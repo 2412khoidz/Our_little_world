@@ -26,35 +26,48 @@ export function WorldExpansionSandbox({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const scene = new WorldExpansionScene({
-      mapSize: 64,
-      dayPhase: 'morning',
-      catVariant: 'ginger-tabby',
-      catAccessory: 'ribbon_rose',
-      petFollowEnabled: true,
-      strayAdopted: true,
-      heldItem: EMPTY_HELD_ITEM,
-      foodBowlPortions: 1,
-      waterBowlVolume: 80,
-      onTelemetry: setTelemetry,
-      onContextResolution: () => {},
-    });
-    sceneRef.current = scene;
+    let cancelled = false;
+    let game: Phaser.Game | null = null;
+    const rafId = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+      host.replaceChildren();
+      const scene = new WorldExpansionScene({
+        mapSize: 64,
+        dayPhase: 'morning',
+        catVariant: 'ginger-tabby',
+        catAccessory: 'ribbon_rose',
+        petFollowEnabled: true,
+        strayAdopted: true,
+        heldItem: EMPTY_HELD_ITEM,
+        foodBowlPortions: 1,
+        waterBowlVolume: 80,
+        onTelemetry: setTelemetry,
+        onContextResolution: () => {},
+      });
+      sceneRef.current = scene;
 
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: host,
-      width: host.clientWidth || 800,
-      height: host.clientHeight || 520,
-      backgroundColor: '#8ec07c',
-      pixelArt: true,
-      render: { antialias: false, pixelArt: true, roundPixels: true },
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
-      scene: [scene],
+      game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: host,
+        width: host.clientWidth || 800,
+        height: host.clientHeight || 520,
+        backgroundColor: '#8ec07c',
+        pixelArt: true,
+        render: { antialias: false, pixelArt: true, roundPixels: true },
+        scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+        scene: [scene],
+      });
+      if (game.canvas) {
+        game.canvas.style.imageRendering = 'pixelated';
+      }
     });
     return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(rafId);
       sceneRef.current = null;
-      game.destroy(true);
+      game?.canvas?.remove();
+      game?.destroy(true);
+      host.replaceChildren();
     };
   }, []);
 

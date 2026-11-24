@@ -221,15 +221,15 @@ export class WorldExpansionScene extends Phaser.Scene {
     const squareLm = this.landmarks.find((l) => l.id === 'square')!;
 
     const drawPath = (x1: number, y1: number, x2: number, y2: number, w = 26) => {
-      const horiz = this.add
-        .rectangle(Math.min(x1, x2), y1 - w / 2, Math.abs(x2 - x1) + w, w, 0xdec099)
-        .setOrigin(0, 0)
-        .setDepth(1);
-      const vert = this.add
-        .rectangle(x2 - w / 2, Math.min(y1, y2), w, Math.abs(y2 - y1) + w, 0xdec099)
-        .setOrigin(0, 0)
-        .setDepth(1);
-      this.layerGroup.push(horiz, vert);
+      const rx1 = Math.min(x1, x2);
+      const rw = Math.abs(x2 - x1) + w;
+      const ry2 = Math.min(y1, y2);
+      const rh = Math.abs(y2 - y1) + w;
+      const horizEdge = this.add.rectangle(rx1 - 2, y1 - w / 2 - 2, rw + 4, w + 4, 0xc7a379).setOrigin(0, 0).setDepth(1);
+      const vertEdge = this.add.rectangle(x2 - w / 2 - 2, ry2 - 2, w + 4, rh + 4, 0xc7a379).setOrigin(0, 0).setDepth(1);
+      const horiz = this.add.rectangle(rx1, y1 - w / 2, rw, w, 0xdec099).setOrigin(0, 0).setDepth(1);
+      const vert = this.add.rectangle(x2 - w / 2, ry2, w, rh, 0xdec099).setOrigin(0, 0).setDepth(1);
+      this.layerGroup.push(horizEdge, vertEdge, horiz, vert);
     };
 
     for (const lm of this.landmarks) {
@@ -245,6 +245,26 @@ export class WorldExpansionScene extends Phaser.Scene {
     }
     this.layerGroup.push(this.add.image(cx + 38, cy - 4, WORLD_PROPS_KEY, extIds.props.mailbox_red).setOrigin(0.5, 1).setDepth(cy - 4));
     this.layerGroup.push(placeWarmLight(this, cx, cy - 28, 36, 0xffd284, 0.25, 860));
+
+    // Cozy cottage yard foliage & garden border
+    const yardProps: Array<{ key: string; x: number; y: number; shadowW?: number }> = [
+      { key: extIds.props.peach_tree, x: cx - 58, y: cy - 4, shadowW: 34 },
+      { key: extIds.props.apple_tree, x: cx + 66, y: cy - 2, shadowW: 34 },
+      { key: extIds.props.sakura_bush, x: cx - 34, y: cy - 2 },
+      { key: extIds.props.planter_box, x: cx + 50, y: cy + 4 },
+      { key: extIds.props.fence_3w, x: cx - 64, y: cy + 36 },
+      { key: extIds.props.fence_3w, x: cx + 66, y: cy + 36 },
+      { key: extIds.props.sunflower, x: cx - 46, y: cy + 44 },
+      { key: extIds.props.sunflower, x: cx + 50, y: cy + 44 },
+      { key: extIds.props.beehive, x: cx + 80, y: cy + 28 },
+    ];
+    for (const yp of yardProps) {
+      if (!propsTex.has(yp.key)) continue;
+      if (yp.shadowW) {
+        this.layerGroup.push(placeSoftShadow(this, yp.x, yp.y - 2, yp.shadowW, 10, yp.y - 4, 0.35));
+      }
+      this.layerGroup.push(this.add.image(yp.x, yp.y, WORLD_PROPS_KEY, yp.key).setOrigin(0.5, 1).setDepth(yp.y));
+    }
 
     // Chimney smoke particles
     for (let i = 0; i < 4; i += 1) {

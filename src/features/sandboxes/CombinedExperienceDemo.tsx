@@ -70,6 +70,9 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
   const [showCompass, setShowCompass] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth > 768 : true,
   );
+  const [showTools, setShowTools] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth > 900 && window.innerHeight > 500 : true,
+  );
 
   const [slots, setSlots] = useState<HotbarSlot[]>(INITIAL_SLOTS);
   const [heldItem, setHeldItem] = useState<HeldItemState>(EMPTY_HELD_ITEM);
@@ -245,50 +248,63 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
     setHeldItem(EMPTY_HELD_ITEM);
   }, [heldItem.itemSku, resolution.secondary, showQuickNotice]);
 
-  // Mount Phaser World Expansion Sandbox once
+  // Mount Phaser World Expansion Sandbox once (RAF-guarded for React StrictMode)
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const scene = new WorldExpansionScene({
-      mapSize: 64,
-      dayPhase: 'morning',
-      catVariant: 'ginger-tabby',
-      catAccessory: 'ribbon_rose',
-      petFollowEnabled: true,
-      strayAdopted: true,
-      heldItem: EMPTY_HELD_ITEM,
-      foodBowlPortions: 0,
-      waterBowlVolume: 60,
-      onTelemetry: setTelemetry,
-      onContextResolution: (r) =>
-        setResolution((cur) =>
-          cur.targetId === r.targetId && cur.primary?.code === r.primary?.code && cur.primary?.available === r.primary?.available && cur.secondary?.code === r.secondary?.code
-            ? cur
-            : r,
-        ),
-      onPetTap: () => {
-        setDialogue({
-          speaker: 'Bé mèo của hai bạn',
-          text: 'Meow~ Cầm thức ăn trên thanh 1–6 rồi nhấn [J] để đưa cho bé ngửi, hoặc tay không nhấn [J] để vuốt ve nhé!',
-        });
-      },
-    });
-    sceneRef.current = scene;
+    let cancelled = false;
+    let game: Phaser.Game | null = null;
+    const rafId = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+      host.replaceChildren();
+      const scene = new WorldExpansionScene({
+        mapSize: 64,
+        dayPhase: 'morning',
+        catVariant: 'ginger-tabby',
+        catAccessory: 'ribbon_rose',
+        petFollowEnabled: true,
+        strayAdopted: true,
+        heldItem: EMPTY_HELD_ITEM,
+        foodBowlPortions: 0,
+        waterBowlVolume: 60,
+        onTelemetry: setTelemetry,
+        onContextResolution: (r) =>
+          setResolution((cur) =>
+            cur.targetId === r.targetId && cur.primary?.code === r.primary?.code && cur.primary?.available === r.primary?.available && cur.secondary?.code === r.secondary?.code
+              ? cur
+              : r,
+          ),
+        onPetTap: () => {
+          setDialogue({
+            speaker: 'Bé mèo của hai bạn',
+            text: 'Meow~ Cầm thức ăn trên thanh 1–6 rồi nhấn [J] để đưa cho bé ngửi, hoặc tay không nhấn [J] để vuốt ve nhé!',
+          });
+        },
+      });
+      sceneRef.current = scene;
 
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: host,
-      width: host.clientWidth || 800,
-      height: host.clientHeight || 540,
-      backgroundColor: '#8ec07c',
-      pixelArt: true,
-      render: { antialias: false, pixelArt: true, roundPixels: true },
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
-      scene: [scene],
+      game = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: host,
+        width: host.clientWidth || 800,
+        height: host.clientHeight || 540,
+        backgroundColor: '#8ec07c',
+        pixelArt: true,
+        render: { antialias: false, pixelArt: true, roundPixels: true },
+        scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+        scene: [scene],
+      });
+      if (game.canvas) {
+        game.canvas.style.imageRendering = 'pixelated';
+      }
     });
     return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(rafId);
       sceneRef.current = null;
-      game.destroy(true);
+      game?.canvas?.remove();
+      game?.destroy(true);
+      host.replaceChildren();
     };
   }, []);
 
@@ -409,56 +425,7 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
             </button>
           </div>
 
-          <div style={{ pointerEvents: 'auto', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="olw-bookmark-tab"
-              style={{ minHeight: 34, fontSize: 11.5 }}
-              onClick={() =>
-                setUiVariant((v) =>
-                  v === 'warm-pixel-cottage' ? 'illustrated-storybook' : 'warm-pixel-cottage',
-                )
-              }
-            >
-              <Palette size={13} /> {uiVariant === 'warm-pixel-cottage' ? 'Cottage UI' : 'Storybook UI'}
-            </button>
-            <button
-              type="button"
-              className="olw-bookmark-tab"
-              style={{ minHeight: 34, fontSize: 11.5 }}
-              onClick={() => {
-                const idx = CAT_VARIANTS.findIndex((v) => v.id === catVariant);
-                const next = CAT_VARIANTS[(idx + 1) % CAT_VARIANTS.length]!;
-                setCatVariant(next.id);
-              }}
-            >
-              <Sparkles size={13} /> Mèo: {activeCatSpec.defaultNameVi}
-            </button>
-            <button
-              type="button"
-              className="olw-bookmark-tab"
-              style={{ minHeight: 34, fontSize: 11.5 }}
-              onClick={() => {
-                const idx = CAT_ACCESSORIES.findIndex((a) => a.id === catAccessory);
-                setCatAccessory(CAT_ACCESSORIES[(idx + 1) % CAT_ACCESSORIES.length]!.id);
-              }}
-            >
-              Phụ kiện
-            </button>
-            <button
-              type="button"
-              className="olw-bookmark-tab"
-              style={{ minHeight: 34, fontSize: 11.5 }}
-              onClick={() =>
-                setAdoption((cur) =>
-                  cur.stage === 'adopted'
-                    ? createAdoptionState(null)
-                    : createAdoptionState({ id: 'demo-quyt', name: activeCatSpec.defaultNameVi }),
-                )
-              }
-            >
-              {adoption.stage === 'adopted' ? 'Thử cảnh mèo hoang' : 'Mèo đã nhận'}
-            </button>
+          <div style={{ pointerEvents: 'auto', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
               className="olw-bookmark-tab olw-bookmark-tab--active"
@@ -470,20 +437,12 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
             </button>
             <button
               type="button"
-              className="olw-bookmark-tab"
+              className={`olw-bookmark-tab ${showTools ? 'olw-bookmark-tab--active' : ''}`}
               style={{ minHeight: 34, fontSize: 11.5 }}
-              onClick={() => setPetFollow((f) => !f)}
+              data-testid="btn-toggle-tools"
+              onClick={() => setShowTools((v) => !v)}
             >
-              {petFollow ? 'Đang đi cùng mèo' : 'Mèo ở hiên'}
-            </button>
-            <button
-              type="button"
-              className={`olw-bookmark-tab ${showCompass ? 'olw-bookmark-tab--active' : ''}`}
-              style={{ minHeight: 34, fontSize: 11.5 }}
-              data-testid="btn-toggle-compass"
-              onClick={() => setShowCompass((v) => !v)}
-            >
-              <Compass size={13} /> Bản đồ
+              <Palette size={13} /> Tùy chỉnh
             </button>
             <button
               type="button"
@@ -494,10 +453,80 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
             >
               <EyeOff size={13} />
             </button>
-            {onExit && (
-              <button type="button" className="olw-bookmark-tab" style={{ minHeight: 34, fontSize: 11.5 }} onClick={onExit}>
-                Thoát
-              </button>
+            {showTools && (
+              <>
+                <button
+                  type="button"
+                  className="olw-bookmark-tab"
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  onClick={() =>
+                    setUiVariant((v) =>
+                      v === 'warm-pixel-cottage' ? 'illustrated-storybook' : 'warm-pixel-cottage',
+                    )
+                  }
+                >
+                  <Palette size={13} /> {uiVariant === 'warm-pixel-cottage' ? 'Cottage UI' : 'Storybook UI'}
+                </button>
+                <button
+                  type="button"
+                  className="olw-bookmark-tab"
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  onClick={() => {
+                    const idx = CAT_VARIANTS.findIndex((v) => v.id === catVariant);
+                    const next = CAT_VARIANTS[(idx + 1) % CAT_VARIANTS.length]!;
+                    setCatVariant(next.id);
+                  }}
+                >
+                  <Sparkles size={13} /> Mèo: {activeCatSpec.defaultNameVi}
+                </button>
+                <button
+                  type="button"
+                  className="olw-bookmark-tab"
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  onClick={() => {
+                    const idx = CAT_ACCESSORIES.findIndex((a) => a.id === catAccessory);
+                    setCatAccessory(CAT_ACCESSORIES[(idx + 1) % CAT_ACCESSORIES.length]!.id);
+                  }}
+                >
+                  Phụ kiện
+                </button>
+                <button
+                  type="button"
+                  className="olw-bookmark-tab"
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  onClick={() =>
+                    setAdoption((cur) =>
+                      cur.stage === 'adopted'
+                        ? createAdoptionState(null)
+                        : createAdoptionState({ id: 'demo-quyt', name: activeCatSpec.defaultNameVi }),
+                    )
+                  }
+                >
+                  {adoption.stage === 'adopted' ? 'Thử cảnh mèo hoang' : 'Mèo đã nhận'}
+                </button>
+                <button
+                  type="button"
+                  className="olw-bookmark-tab"
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  onClick={() => setPetFollow((f) => !f)}
+                >
+                  {petFollow ? 'Đang đi cùng mèo' : 'Mèo ở hiên'}
+                </button>
+                <button
+                  type="button"
+                  className={`olw-bookmark-tab ${showCompass ? 'olw-bookmark-tab--active' : ''}`}
+                  style={{ minHeight: 34, fontSize: 11.5 }}
+                  data-testid="btn-toggle-compass"
+                  onClick={() => setShowCompass((v) => !v)}
+                >
+                  <Compass size={13} /> Bản đồ
+                </button>
+                {onExit && (
+                  <button type="button" className="olw-bookmark-tab" style={{ minHeight: 34, fontSize: 11.5 }} onClick={onExit}>
+                    Thoát
+                  </button>
+                )}
+              </>
             )}
           </div>
         </header>

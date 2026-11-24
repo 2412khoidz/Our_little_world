@@ -77,6 +77,9 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
       data-dev-marker="menu-pet-debugger"
       style={{
         minHeight: '100vh',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        overflowX: 'hidden',
         background: '#241a1d',
         color: '#fff6ea',
         padding: 16,
@@ -205,7 +208,9 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
           <strong>Kiểm chứng 72s Trace ({trace.actionsChosen.length} bước)</strong>
           <div style={{ fontSize: 12.5 }}>Số lần chuyển hành động: <strong>{trace.switches}</strong> (chống rung lắc)</div>
           <div style={{ fontSize: 12.5 }}>Bộ nhớ giới hạn (max 24): <strong>{trace.memoryCount}/24</strong></div>
-          <div style={{ fontSize: 12.5 }}>7 Traits: {JSON.stringify(traits)}</div>
+          <div style={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>
+            7 Traits: {Object.entries(traits).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+          </div>
           <div style={{ fontSize: 11.5, opacity: 0.85, wordBreak: 'break-word' }}>
             Trace: {trace.actionsChosen.slice(0, 10).join(' → ')}
           </div>
