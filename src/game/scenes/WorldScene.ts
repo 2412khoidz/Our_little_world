@@ -87,6 +87,7 @@ export class WorldScene extends Phaser.Scene {
   private localTextureKey = '';
   private localFacing: Direction = 'down';
   private localMoving = false;
+  private localPosture: 'none' | 'sit_study' = 'none';
   private pathQueue: GridPoint[] = [];
   private tapMarker: Phaser.GameObjects.Graphics | null = null;
 
@@ -665,6 +666,7 @@ export class WorldScene extends Phaser.Scene {
         this.blockedGrid,
       );
       if (path.length > 0) {
+        this.localPosture = 'none';
         this.pathQueue = path;
         const finalTile = path[path.length - 1]!;
         this.drawTapMarker(finalTile.tileX, finalTile.tileY);
@@ -892,6 +894,25 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
         this.petEntity?.setStudyMode(active);
       }),
+
+      gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
+        if (!seat || this.currentMapId !== 'home') {
+          this.localPosture = 'none';
+          return;
+        }
+        const desk = this.placements.find((p) => p.mapId === 'home' && p.sku === 'desk_study');
+        if (!desk) return;
+        this.pathQueue = [];
+        this.tapMarker?.clear();
+        const seatX = (desk.tileX + (seat === 'left' ? 0.5 : 1.5)) * TILE_SIZE;
+        const seatY = (desk.tileY + desk.heightTiles + 0.65) * TILE_SIZE;
+        this.localSprite.setPosition(seatX, seatY);
+        this.localFacing = 'up';
+        this.localPosture = 'sit_study';
+        this.playLocalMoveAnim(false);
+        this.emitCurrentTile(true);
+        this.emitLocalMovement('idle', true);
+      }),
     );
   }
 
@@ -1026,6 +1047,7 @@ export class WorldScene extends Phaser.Scene {
     const manualMag = Math.hypot(vx, vy);
 
     if (manualMag > 0.15) {
+      this.localPosture = 'none';
       this.pathQueue = [];
       this.tapMarker?.clear();
 
@@ -1124,6 +1146,16 @@ export class WorldScene extends Phaser.Scene {
       if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== animKey) {
         this.localSprite.play(animKey, true);
       }
+    } else if (this.localPosture === 'sit_study') {
+      const sitAnim = `${this.localTextureKey}:sit-${this.localFacing}`;
+      if (this.anims.exists(sitAnim)) {
+        if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== sitAnim) {
+          this.localSprite.play(sitAnim, true);
+        }
+      } else {
+        this.localSprite.stop();
+        this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
+      }
     } else {
       this.localSprite.stop();
       this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
@@ -1167,7 +1199,7 @@ export class WorldScene extends Phaser.Scene {
           return { kind: 'wardrobe', labelVi: 'Thay trang phục' };
         }
         if (item.interactTag === 'study_preview') {
-          return { kind: 'study_preview', labelVi: 'Góc học (Sắp mở V0.1.5)' };
+          return { kind: 'study_room', labelVi: 'Ngồi vào bàn học' };
         }
         if (item.interactTag === 'cinema_preview') {
           return { kind: 'cinema_preview', labelVi: 'Sofa Rạp phim (V0.4)' };
@@ -1224,12 +1256,8 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.emit('evt:open-avatar-customizer');
     } else if (near.kind === 'pet') {
       gameEventBus.emit('evt:open-pet-panel');
-    } else if (near.kind === 'study_preview') {
-      gameEventBus.emit('evt:preview-notice', {
-        title: 'Phòng học yên tĩnh',
-        version: 'V0.1.5 — Living Home',
-        body: 'Tính năng hẹn giờ Pomodoro chung không camera đang được kích hoạt ở giai đoạn V0.1.5.',
-      });
+    } else if (near.kind === 'study_room') {
+      gameEventBus.emit('evt:open-study-panel');
     } else if (near.kind === 'cinema_preview') {
       gameEventBus.emit('evt:preview-notice', {
         title: 'Góc rạp phim tại nhà',

@@ -23,7 +23,7 @@ export interface DecorateStatePayload {
 }
 
 export interface NearbyInteractable {
-  kind: 'portal' | 'wardrobe' | 'study_preview' | 'cinema_preview' | 'pet';
+  kind: 'portal' | 'wardrobe' | 'study_room' | 'cinema_preview' | 'pet';
   labelVi: string;
 }
 
@@ -48,6 +48,7 @@ export interface GameEventMap {
   'cmd:sync-pet': PetSnapshot | null;
   'cmd:pet-reaction': { action: PetActionType };
   'cmd:set-study-pet-mode': { active: boolean };
+  'cmd:seat-at-desk': { seat: 'left' | 'right' | null };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -56,6 +57,7 @@ export interface GameEventMap {
   'evt:request-map-change': { targetMapId: MapId; spawnX: number; spawnY: number };
   'evt:open-avatar-customizer': undefined;
   'evt:open-pet-panel': undefined;
+  'evt:open-study-panel': undefined;
   'evt:preview-notice': { title: string; body: string; version: string };
   'evt:decorate-place': { mapId: MapId; sku: string; tileX: number; tileY: number };
   'evt:decorate-move': { placementId: string; tileX: number; tileY: number };

@@ -5,6 +5,7 @@ import {
 } from '../../shared/avatar';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   AvatarConfig,
   CreatedInvite,
@@ -449,6 +450,24 @@ export function createDevLanBackend(): WorldBackend {
       },
       async interactPet(params) {
         return apiJson<PetInteractionResult>('/pet/interact', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    study: {
+      async getStudySnapshot(worldId) {
+        return apiJson<StudySnapshot>(`/study?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async startSession(params) {
+        return apiJson<StudySnapshot>('/study/start', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async controlSession(params) {
+        return apiJson<StudySnapshot>('/study/control', {
           method: 'POST',
           body: JSON.stringify(params),
         });

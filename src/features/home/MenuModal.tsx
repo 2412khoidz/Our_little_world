@@ -1,6 +1,7 @@
 import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
   Backpack,
+  BookOpen,
   Cat,
   FlaskConical,
   Gamepad2,
@@ -22,6 +23,7 @@ interface MenuModalProps {
   onOpenInvite: () => void;
   onOpenInventory?: () => void;
   onOpenPet?: () => void;
+  onOpenStudy?: () => void;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
@@ -38,6 +40,7 @@ export function MenuModal({
   onOpenInvite,
   onOpenInventory,
   onOpenPet,
+  onOpenStudy,
   onOpenPwaGuide,
   onOpenSpikeLab,
   onQuickSwitchDev,
@@ -99,6 +102,20 @@ export function MenuModal({
             }}
           >
             <Cat size={17} /> Bé mèo cam
+          </button>
+        )}
+
+        {onOpenStudy && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-study"
+            onClick={() => {
+              onClose();
+              onOpenStudy();
+            }}
+          >
+            <BookOpen size={17} /> Phòng học yên tĩnh (Pomodoro)
           </button>
         )}
 

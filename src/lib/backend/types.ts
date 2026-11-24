@@ -1,6 +1,11 @@
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetActionType, PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
+  StudyControlAction,
+  StudyMode,
+  StudySnapshot,
+} from '../../shared/study/studyTypes';
+import type {
   AvatarConfig,
   BackendMode,
   CinemaCommand,
@@ -86,6 +91,24 @@ export interface SpikeCinemaBus {
   send: (pkt: SpikeCinemaPacket) => void;
 }
 
+export interface StudyBackend {
+  getStudySnapshot(worldId: string): Promise<MutationResult<StudySnapshot>>;
+  startSession(params: {
+    worldId: string;
+    mode: StudyMode;
+    focusMinutes: number;
+    breakMinutes: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<StudySnapshot>>;
+  controlSession(params: {
+    worldId: string;
+    sessionId: string;
+    action: StudyControlAction;
+    expectedVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<StudySnapshot>>;
+}
+
 export interface WorldBackend {
   readonly mode: BackendMode;
 
@@ -159,4 +182,5 @@ export interface WorldBackend {
 
   readonly inventory?: InventoryBackend;
   readonly pet?: PetBackend;
+  readonly study?: StudyBackend;
 }

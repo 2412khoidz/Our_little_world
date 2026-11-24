@@ -172,6 +172,64 @@ function projectPet(pet, nowMs = Date.now()) {
   };
 }
 
+function projectStudySession(row, nowMs = Date.now()) {
+  let phase = row.phase;
+  let status = row.status;
+  let startedAtMs = row.startedAtMs;
+  let endsAtMs = row.endsAtMs;
+  let remainingMs = row.remainingMs;
+  const breakMs = row.breakMinutes * 60000;
+
+  if (status === 'running') {
+    if (phase === 'focus') {
+      if (nowMs < endsAtMs) {
+        remainingMs = endsAtMs - nowMs;
+      } else if (breakMs > 0 && nowMs < endsAtMs + breakMs) {
+        phase = 'break';
+        startedAtMs = endsAtMs;
+        endsAtMs += breakMs;
+        remainingMs = endsAtMs - nowMs;
+      } else {
+        phase = 'completed';
+        status = 'completed';
+        remainingMs = 0;
+      }
+    } else if (phase === 'break') {
+      if (nowMs < endsAtMs) {
+        remainingMs = endsAtMs - nowMs;
+      } else {
+        phase = 'completed';
+        status = 'completed';
+        remainingMs = 0;
+      }
+    }
+  }
+  return { ...row, phase, status, startedAtMs, endsAtMs, remainingMs: Math.max(0, remainingMs) };
+}
+
+function buildStudySnapshot(v015, worldId, userId, nowMs = Date.now()) {
+  const list = (v015.studySessions[worldId] ??= []);
+  const activeShared = [...list]
+    .reverse()
+    .find((s) => s.mode === 'shared' && (s.status === 'running' || s.status === 'paused'));
+  const activeSolo = [...list]
+    .reverse()
+    .find((s) => s.mode === 'solo' && s.ownerId === userId && (s.status === 'running' || s.status === 'paused'));
+
+  let sharedProj = activeShared ? projectStudySession(activeShared, nowMs) : null;
+  if (sharedProj && sharedProj.status === 'completed') sharedProj = null;
+
+  let soloProj = activeSolo ? projectStudySession(activeSolo, nowMs) : null;
+  if (soloProj && soloProj.status === 'completed') soloProj = null;
+
+  return {
+    worldId,
+    serverNowMs: nowMs,
+    sharedSession: sharedProj,
+    soloSession: soloProj,
+  };
+}
+
 export async function handleV015Route({
   req,
   res,
@@ -422,6 +480,164 @@ export async function handleV015Route({
     broadcastEvent(worldId, 'world_mutated', { reason: action === 'feed' ? 'inventory' : 'pet' });
     if (action === 'feed') broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
     sendJson(res, 200, { ok: true, data: resPayload });
+    return true;
+  }
+
+  // === OLW-015-05: Silent Study Room & Pomodoro Co-presence ===
+  if (req.method === 'GET' && route === '/study') {
+    const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();
+    if (!worldId || !isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    sendJson(res, 200, { ok: true, data: buildStudySnapshot(v015, worldId, userId, Date.now()) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/study/start') {
+    const worldId = String(body.worldId ?? '').trim();
+    const mode = String(body.mode ?? '').trim();
+    const focusMinutes = Number(body.focusMinutes);
+    const breakMinutes = Number(body.breakMinutes);
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (
+      !worldId || !key || !['solo', 'shared'].includes(mode) ||
+      !Number.isInteger(focusMinutes) || focusMinutes < 1 || focusMinutes > 180 ||
+      !Number.isInteger(breakMinutes) || breakMinutes < 0 || breakMinutes > 60
+    ) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Cấu hình phiên học chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `study_start:${mode}:${focusMinutes}:${breakMinutes}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'study_start_session', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const list = (v015.studySessions[worldId] ??= []);
+
+    for (const s of list) {
+      const sameLane = mode === 'shared' ? s.mode === 'shared' : s.mode === 'solo' && s.ownerId === userId;
+      if (sameLane && (s.status === 'running' || s.status === 'paused')) {
+        const proj = projectStudySession(s, nowMs);
+        if (proj.status === 'completed') {
+          s.status = 'completed';
+          s.phase = 'completed';
+          s.remainingMs = 0;
+          s.updatedAt = nowIso;
+        } else {
+          sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Đang có phiên học hoạt động ở chế độ này rồi.' });
+          return true;
+        }
+      }
+    }
+
+    const session = {
+      id: `study-${crypto.randomUUID()}`,
+      worldId,
+      ownerId: userId,
+      mode,
+      phase: 'focus',
+      status: 'running',
+      focusMinutes,
+      breakMinutes,
+      startedAtMs: nowMs,
+      endsAtMs: nowMs + focusMinutes * 60000,
+      remainingMs: focusMinutes * 60000,
+      version: 1,
+      updatedAt: nowIso,
+    };
+    list.push(session);
+
+    const snap = buildStudySnapshot(v015, worldId, userId, nowMs);
+    saveV015Idempotency(v015, worldId, userId, 'study_start_session', key, reqHash, snap);
+    saveDb();
+    if (mode === 'shared') broadcastEvent(worldId, 'world_mutated', { reason: 'study' });
+    sendJson(res, 200, { ok: true, data: snap });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/study/control') {
+    const worldId = String(body.worldId ?? '').trim();
+    const sessionId = String(body.sessionId ?? '').trim();
+    const action = String(body.action ?? '').trim();
+    const expectedVersion = Number(body.expectedVersion);
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !sessionId || !key || !['pause', 'resume', 'finish'].includes(action) || !Number.isInteger(expectedVersion)) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Lệnh điều khiển phiên học chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `study_control:${sessionId}:${action}:${expectedVersion}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'study_control_session', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const list = (v015.studySessions[worldId] ??= []);
+    const row = list.find((s) => s.id === sessionId);
+    if (!row) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy phiên học.' });
+      return true;
+    }
+    if (row.ownerId !== userId) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Chỉ người mở phiên học mới điều khiển được đồng hồ nhé.' });
+      return true;
+    }
+    if (row.version !== expectedVersion) {
+      sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Phiên học vừa được cập nhật.' });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const proj = projectStudySession(row, nowMs);
+    if (action === 'finish' || proj.status === 'completed') {
+      row.phase = 'completed';
+      row.status = 'completed';
+      row.remainingMs = 0;
+      row.version += 1;
+      row.updatedAt = nowIso;
+    } else if (action === 'pause' && proj.status === 'running') {
+      row.phase = proj.phase;
+      row.startedAtMs = proj.startedAtMs;
+      row.endsAtMs = proj.endsAtMs;
+      row.status = 'paused';
+      row.remainingMs = proj.remainingMs;
+      row.version += 1;
+      row.updatedAt = nowIso;
+    } else if (action === 'resume' && row.status === 'paused') {
+      row.status = 'running';
+      row.startedAtMs = nowMs;
+      row.endsAtMs = nowMs + row.remainingMs;
+      row.version += 1;
+      row.updatedAt = nowIso;
+    }
+
+    const snap = buildStudySnapshot(v015, worldId, userId, nowMs);
+    saveV015Idempotency(v015, worldId, userId, 'study_control_session', key, reqHash, snap);
+    saveDb();
+    if (row.mode === 'shared') broadcastEvent(worldId, 'world_mutated', { reason: 'study' });
+    sendJson(res, 200, { ok: true, data: snap });
     return true;
   }
 

@@ -28,9 +28,13 @@ import { InventoryModal } from '../features/inventory/InventoryModal';
 import { InviteModal } from '../features/pairing/InviteModal';
 import { PetPanel } from '../features/pets/PetPanel';
 import { isPetSoundMuted, playPetFeedbackChime, setPetSoundMuted } from '../features/pets/petAudio';
+import { PomodoroPanel } from '../features/study/PomodoroPanel';
+import { setStudyAmbientTrack, stopStudyAmbient, type AmbientTrack } from '../features/study/ambientAudio';
 import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
+import { deriveStudySessionAt, formatDurationMmSs } from '../shared/study/pomodoro';
+import type { StudyControlAction, StudyMode, StudySnapshot } from '../shared/study/studyTypes';
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
 import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
@@ -117,13 +121,18 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
   const [petBusy, setPetBusy] = useState(false);
   const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
+  const [studySnapshot, setStudySnapshot] = useState<StudySnapshot | null>(null);
+  const [studyBusy, setStudyBusy] = useState(false);
+  const [studySeat, setStudySeat] = useState<'left' | 'right'>('left');
+  const [ambientTrack, setAmbientTrack] = useState<AmbientTrack>('none');
+  const [studyClockTick, setStudyClockTick] = useState(0);
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -264,7 +273,8 @@ function MainCoupleApp() {
         realtimeRef.current?.notifyWorldMutated('inventory');
       }
       realtimeRef.current?.notifyWorldMutated('pet');
-      playPetFeedbackChime(action);
+      const studyActiveNow = Boolean(studySnapshot?.sharedSession || studySnapshot?.soloSession);
+      playPetFeedbackChime(action, studyActiveNow);
       const msg =
         action === 'feed'
           ? `${res.data.pet.name} ăn hạt rất ngon!`
@@ -273,8 +283,90 @@ function MainCoupleApp() {
             : `${res.data.pet.name} đang rừ rừ vui sướng!`;
       showToast(msg);
     },
-    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast],
+    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast, studySnapshot],
   );
+
+  const refreshStudySnapshot = useCallback(
+    async (explicitWorldId?: string) => {
+      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.study) return;
+      const res = await backend.study.getStudySnapshot(targetWorldId);
+      if (res.ok) {
+        setStudySnapshot(res.data);
+        const active = Boolean(res.data.sharedSession || res.data.soloSession);
+        gameEventBus.emit('cmd:set-study-pet-mode', { active });
+      }
+    },
+    [backend],
+  );
+
+  const handleStartStudy = useCallback(
+    async (mode: StudyMode, focusMinutes: number, breakMinutes: number) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.study) return;
+      setStudyBusy(true);
+      const res = await backend.study.startSession({
+        worldId: targetWorldId,
+        mode,
+        focusMinutes,
+        breakMinutes,
+        idempotencyKey: makeIdempotencyKey('study-start'),
+      });
+      setStudyBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        if (res.code === 'VERSION_CONFLICT') void refreshStudySnapshot(targetWorldId);
+        return;
+      }
+      setStudySnapshot(res.data);
+      gameEventBus.emit('cmd:set-study-pet-mode', { active: true });
+      if (currentMapId === 'home') {
+        gameEventBus.emit('cmd:seat-at-desk', { seat: studySeat });
+      }
+      if (mode === 'shared') realtimeRef.current?.notifyWorldMutated('study');
+      showToast(mode === 'shared' ? 'Đã mở phiên học chung!' : 'Đã bắt đầu phiên học cá nhân.');
+    },
+    [backend, currentMapId, refreshStudySnapshot, showToast, studySeat],
+  );
+
+  const handleControlStudy = useCallback(
+    async (sessionId: string, action: StudyControlAction, expectedVersion: number) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.study) return;
+      setStudyBusy(true);
+      const res = await backend.study.controlSession({
+        worldId: targetWorldId,
+        sessionId,
+        action,
+        expectedVersion,
+        idempotencyKey: makeIdempotencyKey(`study-${action}`),
+      });
+      setStudyBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        if (res.code === 'VERSION_CONFLICT') void refreshStudySnapshot(targetWorldId);
+        return;
+      }
+      setStudySnapshot(res.data);
+      const active = Boolean(res.data.sharedSession || res.data.soloSession);
+      gameEventBus.emit('cmd:set-study-pet-mode', { active });
+      realtimeRef.current?.notifyWorldMutated('study');
+      if (action === 'finish') {
+        stopStudyAmbient();
+        setAmbientTrack('none');
+      }
+    },
+    [backend, refreshStudySnapshot, showToast],
+  );
+
+  useEffect(() => {
+    const activeSession = studySnapshot?.sharedSession ?? studySnapshot?.soloSession;
+    if (!activeSession) return;
+    const id = window.setInterval(() => setStudyClockTick((t) => t + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [studySnapshot]);
+
+  useEffect(() => () => stopStudyAmbient(), []);
 
   // Initial auth bootstrap & subscription
   useEffect(() => {
@@ -350,6 +442,8 @@ function MainCoupleApp() {
             void refreshInventorySnapshot(worldId);
           } else if (reason === 'pet') {
             void refreshPetSnapshot(worldId);
+          } else if (reason === 'study') {
+            void refreshStudySnapshot(worldId);
           } else {
             void refreshWorldSnapshot();
           }
@@ -366,6 +460,7 @@ function MainCoupleApp() {
         realtimeRef.current = handle;
         void refreshInventorySnapshot(worldId);
         void refreshPetSnapshot(worldId);
+        void refreshStudySnapshot(worldId);
       });
 
     return () => {
@@ -376,7 +471,7 @@ function MainCoupleApp() {
         void existing.disconnect();
       }
     };
-  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot, refreshPetSnapshot]);
+  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot]);
 
   // Keep presence metadata synchronized when map/avatar changes
   useEffect(() => {
@@ -462,8 +557,15 @@ function MainCoupleApp() {
       void refreshInventorySnapshot();
     });
 
+    const unsubStudyPanel = gameEventBus.on('evt:open-study-panel', () => {
+      setActiveModal('study');
+      void refreshStudySnapshot();
+      gameEventBus.emit('cmd:seat-at-desk', { seat: studySeat });
+    });
+
     const unsubSceneReady = gameEventBus.on('evt:scene-ready', () => {
       void refreshPetSnapshot();
+      void refreshStudySnapshot();
     });
 
     const unsubPreview = gameEventBus.on('evt:preview-notice', (notice) => {
@@ -484,12 +586,13 @@ function MainCoupleApp() {
       unsubMapReq();
       unsubAvatar();
       unsubPetPanel();
+      unsubStudyPanel();
       unsubSceneReady();
       unsubPreview();
       unsubSelect();
       unsubDiag();
     };
-  }, [refreshInventorySnapshot, refreshPetSnapshot]);
+  }, [refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
@@ -739,6 +842,13 @@ function MainCoupleApp() {
   }
 
   const isAnyModalOpen = activeModal !== null || previewNotice !== null;
+  const activeFloatingStudy = studySnapshot?.sharedSession ?? studySnapshot?.soloSession ?? null;
+  const derivedFloatingStudy = activeFloatingStudy
+    ? deriveStudySessionAt(
+        activeFloatingStudy,
+        (studySnapshot?.serverNowMs ?? 0) + studyClockTick * 1000,
+      )
+    : null;
 
   return (
     <div className="app-shell">
@@ -754,6 +864,30 @@ function MainCoupleApp() {
         presences={presences}
         onOpenInvite={() => setActiveModal('invite')}
       />
+
+      {activeFloatingStudy && derivedFloatingStudy && derivedFloatingStudy.status !== 'completed' && (
+        <button
+          type="button"
+          className="pill"
+          data-testid="study-floating-pill"
+          onClick={() => setActiveModal('study')}
+          style={{
+            position: 'fixed',
+            top: 52,
+            right: 12,
+            zIndex: 25,
+            background: 'rgba(40, 30, 36, 0.88)',
+            borderColor: '#f4c158',
+            color: '#fff8ef',
+            cursor: 'pointer',
+          }}
+        >
+          <span>
+            {derivedFloatingStudy.phase === 'focus' ? 'Tập trung' : 'Nghỉ mắt'}{' '}
+            {formatDurationMmSs(derivedFloatingStudy.remainingMs)}
+          </span>
+        </button>
+      )}
 
       <GameViewport
         worldId={worldSnapshot.world.id}
@@ -847,6 +981,14 @@ function MainCoupleApp() {
                 }
               : undefined
           }
+          onOpenStudy={
+            backend.study
+              ? () => {
+                  setActiveModal('study');
+                  void refreshStudySnapshot();
+                }
+              : undefined
+          }
           onOpenPwaGuide={() => setActiveModal('pwa')}
           onOpenSpikeLab={() => {
             if (import.meta.env.DEV) setActiveModal('spike');
@@ -897,6 +1039,27 @@ function MainCoupleApp() {
           onAdoptOrRename={handleAdoptOrRenamePet}
           onInteract={handleInteractPet}
           onClaimFreeKibble={handleClaimFreeKibble}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'study' && backend.study && (
+        <PomodoroPanel
+          snapshot={studySnapshot}
+          localUserId={currentUser.userId}
+          members={worldSnapshot.members}
+          busy={studyBusy}
+          ambientTrack={ambientTrack}
+          selectedSeat={studySeat}
+          onSelectSeat={(seat) => {
+            setStudySeat(seat);
+            if (currentMapId === 'home') {
+              gameEventBus.emit('cmd:seat-at-desk', { seat });
+            }
+          }}
+          onChangeAmbient={(track) => setAmbientTrack(setStudyAmbientTrack(track))}
+          onStartSession={handleStartStudy}
+          onControlSession={handleControlStudy}
           onClose={() => setActiveModal(null)}
         />
       )}

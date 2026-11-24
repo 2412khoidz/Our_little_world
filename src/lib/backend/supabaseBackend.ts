@@ -1,6 +1,7 @@
 import { parseAvatarConfig } from '../../shared/avatar';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,
   FurniturePlacement,
@@ -455,6 +456,44 @@ export function createSupabaseBackend(): WorldBackend {
           return { ok: false, ...mapSupabaseError(error) };
         }
         return { ok: true, data: data as PetInteractionResult };
+      },
+    },
+
+    study: {
+      async getStudySnapshot(worldId) {
+        const { data, error } = await supabase.rpc('study_get_snapshot', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
+      },
+      async startSession(params) {
+        const { data, error } = await supabase.rpc('study_start_session', {
+          p_world_id: params.worldId,
+          p_mode: params.mode,
+          p_focus_minutes: params.focusMinutes,
+          p_break_minutes: params.breakMinutes,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
+      },
+      async controlSession(params) {
+        const { data, error } = await supabase.rpc('study_control_session', {
+          p_world_id: params.worldId,
+          p_session_id: params.sessionId,
+          p_action: params.action,
+          p_expected_version: params.expectedVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
       },
     },
   };

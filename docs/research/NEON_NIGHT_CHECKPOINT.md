@@ -11,29 +11,10 @@ Cập nhật tự động bởi agent triển khai ban đêm trên nhánh `neon/
 
 ## Tiến độ từng Phase & Commit
 
-### Phase 1 & 2 — Khôi phục chất lượng mỹ thuật Demo E trong game chính & Visual QA Gate
-- **Trạng thái:** `Implemented` & `Locally tested` (chờ nghiệm thu Cloud/iPhone Safari thật).
-- **Nội dung đã hoàn thành:**
-  - Nâng cấp pipeline atlas (`scripts/build-unified-atlas.mjs`, `scripts/unified-atlas-art.mjs`, `scripts/build-private-atlas.py`, `scripts/atlas-sources/free-pets-cat-sheet.json`, `scripts/atlas-sources/demo-e-textures.json`):
-    - Cắt 1:1 native pixel cho toàn bộ 12 nội thất V0.1 (sửa triệt để lỗi méo/lệch ô của `bed_cozy`, `wardrobe_oak`, `bookshelf_warm`, `lamp_floor`, `sofa_cream`, `table_wood`, `desk_study`, `plant_monstera`, `rug_peach`, `lantern_garden`).
-    - Bổ sung hàng pose ngồi (`sit`, 24 frames/tóc) cho `avatars.png` (Adam/Alex/Amelia + fallback CC0) và animation `:sit-*` trong `phaserAvatarTexture.ts`.
-    - Xuất `world-props.png` + `props-manifest.json` cho cả `unified` (CC0 + `CC BY 4.0` `cat-orange` 128f + `_shadow`) và `private-unified` (đầy đủ props + sheet hoạt ảnh Demo E).
-  - Nâng cấp `WorldScene.ts` & `worldCamera.ts`:
-    - Bổ sung cảnh quan đồng cỏ liên hoàn bên ngoài nhà/vườn (`meadow_tile` 64x64 + hoa dại + cây anh đào/táo/sồi/đào), viền nhà ấm áp, hiên nhà, hộp thư đỏ, lò sưởi cháy (`olw-fire`), quầy bếp + TV, góc thú cưng (thảm + bát), ánh nắng xiên, đèn tỏa sáng dịu và tên nhân vật nhỏ gọn.
-    - Khu vườn: ao cong với nước động (`olw-water`), cầu gỗ đôi, hoa sen/súng/sậy, vịt/ếch/gà/cừu/cối xay gió hoạt ảnh, thảm picnic anh đào, luống hoa/rau hướng dương có hàng rào + tổ ong và cánh hoa anh đào rơi nhẹ.
-    - Camera adaptive follow mượt cho `430×932` portrait (`2.0×` integer) & `844×390` landscape khi chơi, chuyển sang `fitWorldZoom` khi vào Chế độ Trang trí.
-- **Kiểm chứng đã chạy sau chỉnh sửa:**
-  - `npm run assets:atlas` + `npm run assets:atlas:private` OK (`21` world/avatar ID + `57` props/anim ID).
-  - `npm run lint` PASS; `npm run typecheck` PASS; `npm test` (`8` files, `32` tests) PASS.
-  - `npm run build && node scripts/verify-prod-guard.mjs` PASS (`0` dev leak, precache verified).
-  - `npm run build:private` PASS.
-  - `PLAYWRIGHT_PORT=4176 npx playwright test` PASS (`8/8` desktop + `430×932` mobile).
-  - Đã kiểm tra trực quan 8 ảnh PNG trong `test-results/v01-demo-e-restored/`.
-
-### Phase 3 — V0.1.5 Living Home (Đang triển khai tuần tự)
-- `OLW-015-01` Inventory Foundation (`K5`): **Implemented & Locally tested** (`supabase/migrations/20261125000100_v015_inventory_and_catalog.sql`, `src/shared/inventory/*`, `DevLan` + `SupabaseBackend`, `InventoryModal.tsx`, `inventoryRules.test.ts` + `v015Inventory.test.ts` — `10` files / `38` tests PASS).
-- `OLW-015-03/04` Living Pet MVP (`cat-orange`): *In progress*
-- `OLW-015-05/06` Silent Study Room & Pomodoro: *Pending*
-- `OLW-015-07` Couple Interactions & Photo Frame: *Pending*
+- **Commit `03072e4` — Phase 1 & 2 (Demo E Art Restoration & Visual QA Gate):** **Implemented & Locally tested** (`21` world/avatar ID + `57` props/anim ID, adaptive follow camera, `8/8` Playwright E2E + `verify-prod-guard.mjs` + 8 QA screenshots inspected).
+- **Commit `b5c6faa` — `OLW-015-01` Inventory Foundation (`K5`):** **Implemented & Locally tested** (`supabase/migrations/20261125000100_v015_inventory_and_catalog.sql`, `src/shared/inventory/*`, `DevLan` + `SupabaseBackend`, `InventoryModal.tsx`, `inventoryRules.test.ts` + `v015Inventory.test.ts`).
+- **Commit `3d8a630` — `OLW-015-03/04` Living Pet MVP (`cat-orange`):** **Implemented & Locally tested** (`supabase/migrations/20261125000200_v015_pet_mvp.sql`, `src/shared/pet/*`, `PetEntity.ts`, `PetPanel.tsx` + `petAudio.ts`, `petNeeds.test.ts` + `v015Pet.test.ts`).
+- **Commit (hiện tại) — `OLW-015-05/06` Silent Study Room & Pomodoro Co-Presence:** **Implemented & Locally tested** (`THIRD_PARTY_NOTICES.md`, `supabase/migrations/20261125000300_v015_study_pomodoro.sql`, `src/shared/study/*` port MIT `cocoworking`, `PomodoroPanel.tsx` + `ambientAudio.ts`, ghế bàn học + mèo nằm cạnh góc học tắt tiếng, `pomodoro.test.ts` + `v015Study.test.ts` — `14` files / `45` tests PASS).
+- `OLW-015-07` Couple Interactions & Static Photo Frame: *In progress*
 - `OLW-015-02` Mailbox & Gifts: *Pending*
 - `OLW-015-08` Dev Console (`K6`) & `supabase/dev-migrations/`: *Pending*
