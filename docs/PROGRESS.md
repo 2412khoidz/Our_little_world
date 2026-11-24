@@ -123,3 +123,7 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 - **M5 Game UI & Shared Life (`1f5b8d4`):** Hệ thống Cozy Indie Game UI với 2 biến thể **Warm Pixel Cottage** & **Illustrated Storybook**, thanh hotbar, hộp thoại chân dung, Cuốn Sổ Chung 5 tab (`OurLittleNotebook.tsx`), contract & Dev LAN stubs V0.3, sandbox `/?ui-sandbox=1`.
 - **M6 World Expansion & Showcase (`0a8ec8c`):** Bản đồ `64×64` & `96×96` gồm 10 địa điểm có chiều sâu (`worldExpansionMap.ts`, `WorldExpansionScene.ts`), `/?world-sandbox=1` và bản trải nghiệm tổng hợp `/?experience-demo=1` với Touch D-pad di động.
 - **Tài liệu & Bằng chứng trực quan (`test-results/grand-showcase/`):** Đã tạo đủ 16 screenshot Desktop/Mobile/Small/Landscape + 2 animated GIF (`pet-locomotion-and-wake.gif`, `pet-physical-feeding-and-play.gif`) và bộ báo cáo bàn giao Phase 14 ([Living Pet](pet/LIVING_PET_QUALITY_REPORT.md), [Game UI](ui/GAME_UI_DESIGN_SYSTEM.md), [Physical Interaction](gameplay/PHYSICAL_INTERACTION_SPEC.md), [World Expansion](world/WORLD_EXPANSION_DESIGN.md), [Quality Audit](research/QUALITY_AUDIT.md)).
+
+## 9. Grand Integration
+
+Đã hợp nhất GPT, Neon và DeepSeek trên nhánh riêng, bảo toàn Demo E, Realtime và các bản Grand sandbox. PostgreSQL local đạt fresh/upgrade theo từng tệp SQL, gồm bản vá debit kho và receipt hộp thư. Vitest 453/453 và Playwright Chromium 15 pass, 1 skip có chủ đích. Xung đột version migration chờ lịch sử database đích. Supabase Cloud, thiết bị thật và mở rộng gameplay sau quality gate còn chờ. [Integration checkpoint](research/INTEGRATION_CHECKPOINT.md)
