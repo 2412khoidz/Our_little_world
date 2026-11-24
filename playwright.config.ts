@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const pwPort = process.env.PLAYWRIGHT_PORT || '4173';
+const pwBaseUrl = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
+const pwStateFile = process.env.OLW_DEV_LAN_STATE_FILE || `.dev-lan-state-pw-${pwPort}.json`;
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
@@ -8,7 +12,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: pwBaseUrl,
     trace: 'on-first-retry',
   },
   projects: [
@@ -27,8 +31,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
-    url: 'http://127.0.0.1:4173',
+    command: `npm run dev -- --host 127.0.0.1 --port ${pwPort} --strictPort`,
+    env: {
+      ...process.env,
+      OLW_DEV_LAN_STATE_FILE: pwStateFile,
+    },
+    url: pwBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

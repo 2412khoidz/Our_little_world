@@ -27,6 +27,7 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
   for (const direction of LEGACY_DIRECTIONS) {
     const base = getIdleFrameIndex(direction);
     let frames: (number | string)[] = [base + 1, base, base + 2, base];
+    let sitFrames: (number | string)[] = [base];
     if (atlasCanvas) {
       const x = AVATAR_DIRECTIONS.indexOf(direction) * AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH;
       // Keep the existing numeric idle frame index and walk animation names.
@@ -36,6 +37,11 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
       frames = Array.from({ length: AVATAR_FRAME_COUNT }, (_, i) => {
         const frame = direction + '-walk-' + i;
         tex.add(frame, 0, x + i * AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+        return frame;
+      });
+      sitFrames = Array.from({ length: AVATAR_FRAME_COUNT }, (_, i) => {
+        const frame = direction + '-sit-' + i;
+        tex.add(frame, 0, x + i * AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT * 2, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
         return frame;
       });
     } else {
@@ -49,6 +55,15 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
         key: animKey,
         frames: frames.map((frame) => ({ key, frame })),
         frameRate: atlasCanvas ? 10 : 8,
+        repeat: -1,
+      });
+    }
+    const sitAnimKey = key + ':sit-' + direction;
+    if (!scene.anims.exists(sitAnimKey)) {
+      scene.anims.create({
+        key: sitAnimKey,
+        frames: sitFrames.map((frame) => ({ key, frame })),
+        frameRate: 4,
         repeat: -1,
       });
     }

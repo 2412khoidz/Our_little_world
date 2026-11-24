@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import { fitWorldZoom } from '../../src/game/art/worldCamera';
+import {
+  computeGameplayZoom,
+  computeScenicBounds,
+  fitWorldZoom,
+} from '../../src/game/art/worldCamera';
 
 it.each([[1280, 600], [430, 767], [844, 275], [390, 485], [430, 230]])(
   'keeps home and garden margins inside a %s×%s canvas',
@@ -12,3 +16,20 @@ it.each([[1280, 600], [430, 767], [844, 275], [390, 485], [430, 230]])(
     }
   },
 );
+
+it('provides crisp zoomed-in gameplay framing for mobile portrait and landscape without black voids', () => {
+  const portraitZoom = computeGameplayZoom(430, 767, 256, 192);
+  expect(portraitZoom).toBeGreaterThanOrEqual(2);
+  expect(portraitZoom).toBeLessThanOrEqual(2.75);
+
+  const landscapeZoom = computeGameplayZoom(844, 285, 256, 192);
+  expect(landscapeZoom).toBeGreaterThanOrEqual(1.75);
+  expect(landscapeZoom).toBeLessThanOrEqual(2.5);
+
+  const desktopZoom = computeGameplayZoom(1280, 600, 256, 192);
+  expect(desktopZoom).toBeGreaterThanOrEqual(2.5);
+
+  const bounds = computeScenicBounds(430, 767, portraitZoom, 256, 192);
+  expect(bounds.width).toBeGreaterThan(256);
+  expect(bounds.height).toBeGreaterThan(192);
+});

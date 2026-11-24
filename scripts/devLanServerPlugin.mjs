@@ -923,12 +923,14 @@ function createAssetCandidatesMiddleware() {
   };
 }
 
-export function devLanServerPlugin() {
+export function devLanServerPlugin(options = {}) {
   return {
     name: 'olw-dev-lan-server',
     apply: 'serve',
     configureServer(server) {
-      const handler = createDevLanHandler();
+      const handler = createDevLanHandler({
+        stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+      });
       const assetCandidates = createAssetCandidatesMiddleware();
       server.middlewares.use(assetCandidates);
       server.middlewares.use(handler);

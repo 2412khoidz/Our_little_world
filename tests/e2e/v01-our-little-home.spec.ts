@@ -1,20 +1,26 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fitWorldZoom } from '../../src/game/art/worldCamera';
 
-const BASE = 'http://127.0.0.1:4173';
+const pwPort = process.env.PLAYWRIGHT_PORT || '4173';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
 
-async function tapWorldTile(page: Page, map: 'home' | 'garden', tileX: number, tileY: number, touch: boolean) {
+async function tapWorldTile(page: Page, _map: 'home' | 'garden', tileX: number, tileY: number, touch: boolean) {
   const canvas = page.getByTestId('game-canvas-host').locator('canvas');
   await expect(canvas).toBeVisible();
   await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) =>
-    element.width === element.parentElement?.clientWidth && element.height === element.parentElement?.clientHeight,
+    element.width === element.parentElement?.clientWidth &&
+    element.height === element.parentElement?.clientHeight &&
+    Boolean(element.dataset.camZoom),
   )).toBe(true);
   const box = (await canvas.boundingBox())!;
-  const width = map === 'home' ? 256 : 288;
-  const height = map === 'home' ? 192 : 224;
-  const zoom = fitWorldZoom(box.width, box.height, width, height);
-  const x = box.x + box.width / 2 + ((tileX + 0.5) * 16 - width / 2) * zoom;
-  const y = box.y + box.height / 2 + ((tileY + 0.5) * 16 - height / 2) * zoom;
+  const cam = await canvas.evaluate((el: HTMLCanvasElement) => ({
+    zoom: Number(el.dataset.camZoom || '1'),
+    viewX: Number(el.dataset.camViewX || '0'),
+    viewY: Number(el.dataset.camViewY || '0'),
+  }));
+  const worldX = (tileX + 0.5) * 16;
+  const worldY = (tileY + 0.5) * 16;
+  const x = box.x + (worldX - cam.viewX) * cam.zoom;
+  const y = box.y + (worldY - cam.viewY) * cam.zoom;
   if (touch) await page.touchscreen.tap(x, y);
   else await page.mouse.click(x, y);
 }
