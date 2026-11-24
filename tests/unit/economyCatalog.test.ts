@@ -34,10 +34,11 @@ describe('economy catalog — structure and SKU stability', () => {
     // sum to 12.0 under ECONOMY_MODEL §1. Downstream rows (herb_carp) were authored
     // against 11.0, so the authored value wins and the drift is reported, not hidden.
     // peach: PRODUCTION_CHAINS lists a perennial tree but no sapling SKU to buy.
-    expect(result.warnings.map((warning) => `${warning.code}:${warning.sku}`)).toEqual([
-      'STANDARD_VALUE_DRIFT:carp_pond',
-      'NO_ACQUISITION_PATH:peach',
-    ]);
+    expect(
+      result.warnings
+        .map((warning) => `${warning.code}:${warning.sku}`)
+        .sort(),
+    ).toEqual(['NO_ACQUISITION_PATH:peach', 'STANDARD_VALUE_DRIFT:carp_pond']);
     expect(deriveStandardValueBp(requireItem('carp_pond'))).toBe(120_000);
   });
 

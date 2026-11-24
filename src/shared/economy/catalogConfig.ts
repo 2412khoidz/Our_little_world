@@ -133,9 +133,10 @@ export const ITEM_CATALOG: readonly ItemDefinition[] = [
   // Bred from neighbouring rose_pink plots (see src/shared/farming/blooms.ts), not bought.
   item({ sku: 'rose_sakura', nameVi: 'Hồng anh đào', group: 'flower', milestone: 'V0.2.1', sellPrice: 48, laborMilli: 1_500, depreciation: 2, standardValueBp: 365_000, inputs: [{ sku: 'rose_pink', qty: 1 }], orderMultiplierBp: 16_000, qualityTiers: ALL_QUALITIES, sellChannels: MARKET_FLOWER }),
   item({ sku: 'cabbage', nameVi: 'Bắp cải', group: 'veg', milestone: 'V0.2.1', sellPrice: 40, laborMilli: 1_400, depreciation: 2, standardValueBp: 350_000, inputs: [{ sku: 'seed_cabbage', qty: 1 }], batchDurationMs: 7_200_000, orderMultiplierBp: 15_000, qualityTiers: ALL_QUALITIES, sellChannels: MARKET_CROP }),
-  // Perennial tree: harvesting yields 3 peaches and the tree regrows. 6h is an
-  // assumption (the design table only says "long-term tree").
-  item({ sku: 'peach', nameVi: 'Đào', group: 'fruit', milestone: 'V0.2.1', sellPrice: 18, laborMilli: 1_000, depreciation: 9, batchQty: 3, standardValueBp: 46_700, batchDurationMs: 21_600_000, orderMultiplierBp: 14_500, qualityTiers: ALL_QUALITIES, sellChannels: MARKET_CROP, stackLimit: 999 }),
+  // Perennial tree: harvesting yields 3 peaches and the tree regrows. 180m matches
+  // src/shared/farming/crops.ts (the design table only says "long-term tree") and
+  // the sapling SKU is still missing — see the NO_ACQUISITION_PATH warning.
+  item({ sku: 'peach', nameVi: 'Đào', group: 'fruit', milestone: 'V0.2.1', sellPrice: 18, laborMilli: 1_000, depreciation: 9, batchQty: 3, standardValueBp: 46_700, batchDurationMs: 10_800_000, orderMultiplierBp: 14_500, qualityTiers: ALL_QUALITIES, sellChannels: MARKET_CROP, stackLimit: 999 }),
 
   // --- Pantry (V0.3.0 shop seasonings) -----------------------------------
   item({ sku: 'sugar_pack', nameVi: 'Gói đường', group: 'pantry', milestone: 'V0.3.0', storeBuy: 6, sellPrice: 3, standardValueBp: 60_000, stackLimit: 999, sellChannels: ['shipping_bin'] }),
