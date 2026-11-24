@@ -11,6 +11,8 @@ import type { RngStream } from '../../rng.ts';
 import { CATALOG_BY_SKU, computeSellLot, itemsForMilestone } from '../catalogConfig.ts';
 import { applyLedgerEntry, createWallet, replayLedger } from '../ledgerMath.ts';
 import type { CoinLedgerEntry } from '../ledgerMath.ts';
+import { completeOrder, generateOrderBoard, orderWindowIndex } from '../orderBoard.ts';
+import type { OrderBoardState } from '../orderBoard.ts';
 import type { ItemDefinition, ItemQuality } from '../types.ts';
 import {
   ACTION_SECONDS,
@@ -44,6 +46,9 @@ export interface WorldState {
   stats: SimStats;
   decorPurchases: string[];
   actionLog: string[];
+  /** Server seed that also drives the deterministic order board. */
+  seed: number;
+  orderBoard: OrderBoardState | null;
 }
 
 export interface SessionClock {
@@ -64,7 +69,7 @@ function emptyStats(): SimStats {
   };
 }
 
-export function createWorld(startingCoins: number, nowMs: number): WorldState {
+export function createWorld(startingCoins: number, nowMs: number, seed = 0): WorldState {
   const state: WorldState = {
     day: 1,
     nowMs,
@@ -79,6 +84,8 @@ export function createWorld(startingCoins: number, nowMs: number): WorldState {
     stats: emptyStats(),
     decorPurchases: [],
     actionLog: [],
+    seed,
+    orderBoard: null,
   };
   if (startingCoins > 0) {
     recordCoin(state, 'grant', startingCoins, 'starter_wallet');
@@ -555,6 +562,57 @@ function runCooking(
 }
 
 /** Sells everything sellable through the Shipping Bin, with soft saturation. */
+function flattenInventory(inventory: QualityInventory): Record<string, number> {
+  const flat: Record<string, number> = {};
+  for (const sku of Object.keys(inventory)) {
+    flat[sku] = qtyOf(inventory, sku);
+  }
+  return flat;
+}
+
+/**
+ * Fulfils whatever the deterministic NPC board asks for and the household can
+ * supply. Unsatisfied orders simply expire with no penalty.
+ */
+function fulfillOrders(state: WorldState, profile: SimProfile): number {
+  if (!profile.features.orders) {
+    return 0;
+  }
+  const windowIndex = orderWindowIndex(state.nowMs);
+  if (!state.orderBoard || state.orderBoard.windowIndex !== windowIndex) {
+    state.orderBoard = generateOrderBoard({
+      seed: state.seed,
+      windowIndex,
+      milestone: profile.milestone,
+      nowMs: state.nowMs,
+    });
+  }
+  let seconds = 0;
+  for (const order of state.orderBoard.orders) {
+    if (!order) {
+      continue;
+    }
+    const completion = completeOrder(state.orderBoard, {
+      orderId: order.orderId,
+      inventory: flattenInventory(state.inventory),
+      nowMs: state.nowMs,
+      idempotencyKey: `order-${state.day}-${order.orderId}`,
+      actorId: 'household',
+    });
+    if (!completion.ok) {
+      continue;
+    }
+    for (const line of order.requirements) {
+      removeItems(state.inventory, line.sku, line.qty);
+    }
+    recordCoin(state, 'earn', completion.rewardCoins, 'order_board');
+    state.orderBoard = completion.board;
+    seconds += ACTION_SECONDS.order;
+  }
+  return seconds;
+}
+
+/** Sells everything sellable through the Shipping Bin, with soft saturation. */
 export function sellAll(state: WorldState): number {
   let seconds = 0;
   for (const sku of Object.keys(state.inventory).sort()) {
@@ -636,6 +694,9 @@ export function runDay(
   spent(runFarm(state, profile, persona, budget.farm, rng, strategy));
   spent(runFishing(state, budget.fish, rng));
   spent(runCooking(state, profile, budget.cook, rng));
+  // Orders are fulfilled before the bin: they pay a premium, so the household
+  // reserves stock for them and only dumps the leftovers.
+  spent(fulfillOrders(state, profile));
   // Selling and shopping happen every session even when the budget is spent:
   // they are quick and blocking them would create artificial deadlocks.
   const sellSeconds = sellAll(state);

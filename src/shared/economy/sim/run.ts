@@ -90,7 +90,7 @@ export function runSimulation(options: SimOptions): SimResult {
   // Strategy is not part of the seed: both arms see the same random stream so a
   // comparison measures the strategy, not a different roll of the dice.
   const rng = createRng(deriveSeed(options.seed, profile.id, persona.id));
-  const state = createWorld(startingCoins, START_MS);
+  const state = createWorld(startingCoins, START_MS, options.seed);
   const snapshots: MilestoneSnapshot[] = [];
   const issues: InvariantIssue[] = [];
   let nextPlayDay = 1;
@@ -265,7 +265,7 @@ export function measureZeroWalletRecovery(
   const target = requireItem(RECOVERY_TARGET_SKU);
   const requiredCoins = target.storeBuy ?? 0;
   const log: string[] = [];
-  const state = createWorld(0, START_MS);
+  const state = createWorld(0, START_MS, seed);
   let seconds = 0;
 
   if (!profile.features.forage) {

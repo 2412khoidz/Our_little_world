@@ -23,6 +23,7 @@ export const ACTION_SECONDS = {
   sell: 15,
   buy: 15,
   decor: 60,
+  order: 30,
 } as const;
 
 /** Forage node respawn (MARKET_AND_NPC only says "periodically"). */
@@ -171,6 +172,14 @@ export const PROFILES: readonly SimProfile[] = [
     labelVi: 'V0.2.2 — + Fishing',
     milestone: 'V0.2.2',
     features: { forage: true, farming: true, fishing: true, cooking: false, orders: false },
+    plotCount: 12,
+    forage: { points: 2, respawnSeconds: FORAGE_RESPAWN_SECONDS, skus: ['wild_herb', 'wood_branch'] },
+  },
+  {
+    id: 'v025',
+    labelVi: 'V0.2.5 — + Bảng đơn NPC 3 slot (giả định, chưa ship UI)',
+    milestone: 'V0.2.5',
+    features: { forage: true, farming: true, fishing: true, cooking: false, orders: true },
     plotCount: 12,
     forage: { points: 2, respawnSeconds: FORAGE_RESPAWN_SECONDS, skus: ['wild_herb', 'wood_branch'] },
   },

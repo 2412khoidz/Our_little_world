@@ -16,7 +16,7 @@ export type PersonaId =
   | 'long_absence'
   | 'mixed_craft_fish';
 
-export type ProfileId = 'v020' | 'v021' | 'v022' | 'v030';
+export type ProfileId = 'v020' | 'v021' | 'v022' | 'v025' | 'v030';
 
 export type StrategyId = 'balanced' | 'monoculture';
 
