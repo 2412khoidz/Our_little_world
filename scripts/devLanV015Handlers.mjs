@@ -1,5 +1,6 @@
 // Server-side Dev LAN parity handlers for V0.1.5 Living Home (OLW-015-01..08)
 import crypto from 'node:crypto';
+import { handleSharedLifeRoute } from './devLanSharedLifeHandlers.mjs';
 
 export const V015_CATALOG = [
   {
@@ -244,6 +245,24 @@ export async function handleV015Route({
   broadcastEvent,
 }) {
   const v015 = ensureV015Db(db);
+
+  if (
+    await handleSharedLifeRoute({
+      req,
+      res,
+      route,
+      reqUrl,
+      body,
+      userId,
+      v015,
+      isWorldMember,
+      sendJson,
+      saveDb,
+      broadcastEvent,
+    })
+  ) {
+    return true;
+  }
 
   if (req.method === 'GET' && route === '/inventory') {
     const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();
