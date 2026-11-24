@@ -62,6 +62,7 @@ function makeSnapshot(
   const standingCrops = plotValueCoins(state);
   const wealth = state.coins + inventoryValue + standingCrops;
   const minutes = state.activeSeconds / 60;
+  const workedMinutes = state.workedSeconds / 60;
   const netIncome = wealth - startingCoins;
   return {
     day,
@@ -70,8 +71,10 @@ function makeSnapshot(
     standingCropsValueCoins: standingCrops,
     wealthCoins: wealth,
     activeSeconds: state.activeSeconds,
+    workedSeconds: state.workedSeconds,
     netIncomeCoins: netIncome,
     incomePerMinute: minutes > 0 ? round2(netIncome / minutes) : 0,
+    incomePerWorkedMinute: workedMinutes > 0 ? round2(netIncome / workedMinutes) : 0,
     sources: summary.sources,
     sinks: summary.sinks,
     groupUnitsSold: { ...state.groupUnitsSold },
@@ -90,7 +93,7 @@ export function runSimulation(options: SimOptions): SimResult {
   // Strategy is not part of the seed: both arms see the same random stream so a
   // comparison measures the strategy, not a different roll of the dice.
   const rng = createRng(deriveSeed(options.seed, profile.id, persona.id));
-  const state = createWorld(startingCoins, START_MS, options.seed);
+  const state = createWorld(startingCoins, START_MS, options.seed, options.saturation);
   const snapshots: MilestoneSnapshot[] = [];
   const issues: InvariantIssue[] = [];
   let nextPlayDay = 1;

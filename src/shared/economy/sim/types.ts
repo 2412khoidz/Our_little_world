@@ -80,6 +80,8 @@ export interface SimOptions {
   readonly milestones?: readonly number[];
   /** If set, wipes wallet+inventory at the start of this day (deadlock probe). */
   readonly resetWalletAtDay?: number | null;
+  /** Override the soft-saturation rules for balance experiments only. */
+  readonly saturation?: SaturationConfig;
 }
 
 export interface SimStats {
@@ -100,8 +102,11 @@ export interface MilestoneSnapshot {
   readonly standingCropsValueCoins: number;
   readonly wealthCoins: number;
   readonly activeSeconds: number;
+  /** Seconds actually spent on productive actions (not idle session time). */
+  readonly workedSeconds: number;
   readonly netIncomeCoins: number;
   readonly incomePerMinute: number;
+  readonly incomePerWorkedMinute: number;
   readonly sources: Readonly<Record<string, number>>;
   readonly sinks: Readonly<Record<string, number>>;
   readonly groupUnitsSold: Readonly<Record<string, number>>;

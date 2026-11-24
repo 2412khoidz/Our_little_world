@@ -13,7 +13,8 @@ import { applyLedgerEntry, createWallet, replayLedger } from '../ledgerMath.ts';
 import type { CoinLedgerEntry } from '../ledgerMath.ts';
 import { completeOrder, generateOrderBoard, orderWindowIndex } from '../orderBoard.ts';
 import type { OrderBoardState } from '../orderBoard.ts';
-import type { ItemDefinition, ItemQuality } from '../types.ts';
+import type { ItemDefinition, ItemQuality, SaturationConfig } from '../types.ts';
+import { DEFAULT_SATURATION } from '../types.ts';
 import {
   ACTION_SECONDS,
   FISH_TABLE,
@@ -43,6 +44,8 @@ export interface WorldState {
   ledger: CoinLedgerEntry[];
   entrySeq: number;
   activeSeconds: number;
+  workedSeconds: number;
+  saturation: SaturationConfig;
   stats: SimStats;
   decorPurchases: string[];
   actionLog: string[];
@@ -69,7 +72,12 @@ function emptyStats(): SimStats {
   };
 }
 
-export function createWorld(startingCoins: number, nowMs: number, seed = 0): WorldState {
+export function createWorld(
+  startingCoins: number,
+  nowMs: number,
+  seed = 0,
+  saturation: SaturationConfig = DEFAULT_SATURATION,
+): WorldState {
   const state: WorldState = {
     day: 1,
     nowMs,
@@ -81,6 +89,8 @@ export function createWorld(startingCoins: number, nowMs: number, seed = 0): Wor
     ledger: [],
     entrySeq: 0,
     activeSeconds: 0,
+    workedSeconds: 0,
+    saturation,
     stats: emptyStats(),
     decorPurchases: [],
     actionLog: [],
@@ -630,7 +640,7 @@ export function sellAll(state: WorldState): number {
         continue;
       }
       const start = state.soldTodayByGroup[item.group] ?? 0;
-      const quote = computeSellLot(sku, quality, start, qty);
+      const quote = computeSellLot(sku, quality, start, qty, { saturation: state.saturation });
       recordCoin(state, 'earn', quote.totalCoins, `sell_${sku}`);
       state.soldTodayByGroup[item.group] = start + qty;
       state.groupUnitsSold[item.group] = (state.groupUnitsSold[item.group] ?? 0) + qty;
@@ -709,6 +719,7 @@ export function runDay(
   // Coins-per-minute is measured against the whole session: a player who fills
   // 6 minutes of a 20-minute session and idles still played 20 minutes.
   state.activeSeconds += sessionLength;
+  state.workedSeconds += Math.min(clock.used, sessionLength);
   state.actionLog.push(
     `d${state.day}:${persona.id}:${Math.round(clock.used)}s wallet=${state.coins}c`,
   );
