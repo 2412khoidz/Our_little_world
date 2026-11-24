@@ -44,8 +44,8 @@ npm run test:e2e      # Chạy khi sửa UI/luồng multiplayer/game viewport
   2. Gặp xung đột hợp đồng `WorldBackend` hoặc `DevLanBackend` không thể map giống SQL RPC.
   3. Cần quyền tài khoản cloud, xác nhận asset/quyền chi, hoặc nghiệm thu trên Safari thật. Ghi phần chờ và tiếp tục phần độc lập đã được giao.
 
-## 5. Giao task đầu tiên
+## 5. Trạng thái tích hợp mỹ thuật
 
-**OLW-010-01** là task sẵn sàng nhận sau baseline V0.1 Final Integration. Giao cho DeepSeek/Copilot với ADR-008, PD-01, Art Direction, Asset Pipeline và vị trí registry. Kiểm kê input có quyền Web/PWA rõ ràng, dùng fallback CC0 khi chưa rõ. Ghi mapping, credit và test trích xuất. Review manifest/credit rồi mới nối adapter render ở OLW-010-02/03. V0.1.5 chỉ mở sau nghiệm thu V0.1. Task V0.2.0 chờ dependency theo backlog.
+**OLW-010-01..03 đã hoàn thành** theo PD-01 cập nhật. Máy phát triển dùng atlas riêng tạo từ pack Demo E sẵn có. Atlas public dùng nguồn đã xác minh. Đọc [checkpoint](research/TAKEOVER_CHECKPOINT.md#olw-010-03--world-integration-đã-hoàn-thành) và [quy trình asset](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public) trước khi tiếp tục. OLW-010-04 trở đi mở khi được giao. V0.1.5 chỉ mở sau nghiệm thu V0.1.
 
 Mẫu bàn giao một task: ID và trạng thái · file/symbol đã sửa · contract và invariant chính · lệnh/kết quả thực chạy · evidence thiết bị thật hoặc mục pending · quyết định/giả định cần review · task kế tiếp. Không gửi nội dung private, secret hay file media sang coding agent khác.

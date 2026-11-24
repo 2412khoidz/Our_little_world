@@ -88,20 +88,21 @@ def main() -> None:
         for x in range(floor.width):
             r, g, b, a = floor.getpixel((x, y))
             floor.putpixel((x, y), (
-                (r * 24 + 215 * 76) // 100,
-                (g * 24 + 171 * 76) // 100,
-                (b * 24 + 132 * 76) // 100, a,
+                (r * 18 + 215 * 82) // 100,
+                (g * 18 + 171 * 82) // 100,
+                (b * 18 + 132 * 82) // 100, a,
             ))
     mosaic = cut(floor_file, 11 * 16, 7 * 16, 32, 32)
     wall_top = cut(floor_file, 16, 7 * 16, 16, 16)
     wall_base = cut(floor_file, 16, 8 * 16, 16, 16)
+    wall_panel = Image.new("RGBA", (16, 16), wall_top.getpixel((8, 12)))
     # Keep the mosaic panel uninterrupted by mixed blue tiles.
     home = Image.new("RGBA", (256, 192), (214, 173, 130, 255))
     for ty in range(12):
         for tx in range(16):
             wall = ty <= 2 or tx in (0, 15) or ty == 11 and tx not in (7, 8)
             if wall:
-                tile = wall_top if ty <= 1 else wall_base
+                tile = wall_top if ty == 0 else wall_panel if ty == 1 else wall_base
                 if tx in (0, 15) and ty > 2:
                     tile = wall_base.transpose(Image.Transpose.ROTATE_90 if tx == 0 else Image.Transpose.ROTATE_270)
             else:
@@ -154,9 +155,13 @@ def main() -> None:
     }
     for sku, id in ids["furniture"].items():
         selection = compatible_frames.get(sku, id)
-        if sku in ("wardrobe_oak", "sofa_cream"):
+        if sku in ("wardrobe_oak", "sofa_cream", "plant_monstera"):
             relative = textures["e-interiors"]
-            bounds = (7 * 16, 48 * 16, 32, 48) if sku == "wardrobe_oak" else (4 * 16, 72 * 16, 48, 32)
+            bounds = {
+                "wardrobe_oak": (7 * 16, 48 * 16, 32, 48),
+                "sofa_cream": (4 * 16, 72 * 16, 48, 32),
+                "plant_monstera": (12 * 16, 45 * 16, 16, 32),
+            }[sku]
             image = cut(relative, *bounds)
             selection = "Modern Interiors " + str(bounds)
         else:

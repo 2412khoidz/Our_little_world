@@ -4,7 +4,7 @@
 
 ## 1. Trạng thái tổng thể
 - **Milestone hiện tại:** V0.1 Final Integration
-- **Trạng thái:** Nền V0.1 dùng starter CC0 đã có và được chạy lại test local. Master Research & Design đã đóng theo quyết định chủ dự án. V0.1 chờ tích hợp Demo E, HTTPS/Supabase Cloud và nghiệm thu thiết bị thật.
+- **Trạng thái:** Đã hoàn tất tích hợp Demo E trong V0.1 ở profile riêng. V0.1 còn cổng quyền triển khai Internet, HTTPS/Supabase Cloud và nghiệm thu thiết bị thật.
 
 ## 2. Checklist nghiệm thu Spike 0 & V0.1
 
@@ -75,3 +75,14 @@ Lint, typecheck, 26 Vitest, production build/guard, private build và 8 Playwrig
 Profile riêng dùng rig Adam/Alex/Amelia. WorldScene và Tủ đồ dùng cùng Canvas palette-remap của Demo E, giữ 6 trường cấu hình cũ, bốn hướng và khóa animation cũ. Profile public dùng rig CC0. Nếu tải atlas thất bại, bộ vẽ avatar starter vẫn hoạt động.
 
 Lint, typecheck, 26 Vitest, public/private build, guard và 8 Playwright Chromium pass. Hai context đổi tóc, màu, áo và kính, peer cập nhật Canvas, reload khôi phục preview. Kiểm hình Tủ đồ ở 430×932, bốn hướng có frame idle và walk riêng, hai cấu hình có cache key khác nhau. Chưa kiểm iPhone thật.
+
+
+### OLW-010-03 — World Integration đã hoàn thành
+
+Game chính dùng hai nền atlas và ánh xạ đủ 12 SKU. Profile private giữ pixel gốc Demo E với sàn gỗ bớt tương phản, mosaic liền mạch, đường Sprout Lands nối theo ô kề và biến thể cỏ rải theo hash. Camera fit toàn map khi resize và đổi map, cả khi mở bảng trang trí. Hình pet dùng cell 16×16 ở cùng mật độ avatar, kiểm dưới dạng preview tĩnh. Menu có link credits theo profile.
+
+- Lint, typecheck, **31/31 Vitest**, public/private build, production guard và **8/8 Playwright Chromium** pass. Có cảnh báo chunk >500 kB như trước.
+- E2E kiểm hai context cùng chơi (cả desktop và Chromium cảm ứng), đổi ngoại hình, chạm đi tới cổng nhà/vườn, đặt và dời đèn đúng ô, chặn chồng đồ, rồi reload và chọn lại món đã dời. WorldBackend, schema/RLS, map logic, collision và BFS giữ nguyên.
+- PNG atlas public **16.454 B**, tổng cả manifest và credits **28.272 B**. Atlas riêng **47.649 B** PNG và **75.570 B** tổng. Public SW **25 mục, 2.006,19 KiB**. Private SW **25 mục, 2.006,20 KiB**, không precache atlas riêng. Build public không sao chép atlas riêng hoặc tệp thử nghiệm không hợp lệ.
+- Screenshot game chính ở desktop 1440×900 và 1280×720, mobile portrait 430×932 và landscape 844×390, cùng Tủ đồ và preview tỷ lệ pet, lưu ngoài Git tại `test-results/v01-final-art/`. Dữ liệu ảnh là fixture Dev LAN.
+- Chưa thử bản này trên iPhone Safari/PWA thật, Android thật hay Supabase Cloud. Quyền phục vụ atlas riêng qua Internet còn Pending Deployment License Verification. [Giấy phép và credits](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)

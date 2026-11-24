@@ -65,3 +65,12 @@ Bước kế: OLW-010-02. Dùng atlas avatar của profile đang hoạt động,
 Đã nối atlas avatar đúng profile qua BootScene, dùng lại palette và phụ kiện Demo E. Tủ đồ và renderer dùng cùng bộ dựng Canvas, giữ dữ liệu V0.1 và animation key. Đã kiểm bốn hướng, cache key, hai context Dev LAN, đổi tùy chỉnh và reload. Lint, typecheck, 26 Vitest, 8 Chromium E2E, public/private build và production guard đều pass. Đã kiểm screenshot Tủ đồ mobile Chromium.
 
 Bước kế: OLW-010-03. Nạp atlas world, dùng semantic ID cho hai map và 12 SKU, giữ logic collision/BFS, Y-depth, cổng và placement. Kiểm camera, đặt/dời đồ và chuyển cổng thật. Lưu screenshot local ngoài Git.
+
+
+## OLW-010-03 — World Integration đã hoàn thành
+
+Game chính dùng atlas theo profile qua BootScene và WorldScene. Hai map và đủ 12 SKU dùng semantic ID. Nhà/vườn, lưới BFS, portal, vị trí nội thất, hợp đồng backend, RLS và schema giữ nguyên. Fix resize của Phaser khi drawer thay đổi chiều cao và chặn frame atlas chồng nhau. Chỉ dùng pet làm preview tĩnh để kiểm tỷ lệ.
+
+Kiểm thử local pass lint, typecheck, **31 Vitest**, public/private build, production guard và **8 E2E Chromium**. Luồng ghép đôi, bốn hướng avatar, chuyển cửa, touch, đặt, dời, xung đột và reload có bằng chứng. Screenshot game chính và preview nằm trong `test-results/v01-final-art/`, ngoài Git. [Số liệu và giới hạn kiểm thử](../PROGRESS.md#olw-010-03--world-integration-đã-hoàn-thành)
+
+**Ranh giới bàn giao:** Dừng sau ba task này. OLW-010-04 trở đi chưa mở. Phát hành Internet của asset riêng chỉ sau khi xác minh quyền tương ứng và thử gateway xác thực cả URL file tĩnh theo PD-01. V0.1 vẫn cần HTTPS/Supabase Cloud và iPhone Safari/PWA thật. [Chuẩn bị máy dev](../art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)

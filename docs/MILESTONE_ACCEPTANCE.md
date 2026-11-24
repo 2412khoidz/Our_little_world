@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 1 | Artwork chính thức (Demo E) được người dùng duyệt | **ĐÃ DUYỆT** | Người dùng chốt Demo E + avatar Modern Interiors + ngân sách `0₫` |
 | 2 | License và asset pipeline rõ ràng | **Đặc tả có · Chờ quyền ship** | Ghi bằng chứng quyền Web/PWA cho từng asset trong dist và Service Worker theo PD-01. Atlas riêng theo PD-01. Internet chờ xác minh quyền triển khai và quyền truy cập URL asset hạn chế. |
-| 3 | **Artwork Demo E được tích hợp vào game chính V0.1** | **`Pending Implementation`** | Game chính V0.1 vẫn đang dùng starter CC0; cần làm theo `OLW-010-01..03` (gồm sửa sàn/đường/cỏ/pet/camera) |
+| 3 | **Artwork Demo E được tích hợp vào game chính V0.1** | **Tích hợp profile riêng · Chờ nghiệm thu thật** | OLW-010-01..03 đã pass local và Chromium. Cần kiểm quyền deploy và chạy các gate trên build triển khai. |
 | 4 | Windows và Android multiplayer | **Một phần (Dev LAN)** | Đã pass logic & hướng dẫn; cần test lại bản nối Supabase & artwork mới trên K70E thật |
 | 5 | **Supabase thật** (Migrations + Auth + DB) | **`Pending Manual Verification`** | Đã viết 3 migrations + SQL tests; **chưa chạy trên Supabase Cloud project thật** |
 | 6 | **Authentication** (Email/Password thật) | **`Pending Manual Verification`** | Có `SupabaseBackend`. PD-08 ưu tiên tài khoản tạo sẵn và tắt đăng ký công khai. Chờ thử đăng nhập, duy trì phiên và quy trình khôi phục an toàn. |

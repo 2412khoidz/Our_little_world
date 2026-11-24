@@ -101,6 +101,7 @@ function readPet(key, packRoot, warn) {
 
 export function validateAtlas(manifest, expectedIds) {
   const idsFound = new Set();
+  const frames = [];
   for (const { id, texture, rect, anchor, source } of manifest.entries) {
     if (idsFound.has(id)) throw new Error('Semantic ID trùng: ' + id);
     idsFound.add(id);
@@ -111,6 +112,12 @@ export function validateAtlas(manifest, expectedIds) {
         ![anchor.ox, anchor.oy].every((n) => Number.isFinite(n) && n >= 0 && n <= 1)) {
       throw new Error('Khung sprite ngoài atlas hoặc neo không hợp lệ: ' + id);
     }
+    if (frames.some((other) => other.texture === texture &&
+        x < other.rect.x + other.rect.w && x + w > other.rect.x &&
+        y < other.rect.y + other.rect.h && y + h > other.rect.y)) {
+      throw new Error('Khung sprite ghi đè nhau: ' + id);
+    }
+    frames.push({ texture, rect });
     if (!['CC0-1.0', 'CC-BY-4.0'].includes(source.license) || !source.credit || !source.version) {
       throw new Error('Thiếu giấy phép phát hành: ' + id);
     }
@@ -135,7 +142,7 @@ export function buildUnifiedAtlas({ output = defaultOutput, packRoot = path.join
     warn('Quyền phát hành atlas Web/PWA chưa được xác minh cho ' + pack + '. Atlas công khai dùng fallback CC0.');
   }
   const starter = readStarterRgba(fs.readFileSync(path.join(root, 'public/assets/starter/furniture-cozy.png')));
-  const world = new PixelCanvas(544, 272);
+  const world = new PixelCanvas(544, 304);
   const avatars = new PixelCanvas(rig.frameWidth * rig.frameCount * rig.directions.length, rig.frameHeight * 2 * rig.hairStyles.length);
   const textures = {
     world: { file: 'world.png', width: world.width, height: world.height },
@@ -153,14 +160,14 @@ export function buildUnifiedAtlas({ output = defaultOutput, packRoot = path.join
   let x = 0;
   for (const [sku, id] of Object.entries(ids.furniture)) {
     const pixels = furnitureSprite(starter, starterBounds[sku]);
-    place(id, pixels, 'world', x, 192, { ox: 0, oy: 1 });
+    place(id, pixels, 'world', x, 224, { ox: 0, oy: 1 });
     x += pixels.width;
   }
-  place(ids.scenery.blossom, makeBlossom(), 'world', 0, 224, bottomCenter);
-  place(ids.scenery.cottage, makeCottage(), 'world', 44, 224, bottomCenter);
+  place(ids.scenery.blossom, makeBlossom(), 'world', 0, 256, bottomCenter);
+  place(ids.scenery.cottage, makeCottage(), 'world', 44, 256, bottomCenter);
   for (const [index, [key, id]] of [['cat-orange', ids.pets.cat], ['puppy-shiba', ids.pets.shiba]].entries()) {
     const { pixels, source } = readPet(key, packRoot, warn);
-    place(id, pixels, 'world', 104 + index * 16, 224, bottomCenter, source);
+    place(id, pixels, 'world', 104 + index * 16, 256, bottomCenter, source);
   }
   for (const [index, style] of rig.hairStyles.entries()) {
     place(ids.rigs[style], makeRig(style), 'avatars', 0, index * rig.frameHeight * 2, bottomCenter);

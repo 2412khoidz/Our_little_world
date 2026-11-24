@@ -3,6 +3,10 @@
 Định dạng tham khảo *Keep a Changelog*. Xem trạng thái nghiệm thu chi tiết tại [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## [Unreleased — V0.1 Final Integration] - 2026-11-25
+### Added
+- Atlas Demo E riêng và atlas public fallback, cùng manifest và credits theo profile.
+- Avatar Modern Interiors tùy chỉnh trong game chính và Tủ đồ. Nền nhà/vườn, 12 SKU, camera fit map và kiểm thử chạm/đặt/dời/reload.
+
 ### Changed
 - Đóng Master Research & Design, chốt PD-01–08 và bàn giao OLW-010-01.
 - Cho phép mini-game PvP tự nguyện giữa hai người theo ADR-010. Thiết kế giữ tài sản và tiến trình ngoài kết quả ván.

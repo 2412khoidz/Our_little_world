@@ -24,6 +24,9 @@ import type {
 } from '../../shared/types';
 import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
+import { fitWorldZoom } from '../art/worldCamera';
+import { WORLD_ART_KEY, worldFurnitureFrame } from '../art/worldAtlas';
+import artIds from '../art/worldArtIds.json';
 import {
   type DecorateStatePayload,
   gameEventBus,
@@ -51,7 +54,7 @@ interface RemoteAvatarEntity {
 export class WorldScene extends Phaser.Scene {
   private currentMapId: MapId = 'home';
   private tilemap: Phaser.Tilemaps.Tilemap | null = null;
-  private mapLayers: Array<Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer> = [];
+  private mapLayers: Phaser.GameObjects.GameObject[] = [];
 
   private worldId = 'local-world';
   private localUserId = '';
@@ -194,6 +197,48 @@ export class WorldScene extends Phaser.Scene {
     this.tilemap?.destroy();
     this.tilemap = null;
 
+    const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
+    const background = artIds.background[mapId];
+    if (art?.has(background)) {
+      this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(0));
+      if (mapId === 'garden') {
+        // The existing static blockers define the feet of these props.
+        const scenery = [
+          { frame: artIds.scenery.cottage, x: 8.5 * TILE_SIZE, y: 3 * TILE_SIZE },
+          { frame: artIds.scenery.blossom, x: 3 * TILE_SIZE, y: 4 * TILE_SIZE },
+          { frame: artIds.scenery.blossom, x: 15 * TILE_SIZE, y: 4 * TILE_SIZE },
+        ];
+        for (const { frame, x, y } of scenery) {
+          if (!art.has(frame)) continue;
+          const prop = this.add.image(x, y, WORLD_ART_KEY, frame).setOrigin(0.5, 1).setDepth(Math.round(y));
+          this.mapLayers.push(prop);
+        }
+      }
+    } else {
+      this.buildStarterMap(mapId);
+    }
+    this.cameras.main.setBackgroundColor(mapId === 'home' ? '#b48672' : '#a6be77');
+
+    const def = getMapDefinition(mapId);
+    const spawn = spawnTile ?? def.defaultSpawn;
+    const px = (spawn.tileX + 0.5) * TILE_SIZE;
+    const py = (spawn.tileY + 0.85) * TILE_SIZE;
+    this.localSprite.setPosition(px, py);
+    this.localShadow.setPosition(px, py - 1);
+    this.localLabel.setPosition(px, py - 27);
+
+    this.rebuildFurnitureAndCollisions();
+    this.reconcileRemoteVisibility();
+    this.redrawDecorateOverlay();
+    this.handleResize();
+
+    this.lastPortalAtMs = Date.now();
+    this.emitCurrentTile(true);
+    this.emitLocalMovement('idle', true);
+    gameEventBus.emit('evt:scene-ready', { mapId });
+  }
+
+  private buildStarterMap(mapId: MapId): void {
     const mapKey = mapId === 'home' ? 'map-home' : 'map-garden';
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
@@ -217,25 +262,6 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    const def = getMapDefinition(mapId);
-    const spawn = spawnTile ?? def.defaultSpawn;
-    const px = (spawn.tileX + 0.5) * TILE_SIZE;
-    const py = (spawn.tileY + 0.85) * TILE_SIZE;
-    this.localSprite.setPosition(px, py);
-    this.localShadow.setPosition(px, py - 1);
-    this.localLabel.setPosition(px, py - 27);
-
-    this.rebuildFurnitureAndCollisions();
-    this.reconcileRemoteVisibility();
-    this.redrawDecorateOverlay();
-    this.handleResize();
-    this.cameras.main.centerOn(px, py);
-    this.cameras.main.startFollow(this.localSprite, true, 0.16, 0.16);
-
-    this.lastPortalAtMs = Date.now();
-    this.emitCurrentTile(true);
-    this.emitLocalMovement('idle', true);
-    gameEventBus.emit('evt:scene-ready', { mapId });
   }
 
   private rebuildFurnitureAndCollisions(): void {
@@ -252,14 +278,15 @@ export class WorldScene extends Phaser.Scene {
 
       const anchorX = placement.tileX * TILE_SIZE;
       const footY = (placement.tileY + placement.heightTiles) * TILE_SIZE;
+      const { key, frame } = worldFurnitureFrame(this, placement.sku);
       const img = this.add
-        .image(anchorX, footY, 'furniture-cozy', placement.sku)
+        .image(anchorX, footY, key, frame)
         .setOrigin(0, 1);
 
       if (placement.layerSlot === 'floor') {
         img.setDepth(2);
       } else {
-        img.setDepth(footY);
+        img.setDepth(Math.round(footY));
       }
 
       this.furnitureSprites.set(placement.id, img);
@@ -550,29 +577,9 @@ export class WorldScene extends Phaser.Scene {
     const worldW = def.widthTiles * TILE_SIZE;
     const worldH = def.heightTiles * TILE_SIZE;
 
-    // Choose crisp integer pixel zoom tailored for iPhone portrait and Windows landscape
-    let zoom = 2;
-    if (width >= 900 && height >= 420) {
-      zoom = 3;
-    } else if (width <= 520) {
-      zoom = Math.max(2, Math.min(3, Math.floor((width * 0.95) / (worldW * 0.72))));
-    }
-    if (worldW * 4 <= width && worldH * 4 <= height && width >= 1100) {
-      zoom = 4;
-    }
-
-    cam.setZoom(zoom);
+    cam.setZoom(fitWorldZoom(width, height, worldW, worldH));
     cam.setRoundPixels(true);
-    const viewW = width / zoom;
-    const viewH = height / zoom;
-    const boundsX = viewW > worldW ? -(viewW - worldW) / 2 : 0;
-    const boundsY = viewH > worldH ? -(viewH - worldH) / 2 : 0;
-    const boundsW = Math.max(worldW, viewW);
-    const boundsH = Math.max(worldH, viewH);
-    cam.setBounds(boundsX, boundsY, boundsW, boundsH);
-    if (this.localSprite) {
-      cam.centerOn(this.localSprite.x, this.localSprite.y);
-    }
+    cam.centerOn(worldW / 2, worldH / 2);
   }
 
   update(_time: number, deltaMs: number): void {
@@ -682,7 +689,7 @@ export class WorldScene extends Phaser.Scene {
     if (movedAny) {
       this.localMoving = true;
       const animKey = `${this.localTextureKey}:walk-${this.localFacing}`;
-      if (this.localSprite.anims.currentAnim?.key !== animKey) {
+      if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== animKey) {
         this.localSprite.play(animKey, true);
       }
       this.checkStepOnPortal();
@@ -1028,7 +1035,7 @@ export class WorldScene extends Phaser.Scene {
       const stale = this.remoteFilter.isStale(entity.sessionId, now);
       if ((entity.anim === 'walk' || moving) && !stale) {
         const animKey = `${entity.textureKey}:walk-${entity.facing}`;
-        if (entity.sprite.anims.currentAnim?.key !== animKey) {
+        if (!entity.sprite.anims.isPlaying || entity.sprite.anims.currentAnim?.key !== animKey) {
           entity.sprite.play(animKey, true);
         }
       } else {

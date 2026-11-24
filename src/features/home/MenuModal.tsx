@@ -1,3 +1,4 @@
+import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
   FlaskConical,
   Gamepad2,
@@ -152,6 +153,9 @@ export function MenuModal({
           </div>
         )}
 
+        <a className="btn btn--secondary btn--sm" href={ART_ATLAS_PATH + '/CREDITS.md'} target="_blank" rel="noopener">
+          Nguồn hình ảnh
+        </a>
         <button type="button" className="btn btn--danger" onClick={onSignOut}>
           <LogOut size={17} /> Đăng xuất
         </button>

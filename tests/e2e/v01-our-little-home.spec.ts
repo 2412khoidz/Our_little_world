@@ -1,6 +1,33 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { fitWorldZoom } from '../../src/game/art/worldCamera';
 
 const BASE = 'http://127.0.0.1:4173';
+
+async function tapWorldTile(page: Page, map: 'home' | 'garden', tileX: number, tileY: number, touch: boolean) {
+  const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+  await expect(canvas).toBeVisible();
+  await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) =>
+    element.width === element.parentElement?.clientWidth && element.height === element.parentElement?.clientHeight,
+  )).toBe(true);
+  const box = (await canvas.boundingBox())!;
+  const width = map === 'home' ? 256 : 288;
+  const height = map === 'home' ? 192 : 224;
+  const zoom = fitWorldZoom(box.width, box.height, width, height);
+  const x = box.x + box.width / 2 + ((tileX + 0.5) * 16 - width / 2) * zoom;
+  const y = box.y + box.height / 2 + ((tileY + 0.5) * 16 - height / 2) * zoom;
+  if (touch) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+}
+
+async function testPlacements(page: Page) {
+  const response = await page.request.get(BASE + '/api/dev-lan/world/snapshot', {
+    headers: { 'x-dev-user-id': '11111111-1111-4111-8111-111111111111' },
+  });
+  expect(response.ok()).toBe(true);
+  const result = await response.json();
+  return result.data.placements as { sku: string; mapId: string; tileX: number; tileY: number }[];
+}
+
 
 test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Contexts)', () => {
   test.beforeEach(async ({ request }) => {
@@ -10,10 +37,12 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
 
   test('pairs Mây & Nắng across isolated device contexts, rejects 3rd outsider, syncs room/avatar/furniture', async ({
     browser,
-  }) => {
-    const ctxMay = await browser.newContext();
-    const ctxNang = await browser.newContext();
-    const ctxOutsider = await browser.newContext();
+  }, testInfo) => {
+    const { viewport, hasTouch, isMobile } = testInfo.project.use;
+    const options = { viewport, hasTouch, isMobile };
+    const ctxMay = await browser.newContext(options);
+    const ctxNang = await browser.newContext(options);
+    const ctxOutsider = await browser.newContext(options);
 
     const errors: string[] = [];
     const pageA = await ctxMay.newPage();
@@ -55,10 +84,14 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
     await expect(pageC.getByTestId('onboarding-error')).toBeVisible();
     await ctxOutsider.close();
 
-    // 4. Room switch syncs across isolated devices via SSE
-    await pageA.getByTestId('nav-garden').click();
+    // 4. Tap-to-move follows the original collision grid through the door.
+    await tapWorldTile(pageA, 'home', 7, 10, !!hasTouch);
+    await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Ra khu vườn');
+    await pageA.getByTestId('btn-nearby-action').click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Ngoài vườn');
-    await pageA.getByTestId('nav-home').click();
+    await tapWorldTile(pageA, 'garden', 8, 3, !!hasTouch);
+    await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Vào trong nhà');
+    await pageA.getByTestId('btn-nearby-action').click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
 
     // 5. Both clients redraw the same configuration and preserve it after reload.
@@ -95,28 +128,29 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
     await pageA.getByTestId('nav-decorate').click();
     await expect(pageA.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 1/2');
     await pageA.getByTestId('decorate-sku-lamp_floor').click();
-    await pageA.waitForTimeout(120);
-
-    const canvasBox = await pageA.getByTestId('game-canvas-host').boundingBox();
-    expect(canvasBox).not.toBeNull();
-    if (canvasBox) {
-      await pageA.mouse.click(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.45);
-    }
+    await tapWorldTile(pageA, 'home', 8, 6, !!hasTouch);
     await expect(pageA.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 0/2');
 
-    // Device A tries placing plant on the exact same occupied tile -> conflict message
+    // The same object-layer tile rejects overlap.
     await pageA.getByTestId('decorate-sku-plant_monstera').click();
-    await pageA.waitForTimeout(120);
-    const canvasBox2 = await pageA.getByTestId('game-canvas-host').boundingBox();
-    if (canvasBox2) {
-      await pageA.mouse.click(canvasBox2.x + canvasBox2.width * 0.5, canvasBox2.y + canvasBox2.height * 0.45);
-    }
+    await tapWorldTile(pageA, 'home', 8, 6, !!hasTouch);
     await expect(pageA.getByTestId('stage-toast')).toContainText('chiếm chỗ');
+    await pageA.getByTestId('decorate-sku-plant_monstera').click();
+
+    // Select that existing frame and move by exact tile coordinates.
+    await tapWorldTile(pageA, 'home', 8, 6, !!hasTouch);
+    await expect(pageA.getByTestId('btn-stow-selected')).toBeVisible();
+    await tapWorldTile(pageA, 'home', 12, 8, !!hasTouch);
+    await expect.poll(async () => testPlacements(pageA)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sku: 'lamp_floor', mapId: 'home', tileX: 12, tileY: 8 }),
+    ]));
 
     // Reload Device B (Nắng) -> sees updated furniture count persisted on server!
     await pageB.reload();
     await pageB.getByTestId('nav-decorate').click();
     await expect(pageB.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 0/2');
+    await tapWorldTile(pageB, 'home', 12, 8, !!hasTouch);
+    await expect(pageB.getByTestId('btn-stow-selected')).toBeVisible();
 
     await ctxMay.close();
     await ctxNang.close();

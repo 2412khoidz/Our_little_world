@@ -2,7 +2,7 @@
 
 **Our Little World** là một cozy game 2D pixel art kết hợp không gian số riêng tư dành cho một cặp đôi yêu xa — được thiết kế ưu tiên **iPhone Safari / PWA** và **Windows Chrome / Edge**.
 
-Hiện tại dự án ở **V0.1 Final Integration**. Master Research & Design đã đóng; Demo E đã duyệt về mỹ thuật và game V0.1 hiện dùng starter CC0. Xem [chỉ mục tài liệu](docs/README.md) và [tiến độ V0.1](docs/PROGRESS.md).
+Hiện tại dự án ở **V0.1 Final Integration**. Master Research & Design đã đóng; Game V0.1 đã tích hợp Demo E ở profile riêng; profile public dùng atlas CC0 đã xác minh cho nhóm asset còn chờ quyền deploy. Xem [chỉ mục tài liệu](docs/README.md) và [tiến độ V0.1](docs/PROGRESS.md).
 
 ---
 
@@ -44,6 +44,12 @@ Khi chạy ở môi trường development (`npm run dev`) và chưa cấu hình 
 - Trên điện thoại chọn **Nắng (Người thương)** để nhập mã mời (hoặc vào thẳng nếu đã tạo sẵn nhà 2/2) và di chuyển realtime cùng lúc.
 - Thử đóng vai **Khách lạ** trên một thiết bị/tab thứ ba để kiểm chứng hệ thống từ chối người thứ 3.
 - Bộ chọn danh tính dev chỉ tồn tại khi `import.meta.env.DEV === true` và bị loại hoàn toàn khỏi bản build production (`npm run build`).
+
+### Chạy game chính với artwork Demo E
+
+Nếu các pack Demo E sẵn có dưới `asset-candidates/extracted/`, chạy `npm run assets:atlas:private` (Python + Pillow) rồi khởi động lại `npm run dev`. Truy cập đường dẫn game chính như thường. `npm run build:private` và `npm run preview:private` dùng để xem bản private offline/local trên máy phát triển.
+
+Bản `npm run build` dùng profile public, ghi vào `dist/`. Quyền phục vụ các asset private qua Internet còn chờ xác minh. [Quy trình asset và cổng triển khai](docs/art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public) · [Credits public](public/assets/unified/CREDITS.md)
 
 ### Kết nối Supabase thật (tùy chọn cho dev/test đa mạng)
 

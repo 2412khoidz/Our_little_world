@@ -47,6 +47,7 @@ it('rejects a duplicate ID, an out-of-bounds frame and an unapproved license', (
   const manifest = buildUnifiedAtlas({ output: sandbox(), warn: vi.fn() });
   const entry = manifest.entries[0]!;
   expect(() => validateAtlas({ ...manifest, entries: [entry, entry] })).toThrow('Semantic ID trùng');
+  expect(() => validateAtlas({ ...manifest, entries: [entry, { ...entry, id: 'overlapping' }] })).toThrow('ghi đè');
   expect(() => validateAtlas({ ...manifest, entries: [{ ...entry, rect: { ...entry.rect, x: -1 } }] })).toThrow('ngoài atlas');
   expect(() => validateAtlas({ ...manifest, entries: [{ ...entry, source: { ...entry.source, license: 'Unknown' } }] })).toThrow('Thiếu giấy phép');
 });

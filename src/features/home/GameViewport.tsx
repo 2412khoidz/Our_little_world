@@ -72,7 +72,7 @@ export function GameViewport({
         resizeObserver = new ResizeObserver(() => {
           if (!gameInstance || destroyed) return;
           if (el.clientWidth > 0 && el.clientHeight > 0) {
-            gameInstance.scale.resize(el.clientWidth, el.clientHeight);
+            gameInstance.scale.setParentSize(el.clientWidth, el.clientHeight);
           }
         });
         resizeObserver.observe(el);

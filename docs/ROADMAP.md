@@ -6,4 +6,4 @@
 > - **[IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md)** — Backlog task chi tiết bàn giao cho DeepSeek V4.1 Flash.
 > - **[PROGRESS.md](PROGRESS.md)** — Trạng thái code & kiểm thử thực tế hiện tại.
 
-V0.1 còn các gate artwork, deploy và thiết bị thật. Master Research & Design đã đóng. Task đầu tiên của V0.1 Final Integration là `OLW-010-01`. V0.1.5 chỉ bắt đầu sau nghiệm thu V0.1.
+V0.1 đã tích hợp Demo E ở profile riêng. Còn các gate quyền triển khai, HTTPS/Supabase Cloud và thiết bị thật. V0.1.5 chỉ bắt đầu sau nghiệm thu V0.1.
