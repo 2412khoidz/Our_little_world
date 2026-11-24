@@ -59,3 +59,9 @@ PD-01 được chủ dự án cập nhật trong lúc thực hiện. Dùng bản
 Kiểm thử pass lint, typecheck, 26 Vitest, 8 Chromium E2E, public build/guard và private build. File private tái tạo trùng SHA-256. Public PWA precache 25 mục, 1.999,56 KiB. Không nghiệm thu thiết bị thật tại bước này.
 
 Bước kế: OLW-010-02. Dùng atlas avatar của profile đang hoạt động, kết hợp ramp từ unifiedAvatarBuilder, giữ API và animation key cũ. Sau đó dùng atlas world cho OLW-010-03. [Profile và giấy phép](../art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)
+
+## OLW-010-02 — Avatar đã hoàn thành
+
+Đã nối atlas avatar đúng profile qua BootScene, dùng lại palette và phụ kiện Demo E. Tủ đồ và renderer dùng cùng bộ dựng Canvas, giữ dữ liệu V0.1 và animation key. Đã kiểm bốn hướng, cache key, hai context Dev LAN, đổi tùy chỉnh và reload. Lint, typecheck, 26 Vitest, 8 Chromium E2E, public/private build và production guard đều pass. Đã kiểm screenshot Tủ đồ mobile Chromium.
+
+Bước kế: OLW-010-03. Nạp atlas world, dùng semantic ID cho hai map và 12 SKU, giữ logic collision/BFS, Y-depth, cổng và placement. Kiểm camera, đặt/dời đồ và chuyển cổng thật. Lưu screenshot local ngoài Git.

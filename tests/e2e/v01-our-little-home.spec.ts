@@ -61,14 +61,35 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
     await pageA.getByTestId('nav-home').click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
 
-    // 5. Avatar rename propagates & persists across reload
+    // 5. Both clients redraw the same configuration and preserve it after reload.
+    const peerCanvas = pageB.getByTestId('game-canvas-host').locator('canvas');
+    const peerBefore = await peerCanvas.screenshot();
     await pageA.getByTestId('nav-avatar').click();
+    const wardrobeCanvas = pageA.getByTestId('avatar-preview-canvas');
+    await expect(wardrobeCanvas).toHaveAttribute('data-atlas-ready', 'true');
+    const readPreview = () => wardrobeCanvas.evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
+    const originalPreview = await readPreview();
+    for (const name of ['Tóc bob', 'Hồng anh đào', 'Yếm làm vườn', 'Xanh mây nhạt', 'Không có', 'Kính tròn']) {
+      await pageA.getByRole('button', { name, exact: true }).click();
+    }
+    const selectedPreview = await readPreview();
+    expect(selectedPreview).not.toBe(originalPreview);
     await pageA.getByTestId('input-avatar-nickname').fill('Mây Cute');
     await pageA.getByTestId('btn-save-avatar').click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây Cute');
+    await expect.poll(async () => (await peerCanvas.screenshot()).equals(peerBefore)).toBe(false);
+    await pageB.getByTestId('nav-avatar').click();
+    await pageB.getByRole('button', { name: 'Nắng mật ong', exact: true }).click();
+    await pageB.getByRole('button', { name: 'Tóc ngắn gọn', exact: true }).click();
+    await pageB.getByRole('button', { name: 'Kính tròn', exact: true }).click();
+    await pageB.getByTestId('btn-save-avatar').click();
 
     await pageA.reload();
     await expect(pageA.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    await pageA.getByTestId('nav-avatar').click();
+    await expect.poll(readPreview).toBe(selectedPreview);
+    await pageA.getByRole('button', { name: 'Đóng' }).click();
 
     // 6. Furniture placement persists & occupied-tile conflict rejects duplicate placement
     await pageA.getByTestId('nav-decorate').click();

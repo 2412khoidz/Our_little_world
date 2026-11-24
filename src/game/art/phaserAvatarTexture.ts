@@ -1,49 +1,58 @@
 import Phaser from 'phaser';
-import type { AvatarConfig } from '../../shared/types';
+import type { AvatarConfig, Direction } from '../../shared/types';
+import { AVATAR_ATLAS_KEY } from './atlasProfile';
+import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } from './avatarSpriteBuilder';
 import {
-  buildAvatarSpritesheetCanvas,
-  getAvatarTextureKey,
-} from './avatarSpriteBuilder';
+  AVATAR_DIRECTIONS,
+  AVATAR_FRAME_COUNT,
+  AVATAR_FRAME_HEIGHT,
+  AVATAR_FRAME_WIDTH,
+  buildWorldAvatarCanvas,
+} from './worldAvatarCanvas';
+
+const LEGACY_DIRECTIONS: readonly Direction[] = ['down', 'up', 'left', 'right'];
 
 export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarConfig): string {
   const key = getAvatarTextureKey(config);
-  if (scene.textures.exists(key)) {
-    return key;
-  }
+  if (scene.textures.exists(key)) return key;
 
-  const canvas = buildAvatarSpritesheetCanvas(config);
-  const tex = scene.textures.addCanvas(key, canvas);
-  if (!tex) {
-    return key;
-  }
+  const source = scene.textures.exists(AVATAR_ATLAS_KEY)
+    ? scene.textures.get(AVATAR_ATLAS_KEY).getSourceImage()
+    : null;
+  const atlasCanvas = source && buildWorldAvatarCanvas(source as CanvasImageSource, config);
+  const tex = scene.textures.addCanvas(key, atlasCanvas || buildAvatarSpritesheetCanvas(config));
+  if (!tex) return key;
   tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-  let frameIndex = 0;
-  for (let row = 0; row < 4; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      tex.add(frameIndex, 0, col * 16, row * 24, 16, 24);
-      frameIndex += 1;
+  for (const direction of LEGACY_DIRECTIONS) {
+    const base = getIdleFrameIndex(direction);
+    let frames: (number | string)[] = [base + 1, base, base + 2, base];
+    if (atlasCanvas) {
+      const x = AVATAR_DIRECTIONS.indexOf(direction) * AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH;
+      // Keep the existing numeric idle frame index and walk animation names.
+      tex.add(base, 0, x, 0, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      tex.add(base + 1, 0, x + AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      tex.add(base + 2, 0, x + 4 * AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      frames = Array.from({ length: AVATAR_FRAME_COUNT }, (_, i) => {
+        const frame = direction + '-walk-' + i;
+        tex.add(frame, 0, x + i * AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+        return frame;
+      });
+    } else {
+      for (let col = 0; col < 3; col += 1) {
+        tex.add(base + col, 0, col * 16, base / 3 * 24, 16, 24);
+      }
     }
-  }
-
-  const dirNames: Array<'down' | 'up' | 'left' | 'right'> = ['down', 'up', 'left', 'right'];
-  dirNames.forEach((dir, row) => {
-    const animKey = `${key}:walk-${dir}`;
+    const animKey = key + ':walk-' + direction;
     if (!scene.anims.exists(animKey)) {
-      const base = row * 3;
       scene.anims.create({
         key: animKey,
-        frames: [
-          { key, frame: base + 1 },
-          { key, frame: base },
-          { key, frame: base + 2 },
-          { key, frame: base },
-        ],
-        frameRate: 8,
+        frames: frames.map((frame) => ({ key, frame })),
+        frameRate: atlasCanvas ? 10 : 8,
         repeat: -1,
       });
     }
-  });
+  }
 
   return key;
 }

@@ -69,3 +69,9 @@ Kiểm thử baseline trong bản sao tạm đã pass lint, typecheck, 24/24 Vit
 Đã tạo atlas private từ 15 tệp nguồn Demo E, cộng hai frame Frakassets đã xác minh. Profile public có PNG 16.142 B và tổng 27.960 B gồm manifest/credits. Profile private có PNG 46.875 B và tổng 74.780 B. Cả hai có 21 semantic ID. Private atlas tái tạo trùng hash. Public precache 25 mục, 1.999,56 KiB. Tệp ZIP giả và atlas private có sẵn trong sandbox đều nằm ngoài dist public và precache.
 
 Lint, typecheck, 26 Vitest, production build/guard, private build và 8 Playwright Chromium đều pass. Đã kiểm hình atlas 1:1, phần runtime sẽ nối ở OLW-010-02 và OLW-010-03. Quyền deploy Internet của bốn nhóm pack Demo E còn Pending Deployment License Verification. [Quy trình và credits](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)
+
+### OLW-010-02 — Avatar Modern Interiors trong game chính
+
+Profile riêng dùng rig Adam/Alex/Amelia. WorldScene và Tủ đồ dùng cùng Canvas palette-remap của Demo E, giữ 6 trường cấu hình cũ, bốn hướng và khóa animation cũ. Profile public dùng rig CC0. Nếu tải atlas thất bại, bộ vẽ avatar starter vẫn hoạt động.
+
+Lint, typecheck, 26 Vitest, public/private build, guard và 8 Playwright Chromium pass. Hai context đổi tóc, màu, áo và kính, peer cập nhật Canvas, reload khôi phục preview. Kiểm hình Tủ đồ ở 430×932, bốn hướng có frame idle và walk riêng, hai cấu hình có cache key khác nhau. Chưa kiểm iPhone thật.

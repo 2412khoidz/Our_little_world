@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL } from '../art/atlasProfile';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 
 export class BootScene extends Phaser.Scene {
@@ -7,6 +8,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    this.load.image(AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL);
     this.load.image('tileset-cozy', '/assets/starter/tileset-cozy.png');
     this.load.image('furniture-cozy', '/assets/starter/furniture-cozy.png');
     this.load.tilemapTiledJSON('map-home', '/assets/maps/home.json');

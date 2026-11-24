@@ -173,6 +173,7 @@ export class WorldScene extends Phaser.Scene {
     const me = this.members.find((m) => m.userId === this.localUserId);
     if (!me) return;
     this.localTextureKey = ensurePhaserAvatarTexture(this, me.avatarConfig);
+    this.localSprite.stop();
     this.localSprite.setTexture(
       this.localTextureKey,
       getIdleFrameIndex(this.localFacing),
@@ -932,6 +933,7 @@ export class WorldScene extends Phaser.Scene {
       entity.avatarConfig = member.avatarConfig;
       entity.nickname = member.nickname;
       entity.textureKey = ensurePhaserAvatarTexture(this, member.avatarConfig);
+      entity.sprite.stop();
       entity.sprite.setTexture(entity.textureKey, getIdleFrameIndex(entity.facing));
       entity.label.setText(member.nickname);
     }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
-import { renderAvatarPreviewCanvas } from '../../game/art/avatarSpriteBuilder';
+import { drawWardrobePreview, loadAvatarAtlas } from '../../game/art/worldAvatarCanvas';
 import {
   ACCESSORY_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -28,12 +28,21 @@ export function AvatarModal({
   const [config, setConfig] = useState<AvatarConfig>(initialConfig);
   const [busy, setBusy] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [atlas, setAtlas] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    void loadAvatarAtlas().then((image) => {
+      if (mounted) setAtlas(image);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     if (canvasRef.current) {
-      renderAvatarPreviewCanvas(canvasRef.current, config, 5);
+      drawWardrobePreview(canvasRef.current, atlas, config, 5);
     }
-  }, [config]);
+  }, [atlas, config]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +80,8 @@ export function AvatarModal({
         >
           <canvas
             ref={canvasRef}
+            data-testid="avatar-preview-canvas"
+            data-atlas-ready={Boolean(atlas)}
             style={{ width: 80, height: 120, imageRendering: 'pixelated', flexShrink: 0 }}
           />
           <label style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>
