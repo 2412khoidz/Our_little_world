@@ -137,11 +137,41 @@
 
 .nearby-action-wrap {
   position: absolute;
-  bottom: 14px;
+  bottom: 62px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 16;
+  z-index: 26;
   pointer-events: none;
+}
+
+.couple-action-shell {
+  position: fixed;
+  left: 50%;
+  bottom: calc(70px + var(--safe-bottom));
+  transform: translateX(-50%);
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  pointer-events: none;
+}
+
+@media (max-height: 460px) {
+  .nearby-action-wrap {
+    bottom: 54px;
+  }
+
+  .couple-action-shell {
+    bottom: calc(62px + var(--safe-bottom));
+  }
+
+  .joystick-zone {
+    bottom: 58px;
+    width: 72px;
+    height: 72px;
+  }
 }
 
 .nearby-action-btn {
@@ -167,10 +197,10 @@
 /* Virtual Joystick */
 .joystick-zone {
   position: absolute;
-  left: calc(14px + var(--safe-left));
-  bottom: 14px;
-  width: 96px;
-  height: 96px;
+  left: calc(12px + var(--safe-left));
+  bottom: 66px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   background: rgba(45, 34, 38, 0.44);
   border: 2px solid rgba(255, 248, 239, 0.35);

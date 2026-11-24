@@ -34,21 +34,7 @@ export function CoupleActionBar({
   onStandUp,
 }: CoupleActionBarProps) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        left: '50%',
-        bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))',
-        transform: 'translateX(-50%)',
-        zIndex: 24,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
-        maxWidth: 'calc(100vw - 24px)',
-        pointerEvents: 'none',
-      }}
-    >
+    <div className="couple-action-shell">
       {incomingInvite && (
         <div
           className="cozy-card"

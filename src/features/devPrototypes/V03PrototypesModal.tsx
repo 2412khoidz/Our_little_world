@@ -121,7 +121,16 @@ export function V03PrototypesModal({ onClose }: V03PrototypesModalProps) {
 
         {tab === 'wishlist' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div className="pill" style={{ alignSelf: 'flex-start', fontSize: 12 }}>
+            <div
+              className="pill"
+              style={{
+                alignSelf: 'flex-start',
+                fontSize: 12,
+                background: '#efdfd2',
+                color: '#4b3036',
+                borderColor: '#d9b9a3',
+              }}
+            >
               🗓️ Đếm ngược kỷ niệm mẫu: còn 14 ngày tới ngày gặp mặt
             </div>
             {wishlist.map((item) => (

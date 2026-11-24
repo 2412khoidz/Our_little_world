@@ -199,7 +199,15 @@ export function MailboxModal({
                         {item.kind === 'gift' ? '🎁 ' : '💌 '}
                         {item.subject}
                       </strong>
-                      <span className="pill" style={{ fontSize: 11 }}>
+                      <span
+                        className="pill"
+                        style={{
+                          fontSize: 11,
+                          background: '#efdfd2',
+                          color: '#4b3036',
+                          borderColor: '#d9b9a3',
+                        }}
+                      >
                         Từ {memberNames.get(item.senderId) ?? 'Người thương'}
                       </span>
                     </div>
@@ -223,7 +231,16 @@ export function MailboxModal({
                           {item.body ?? ''}
                         </p>
                         {item.giftItemSku && item.giftQty > 0 && (
-                          <div className="pill" style={{ alignSelf: 'flex-start', fontSize: 12 }}>
+                          <div
+                            className="pill"
+                            style={{
+                              alignSelf: 'flex-start',
+                              fontSize: 12,
+                              background: '#efdfd2',
+                              color: '#4b3036',
+                              borderColor: '#d9b9a3',
+                            }}
+                          >
                             🎁 Đính kèm: {giftMeta?.nameVi ?? item.giftItemSku} ×{item.giftQty}
                           </div>
                         )}
