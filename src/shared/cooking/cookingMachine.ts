@@ -286,33 +286,55 @@ export function tick(session: CookingSession, nowMs: number): CookingSession {
   if (!Number.isFinite(nowMs)) {
     return session;
   }
-
-  const recipe = requireRecipe(session.recipeSku);
-  const targetElapsedMs = Math.max(session.elapsedMs, nowMs - session.startedAtMs);
-  const dt = targetElapsedMs - session.elapsedMs;
-  if (dt <= 0) {
+  // A server clock that goes backwards must never rewind the session.
+  if (nowMs < session.updatedAtMs) {
     return session;
   }
 
+  const recipe = requireRecipe(session.recipeSku);
+  // Time integration contract: `elapsedMs` follows the server clock exactly, but
+  // the pan heat / out-of-band timer only advance on fixed `PAN_BUCKET_MS`
+  // boundaries. Sub-bucket time is carried to the next tick, so one long tick and
+  // many short ticks integrate the same buckets (no step-size drift), while the
+  // player-visible elapsed time stays accurate.
+  const rawElapsedMs = Math.max(session.elapsedMs, nowMs - session.startedAtMs);
+  if (rawElapsedMs <= session.elapsedMs) {
+    return session;
+  }
+  const bucketTargetMs = Math.floor(rawElapsedMs / PAN_BUCKET_MS) * PAN_BUCKET_MS;
+
+  let elapsedMs = Math.floor(session.elapsedMs / PAN_BUCKET_MS) * PAN_BUCKET_MS;
+  let heat01 = session.heat01;
   let outOfToleranceMs = session.outOfToleranceMs;
-  if (isHeatInBand(session.heat01, recipe)) {
-    outOfToleranceMs = 0;
-  } else {
-    outOfToleranceMs += dt;
+  while (elapsedMs < bucketTargetMs) {
+    elapsedMs += PAN_BUCKET_MS;
+    // Sample the band at the START of the bucket (same rule as the one-shot
+    // version), so a long tick and bucket-aligned short ticks agree.
+    if (isHeatInBand(heat01, recipe)) {
+      outOfToleranceMs = 0;
+    } else {
+      outOfToleranceMs += PAN_BUCKET_MS;
+    }
+    const targetHeat01 = panTargetHeat01(recipe, session.rngSeed, elapsedMs);
+    const driftRatio = Math.min(1, PAN_BUCKET_MS / PAN_DRIFT_TAU_MS);
+    heat01 = clampHeat(heat01 + (targetHeat01 - heat01) * driftRatio);
   }
 
-  const targetHeat01 = panTargetHeat01(recipe, session.rngSeed, targetElapsedMs);
-  const driftRatio = Math.min(1, dt / PAN_DRIFT_TAU_MS);
-  const heat01 = clampHeat(session.heat01 + (targetHeat01 - session.heat01) * driftRatio);
-
-  const overheated = outOfToleranceMs > recipe.burnWindowMs;
-  const overcooked = targetElapsedMs > recipe.cookMs + recipe.burnWindowMs;
+  const remainderMs = rawElapsedMs - bucketTargetMs;
+  // The persisted timer is bucket-aligned; the burn decision also counts the
+  // sub-bucket remainder still inside the window so a 6001 ms tick is not delayed
+  // to the next bucket boundary.
+  const outOfToleranceForDecision =
+    outOfToleranceMs +
+    (remainderMs > 0 && !isHeatInBand(heat01, recipe) ? remainderMs : 0);
+  const overheated = outOfToleranceForDecision > recipe.burnWindowMs;
+  const overcooked = rawElapsedMs > recipe.cookMs + recipe.burnWindowMs;
   if (overheated || overcooked) {
     const reason: BurnReason = overheated ? 'HEAT' : 'OVERCOOKED';
     return burnedSession(
       session,
       recipe,
-      targetElapsedMs,
+      rawElapsedMs,
       nowMs,
       outOfToleranceMs,
       heat01,
@@ -324,7 +346,7 @@ export function tick(session: CookingSession, nowMs: number): CookingSession {
     ...session,
     phase: session.prepDone >= recipe.prepStationSteps ? 'cooking' : 'prep',
     heat01,
-    elapsedMs: targetElapsedMs,
+    elapsedMs: rawElapsedMs,
     updatedAtMs: nowMs,
     outOfToleranceMs,
   };
@@ -483,6 +505,14 @@ function serveAction(
   if (!Number.isFinite(action.nowMs)) {
     return fail(session, 'INVALID_ACTION', 'Thời điểm dọn món không hợp lệ.');
   }
+  // Server clock must not go backwards between actions.
+  if (action.nowMs < session.updatedAtMs) {
+    return fail(
+      session,
+      'INVALID_ACTION',
+      'Đồng hồ server đi lùi: không thể dọn món bằng mốc thời gian cũ.',
+    );
+  }
 
   const ticked = tick(session, action.nowMs);
   if (ticked.phase === 'burned') {
@@ -501,7 +531,7 @@ function serveAction(
     recipeSku: recipe.sku,
     dishSku: recipe.dishSku,
     quality,
-    completedAtMs: action.nowMs,
+    completedAtMs: ticked.updatedAtMs,
     elapsedMs: ticked.elapsedMs,
     reason: null,
     stirCount: ticked.stirCount,
@@ -512,7 +542,7 @@ function serveAction(
     phase: 'done',
     quality,
     outcome,
-    updatedAtMs: action.nowMs,
+    updatedAtMs: ticked.updatedAtMs,
   });
 }
 
@@ -575,8 +605,22 @@ export const reduceCookingSession = applyCookingAction;
 export function getOrderConstraints(
   session: CookingSession,
   order: RestaurantOrder,
+  actorId?: string,
 ): OrderConstraintResult {
   const recipe = requireRecipe(session.recipeSku);
+
+  // Ownership: only a player of this session may settle its order.
+  if (
+    actorId !== undefined &&
+    actorId !== session.players.prepId &&
+    actorId !== session.players.heatId
+  ) {
+    return {
+      ok: false,
+      reason: 'UNKNOWN_PLAYER',
+      messageVi: 'Người này không thuộc phiên nấu ăn hiện tại.',
+    };
+  }
 
   if (order.dishSku !== recipe.dishSku) {
     return {
@@ -641,6 +685,13 @@ export function getOrderConstraints(
   }
 
   const orderStartedAtMs = order.createdAtMs ?? session.startedAtMs;
+  if (order.createdAtMs !== undefined && session.outcome.completedAtMs < order.createdAtMs) {
+    return {
+      ok: false,
+      reason: 'TOO_EARLY',
+      messageVi: 'Món đã xong trước khi đơn hàng được tạo — không hợp lệ.',
+    };
+  }
   if (session.outcome.completedAtMs - orderStartedAtMs > order.deadlineMs) {
     return {
       ok: false,

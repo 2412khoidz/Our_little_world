@@ -224,8 +224,10 @@ export interface RestaurantOrder {
 export type OrderRejectionReason =
   | 'WRONG_DISH'
   | 'TOO_SLOW'
+  | 'TOO_EARLY'
   | 'STARS_TOO_LOW'
   | 'BURNED'
+  | 'UNKNOWN_PLAYER'
   | 'INVALID_ACTION';
 
 export type OrderConstraintResult =
