@@ -5,7 +5,12 @@
  * run is reproducible from `(seed, profileId, personaId, days, strategy)`.
  */
 
-import type { ItemGroup, ItemQuality, MilestoneId } from '../types.ts';
+import type {
+  ItemGroup,
+  ItemQuality,
+  MilestoneId,
+  SaturationConfig,
+} from '../types.ts';
 
 export type PersonaId =
   | 'casual'
