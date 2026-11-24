@@ -100,6 +100,7 @@ function MainCoupleApp() {
   const [worldSnapshot, setWorldSnapshot] = useState<WorldSnapshot | null>(null);
   const [currentMapId, setCurrentMapId] = useState<MapId>('home');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [movementConnectionVersion, setMovementConnectionVersion] = useState(0);
   const [presences, setPresences] = useState<PresencePayload[]>([]);
   const [diagnostics, setDiagnostics] = useState<GameDiagnosticsSnapshot | null>(null);
 
@@ -124,6 +125,7 @@ function MainCoupleApp() {
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
   const realtimeRef = useRef<RealtimeHandle | null>(null);
+  const realtimeStatusRef = useRef<ConnectionStatus>('disconnected');
   const snapshotRef = useRef<WorldSnapshot | null>(null);
   useEffect(() => {
     snapshotRef.current = worldSnapshot;
@@ -200,6 +202,16 @@ function MainCoupleApp() {
     if (!worldId || !currentUser || !memberSnapshot) return;
 
     let cancelled = false;
+    let latestStatus: ConnectionStatus = 'connecting';
+    const updateConnectionStatus = (status: ConnectionStatus) => {
+      if (status === 'connected' && realtimeStatusRef.current !== status) {
+        setMovementConnectionVersion((version) => version + 1);
+      }
+      realtimeStatusRef.current = status;
+      setConnectionStatus(status);
+    };
+    updateConnectionStatus('connecting');
+
     const initialPresence: PresencePayload = {
       userId: currentUser.userId,
       sessionId,
@@ -224,7 +236,9 @@ function MainCoupleApp() {
           void refreshWorldSnapshot();
         },
         onConnectionChange: (status) => {
-          setConnectionStatus(status);
+          if (cancelled) return;
+          latestStatus = status;
+          if (realtimeRef.current) updateConnectionStatus(status);
         },
       })
       .then((handle) => {
@@ -233,21 +247,23 @@ function MainCoupleApp() {
           return;
         }
         realtimeRef.current = handle;
+        updateConnectionStatus(latestStatus);
       });
 
     return () => {
       cancelled = true;
       const existing = realtimeRef.current;
       realtimeRef.current = null;
+      realtimeStatusRef.current = 'disconnected';
       if (existing) {
         void existing.disconnect();
       }
     };
   }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot]);
 
-  // Keep presence metadata synchronized when map/avatar changes
+  // Refresh presence with the current tile after reconnect, map or avatar changes.
   useEffect(() => {
-    if (!realtimeRef.current || !currentUser || !localMember) return;
+    if (connectionStatus !== 'connected' || !realtimeRef.current || !currentUser || !localMember) return;
     realtimeRef.current.updatePresence({
       userId: currentUser.userId,
       sessionId,
@@ -259,7 +275,7 @@ function MainCoupleApp() {
       facing: localTileRef.current.facing,
       updatedAtMs: Date.now(),
     });
-  }, [currentMapId, localMember, currentUser, sessionId]);
+  }, [connectionStatus, movementConnectionVersion, currentMapId, localMember, currentUser, sessionId]);
 
   // Visibility & network reconnect flow (crucial for iPhone Safari background/lock resume)
   const handleReconnectAndResync = useCallback(async () => {
@@ -285,6 +301,7 @@ function MainCoupleApp() {
       }
     };
     const onOffline = () => {
+      realtimeStatusRef.current = 'offline';
       setConnectionStatus('offline');
       showToast('Đang tạm mất mạng — ứng dụng sẽ tự kết nối lại khi có mạng.', true);
     };
@@ -301,7 +318,9 @@ function MainCoupleApp() {
   // Listen to Phaser events
   useEffect(() => {
     const unsubMove = gameEventBus.on('evt:local-movement', (pkt) => {
-      realtimeRef.current?.publishMovement(pkt);
+      if (realtimeStatusRef.current === 'connected') {
+        realtimeRef.current?.publishMovement(pkt);
+      }
     });
 
     const unsubTile = gameEventBus.on('evt:local-tile-changed', (tile) => {
@@ -622,6 +641,7 @@ function MainCoupleApp() {
         activeSku={activeSku}
         selectedPlacementId={selectedPlacementId}
         showJoystick={showJoystick}
+        movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
         toast={toast}
       />

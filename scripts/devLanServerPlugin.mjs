@@ -465,7 +465,8 @@ export function createDevLanHandler({
 
         req.on('close', () => {
           const existing = sseClients.get(qSessionId);
-          if (existing) {
+          // The closing stream may have been replaced during reconnect.
+          if (existing?.res === res) {
             sseClients.delete(qSessionId);
             broadcastPresenceSync(qWorldId);
           }

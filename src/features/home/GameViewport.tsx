@@ -20,6 +20,7 @@ interface GameViewportProps {
   selectedPlacementId: string | null;
   showJoystick: boolean;
   isModalOpen: boolean;
+  movementConnection: number | null;
   toast: { message: string; isError?: boolean } | null;
 }
 
@@ -36,6 +37,7 @@ export function GameViewport({
   selectedPlacementId,
   showJoystick,
   isModalOpen,
+  movementConnection,
   toast,
 }: GameViewportProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -123,6 +125,11 @@ export function GameViewport({
     if (!sceneReady) return;
     gameEventBus.emit('cmd:set-paused', { paused: isModalOpen });
   }, [sceneReady, isModalOpen]);
+
+  useEffect(() => {
+    if (!sceneReady) return;
+    gameEventBus.emit('cmd:set-movement-connection', movementConnection);
+  }, [sceneReady, movementConnection]);
 
   function updateJoystickFromPointer(clientX: number, clientY: number) {
     const maxRadius = 32;

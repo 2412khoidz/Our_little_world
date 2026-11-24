@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MovementPacket } from '../../src/shared/types';
 import { fitWorldZoom } from '../../src/game/art/worldCamera';
 
 const BASE = 'http://127.0.0.1:4173';
@@ -182,6 +183,96 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
 
     await ctxDevice1.close();
     await ctxDevice2.close();
+  });
+
+  test('sends final movement snapshots across pause, reconnect and map transitions with three sessions', async ({
+    browser,
+  }, testInfo) => {
+    const { viewport, hasTouch, isMobile } = testInfo.project.use;
+    const options = { viewport, hasTouch, isMobile };
+    const contexts = await Promise.all([
+      browser.newContext(options),
+      browser.newContext(options),
+      browser.newContext(options),
+    ]);
+    const [firstContext, partnerContext, secondContext] = contexts;
+    try {
+      const [pageA, pageB, secondA] = await Promise.all([
+        firstContext.newPage(),
+        partnerContext.newPage(),
+        secondContext.newPage(),
+      ]);
+      const movement: MovementPacket[] = [];
+      pageA.on('request', (request) => {
+        if (!request.url().endsWith('/api/dev-lan/realtime') || request.method() !== 'POST') return;
+        const body = request.postDataJSON() as { kind: string; payload: MovementPacket };
+        if (body.kind === 'movement') movement.push(body.payload);
+      });
+
+      await pageA.goto('/');
+      await pageA.getByTestId('btn-dev-seed-couple').click();
+      await pageA.getByTestId('preset-partner-a').click();
+      await expect.poll(() => movement.length).toBe(1);
+
+      await Promise.all([
+        pageB.goto('/').then(() => pageB.getByTestId('preset-partner-b').click()),
+        secondA.goto('/').then(() => secondA.getByTestId('preset-partner-a').click()),
+      ]);
+      await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
+      await expect(secondA.getByTestId('partner-presence-pill')).toContainText('Nắng đang ở Trong nhà');
+
+      await tapWorldTile(pageA, 'home', 12, 8, !!hasTouch);
+      await expect.poll(() => movement.some((packet) => packet.anim === 'walk')).toBe(true);
+      await pageA.getByTestId('nav-avatar').click();
+      await expect(pageA.getByTestId('avatar-preview-canvas')).toBeVisible();
+      await expect.poll(() => movement.at(-1)?.anim).toBe('idle');
+      const idleAtPause = movement.at(-1)!;
+      await pageA.getByRole('button', { name: 'Đóng', exact: true }).click();
+      await expect.poll(() => movement.some((packet) => packet.seq > idleAtPause.seq && packet.anim === 'walk')).toBe(true);
+
+      // Simulate a backgrounded document while tap-to-move is still active.
+      await pageA.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await expect.poll(() => movement.at(-1)?.anim).toBe('idle');
+      const idleAtHide = movement.at(-1)!;
+      await firstContext.setOffline(true);
+      await expect(pageA.getByTestId('connection-pill')).toContainText(/Đang mất mạng|Đang kết nối lại/);
+      expect(movement.at(-1)).toEqual(idleAtHide);
+      await pageA.evaluate(() => Reflect.deleteProperty(document, 'hidden'));
+      await firstContext.setOffline(false);
+      await expect(pageA.getByTestId('connection-pill')).toContainText('Trực tuyến');
+
+      await expect.poll(() => movement.find((packet) => packet.seq > idleAtHide.seq)).toMatchObject({
+        seq: idleAtHide.seq + 1,
+        sessionId: idleAtHide.sessionId,
+        anim: 'idle',
+        mapId: 'home',
+      });
+
+      await tapWorldTile(pageA, 'home', 7, 10, !!hasTouch);
+      await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Ra khu vườn');
+      await pageA.getByTestId('btn-nearby-action').click();
+      await expect.poll(() => movement.filter((packet) => packet.mapId === 'garden')).toEqual([
+        expect.objectContaining({ anim: 'idle', sessionId: idleAtHide.sessionId }),
+      ]);
+      await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Ngoài vườn');
+
+      let previous: MovementPacket | undefined;
+      for (const current of movement) {
+        if (previous) {
+          expect(current.seq).toBe(previous.seq + 1);
+          if (previous.anim === 'walk' && current.anim === 'walk') {
+            // The wire clock is rounded to integer milliseconds.
+            expect(current.timestampMs - previous.timestampMs).toBeGreaterThanOrEqual(124);
+          }
+        }
+        previous = current;
+      }
+    } finally {
+      await Promise.all(contexts.map((context) => context.close()));
+    }
   });
 
   test('renders mobile-first layout cleanly on 430x932 viewport without horizontal overflow', async ({

@@ -39,6 +39,7 @@ export interface GameEventMap {
   'cmd:sync-world': WorldSyncPayload;
   'cmd:set-map': { mapId: MapId; spawnTile?: { tileX: number; tileY: number } };
   'cmd:remote-movement': MovementPacket;
+  'cmd:set-movement-connection': number | null;
   'cmd:remote-presence': PresencePayload[];
   'cmd:set-decorate': DecorateStatePayload;
   'cmd:set-joystick': { vx: number; vy: number };

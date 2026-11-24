@@ -105,6 +105,7 @@ export class WorldScene extends Phaser.Scene {
   private lastDiagnosticsAtMs = 0;
   private contextLost = false;
   private paused = false;
+  private movementConnection: number | null = null;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -188,7 +189,6 @@ export class WorldScene extends Phaser.Scene {
     this.currentMapId = mapId;
     this.pathQueue = [];
     this.tapMarker?.clear();
-    this.txThrottle.reset();
 
     for (const layer of this.mapLayers) {
       layer.destroy();
@@ -234,7 +234,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.lastPortalAtMs = Date.now();
     this.emitCurrentTile(true);
-    this.emitLocalMovement('idle', true);
+    this.emitLocalMovement('idle');
     gameEventBus.emit('evt:scene-ready', { mapId });
   }
 
@@ -307,7 +307,7 @@ export class WorldScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (this.paused) return;
+      if (this.paused || document.hidden) return;
       // Ignore slight drag gestures
       if (pointer.getDistance() > 14) return;
 
@@ -506,8 +506,21 @@ export class WorldScene extends Phaser.Scene {
       }),
 
       gameEventBus.on('cmd:remote-presence', (presences) => {
+        const activeSessions = new Set(presences.map((presence) => presence.sessionId));
+        for (const previous of this.latestPresences) {
+          if (!activeSessions.has(previous.sessionId)) this.remoteFilter.removeSession(previous.sessionId);
+        }
         this.latestPresences = presences;
         this.reconcileRemotePresences(presences);
+      }),
+
+      gameEventBus.on('cmd:set-movement-connection', (connection) => {
+        if (this.movementConnection === connection) return;
+        this.movementConnection = connection;
+        if (connection !== null) {
+          this.txThrottle.reset();
+          this.emitLocalMovement('idle');
+        }
       }),
 
       gameEventBus.on('cmd:remote-movement', (packet) => {
@@ -543,6 +556,7 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.on('cmd:set-paused', ({ paused }) => {
         this.paused = paused;
         if (paused) {
+          this.emitLocalMovement('idle');
           this.scene.pause();
         } else {
           this.scene.resume();
@@ -560,9 +574,14 @@ export class WorldScene extends Phaser.Scene {
     const onRestored = () => {
       this.contextLost = false;
     };
+    const onVisibility = () => {
+      if (document.hidden) this.emitLocalMovement('idle');
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     canvas.addEventListener('webglcontextlost', onLost);
     canvas.addEventListener('webglcontextrestored', onRestored);
     this.unsubscribes.push(() => {
+      document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
     });
@@ -583,7 +602,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
-    if (this.paused) return;
+    if (this.paused || document.hidden) return;
 
     const dtSec = Math.min(deltaMs, 50) / 1000;
     const moved = this.updateLocalMovement(dtSec);
@@ -592,9 +611,9 @@ export class WorldScene extends Phaser.Scene {
 
     if (moved) {
       this.emitCurrentTile(false);
-      this.emitLocalMovement('walk', false);
+      this.emitLocalMovement('walk');
     } else {
-      this.emitLocalMovement('idle', false);
+      this.emitLocalMovement('idle');
     }
 
     const now = Date.now();
@@ -845,22 +864,23 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private emitLocalMovement(anim: 'idle' | 'walk', force: boolean): void {
-    if (!this.localUserId || !this.sessionId) return;
-    const now = Date.now();
-    if (!force && !this.txThrottle.shouldEmit(now, anim, this.currentMapId)) {
-      return;
-    }
+  private emitLocalMovement(anim: MovementPacket['anim']): void {
+    if (this.movementConnection === null || !this.localUserId || !this.sessionId) return;
+    const position = {
+      x: Math.round(this.localSprite.x * 10) / 10,
+      y: Math.round(this.localSprite.y * 10) / 10,
+      facing: this.localFacing,
+    };
+    if (!this.txThrottle.shouldEmit(performance.now(), anim, this.currentMapId, position)) return;
+
     const packet: MovementPacket = {
       worldId: this.worldId,
       userId: this.localUserId,
       sessionId: this.sessionId,
       mapId: this.currentMapId,
       seq: this.txThrottle.nextSeq(),
-      timestampMs: now,
-      x: Math.round(this.localSprite.x * 10) / 10,
-      y: Math.round(this.localSprite.y * 10) / 10,
-      facing: this.localFacing,
+      timestampMs: Date.now(),
+      ...position,
       anim,
     };
     gameEventBus.emit('evt:local-movement', packet);
@@ -876,14 +896,22 @@ export class WorldScene extends Phaser.Scene {
       const avatarConfig = member?.avatarConfig ?? p.avatarConfig;
       const nickname = member?.nickname ?? p.nickname;
       const existing = this.remoteEntities.get(p.userId);
+      const latest = this.remoteFilter.getLatestPacket(p.sessionId);
+      const position = latest?.userId === p.userId &&
+          (latest.mapId === p.mapId || latest.timestampMs > p.updatedAtMs) ? latest : {
+        x: (p.tileX + 0.5) * TILE_SIZE,
+        y: (p.tileY + 0.85) * TILE_SIZE,
+        mapId: p.mapId,
+        facing: p.facing,
+        anim: 'idle' as const,
+      };
 
       if (!existing) {
         const texKey = ensurePhaserAvatarTexture(this, avatarConfig);
-        const px = (p.tileX + 0.5) * TILE_SIZE;
-        const py = (p.tileY + 0.85) * TILE_SIZE;
+        const { x: px, y: py } = position;
         const shadow = this.add.ellipse(px, py - 1, 10, 4, 0x2b1d19, 0.25);
         const sprite = this.add
-          .sprite(px, py, texKey, getIdleFrameIndex(p.facing))
+          .sprite(px, py, texKey, getIdleFrameIndex(position.facing))
           .setOrigin(0.5, 1);
         const label = this.add
           .text(px, py - 27, nickname, {
@@ -900,21 +928,23 @@ export class WorldScene extends Phaser.Scene {
         this.remoteEntities.set(p.userId, {
           userId: p.userId,
           sessionId: p.sessionId,
-          mapId: p.mapId,
+          mapId: position.mapId,
           sprite,
           shadow,
           label,
           targetX: px,
           targetY: py,
-          facing: p.facing,
-          anim: 'idle',
+          facing: position.facing,
+          anim: position.anim,
           textureKey: texKey,
           avatarConfig,
           nickname,
         });
       } else {
-        existing.sessionId = p.sessionId;
-        existing.mapId = p.mapId;
+        if (existing.sessionId !== p.sessionId || existing.mapId !== position.mapId) {
+          existing.sessionId = p.sessionId;
+          this.setRemoteTarget(existing, position, true);
+        }
         existing.nickname = nickname;
         existing.label.setText(nickname);
       }
@@ -922,7 +952,6 @@ export class WorldScene extends Phaser.Scene {
 
     for (const [uid, entity] of this.remoteEntities.entries()) {
       if (!activeUserIds.has(uid)) {
-        this.remoteFilter.removeSession(entity.sessionId);
         entity.sprite.destroy();
         entity.shadow.destroy();
         entity.label.destroy();
@@ -950,58 +979,27 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private applyRemoteMovementPacket(packet: MovementPacket): void {
-    let entity = this.remoteEntities.get(packet.userId);
-    if (!entity) {
-      const member = this.members.find((m) => m.userId === packet.userId);
-      const avatarConfig = member?.avatarConfig ?? DEFAULT_AVATAR_PARTNER_A;
-      const nickname = member?.nickname ?? 'Người thương';
-      const texKey = ensurePhaserAvatarTexture(this, avatarConfig);
-      const shadow = this.add.ellipse(packet.x, packet.y - 1, 10, 4, 0x2b1d19, 0.25);
-      const sprite = this.add
-        .sprite(packet.x, packet.y, texKey, getIdleFrameIndex(packet.facing))
-        .setOrigin(0.5, 1);
-      const label = this.add
-        .text(packet.x, packet.y - 27, nickname, {
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: '9px',
-          color: '#fff8ef',
-          backgroundColor: '#5c4138cc',
-          padding: { x: 3, y: 1 },
-        })
-        .setOrigin(0.5, 1)
-        .setResolution(2)
-        .setDepth(9500);
-
-      entity = {
-        userId: packet.userId,
-        sessionId: packet.sessionId,
-        mapId: packet.mapId,
-        sprite,
-        shadow,
-        label,
-        targetX: packet.x,
-        targetY: packet.y,
-        facing: packet.facing,
-        anim: packet.anim,
-        textureKey: texKey,
-        avatarConfig,
-        nickname,
-      };
-      this.remoteEntities.set(packet.userId, entity);
-    }
-
+    const entity = this.remoteEntities.get(packet.userId);
+    if (!entity || entity.sessionId !== packet.sessionId) return;
     const changedMap = entity.mapId !== packet.mapId;
-    entity.sessionId = packet.sessionId;
-    entity.mapId = packet.mapId;
-    entity.targetX = packet.x;
-    entity.targetY = packet.y;
-    entity.facing = packet.facing;
-    entity.anim = packet.anim;
-    if (changedMap) {
-      entity.sprite.setPosition(packet.x, packet.y);
-      entity.shadow.setPosition(packet.x, packet.y - 1);
-      entity.label.setPosition(packet.x, packet.y - 27);
-      this.reconcileRemoteVisibility();
+    this.setRemoteTarget(entity, packet, changedMap);
+    if (changedMap) this.reconcileRemoteVisibility();
+  }
+
+  private setRemoteTarget(
+    entity: RemoteAvatarEntity,
+    position: Pick<MovementPacket, 'mapId' | 'x' | 'y' | 'facing' | 'anim'>,
+    snap: boolean,
+  ): void {
+    entity.mapId = position.mapId;
+    entity.targetX = position.x;
+    entity.targetY = position.y;
+    entity.facing = position.facing;
+    entity.anim = position.anim;
+    if (snap) {
+      entity.sprite.setPosition(position.x, position.y);
+      entity.shadow.setPosition(position.x, position.y - 1);
+      entity.label.setPosition(position.x, position.y - 27);
     }
   }
 

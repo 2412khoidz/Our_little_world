@@ -37,7 +37,7 @@ export class MovementTxThrottle {
 
   constructor(private readonly intervalMs: number = MOVEMENT_SEND_INTERVAL_MS) {}
 
-  shouldEmit(nowMs: number, anim: MovementPacket['anim'], mapId: MapId, position?: MovementPosition): boolean {
+  shouldEmit(nowMs: number, anim: MovementPacket['anim'], mapId: MapId, position: MovementPosition): boolean {
     const stopped = anim === 'idle' && this.wasWalking;
     this.wasWalking = anim === 'walk';
     const urgent = mapId !== this.lastSentMapId || stopped;
@@ -45,8 +45,10 @@ export class MovementTxThrottle {
       if (anim === 'idle' || nowMs - this.lastSentAtMs < this.intervalMs) return false;
 
       const last = this.lastSentPosition;
-      if (position && last && position.facing === last.facing &&
-          Math.hypot(position.x - last.x, position.y - last.y) < MOVEMENT_POSITION_DELTA_PX) {
+      if (
+        last && position.facing === last.facing &&
+        Math.hypot(position.x - last.x, position.y - last.y) < MOVEMENT_POSITION_DELTA_PX
+      ) {
         return false;
       }
     }
