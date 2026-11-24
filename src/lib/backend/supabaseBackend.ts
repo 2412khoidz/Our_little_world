@@ -1,4 +1,9 @@
 import { parseAvatarConfig } from '../../shared/avatar';
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
+import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,
   FurniturePlacement,
@@ -7,6 +12,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 import { getSupabaseClient } from '../supabase';
@@ -37,7 +43,12 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['NO_PLACE_ZONE', 'NO_PLACE_ZONE', 'Cần chừa lối đi trước cửa ra vào.'],
     ['WRONG_MAP', 'WRONG_MAP', 'Món nội thất không thuộc khu vực này.'],
     ['STOCK_EXCEEDED', 'STOCK_EXCEEDED', 'Bạn đã dùng hết số lượng món đồ khởi đầu này.'],
-    ['VERSION_CONFLICT', 'VERSION_CONFLICT', 'Nhà vừa được người kia chỉnh sửa. Đang đồng bộ lại...'],
+    ['VERSION_CONFLICT', 'VERSION_CONFLICT', 'Dữ liệu vừa được người kia cập nhật. Đang đồng bộ lại...'],
+    ['COOLDOWN_ACTIVE', 'COOLDOWN_ACTIVE', 'Hãy đợi thêm một chút trước khi thực hiện lại nhé.'],
+    ['STACK_FULL', 'STACK_FULL', 'Ngăn túi chứa món đồ này đã đầy rồi.'],
+    ['ALREADY_OPENED', 'ALREADY_OPENED', 'Lá thư hoặc món quà này đã được mở trước đó.'],
+    ['INSUFFICIENT_ITEMS', 'INSUFFICIENT_ITEMS', 'Trong túi không đủ vật phẩm cần dùng.'],
+    ['IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'Yêu cầu bị trùng khóa nhưng khác nội dung.'],
     ['NOT_FOUND', 'NOT_FOUND', 'Không tìm thấy dữ liệu được yêu cầu.'],
     ['VALIDATION_ERROR', 'VALIDATION_ERROR', 'Dữ liệu nhập chưa hợp lệ.'],
   ];
@@ -304,8 +315,12 @@ export function createSupabaseBackend(): WorldBackend {
         });
 
         ch.on('broadcast', { event: 'world_mutated' }, ({ payload }) => {
-          const reason = (payload as { reason?: 'furniture' | 'profile' | 'member' })?.reason ?? 'furniture';
+          const reason = (payload as { reason?: WorldMutationReason })?.reason ?? 'furniture';
           handlers.onWorldMutated(reason);
+        });
+
+        ch.on('broadcast', { event: 'couple_event' }, ({ payload }) => {
+          handlers.onCoupleEvent?.(payload as CoupleEventPacket);
         });
 
         ch.subscribe(async (status) => {
@@ -344,6 +359,14 @@ export function createSupabaseBackend(): WorldBackend {
             type: 'broadcast',
             event: 'world_mutated',
             payload: { reason },
+          });
+        },
+        publishCoupleEvent(packet) {
+          if (!activeChannel) return;
+          void activeChannel.send({
+            type: 'broadcast',
+            event: 'couple_event',
+            payload: packet,
           });
         },
         async reconnect() {
@@ -389,6 +412,149 @@ export function createSupabaseBackend(): WorldBackend {
           });
         },
       };
+    },
+
+    inventory: {
+      async getInventory(worldId) {
+        const { data, error } = await supabase.rpc('inventory_get', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
+      async claimFreeKibble(worldId, idempotencyKey) {
+        const { data, error } = await supabase.rpc('inventory_claim_free_kibble', {
+          p_world_id: worldId,
+          p_idempotency_key: idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
+    },
+
+    pet: {
+      async getPetSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('pet_get_snapshot', {
+          p_world_id: worldId,
+        });
+        if (error) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: (data as PetSnapshot | null) ?? null };
+      },
+      async adoptOrRenamePet(params) {
+        const { data, error } = await supabase.rpc('pet_adopt_or_rename', {
+          p_world_id: params.worldId,
+          p_name: params.name,
+          p_expected_version: params.expectedVersion ?? null,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetSnapshot };
+      },
+      async interactPet(params) {
+        const { data, error } = await supabase.rpc('pet_interact', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_action: params.action,
+          p_expected_version: params.expectedVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetInteractionResult };
+      },
+    },
+
+    study: {
+      async getStudySnapshot(worldId) {
+        const { data, error } = await supabase.rpc('study_get_snapshot', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
+      },
+      async startSession(params) {
+        const { data, error } = await supabase.rpc('study_start_session', {
+          p_world_id: params.worldId,
+          p_mode: params.mode,
+          p_focus_minutes: params.focusMinutes,
+          p_break_minutes: params.breakMinutes,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
+      },
+      async controlSession(params) {
+        const { data, error } = await supabase.rpc('study_control_session', {
+          p_world_id: params.worldId,
+          p_session_id: params.sessionId,
+          p_action: params.action,
+          p_expected_version: params.expectedVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as StudySnapshot };
+      },
+    },
+
+    mailbox: {
+      async listMailbox(worldId) {
+        const { data, error } = await supabase.rpc('mailbox_list', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as MailboxSnapshot };
+      },
+      async sendLetterOrGift(params) {
+        const { data, error } = await supabase.rpc('mailbox_send_letter_or_gift', {
+          p_world_id: params.worldId,
+          p_recipient_id: params.recipientId,
+          p_subject: params.subject,
+          p_body: params.body,
+          p_gift_item_sku: params.giftItemSku,
+          p_gift_qty: params.giftQty,
+          p_source_scope: params.sourceScope,
+          p_is_surprise: params.isSurprise,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { mailbox: MailboxSnapshot; inventory: InventorySnapshot },
+        };
+      },
+      async openItem(params) {
+        const { data, error } = await supabase.rpc('mailbox_open_item', {
+          p_world_id: params.worldId,
+          p_letter_id: params.letterId,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot },
+        };
+      },
     },
   };
 }

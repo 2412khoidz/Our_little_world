@@ -194,20 +194,26 @@ export const rigLayout = { frameWidth: 16, frameHeight: 32, frameCount: 6, direc
 export { avatarColors };
 
 export function makeRig(hairStyle) {
-  const c = new PixelCanvas(384, 64);
+  const c = new PixelCanvas(384, 96);
   const p = avatarColors;
-  for (let row = 0; row < 2; row += 1) {
+  for (let row = 0; row < 3; row += 1) {
+    const isSit = row === 2;
     for (const [index, direction] of rigLayout.directions.entries()) {
       for (let frame = 0; frame < 6; frame += 1) {
         const x = (index * 6 + frame) * 16;
         const y = row * 32;
-        const step = row === 0 ? 0 : [0, 1, 1, 0, -1, -1][frame];
-        const bob = row === 1 && frame % 3 !== 0 ? -1 : 0;
+        const step = row === 1 ? [0, 1, 1, 0, -1, -1][frame] : 0;
+        const bob = (row === 1 && frame % 3 !== 0 ? -1 : 0) + (isSit ? 2 : 0);
         const r = (dx, dy, w, h, color) => c.rect(x + dx, y + dy, w, h, color);
         const side = direction === 'left' || direction === 'right';
         const right = direction === 'right';
         const back = direction === 'up';
-        if (side) {
+        if (isSit) {
+          r(4, 27, 4, 3, p.outline);
+          r(8, 27, 4, 3, p.outline);
+          r(5, 28, 2, 2, '#786679');
+          r(9, 28, 2, 2, '#6b596a');
+        } else if (side) {
           r(5 + step, 26, 3, 5, '#6b596a');
           r(8 - step, 26, 3, 6, p.outline);
         } else {

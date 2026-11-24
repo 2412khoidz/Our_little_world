@@ -8,7 +8,7 @@ import { devLanServerPlugin } from './scripts/devLanServerPlugin.mjs';
 import productionPublicFiles from './scripts/production-public-files.json' with { type: 'json' };
 
 const privateArtDir = 'assets/private-unified';
-const privateArtFiles = ['world.png', 'avatars.png', 'manifest.json', 'CREDITS.md']
+const privateArtFiles = ['world.png', 'world-props.png', 'avatars.png', 'manifest.json', 'props-manifest.json', 'CREDITS.md']
   .map((file) => privateArtDir + '/' + file);
 
 function approvedPublicAssets(privateBuild: boolean): Plugin {
@@ -42,7 +42,9 @@ export default defineConfig(({ command, mode }) => {
   plugins: [
     react(),
     approvedPublicAssets(privateBuild),
-    devLanServerPlugin(),
+    devLanServerPlugin({
+      stateFilePath: process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+    }),
     VitePWA({
       registerType: 'prompt',
       includeAssets: [

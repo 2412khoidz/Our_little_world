@@ -98,3 +98,28 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ### V0.1 Security Hardening
 
 Đã thêm migration bổ sung cho quyền EXECUTE của RPC, thứ tự khóa world/invite, trần hai thành viên, phân quyền Realtime và receipt idempotency. PostgreSQL 18.6 local vượt SQL assertions và ba kịch bản nhiều phiên. Supabase Test/Auth/PostgREST/WebSocket thật còn **Pending Verification**. [Checkpoint và hướng dẫn tích hợp](research/GPT_NIGHT_CHECKPOINT.md#v01-security-hardening--hoàn-thành-local-cloud-pending-verification)
+
+## 7. Triển khai V0.1.5 — Living Home (`neon/night-dev`)
+
+*Trạng thái tổng thể V0.1.5: **Implemented & Locally tested** (`Pending cloud/device verification` — chưa đánh dấu `Accepted` trước khi kiểm thử Supabase Cloud và iPhone Safari thật).*
+
+- **Phục hồi mỹ thuật Demo E & Camera (`03072e4`):** Tái lập 100% tỷ lệ pixel 1:1 (`world-props.png`, `props-manifest.json`), anim ngồi trên `avatars.png`, sprite mèo `cat-orange` CC BY 4.0, camera tự bám theo người chơi trên bản đồ lớn hơn viewport và thu vừa khít khi trang trí.
+- **`OLW-015-01` Kho đồ tối thiểu K5 (`b5c6faa`):** `supabase/migrations/20261125000100_v015_inventory_and_catalog.sql`, 6 vật phẩm catalog 0₫, phân tách `shared` và `user:<uuid>`, nhận hạt mèo miễn phí hằng ngày.
+- **`OLW-015-03/04` Bé mèo cam sống động (`3d8a630`):** `20261125000200_v015_pet_mvp.sql`, catch-up ngoại tuyến nhân từ (`FLOOR=30`, trần 48 giờ), đua lệnh cho ăn nguyên tử & hồi chiêu server, `PetEntity.ts` + `PetPanel.tsx` + âm thanh `petAudio.ts` chạm để phát.
+- **`OLW-015-05/06` Phòng học yên tĩnh & Pomodoro (`eb5d202`):** `THIRD_PARTY_NOTICES.md` ghi công MIT (`cocoworking`), `20261125000300_v015_study_pomodoro.sql`, đồng hồ chuẩn server (`PomodoroPanel.tsx`), âm thanh nền mặc định tắt (`ambientAudio.ts`), ngồi vào ghế trái/phải và mèo nằm nghỉ chế độ yên lặng.
+- **`OLW-015-07` Tương tác cặp đôi & Khung ảnh (`d40b2e1`):** `CoupleActionBar.tsx` (5 biểu tượng cảm xúc + mời ôm 15 giây có chấp nhận/từ chối), ngồi sofa/ghế vườn 2 slot không chồng lên nhau, nằm giường đôi kèm lớp chăn pixel pastel, `PhotoFrameModal.tsx`.
+- **`OLW-015-02` Hộp thư & Quà bất ngờ (`3e7ed72`):** `20261125000400_v015_mailbox_and_gifts.sql`, giấu nội dung quà bí mật ở tầng server tới khi người nhận tự mở, rollback sạch khi ngăn đồ nhận đã đầy (`STACK_FULL`), `MailboxModal.tsx` plain-text chống XSS và badge thông báo trên hòm thư đỏ ngoài vườn.
+- **`OLW-015-08` Dev Console K6 (`400e054`) & Prototype V0.3 (`5db098b`):** Tách RPC dev vào `supabase/dev-migrations/20261125900100_dev_console_rpcs.sql` (`dev_admins` + `worlds.is_test = true`), `DevConsoleDrawer.tsx` (`Ctrl+Shift+D`), `V03PrototypesModal.tsx` chỉ nạp qua `import.meta.env.DEV` và được kiểm tra loại bỏ 100% khỏi bản production bởi `scripts/verify-prod-guard.mjs`.
+- **Kiểm chứng cục bộ mới nhất (cổng `4176`, Dev LAN + Chromium):** `npm run lint` (0 lỗi), `npm run typecheck` (`tsc -b`, 0 lỗi), `npm test` (**23 files / 68 tests pass**), `npm run build` + `verify-prod-guard.mjs` (**Pass**, 0 dev leaks), `npm run build:private` (**Pass**), `npx playwright test` (**13 passed, 1 skipped**). [Checkpoint nhánh đêm](research/NEON_NIGHT_CHECKPOINT.md)
+
+## 8. Pre-Integration Quality & Living Pet Override (`neon/night-dev`)
+
+*Trạng thái: **Implemented & Locally tested** (Sandbox & E2E cục bộ; chờ chủ dự án duyệt trực quan biến thể mèo, UI và quy mô bản đồ trước khi chạy Integration Master).*
+
+- **M1 P0 Foundation (`afd75bb`):** Khôi phục typecheck thật (`tsc -b`), sửa lỗi đăng ký đủ frame lưới trong `src/game/art/worldAtlas.ts`, bổ sung migration `20261125000500` thu hồi quyền `EXECUTE` helper `SECURITY DEFINER` và khóa `worlds FOR UPDATE` trong `_inventory_adjust_item` (`supabase/tests/v015_inventory_security.sql` chờ chạy trên PostgreSQL thật).
+- **M2 Living Cat Visual (`1605435`):** 3 biến thể mèo thủ công `24×24px` (`ginger-tabby` Quýt, `cream-puff` Mochi, `calico-patch` Bông) + 4 phụ kiện + 27 animation tracks + `PetAnimationController.ts` (`wake_yawn_stretch`), sandbox `/?pet-art=1`.
+- **M3 Physical Interaction (`411efb2`):** Hệ thống phím & ngữ cảnh `[J]`/`[K]`/`1–8` (`interactionResolver.ts`), `HeldItemRenderer.ts`, catalog thức ăn an toàn (`petFoodCatalog.ts`), bảo toàn 1:1 `Inventory → Bowl → Consumed`, hành trình nhận nuôi mèo hoang (`petPhysicalCare.ts`) và `PetEntity.ts` render nguyên bản 1:1.
+- **M4 Living Pet Intelligence & Pet Lab (`e4eb0aa`):** Adapter tiền tích hợp (`petPrimitivesAdapter.ts`), cấu hình 7 tính cách / 8 nhu cầu không tử vong / 9 cảm xúc / 14 affordance (`petIntelligenceConfig.ts`), mô phỏng 18 kịch bản (`petLabSimulation.ts`), sandbox `/?pet-lab=1`.
+- **M5 Game UI & Shared Life (`1f5b8d4`):** Hệ thống Cozy Indie Game UI với 2 biến thể **Warm Pixel Cottage** & **Illustrated Storybook**, thanh hotbar, hộp thoại chân dung, Cuốn Sổ Chung 5 tab (`OurLittleNotebook.tsx`), contract & Dev LAN stubs V0.3, sandbox `/?ui-sandbox=1`.
+- **M6 World Expansion & Showcase (`0a8ec8c`):** Bản đồ `64×64` & `96×96` gồm 10 địa điểm có chiều sâu (`worldExpansionMap.ts`, `WorldExpansionScene.ts`), `/?world-sandbox=1` và bản trải nghiệm tổng hợp `/?experience-demo=1` với Touch D-pad di động.
+- **Tài liệu & Bằng chứng trực quan (`test-results/grand-showcase/`):** Đã tạo đủ 16 screenshot Desktop/Mobile/Small/Landscape + 2 animated GIF (`pet-locomotion-and-wake.gif`, `pet-physical-feeding-and-play.gif`) và bộ báo cáo bàn giao Phase 14 ([Living Pet](pet/LIVING_PET_QUALITY_REPORT.md), [Game UI](ui/GAME_UI_DESIGN_SYSTEM.md), [Physical Interaction](gameplay/PHYSICAL_INTERACTION_SPEC.md), [World Expansion](world/WORLD_EXPANSION_DESIGN.md), [Quality Audit](research/QUALITY_AUDIT.md)).

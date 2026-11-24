@@ -10,7 +10,7 @@ export const AVATAR_FRAME_HEIGHT = rig.frameHeight;
 export const AVATAR_FRAME_COUNT = rig.frameCount;
 export const AVATAR_DIRECTIONS: readonly Direction[] = ['right', 'up', 'left', 'down'];
 const stripWidth = AVATAR_FRAME_WIDTH * AVATAR_FRAME_COUNT * AVATAR_DIRECTIONS.length;
-const rigHeight = AVATAR_FRAME_HEIGHT * 2;
+const rigHeight = AVATAR_FRAME_HEIGHT * 3;
 
 export function buildWorldAvatarCanvas(
   source: CanvasImageSource,
@@ -59,11 +59,12 @@ export function buildWorldAvatarCanvas(
   context.putImageData(image, 0, 0);
 
   for (const [index, direction] of AVATAR_DIRECTIONS.entries()) {
-    for (let animation = 0; animation < 2; animation += 1) {
+    for (let animation = 0; animation < 3; animation += 1) {
+      const yOffset = animation === 2 ? 2 : 0;
       for (let frame = 0; frame < AVATAR_FRAME_COUNT; frame += 1) {
         drawFrameAccessories(
           context, (index * AVATAR_FRAME_COUNT + frame) * AVATAR_FRAME_WIDTH,
-          animation * AVATAR_FRAME_HEIGHT, direction, rigId, config,
+          animation * AVATAR_FRAME_HEIGHT + yOffset, direction, rigId, config,
         );
       }
     }

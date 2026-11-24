@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ensureV015Db, handleV015Route } from './devLanV015Handlers.mjs';
 
 const DEV_IDENTITIES = [
   {
@@ -211,7 +212,7 @@ function createInitialDb() {
       updatedAt: nowIso,
     };
   }
-  return {
+  const dbObj = {
     profiles,
     worlds: {},
     memberships: {},
@@ -219,6 +220,8 @@ function createInitialDb() {
     placements: {},
     idempotency: {},
   };
+  ensureV015Db(dbObj);
+  return dbObj;
 }
 
 function sendJson(res, status, payload) {
@@ -858,12 +861,29 @@ export function createDevLanHandler({
           broadcastEvent(worldId, 'movement', payload, sessionId || null);
         } else if (kind === 'world_mutated') {
           broadcastEvent(worldId, 'world_mutated', payload ?? { reason: 'furniture' }, sessionId || null);
+        } else if (kind === 'couple_event' && payload) {
+          broadcastEvent(worldId, 'couple_event', payload, sessionId || null);
         } else if (kind === 'spike_cinema' && payload) {
           broadcastEvent(worldId, 'spike_cinema', payload, sessionId || null);
         }
         sendJson(res, 200, { ok: true });
         return;
       }
+
+      const handledV015 = await handleV015Route({
+        req,
+        res,
+        route,
+        reqUrl,
+        body,
+        userId,
+        db,
+        isWorldMember,
+        sendJson,
+        saveDb,
+        broadcastEvent,
+      });
+      if (handledV015) return;
 
       sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy đường dẫn dev.' });
     } catch (err) {
@@ -924,12 +944,14 @@ function createAssetCandidatesMiddleware() {
   };
 }
 
-export function devLanServerPlugin() {
+export function devLanServerPlugin(options = {}) {
   return {
     name: 'olw-dev-lan-server',
     apply: 'serve',
     configureServer(server) {
-      const handler = createDevLanHandler();
+      const handler = createDevLanHandler({
+        stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+      });
       const assetCandidates = createAssetCandidatesMiddleware();
       server.middlewares.use(assetCandidates);
       server.middlewares.use(handler);

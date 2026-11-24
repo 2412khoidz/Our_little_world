@@ -3,6 +3,12 @@ import {
   DEFAULT_AVATAR_PARTNER_B,
   parseAvatarConfig,
 } from '../../shared/avatar';
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
+import type { DevSanitizedWorldSnapshot } from '../../shared/devConsole/devConsoleTypes';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
+import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   AvatarConfig,
   CreatedInvite,
@@ -14,6 +20,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 import type {
@@ -330,9 +337,14 @@ export function createDevLanBackend(): WorldBackend {
 
         es.addEventListener('world_mutated', (ev) => {
           const parsed = JSON.parse((ev as MessageEvent).data) as {
-            reason?: 'furniture' | 'profile' | 'member';
+            reason?: WorldMutationReason;
           };
           handlers.onWorldMutated(parsed.reason ?? 'furniture');
+        });
+
+        es.addEventListener('couple_event', (ev) => {
+          const pkt = JSON.parse((ev as MessageEvent).data) as CoupleEventPacket;
+          handlers.onCoupleEvent?.(pkt);
         });
 
         es.addEventListener('world_reset', () => {
@@ -358,6 +370,9 @@ export function createDevLanBackend(): WorldBackend {
         },
         notifyWorldMutated(reason) {
           postRealtime('world_mutated', { reason });
+        },
+        publishCoupleEvent(packet) {
+          postRealtime('couple_event', packet);
         },
         async reconnect() {
           if (simulatedOffline) {
@@ -420,6 +435,107 @@ export function createDevLanBackend(): WorldBackend {
           }).catch(() => {});
         },
       };
+    },
+
+    inventory: {
+      async getInventory(worldId) {
+        return apiJson<InventorySnapshot>(`/inventory?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async claimFreeKibble(worldId, idempotencyKey) {
+        return apiJson<InventorySnapshot>('/inventory/claim-free-kibble', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, idempotencyKey }),
+        });
+      },
+    },
+
+    pet: {
+      async getPetSnapshot(worldId) {
+        return apiJson<PetSnapshot | null>(`/pet?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async adoptOrRenamePet(params) {
+        return apiJson<PetSnapshot>('/pet/adopt-or-rename', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async interactPet(params) {
+        return apiJson<PetInteractionResult>('/pet/interact', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    study: {
+      async getStudySnapshot(worldId) {
+        return apiJson<StudySnapshot>(`/study?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async startSession(params) {
+        return apiJson<StudySnapshot>('/study/start', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async controlSession(params) {
+        return apiJson<StudySnapshot>('/study/control', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    mailbox: {
+      async listMailbox(worldId) {
+        return apiJson<MailboxSnapshot>(`/mailbox?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async sendLetterOrGift(params) {
+        return apiJson<{ mailbox: MailboxSnapshot; inventory: InventorySnapshot }>('/mailbox/send', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async openItem(params) {
+        return apiJson<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>(
+          '/mailbox/open',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+    },
+
+    devConsole: {
+      async spawnItem(params) {
+        return apiJson<InventorySnapshot>('/dev-console/spawn-item', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async setPetVitals(params) {
+        return apiJson<PetSnapshot>('/dev-console/set-pet', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async advanceStudy(params) {
+        return apiJson<StudySnapshot>('/dev-console/advance-study', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async exportSnapshot(worldId) {
+        return apiJson<DevSanitizedWorldSnapshot>(
+          `/dev-console/snapshot-export?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async restoreSnapshot(worldId, snapshot) {
+        return apiJson<{ restored: true }>('/dev-console/snapshot-restore', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, snapshot }),
+        });
+      },
     },
   };
 }

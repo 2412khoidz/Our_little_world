@@ -20,6 +20,16 @@ const FORBIDDEN_PROD_MARKERS = [
   'btn-dev-seed-couple',
   'menu-spike-lab',
   'dev-identity-picker',
+  'dev-console-drawer',
+  'dev-console-k6',
+  'dev-console/spawn-item',
+  'v03-dev-prototypes',
+  'pet-lab-sandbox',
+  'menu-pet-debugger',
+  'pet-art-sandbox',
+  'ui-variant-sandbox',
+  'world-expansion-sandbox',
+  'combined-experience-demo',
 ];
 
 const jsFiles = fs.readdirSync(distAssets).filter((f) => f.endsWith('.js'));

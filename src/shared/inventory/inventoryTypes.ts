@@ -1,0 +1,29 @@
+export type InventoryOwnerScope = 'shared' | `user:${string}`;
+
+export type ItemPurpose = 'pet_food' | 'gift' | 'stationery' | 'keepsake';
+
+export interface InventoryCatalogItem {
+  sku: string;
+  nameVi: string;
+  descriptionVi: string;
+  purpose: ItemPurpose;
+  stackLimit: number;
+  tradeable: boolean;
+}
+
+export interface InventoryEntry {
+  worldId: string;
+  ownerScope: InventoryOwnerScope;
+  itemSku: string;
+  qty: number;
+  updatedAt: string;
+}
+
+export interface InventorySnapshot {
+  worldId: string;
+  serverNowMs: number;
+  serverDateUtc: string;
+  canClaimFreeKibble: boolean;
+  catalog: readonly InventoryCatalogItem[];
+  items: InventoryEntry[];
+}

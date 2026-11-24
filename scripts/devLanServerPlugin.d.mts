@@ -7,4 +7,4 @@ export interface DevLanMiddleware {
 }
 
 export function createDevLanHandler(options?: { stateFilePath?: string }): DevLanMiddleware;
-export function devLanServerPlugin(): Plugin;
+export function devLanServerPlugin(options?: { stateFilePath?: string }): Plugin;

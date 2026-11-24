@@ -1,10 +1,16 @@
 import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
+  Backpack,
+  BookOpen,
+  Bug,
+  Cat,
   FlaskConical,
   Gamepad2,
   LogOut,
+  Mail,
   RotateCcw,
   Smartphone,
+  Sparkles,
   UserCheck,
   UserPlus,
   X,
@@ -18,8 +24,15 @@ interface MenuModalProps {
   showJoystick: boolean;
   onToggleJoystick: () => void;
   onOpenInvite: () => void;
+  onOpenInventory?: () => void;
+  onOpenPet?: () => void;
+  onOpenStudy?: () => void;
+  onOpenMailbox?: () => void;
+  mailboxUnreadCount?: number;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
+  onOpenDevConsole?: () => void;
+  onOpenV03Prototypes?: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
   onResetDevWorld?: () => void;
   onSignOut: () => void;
@@ -32,8 +45,15 @@ export function MenuModal({
   showJoystick,
   onToggleJoystick,
   onOpenInvite,
+  onOpenInventory,
+  onOpenPet,
+  onOpenStudy,
+  onOpenMailbox,
+  mailboxUnreadCount = 0,
   onOpenPwaGuide,
   onOpenSpikeLab,
+  onOpenDevConsole,
+  onOpenV03Prototypes,
   onQuickSwitchDev,
   onResetDevWorld,
   onSignOut,
@@ -67,6 +87,62 @@ export function MenuModal({
         >
           <UserPlus size={17} /> Ghép cặp &amp; Mã mời
         </button>
+
+        {onOpenInventory && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-inventory"
+            onClick={() => {
+              onClose();
+              onOpenInventory();
+            }}
+          >
+            <Backpack size={17} /> Túi đồ &amp; Hạt mèo (0₫)
+          </button>
+        )}
+
+        {onOpenPet && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-pet"
+            onClick={() => {
+              onClose();
+              onOpenPet();
+            }}
+          >
+            <Cat size={17} /> Bé mèo cam
+          </button>
+        )}
+
+        {onOpenStudy && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-study"
+            onClick={() => {
+              onClose();
+              onOpenStudy();
+            }}
+          >
+            <BookOpen size={17} /> Phòng học yên tĩnh (Pomodoro)
+          </button>
+        )}
+
+        {onOpenMailbox && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-mailbox"
+            onClick={() => {
+              onClose();
+              onOpenMailbox();
+            }}
+          >
+            <Mail size={17} /> Hộp thư &amp; Quà{mailboxUnreadCount > 0 ? ` (${mailboxUnreadCount} mới)` : ''}
+          </button>
+        )}
 
         <button type="button" className="btn btn--secondary" onClick={onToggleJoystick}>
           <Gamepad2 size={17} />
@@ -112,6 +188,34 @@ export function MenuModal({
             >
               <FlaskConical size={16} /> Spike 0 Lab (Đo hiệu năng &amp; Video Sync PoC)
             </button>
+
+            {onOpenDevConsole && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-dev-console"
+                onClick={() => {
+                  onClose();
+                  onOpenDevConsole();
+                }}
+              >
+                <Bug size={16} /> Dev Console K6 (Ctrl+Shift+D)
+              </button>
+            )}
+
+            {onOpenV03Prototypes && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-v03-prototypes"
+                onClick={() => {
+                  onClose();
+                  onOpenV03Prototypes();
+                }}
+              >
+                <Sparkles size={16} /> Prototype UI V0.3 (Dev-only)
+              </button>
+            )}
 
             {backendMode === 'dev-lan' && onQuickSwitchDev && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
