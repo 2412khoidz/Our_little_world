@@ -39,6 +39,8 @@ describe('experiments — income metrics separate the denominators', () => {
       profileId: 'v021',
       personaId: 'optimizer',
       days: 30,
+      // Strategy, not persona, decides monoculture now.
+      strategy: 'monoculture',
     });
     const casualDiversity = diversityMetrics(casual);
     const optimizerDiversity = diversityMetrics(optimizer);

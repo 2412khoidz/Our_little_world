@@ -56,6 +56,12 @@ export interface WorldState {
   stats: SimStats;
   decorPurchases: string[];
   actionLog: string[];
+  /** Independent journal of every item movement (oracle for conservation). */
+  itemJournal: ItemJournalEntry[];
+  /** Seconds spent beyond the declared session length (selling/shopping). */
+  overrunSeconds: number;
+  /** Rotation cursor for the balanced crop policy. */
+  cropCycle: number;
   /** Server seed that also drives the deterministic order board. */
   seed: number;
   orderBoard: OrderBoardState | null;
@@ -76,6 +82,7 @@ function emptyStats(): SimStats {
     itemsBought: 0,
     decorBought: 0,
     seedsPlanted: 0,
+    stackCapped: 0,
   };
 }
 
@@ -106,6 +113,9 @@ export function createWorld(
     stats: emptyStats(),
     decorPurchases: [],
     actionLog: [],
+    itemJournal: [],
+    overrunSeconds: 0,
+    cropCycle: 0,
     seed,
     orderBoard: null,
   };
@@ -172,6 +182,66 @@ export function qtyOf(inventory: QualityInventory, sku: string): number {
 }
 
 /** Consumes lowest quality first; returns false (and changes nothing) when short. */
+export interface ItemJournalEntry {
+  readonly sku: string;
+  readonly qty: number;
+  readonly reason: string;
+  readonly quality?: ItemQuality;
+}
+
+export function journalItem(
+  state: WorldState,
+  sku: string,
+  qty: number,
+  reason: string,
+  quality?: ItemQuality,
+): void {
+  if (qty === 0) {
+    return;
+  }
+  state.itemJournal.push({ sku, qty, reason, quality });
+  if (state.itemJournal.length > 50_000) {
+    state.itemJournal.shift();
+  }
+}
+
+/** Adds items honouring the catalog stack limit; overflow is counted, not hidden. */
+export function addTo(
+  state: WorldState,
+  sku: string,
+  qty: number,
+  quality: ItemQuality,
+  reason: string,
+): void {
+  if (qty <= 0) {
+    return;
+  }
+  const item = CATALOG_BY_SKU.get(sku);
+  const cap = item?.stackLimit ?? Number.MAX_SAFE_INTEGER;
+  const current = qtyOf(state.inventory, sku);
+  const allowed = Math.max(0, Math.min(qty, cap - current));
+  if (allowed > 0) {
+    addItems(state.inventory, sku, allowed, quality);
+    journalItem(state, sku, allowed, reason, quality);
+  }
+  if (allowed < qty) {
+    state.stats.stackCapped += qty - allowed;
+  }
+}
+
+export function takeFrom(
+  state: WorldState,
+  sku: string,
+  qty: number,
+  reason: string,
+): boolean {
+  if (!removeItems(state.inventory, sku, qty)) {
+    return false;
+  }
+  journalItem(state, sku, -qty, reason);
+  return true;
+}
+
 export function removeItems(inventory: QualityInventory, sku: string, qty: number): boolean {
   if (qty <= 0) {
     return true;
@@ -206,6 +276,14 @@ export function plotValueCoins(state: WorldState): number {
     total += seed && seed.storeBuy !== null ? seed.storeBuy : 0;
   }
   return total;
+}
+
+export function inventorySnapshot(state: WorldState): Record<string, number> {
+  const snapshot: Record<string, number> = {};
+  for (const sku of Object.keys(state.inventory)) {
+    snapshot[sku] = qtyOf(state.inventory, sku);
+  }
+  return snapshot;
 }
 
 export function inventoryValueCoins(inventory: QualityInventory): number {
@@ -287,12 +365,12 @@ function allocateBudget(remainingSeconds: number, weights: ActivityBudget): Acti
   };
 }
 
-function harvestBatch(state: WorldState, item: ItemDefinition, rng: RngStream): void {
-  addItems(state.inventory, item.sku, item.batchQty, rollQuality(item, rng));
+function harvestBatch(state: WorldState, item: ItemDefinition, qualityRng: RngStream): void {
+  addTo(state, item.sku, item.batchQty, rollQuality(item, qualityRng), 'harvest');
   state.stats.harvests += 1;
 }
 
-function harvestReadyPlots(state: WorldState, clock: SessionClock, rng: RngStream): void {
+function harvestReadyPlots(state: WorldState, clock: SessionClock, qualityRng: RngStream): void {
   for (let index = 0; index < state.plots.length; index += 1) {
     const plot = state.plots[index];
     if (!plot || plot.readyAtMs > state.nowMs) {
@@ -307,7 +385,7 @@ function harvestReadyPlots(state: WorldState, clock: SessionClock, rng: RngStrea
     if (!item) {
       continue;
     }
-    harvestBatch(state, item, rng);
+    harvestBatch(state, item, qualityRng);
     clock.remaining -= ACTION_SECONDS.harvest;
     clock.used += ACTION_SECONDS.harvest;
   }
@@ -336,7 +414,7 @@ function runForage(
       profile.forage.skus.length > 1 && rng.chance(branchWeight / (herbWeight + branchWeight))
         ? (profile.forage.skus[1] as string)
         : (profile.forage.skus[0] as string);
-    addItems(state.inventory, sku, 1, 'normal');
+    addTo(state, sku, 1, 'normal', 'forage');
     state.stats.foraged += 1;
   }
   return units * ACTION_SECONDS.forage;
@@ -365,14 +443,22 @@ export function availableCrops(profile: SimProfile): ItemDefinition[] {
   );
 }
 
+/**
+ * Cropping policy is a *strategy* decision, not a persona one:
+ * - `monoculture` always picks the highest coins-per-action-second crop.
+ * - `balanced` rotates groups deterministically, so the two arms of a comparison
+ *   really take different decisions (the old code let `persona.id === 'optimizer'`
+ *   override the strategy and produced ratio 1). Persona affinity now only
+ *   affects the activity budget, never the crop policy.
+ */
 function pickCrop(
-  persona: PersonaDefinition,
+  state: WorldState,
   strategy: StrategyId,
   crops: readonly ItemDefinition[],
-  rng: RngStream,
 ): ItemDefinition {
-  if (strategy === 'monoculture' || persona.id === 'optimizer') {
-    let best = crops[0] as ItemDefinition;
+  const first = crops[0] as ItemDefinition;
+  if (strategy === 'monoculture') {
+    let best = first;
     let bestRate = cropRatePerSecond(best);
     for (const crop of crops) {
       const rate = cropRatePerSecond(crop);
@@ -383,19 +469,12 @@ function pickCrop(
     }
     return best;
   }
-  if (persona.id === 'decorator') {
-    const flowers = crops.filter((crop) => crop.group === 'flower');
-    if (flowers.length > 0 && rng.chance(0.7)) {
-      return rng.pick(flowers);
-    }
-  }
-  if (persona.id === 'mixed_craft_fish') {
-    const veggies = crops.filter((crop) => crop.group === 'veg' || crop.group === 'grain');
-    if (veggies.length > 0) {
-      return rng.pick(veggies);
-    }
-  }
-  return rng.pick(crops);
+  const groups = [...new Set(crops.map((crop) => crop.group))].sort();
+  const group = groups[state.cropCycle % groups.length] ?? first.group;
+  const pool = crops.filter((crop) => crop.group === group);
+  const crop = pool[state.cropCycle % Math.max(1, pool.length)] ?? first;
+  state.cropCycle += 1;
+  return crop;
 }
 
 export function pickBestCropForReport(crops: readonly ItemDefinition[]): ItemDefinition | null {
@@ -414,10 +493,9 @@ export function pickBestCropForReport(crops: readonly ItemDefinition[]): ItemDef
 function runFarm(
   state: WorldState,
   profile: SimProfile,
-  persona: PersonaDefinition,
   sliceSeconds: number,
-  rng: RngStream,
   strategy: StrategyId,
+  qualityRng: RngStream,
 ): number {
   if (!profile.features.farming || profile.plotCount <= 0) {
     return 0;
@@ -443,7 +521,7 @@ function runFarm(
       state.plots.splice(maturedIndex, 1);
       const item = CATALOG_BY_SKU.get(plot.sku);
       if (item) {
-        harvestBatch(state, item, rng);
+        harvestBatch(state, item, qualityRng);
       }
       clock += ACTION_SECONDS.harvest;
       continue;
@@ -451,7 +529,7 @@ function runFarm(
     if (state.plots.length >= profile.plotCount) {
       break;
     }
-    const crop = pickCrop(persona, strategy, crops, rng);
+    const crop = pickCrop(state, strategy, crops);
     const seedInput = crop.inputs[0];
     if (!seedInput) {
       break;
@@ -478,7 +556,12 @@ function runFarm(
   return clock;
 }
 
-function runFishing(state: WorldState, sliceSeconds: number, rng: RngStream): number {
+function runFishing(
+  state: WorldState,
+  sliceSeconds: number,
+  rng: RngStream,
+  qualityRng: RngStream,
+): number {
   if (sliceSeconds < ACTION_SECONDS.fish) {
     return 0;
   }
@@ -503,7 +586,7 @@ function runFishing(state: WorldState, sliceSeconds: number, rng: RngStream): nu
     }
     const fish = CATALOG_BY_SKU.get(chosen.sku);
     if (fish) {
-      addItems(state.inventory, fish.sku, 1, rollQuality(fish, rng));
+      addTo(state, fish.sku, 1, rollQuality(fish, qualityRng), 'fish');
       state.stats.fishCaught += 1;
     }
     clock += ACTION_SECONDS.fish;
@@ -539,15 +622,15 @@ function cookOne(state: WorldState, dish: ItemDefinition): boolean {
     recordCoin(state, 'spend', purchaseCost, 'buy_pantry');
   }
   for (const purchase of purchases) {
-    addItems(state.inventory, purchase.sku, purchase.qty, 'normal');
+    addTo(state, purchase.sku, purchase.qty, 'normal', 'buy_pantry');
     state.stats.itemsBought += purchase.qty;
   }
   for (const input of dish.inputs) {
-    if (!removeItems(state.inventory, input.sku, input.qty)) {
+    if (!takeFrom(state, input.sku, input.qty, 'cook_input')) {
       return false;
     }
   }
-  addItems(state.inventory, dish.sku, dish.batchQty, 'normal');
+  addTo(state, dish.sku, dish.batchQty, 'normal', 'cook');
   state.stats.dishesCooked += 1;
   return true;
 }
@@ -625,7 +708,7 @@ function fulfillOrders(state: WorldState, profile: SimProfile): number {
       continue;
     }
     for (const line of order.requirements) {
-      removeItems(state.inventory, line.sku, line.qty);
+      takeFrom(state, line.sku, line.qty, 'order');
     }
     recordCoin(state, 'earn', completion.rewardCoins, 'order_board');
     state.orderBoard = completion.board;
@@ -677,6 +760,7 @@ export function sellAll(state: WorldState): number {
       recordCoin(state, 'earn', coins, `sell_${sku}`);
       state.groupUnitsSold[item.group] = (state.groupUnitsSold[item.group] ?? 0) + qty;
       counts[quality] = 0;
+      journalItem(state, sku, -qty, 'sell');
       state.stats.itemsSold += qty;
       seconds += ACTION_SECONDS.sell;
     }
@@ -716,12 +800,13 @@ export function runDay(
   rng: RngStream,
   strategy: StrategyId,
   decorSinks: readonly DecorSink[],
+  qualityRng: RngStream = rng,
 ): number {
   const [minSeconds, maxSeconds] = persona.dailyActiveSeconds;
   const sessionLength = rng.int(minSeconds, maxSeconds + 1);
   const clock: SessionClock = { remaining: sessionLength, used: 0 };
 
-  harvestReadyPlots(state, clock, rng);
+  harvestReadyPlots(state, clock, qualityRng);
 
   const weights = effectiveWeights(persona, profile);
   const budget = allocateBudget(clock.remaining, weights);
@@ -733,8 +818,8 @@ export function runDay(
   };
 
   spent(runForage(state, profile, budget.forage, rng));
-  spent(runFarm(state, profile, persona, budget.farm, rng, strategy));
-  spent(runFishing(state, budget.fish, rng));
+  spent(runFarm(state, profile, budget.farm, strategy, qualityRng));
+  spent(runFishing(state, budget.fish, rng, qualityRng));
   spent(runCooking(state, profile, budget.cook, rng));
   // Orders are fulfilled before the bin: they pay a premium, so the household
   // reserves stock for them and only dumps the leftovers.
@@ -748,11 +833,15 @@ export function runDay(
   const decorSeconds = buyDecor(state, persona, decorAvailable, rng);
   clock.used += sellSeconds + decorSeconds;
 
-  // Coins-per-minute is measured against the whole session: a player who fills
-  // 6 minutes of a 20-minute session and idles still played 20 minutes.
-  state.activeSeconds += sessionLength;
-  state.workedSeconds += Math.min(clock.used, sessionLength);
-  state.idleSeconds += Math.max(0, sessionLength - Math.min(clock.used, sessionLength));
+  // Coins-per-minute is measured against real online time. Selling/shopping can
+  // overrun the declared session; that overrun is counted as online time instead
+  // of being silently dropped, so actions never "fit" for free.
+  const workedInSession = Math.min(clock.used, sessionLength);
+  const overtime = Math.max(0, clock.used - sessionLength);
+  state.activeSeconds += sessionLength + overtime;
+  state.workedSeconds += clock.used;
+  state.idleSeconds += Math.max(0, sessionLength - workedInSession);
+  state.overrunSeconds += overtime;
   state.plotDays += state.plots.length;
   state.actionLog.push(
     `d${state.day}:${persona.id}:${Math.round(clock.used)}s wallet=${state.coins}c`,

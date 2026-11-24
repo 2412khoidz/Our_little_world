@@ -354,6 +354,7 @@ export function runSaturationSweep(input: {
           personaId,
           days: input.days,
           saturation: config,
+          strategy: personaId === 'optimizer' ? 'monoculture' : 'balanced',
         });
         metrics.push(incomeMetrics(result));
         diversity.push(diversityMetrics(result));
@@ -529,6 +530,8 @@ export function compareMarketPolicies(input: {
           personaId,
           days: input.days,
           market: policy,
+          // The optimizer persona is only "monoculture" through its strategy now.
+          strategy: personaId === 'optimizer' ? 'monoculture' : 'balanced',
         });
         const last = result.snapshots[result.snapshots.length - 1];
         metrics.push(incomeMetrics(result));

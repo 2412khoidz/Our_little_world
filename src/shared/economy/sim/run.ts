@@ -9,6 +9,7 @@ import { CATALOG_VERSION, catalogFingerprint, requireItem } from '../catalogConf
 import { replayLedger } from '../ledgerMath.ts';
 import { createRng, deriveSeed } from '../../rng.ts';
 import { DEFAULT_SATURATION } from '../types.ts';
+import { FORAGE_NODES, claimForage, createForageState } from '../forage.ts';
 import { baselinePolicy } from './marketPolicies.ts';
 import {
   ACTION_SECONDS,
@@ -25,11 +26,12 @@ import {
   getProfile,
 } from './config.ts';
 import {
-  addItems,
+  addTo,
   availableCrops,
   checkInvariants,
   createWorld,
   resetDayAccounting,
+  inventorySnapshot,
   inventoryValueCoins,
   pickBestCropForReport,
   plotValueCoins,
@@ -76,6 +78,7 @@ function makeSnapshot(
     activeSeconds: state.activeSeconds,
     workedSeconds: state.workedSeconds,
     idleSeconds: state.idleSeconds,
+    overrunSeconds: state.overrunSeconds,
     plotDays: state.plotDays,
     soldValueToday: state.soldValueToday,
     netIncomeCoins: netIncome,
@@ -100,7 +103,10 @@ export function runSimulation(options: SimOptions): SimResult {
   const startingCoins = options.startingCoins ?? STARTING_COINS;
   // Strategy is not part of the seed: both arms see the same random stream so a
   // comparison measures the strategy, not a different roll of the dice.
-  const rng = createRng(deriveSeed(options.seed, profile.id, persona.id));
+  const rng = createRng(deriveSeed(options.seed, profile.id, persona.id, 'choice'));
+  // Quality/order randomness gets its own channel so the two comparison arms see
+  // the same rolls even when their action choices diverge.
+  const qualityRng = createRng(deriveSeed(options.seed, profile.id, persona.id, 'quality'));
   const market = options.market ?? baselinePolicy(options.saturation ?? DEFAULT_SATURATION);
   const state = createWorld(startingCoins, START_MS, options.seed, market);
   const snapshots: MilestoneSnapshot[] = [];
@@ -121,7 +127,7 @@ export function runSimulation(options: SimOptions): SimResult {
 
     const playsToday = persona.playEveryDays === null || day >= nextPlayDay;
     if (playsToday) {
-      runDay(state, persona, profile, rng, strategy, DECOR_SINKS);
+      runDay(state, persona, profile, rng, strategy, DECOR_SINKS, qualityRng);
       playDays += 1;
       if (persona.awayDaysRange) {
         nextPlayDay = day + rng.int(persona.awayDaysRange[0], persona.awayDaysRange[1] + 1);
@@ -178,6 +184,9 @@ export function runSimulation(options: SimOptions): SimResult {
     absentDays,
     invariants: { ok: issues.length === 0, issues },
     actionLog: [...state.actionLog],
+    finalInventory: inventorySnapshot(state),
+    itemJournal: [...state.itemJournal],
+    ledger: [...state.ledger],
   };
 }
 
@@ -277,8 +286,14 @@ export function measureZeroWalletRecovery(
   const target = requireItem(RECOVERY_TARGET_SKU);
   const requiredCoins = target.storeBuy ?? 0;
   const log: string[] = [];
-  const state = createWorld(0, START_MS, seed);
+  const world = createWorld(0, START_MS, seed);
+  let forageState = createForageState({}, START_MS);
   let seconds = 0;
+  let nodeIndex = 0;
+  // Real actions only: claim an actually-available node, then sell through the
+  // bin. Respawn/availability is respected; waiting advances world time but is
+  // NOT counted as active play.
+  const deadlineMs = START_MS + 30 * 60_000;
 
   if (!profile.features.forage) {
     return {
@@ -293,21 +308,35 @@ export function measureZeroWalletRecovery(
     };
   }
 
-  for (let attempt = 0; attempt < 8 && state.coins < requiredCoins; attempt += 1) {
-    const sku = profile.forage.skus[attempt % profile.forage.skus.length] ?? 'wild_herb';
-    addItems(state.inventory, sku, 1, 'normal');
+  while (world.coins < requiredCoins && world.nowMs < deadlineMs && nodeIndex < 12) {
+    const node = FORAGE_NODES[nodeIndex % FORAGE_NODES.length];
+    if (!node) {
+      break;
+    }
+    const claim = claimForage(forageState, { nodeId: node.nodeId, nowMs: world.nowMs });
+    if (!claim.ok) {
+      log.push(`Chưa hái được ${node.nodeId} (${claim.code}) — chờ hồi`);
+      world.nowMs += Math.max(60_000, node.respawnMs);
+      nodeIndex += 1;
+      continue;
+    }
+    forageState = claim.state;
+    addTo(world, claim.item.sku, claim.item.qty, 'normal', 'forage');
     seconds += ACTION_SECONDS.forage;
-    seconds += sellAll(state);
-    log.push(`Hái ${sku} (+${ACTION_SECONDS.forage}s) và bán qua Shipping Bin -> ${state.coins} xu`);
+    seconds += sellAll(world);
+    log.push(
+      `Hái ${claim.item.sku} tại ${node.nodeId} (+${ACTION_SECONDS.forage}s) rồi bán -> ${world.coins} xu`,
+    );
+    nodeIndex += 1;
   }
 
   return {
     profileId,
     personaId,
     seed,
-    recovered: state.coins >= requiredCoins && seconds <= RECOVERY_DEADLINE_SECONDS,
+    recovered: world.coins >= requiredCoins && seconds <= RECOVERY_DEADLINE_SECONDS,
     secondsToRecover: seconds,
-    walletAfterRecovery: state.coins,
+    walletAfterRecovery: world.coins,
     requiredCoins,
     log,
   };

@@ -102,6 +102,8 @@ export interface SimStats {
   itemsBought: number;
   decorBought: number;
   seedsPlanted: number;
+  /** Items refused because the SKU stack limit would be exceeded. */
+  stackCapped: number;
 }
 
 export interface MilestoneSnapshot {
@@ -114,6 +116,7 @@ export interface MilestoneSnapshot {
   /** Seconds actually spent on productive actions (not idle session time). */
   readonly workedSeconds: number;
   readonly idleSeconds: number;
+  readonly overrunSeconds: number;
   readonly plotDays: number;
   readonly soldValueToday: number;
   readonly netIncomeCoins: number;
@@ -151,6 +154,21 @@ export interface SimResult {
   readonly absentDays: number;
   readonly invariants: { readonly ok: boolean; readonly issues: readonly InvariantIssue[] };
   readonly actionLog: readonly string[];
+  readonly finalInventory: Readonly<Record<string, number>>;
+  readonly itemJournal: readonly {
+    readonly sku: string;
+    readonly qty: number;
+    readonly reason: string;
+    readonly quality?: ItemQuality;
+  }[];
+  readonly ledger: readonly {
+    readonly id: string;
+    readonly kind: 'earn' | 'grant' | 'spend';
+    readonly deltaCoins: number;
+    readonly reason: string;
+    readonly idempotencyKey: string;
+    readonly createdAt: number;
+  }[];
 }
 
 export interface RecoveryProbe {
