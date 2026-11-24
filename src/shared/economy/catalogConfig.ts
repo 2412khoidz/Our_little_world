@@ -15,7 +15,7 @@
  *   instant-arbitrage check, not the player-visible timer.
  */
 
-import { divFloor, mulBp, saturationMultiplierBp } from './ledgerMath';
+import { divFloor, mulBp, saturationMultiplierBp } from './ledgerMath.ts';
 import type {
   ItemDefinition,
   ItemGroup,
@@ -25,7 +25,7 @@ import type {
   SellChannel,
   SellQuote,
   SaturationConfig,
-} from './types';
+} from './types.ts';
 import {
   DEFAULT_SATURATION,
   isMilestoneAtOrBefore,
@@ -33,7 +33,7 @@ import {
   MILESTONE_ORDER,
   QUALITY_MULTIPLIER_BP,
   SELL_CHANNELS,
-} from './types';
+} from './types.ts';
 
 /** Bumped whenever a price/labor number changes, for report traceability. */
 export const CATALOG_VERSION = 'olw-economy-v0.2.0-r1';
@@ -335,6 +335,7 @@ export type CatalogIssueCode =
   | 'BAD_SELL_CHANNEL'
   | 'INPUT_MILESTONE_AHEAD'
   | 'UNREACHABLE_SELLABLE'
+  | 'NO_ACQUISITION_PATH'
   | 'STANDARD_VALUE_DRIFT';
 
 export interface CatalogIssue {
@@ -478,6 +479,20 @@ export function validateCatalog(
         'UNREACHABLE_SELLABLE',
         definition.sku,
         'Vật phẩm có giá bán nhưng không có kênh bán nào',
+      );
+    }
+    // Sellable but neither purchasable, craftable nor forageable: the design
+    // table never says how the player obtains it (e.g. `peach` has no sapling SKU).
+    if (
+      definition.sellPrice > 0 &&
+      definition.storeBuy === null &&
+      definition.inputs.length === 0 &&
+      !definition.forageable
+    ) {
+      pushWarning(
+        'NO_ACQUISITION_PATH',
+        definition.sku,
+        'Có giá bán nhưng không có đường sở hữu (thiếu SKU đầu vào) — loại khỏi mô phỏng',
       );
     }
 

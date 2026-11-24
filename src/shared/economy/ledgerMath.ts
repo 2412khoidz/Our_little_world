@@ -12,8 +12,8 @@
  * wallet or the inventory.
  */
 
-import type { ItemQuality, SaturationConfig } from './types';
-import { DEFAULT_SATURATION, QUALITY_MULTIPLIER_BP } from './types';
+import type { ItemQuality, SaturationConfig } from './types.ts';
+import { DEFAULT_SATURATION, QUALITY_MULTIPLIER_BP } from './types.ts';
 
 /** Basis-point denominator. `10_000` bp = `1.0`. */
 export const BP_DENOM = 10_000;

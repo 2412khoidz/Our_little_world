@@ -28,13 +28,16 @@ describe('economy catalog — structure and SKU stability', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('documents exactly one standard-value drift from the design table', () => {
+  it('documents exactly the known design-table gaps', () => {
     const result = validateCatalog(ITEM_CATALOG);
     // carp_pond: the design table says V = 11.0 but its own inputs/labor/depreciation
     // sum to 12.0 under ECONOMY_MODEL §1. Downstream rows (herb_carp) were authored
     // against 11.0, so the authored value wins and the drift is reported, not hidden.
-    expect(result.warnings.map((warning) => warning.sku)).toEqual(['carp_pond']);
-    expect(result.warnings[0]?.code).toBe('STANDARD_VALUE_DRIFT');
+    // peach: PRODUCTION_CHAINS lists a perennial tree but no sapling SKU to buy.
+    expect(result.warnings.map((warning) => `${warning.code}:${warning.sku}`)).toEqual([
+      'STANDARD_VALUE_DRIFT:carp_pond',
+      'NO_ACQUISITION_PATH:peach',
+    ]);
     expect(deriveStandardValueBp(requireItem('carp_pond'))).toBe(120_000);
   });
 

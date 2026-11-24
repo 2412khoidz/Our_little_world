@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "economy:sim": "node scripts/economy-sim.ts",
     "assets:generate": "node scripts/generate-starter-assets.mjs",
     "assets:atlas": "node scripts/build-unified-atlas.mjs",
     "assets:atlas:private": "node scripts/build-unified-atlas.mjs --private",

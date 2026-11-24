@@ -13,8 +13,8 @@
  * coins-per-minute rate instead of being treated as failures.
  */
 
-import { ITEM_CATALOG } from './catalogConfig';
-import type { ItemDefinition } from './types';
+import { ITEM_CATALOG } from './catalogConfig.ts';
+import type { ItemDefinition } from './types.ts';
 
 export type ArbitrageKind = 'direct_resale' | 'instant_craft';
 

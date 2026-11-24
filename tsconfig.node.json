@@ -24,6 +24,7 @@
     "vitest.config.ts",
     "eslint.config.js",
     "playwright.config.ts",
+    "scripts/economy-sim.ts",
     "scripts/devLanServerPlugin.d.mts",
     "tests/server",
     "tests/e2e"

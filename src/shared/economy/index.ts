@@ -5,7 +5,7 @@
  * and (later) the SQL seed generator.
  */
 
-export * from './types';
-export * from './ledgerMath';
-export * from './catalogConfig';
-export * from './arbitrage';
+export * from './types.ts';
+export * from './ledgerMath.ts';
+export * from './catalogConfig.ts';
+export * from './arbitrage.ts';
