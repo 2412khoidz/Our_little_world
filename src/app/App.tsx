@@ -19,6 +19,8 @@ import type {
   WorldSnapshot,
 } from '../shared/types';
 import { AvatarModal } from '../features/avatar/AvatarModal';
+import { CoupleActionBar } from '../features/couple/CoupleActionBar';
+import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MenuModal } from '../features/home/MenuModal';
@@ -30,6 +32,14 @@ import { PetPanel } from '../features/pets/PetPanel';
 import { isPetSoundMuted, playPetFeedbackChime, setPetSoundMuted } from '../features/pets/petAudio';
 import { PomodoroPanel } from '../features/study/PomodoroPanel';
 import { setStudyAmbientTrack, stopStudyAmbient, type AmbientTrack } from '../features/study/ambientAudio';
+import { createHugInvite, validateInviteAcceptance } from '../shared/couple/coupleProtocol';
+import {
+  STATIC_PHOTO_PRESETS,
+  type CoupleEmoteId,
+  type CoupleEventPacket,
+  type CoupleInvitePayload,
+  type CouplePostureKind,
+} from '../shared/couple/coupleTypes';
 import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
@@ -121,7 +131,7 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -133,6 +143,18 @@ function MainCoupleApp() {
   const [studySeat, setStudySeat] = useState<'left' | 'right'>('left');
   const [ambientTrack, setAmbientTrack] = useState<AmbientTrack>('none');
   const [studyClockTick, setStudyClockTick] = useState(0);
+  const [localPosture, setLocalPosture] = useState<CouplePostureKind>('none');
+  const [incomingHugInvite, setIncomingHugInvite] = useState<CoupleInvitePayload | null>(null);
+  const [outgoingInviteExpiresAtMs, setOutgoingInviteExpiresAtMs] = useState<number | null>(null);
+  const [coupleClockNowMs, setCoupleClockNowMs] = useState(() => Date.now());
+  const [selectedPhotoPresetId, setSelectedPhotoPresetId] = useState<string>(
+    STATIC_PHOTO_PRESETS[0]!.id,
+  );
+  const consumedInviteIdsRef = useRef<Set<string>>(new Set());
+  const currentMapIdRef = useRef<MapId>(currentMapId);
+  useEffect(() => {
+    currentMapIdRef.current = currentMapId;
+  }, [currentMapId]);
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -368,6 +390,210 @@ function MainCoupleApp() {
 
   useEffect(() => () => stopStudyAmbient(), []);
 
+  useEffect(() => {
+    if (!incomingHugInvite && !outgoingInviteExpiresAtMs) return;
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      setCoupleClockNowMs(now);
+      setIncomingHugInvite((prev) => (prev && now >= prev.expiresAtMs ? null : prev));
+      setOutgoingInviteExpiresAtMs((prev) => (prev && now >= prev ? null : prev));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [incomingHugInvite, outgoingInviteExpiresAtMs]);
+
+  const handleCoupleEvent = useCallback(
+    (packet: CoupleEventPacket) => {
+      if (!currentUser || packet.worldId !== snapshotRef.current?.world.id) return;
+      if (packet.type === 'COUPLE_EMOTE') {
+        if (packet.userId !== currentUser.userId) {
+          gameEventBus.emit('cmd:spawn-emote', {
+            userId: packet.userId,
+            mapId: packet.mapId,
+            emote: packet.emote,
+          });
+        }
+        return;
+      }
+      if (packet.type === 'COUPLE_POSTURE') {
+        if (packet.userId !== currentUser.userId) {
+          gameEventBus.emit('cmd:sync-remote-posture', {
+            userId: packet.userId,
+            mapId: packet.mapId,
+            posture: packet.posture,
+            x: packet.x,
+            y: packet.y,
+            facing: packet.facing,
+          });
+        }
+        return;
+      }
+      if (packet.type === 'COUPLE_INVITE') {
+        if (
+          packet.toUserId === currentUser.userId &&
+          !consumedInviteIdsRef.current.has(packet.inviteId) &&
+          Date.now() < packet.expiresAtMs
+        ) {
+          setCoupleClockNowMs(Date.now());
+          setIncomingHugInvite(packet);
+        }
+        return;
+      }
+      if (packet.type === 'COUPLE_ACCEPT') {
+        if (packet.toUserId === currentUser.userId || packet.fromUserId === currentUser.userId) {
+          consumedInviteIdsRef.current.add(packet.inviteId);
+          setOutgoingInviteExpiresAtMs(null);
+          setIncomingHugInvite(null);
+          if (currentMapIdRef.current === packet.mapId) {
+            const isInviter = packet.toUserId === currentUser.userId;
+            const targetX = packet.anchorX + (isInviter ? -7 : 7);
+            const targetY = packet.anchorY;
+            const targetFacing: Direction = isInviter ? 'right' : 'left';
+            setLocalPosture('hug');
+            gameEventBus.emit('cmd:apply-local-posture', {
+              posture: 'hug',
+              x: targetX,
+              y: targetY,
+              facing: targetFacing,
+            });
+            gameEventBus.emit('cmd:spawn-emote', {
+              userId: currentUser.userId,
+              mapId: packet.mapId,
+              emote: 'hug_hearts',
+              local: true,
+            });
+          }
+          showToast('Hai người vừa ôm nhau một cái thật ấm ❤️');
+        }
+        return;
+      }
+      if (packet.type === 'COUPLE_DECLINE') {
+        if (packet.toUserId === currentUser.userId) {
+          setOutgoingInviteExpiresAtMs(null);
+          showToast('Người thương hẹn ôm sau một lát nhé.');
+        }
+        return;
+      }
+      if (packet.type === 'COUPLE_END') {
+        if (packet.userId !== currentUser.userId) {
+          gameEventBus.emit('cmd:sync-remote-posture', {
+            userId: packet.userId,
+            mapId: currentMapIdRef.current,
+            posture: 'none',
+            x: 0,
+            y: 0,
+            facing: 'down',
+          });
+        }
+      }
+    },
+    [currentUser, showToast],
+  );
+  const handleCoupleEventRef = useRef(handleCoupleEvent);
+  useEffect(() => {
+    handleCoupleEventRef.current = handleCoupleEvent;
+  }, [handleCoupleEvent]);
+
+  const handleSendEmote = useCallback(
+    (emote: CoupleEmoteId) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !currentUser) return;
+      gameEventBus.emit('cmd:spawn-emote', {
+        userId: currentUser.userId,
+        mapId: currentMapId,
+        emote,
+        local: true,
+      });
+      realtimeRef.current?.publishCoupleEvent?.({
+        type: 'COUPLE_EMOTE',
+        worldId: targetWorldId,
+        userId: currentUser.userId,
+        mapId: currentMapId,
+        emote,
+        sentAtMs: Date.now(),
+      });
+    },
+    [currentMapId, currentUser],
+  );
+
+  const handleRequestHug = useCallback(() => {
+    const snap = snapshotRef.current;
+    if (!snap || !currentUser) return;
+    const partner = presences.find(
+      (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
+    );
+    if (!partner) {
+      showToast('Hãy vào cùng một phòng với người thương để ôm nhau nhé.', true);
+      return;
+    }
+    const now = Date.now();
+    const anchorX = Math.round(((localTileRef.current.tileX + 0.5) * 16 + (partner.tileX + 0.5) * 16) / 2);
+    const anchorY = Math.round(((localTileRef.current.tileY + 1) * 16 + (partner.tileY + 1) * 16) / 2);
+    const invite = createHugInvite({
+      inviteId: makeIdempotencyKey('hug'),
+      worldId: snap.world.id,
+      fromUserId: currentUser.userId,
+      fromSessionId: sessionId,
+      toUserId: partner.userId,
+      mapId: currentMapId,
+      anchorX,
+      anchorY,
+      nowMs: now,
+    });
+    setCoupleClockNowMs(now);
+    setOutgoingInviteExpiresAtMs(invite.expiresAtMs);
+    realtimeRef.current?.publishCoupleEvent?.(invite);
+    showToast('Đã gửi lời mời ôm nhau (15 giây)...');
+  }, [currentMapId, currentUser, presences, sessionId, showToast]);
+
+  const handleAcceptHug = useCallback(() => {
+    if (!incomingHugInvite || !currentUser) return;
+    const check = validateInviteAcceptance(
+      incomingHugInvite,
+      currentUser.userId,
+      currentMapId,
+      Date.now(),
+      consumedInviteIdsRef.current,
+    );
+    if (!check.ok) {
+      setIncomingHugInvite(null);
+      showToast('Lời mời ôm đã hết hạn hoặc không còn ở cùng phòng.', true);
+      return;
+    }
+    consumedInviteIdsRef.current.add(incomingHugInvite.inviteId);
+    setIncomingHugInvite(null);
+    realtimeRef.current?.publishCoupleEvent?.(check.accept);
+    setLocalPosture('hug');
+    gameEventBus.emit('cmd:apply-local-posture', {
+      posture: 'hug',
+      x: check.accept.anchorX + 7,
+      y: check.accept.anchorY,
+      facing: 'left',
+    });
+    gameEventBus.emit('cmd:spawn-emote', {
+      userId: currentUser.userId,
+      mapId: check.accept.mapId,
+      emote: 'hug_hearts',
+      local: true,
+    });
+  }, [currentMapId, currentUser, incomingHugInvite, showToast]);
+
+  const handleDeclineHug = useCallback(() => {
+    if (!incomingHugInvite || !currentUser) return;
+    realtimeRef.current?.publishCoupleEvent?.({
+      type: 'COUPLE_DECLINE',
+      inviteId: incomingHugInvite.inviteId,
+      worldId: incomingHugInvite.worldId,
+      fromUserId: currentUser.userId,
+      toUserId: incomingHugInvite.fromUserId,
+    });
+    setIncomingHugInvite(null);
+  }, [currentUser, incomingHugInvite]);
+
+  const handleStandUp = useCallback(() => {
+    setLocalPosture('none');
+    gameEventBus.emit('cmd:cancel-local-posture');
+  }, []);
+
   // Initial auth bootstrap & subscription
   useEffect(() => {
     let active = true;
@@ -450,6 +676,9 @@ function MainCoupleApp() {
         },
         onConnectionChange: (status) => {
           setConnectionStatus(status);
+        },
+        onCoupleEvent: (packet) => {
+          handleCoupleEventRef.current(packet);
         },
       })
       .then((handle) => {
@@ -580,6 +809,27 @@ function MainCoupleApp() {
       setDiagnostics(diag);
     });
 
+    const unsubPhoto = gameEventBus.on('evt:open-photo-frame', () => {
+      setActiveModal('photo');
+    });
+
+    const unsubPosture = gameEventBus.on('evt:local-posture-changed', (evt) => {
+      setLocalPosture(evt.posture);
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !currentUser) return;
+      realtimeRef.current?.publishCoupleEvent?.({
+        type: 'COUPLE_POSTURE',
+        worldId: targetWorldId,
+        userId: currentUser.userId,
+        mapId: evt.mapId,
+        posture: evt.posture,
+        slotIndex: evt.slotIndex,
+        x: evt.x,
+        y: evt.y,
+        facing: evt.facing,
+      });
+    });
+
     return () => {
       unsubMove();
       unsubTile();
@@ -591,8 +841,10 @@ function MainCoupleApp() {
       unsubPreview();
       unsubSelect();
       unsubDiag();
+      unsubPhoto();
+      unsubPosture();
     };
-  }, [refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
+  }, [currentUser, refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
@@ -905,6 +1157,27 @@ function MainCoupleApp() {
         toast={toast}
       />
 
+      {!decorateActive && !isAnyModalOpen && (
+        <CoupleActionBar
+          partnerOnlineSameRoom={presences.some(
+            (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
+          )}
+          localPosture={localPosture}
+          incomingInvite={incomingHugInvite}
+          inviteRemainingSec={
+            incomingHugInvite
+              ? Math.max(0, Math.ceil((incomingHugInvite.expiresAtMs - coupleClockNowMs) / 1000))
+              : 0
+          }
+          outgoingInviteActive={outgoingInviteExpiresAtMs !== null}
+          onSendEmote={handleSendEmote}
+          onRequestHug={handleRequestHug}
+          onAcceptHug={handleAcceptHug}
+          onDeclineHug={handleDeclineHug}
+          onStandUp={handleStandUp}
+        />
+      )}
+
       {decorateActive ? (
         <DecorateDrawer
           currentMapId={currentMapId}
@@ -1060,6 +1333,14 @@ function MainCoupleApp() {
           onChangeAmbient={(track) => setAmbientTrack(setStudyAmbientTrack(track))}
           onStartSession={handleStartStudy}
           onControlSession={handleControlStudy}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'photo' && (
+        <PhotoFrameModal
+          selectedPresetId={selectedPhotoPresetId}
+          onSelectPreset={setSelectedPhotoPresetId}
           onClose={() => setActiveModal(null)}
         />
       )}

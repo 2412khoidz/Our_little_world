@@ -1,3 +1,4 @@
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetActionType, PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
@@ -42,6 +43,7 @@ export interface RealtimeHandlers {
   onPresenceChange: (presences: PresencePayload[]) => void;
   onMovement: (packet: MovementPacket) => void;
   onWorldMutated: (reason: WorldMutationReason) => void;
+  onCoupleEvent?: (packet: CoupleEventPacket) => void;
   onConnectionChange: (status: ConnectionStatus) => void;
 }
 
@@ -49,6 +51,7 @@ export interface RealtimeHandle {
   publishMovement: (packet: MovementPacket) => void;
   updatePresence: (presence: PresencePayload) => void;
   notifyWorldMutated: (reason: WorldMutationReason) => void;
+  publishCoupleEvent?: (packet: CoupleEventPacket) => void;
   reconnect: () => Promise<void>;
   setSimulatedOffline?: (offline: boolean) => void;
   disconnect: () => Promise<void>;

@@ -860,6 +860,8 @@ export function createDevLanHandler({
           broadcastEvent(worldId, 'movement', payload, sessionId || null);
         } else if (kind === 'world_mutated') {
           broadcastEvent(worldId, 'world_mutated', payload ?? { reason: 'furniture' }, sessionId || null);
+        } else if (kind === 'couple_event' && payload) {
+          broadcastEvent(worldId, 'couple_event', payload, sessionId || null);
         } else if (kind === 'spike_cinema' && payload) {
           broadcastEvent(worldId, 'spike_cinema', payload, sessionId || null);
         }

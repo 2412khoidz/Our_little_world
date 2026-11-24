@@ -1,4 +1,5 @@
 import { parseAvatarConfig } from '../../shared/avatar';
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
@@ -317,6 +318,10 @@ export function createSupabaseBackend(): WorldBackend {
           handlers.onWorldMutated(reason);
         });
 
+        ch.on('broadcast', { event: 'couple_event' }, ({ payload }) => {
+          handlers.onCoupleEvent?.(payload as CoupleEventPacket);
+        });
+
         ch.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             handlers.onConnectionChange('connected');
@@ -353,6 +358,14 @@ export function createSupabaseBackend(): WorldBackend {
             type: 'broadcast',
             event: 'world_mutated',
             payload: { reason },
+          });
+        },
+        publishCoupleEvent(packet) {
+          if (!activeChannel) return;
+          void activeChannel.send({
+            type: 'broadcast',
+            event: 'couple_event',
+            payload: packet,
           });
         },
         async reconnect() {

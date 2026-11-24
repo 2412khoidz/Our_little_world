@@ -13,6 +13,8 @@ import {
   selectLatestPresenceByUser,
   stepInterpolatedPosition,
 } from '../../shared/realtime';
+import { getCoupleEmoteSymbol, pickAvailableSharedSlot } from '../../shared/couple/coupleProtocol';
+import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
 import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   AvatarConfig,
@@ -60,6 +62,8 @@ interface RemoteAvatarEntity {
   targetY: number;
   facing: Direction;
   anim: 'idle' | 'walk';
+  posture: CouplePostureKind;
+  blanket?: Phaser.GameObjects.Rectangle;
   textureKey: string;
   avatarConfig: AvatarConfig;
   nickname: string;
@@ -87,9 +91,12 @@ export class WorldScene extends Phaser.Scene {
   private localTextureKey = '';
   private localFacing: Direction = 'down';
   private localMoving = false;
-  private localPosture: 'none' | 'sit_study' = 'none';
+  private localPosture: CouplePostureKind = 'none';
+  private localBlanket: Phaser.GameObjects.Rectangle | null = null;
   private pathQueue: GridPoint[] = [];
   private tapMarker: Phaser.GameObjects.Graphics | null = null;
+  private mailboxBadge: Phaser.GameObjects.Container | null = null;
+  private mailboxUnreadCount = 0;
 
   private remoteEntities = new Map<string, RemoteAvatarEntity>();
   private latestPresences: PresencePayload[] = [];
@@ -228,9 +235,12 @@ export class WorldScene extends Phaser.Scene {
 
   private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
     this.currentMapId = mapId;
+    this.clearLocalPosture(true);
     this.pathQueue = [];
     this.tapMarker?.clear();
     this.txThrottle.reset();
+    this.mailboxBadge?.destroy();
+    this.mailboxBadge = null;
 
     for (const layer of this.mapLayers) {
       layer.destroy();
@@ -445,6 +455,7 @@ export class WorldScene extends Phaser.Scene {
     this.placeProp(extIds.props.planter_box, 108, 48, 0.5, 1, 48);
     this.placeProp(extIds.props.planter_box, 164, 48, 0.5, 1, 48);
     this.placeProp(extIds.props.mailbox_red, 184, 52, 0.5, 1, 52);
+    this.refreshMailboxBadge();
 
     // 2. Curved Autotile Pond (`tx = 5..11, ty = 9..11`, bridge spans `tx = 7..8`)
     const px0 = 5;
@@ -666,7 +677,7 @@ export class WorldScene extends Phaser.Scene {
         this.blockedGrid,
       );
       if (path.length > 0) {
-        this.localPosture = 'none';
+        this.clearLocalPosture(true);
         this.pathQueue = path;
         const finalTile = path[path.length - 1]!;
         this.drawTapMarker(finalTile.tileX, finalTile.tileY);
@@ -897,7 +908,7 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
         if (!seat || this.currentMapId !== 'home') {
-          this.localPosture = 'none';
+          this.clearLocalPosture(false);
           return;
         }
         const desk = this.placements.find((p) => p.mapId === 'home' && p.sku === 'desk_study');
@@ -912,6 +923,63 @@ export class WorldScene extends Phaser.Scene {
         this.playLocalMoveAnim(false);
         this.emitCurrentTile(true);
         this.emitLocalMovement('idle', true);
+      }),
+
+      gameEventBus.on('cmd:apply-local-posture', ({ posture, x, y, facing }) => {
+        if (posture === 'none') {
+          this.clearLocalPosture(false);
+          return;
+        }
+        this.pathQueue = [];
+        this.tapMarker?.clear();
+        if (typeof x === 'number' && typeof y === 'number') {
+          this.localSprite.setPosition(x, y);
+        }
+        if (facing) {
+          this.localFacing = facing;
+        }
+        this.localPosture = posture;
+        this.playLocalMoveAnim(false);
+        this.emitCurrentTile(true);
+        this.emitLocalMovement('idle', true);
+      }),
+
+      gameEventBus.on('cmd:cancel-local-posture', () => {
+        this.clearLocalPosture(true);
+        this.playLocalMoveAnim(false);
+      }),
+
+      gameEventBus.on('cmd:sync-remote-posture', ({ userId, mapId, posture, x, y, facing }) => {
+        const entity = this.remoteEntities.get(userId);
+        if (!entity) return;
+        entity.mapId = mapId;
+        entity.posture = posture;
+        if (posture !== 'none') {
+          entity.targetX = x;
+          entity.targetY = y;
+          entity.facing = facing;
+          entity.sprite.setPosition(x, y);
+        }
+        this.syncRemoteBlanket(entity);
+        this.reconcileRemoteVisibility();
+      }),
+
+      gameEventBus.on('cmd:spawn-emote', ({ userId, mapId, emote, local }) => {
+        if (mapId !== this.currentMapId) return;
+        const symbol = emote === 'hug_hearts' ? '💕' : getCoupleEmoteSymbol(emote);
+        if (local || userId === this.localUserId) {
+          this.spawnEmoteBubble(this.localSprite.x, this.localSprite.y - 30, symbol);
+          return;
+        }
+        const remote = this.remoteEntities.get(userId);
+        if (remote && remote.mapId === this.currentMapId) {
+          this.spawnEmoteBubble(remote.sprite.x, remote.sprite.y - 30, symbol);
+        }
+      }),
+
+      gameEventBus.on('cmd:sync-mailbox-unread', ({ unreadCount }) => {
+        this.mailboxUnreadCount = Math.max(0, unreadCount);
+        this.refreshMailboxBadge();
       }),
     );
   }
@@ -1047,7 +1115,7 @@ export class WorldScene extends Phaser.Scene {
     const manualMag = Math.hypot(vx, vy);
 
     if (manualMag > 0.15) {
-      this.localPosture = 'none';
+      this.clearLocalPosture(true);
       this.pathQueue = [];
       this.tapMarker?.clear();
 
@@ -1142,11 +1210,17 @@ export class WorldScene extends Phaser.Scene {
 
     if (moving) {
       this.localMoving = true;
+      if (this.localBlanket) this.localBlanket.setVisible(false);
       const animKey = `${this.localTextureKey}:walk-${this.localFacing}`;
       if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== animKey) {
         this.localSprite.play(animKey, true);
       }
-    } else if (this.localPosture === 'sit_study') {
+    } else if (
+      this.localPosture === 'sit_study' ||
+      this.localPosture === 'sit_sofa' ||
+      this.localPosture === 'sit_bench'
+    ) {
+      if (this.localBlanket) this.localBlanket.setVisible(false);
       const sitAnim = `${this.localTextureKey}:sit-${this.localFacing}`;
       if (this.anims.exists(sitAnim)) {
         if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== sitAnim) {
@@ -1156,7 +1230,20 @@ export class WorldScene extends Phaser.Scene {
         this.localSprite.stop();
         this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
       }
+    } else if (this.localPosture === 'lie_bed') {
+      this.localSprite.stop();
+      this.localSprite.setFrame(getIdleFrameIndex('down'));
+      if (!this.localBlanket) {
+        this.localBlanket = this.add
+          .rectangle(this.localSprite.x, this.localSprite.y - 4, 13, 8, 0xf2b7c6, 0.94)
+          .setStrokeStyle(0.75, 0xfff8ef, 0.9);
+      }
+      this.localBlanket
+        .setPosition(this.localSprite.x, this.localSprite.y - 4)
+        .setDepth(this.localSprite.y + 2)
+        .setVisible(true);
     } else {
+      if (this.localBlanket) this.localBlanket.setVisible(false);
       this.localSprite.stop();
       this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
     }
@@ -1188,10 +1275,29 @@ export class WorldScene extends Phaser.Scene {
       };
     }
 
+    if (this.currentMapId === 'home') {
+      const frameDist = Math.hypot(tileX - 9.1, tileY - 2.2);
+      if (frameDist <= 1.85) {
+        return { kind: 'photo_frame', labelVi: 'Xem khung ảnh kỷ niệm' };
+      }
+    }
+
+    if (this.currentMapId === 'garden') {
+      const mailboxDist = Math.hypot(tileX - 11.0, tileY - 2.75);
+      if (mailboxDist <= 1.85) {
+        return {
+          kind: 'mailbox',
+          labelVi: this.mailboxUnreadCount > 0
+            ? `Hộp thư (${this.mailboxUnreadCount} thư mới)`
+            : 'Mở hộp thư kỷ niệm',
+        };
+      }
+    }
+
     for (const p of this.placements) {
       if (p.mapId !== this.currentMapId) continue;
       const item = getCatalogItem(p.sku);
-      if (!item?.interactTag) continue;
+      if (!item) continue;
       const cx = p.tileX + (p.widthTiles - 1) / 2;
       const cy = p.tileY + (p.heightTiles - 1) / 2;
       if (Math.hypot(tileX - cx, tileY - cy) <= 1.85) {
@@ -1200,6 +1306,15 @@ export class WorldScene extends Phaser.Scene {
         }
         if (item.interactTag === 'study_preview') {
           return { kind: 'study_room', labelVi: 'Ngồi vào bàn học' };
+        }
+        if (p.sku === 'sofa_cream') {
+          return { kind: 'sofa_sit', labelVi: 'Ngồi sofa cùng nhau' };
+        }
+        if (p.sku === 'bench_garden') {
+          return { kind: 'bench_sit', labelVi: 'Ngồi ghế vườn' };
+        }
+        if (p.sku === 'bed_cozy') {
+          return { kind: 'bed_lie', labelVi: 'Nằm nghỉ cùng nhau' };
         }
         if (item.interactTag === 'cinema_preview') {
           return { kind: 'cinema_preview', labelVi: 'Sofa Rạp phim (V0.4)' };
@@ -1258,12 +1373,152 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.emit('evt:open-pet-panel');
     } else if (near.kind === 'study_room') {
       gameEventBus.emit('evt:open-study-panel');
+    } else if (near.kind === 'photo_frame') {
+      gameEventBus.emit('evt:open-photo-frame');
+    } else if (near.kind === 'mailbox') {
+      gameEventBus.emit('evt:open-mailbox');
+    } else if (
+      near.kind === 'sofa_sit' ||
+      near.kind === 'bench_sit' ||
+      near.kind === 'bed_lie'
+    ) {
+      this.enterSharedPosture(near.kind);
     } else if (near.kind === 'cinema_preview') {
       gameEventBus.emit('evt:preview-notice', {
         title: 'Góc rạp phim tại nhà',
         version: 'V0.4 — Our Little Cinema',
         body: 'Trình phát phim đồng bộ qua Jellyfin/Tailscale đang được thử nghiệm riêng trong Menu → Spike 0 Lab và sẽ tích hợp vào sofa ở V0.4.',
       });
+    }
+  }
+
+  private clearLocalPosture(emit: boolean): void {
+    const hadPosture = this.localPosture !== 'none';
+    this.localPosture = 'none';
+    if (this.localBlanket) {
+      this.localBlanket.setVisible(false);
+    }
+    if (emit && hadPosture) {
+      gameEventBus.emit('evt:local-posture-changed', {
+        posture: 'none',
+        slotIndex: 0,
+        x: this.localSprite.x,
+        y: this.localSprite.y,
+        facing: this.localFacing,
+        mapId: this.currentMapId,
+      });
+    }
+  }
+
+  private enterSharedPosture(kind: 'sofa_sit' | 'bench_sit' | 'bed_lie'): void {
+    const targetSku =
+      kind === 'sofa_sit' ? 'sofa_cream' : kind === 'bench_sit' ? 'bench_garden' : 'bed_cozy';
+    const targetPosture: CouplePostureKind =
+      kind === 'sofa_sit' ? 'sit_sofa' : kind === 'bench_sit' ? 'sit_bench' : 'lie_bed';
+    const item = this.placements.find(
+      (p) => p.mapId === this.currentMapId && p.sku === targetSku,
+    );
+    if (!item) return;
+
+    const centerX = (item.tileX + item.widthTiles / 2) * TILE_SIZE;
+    const footY = (item.tileY + item.heightTiles) * TILE_SIZE;
+    const slot0 =
+      kind === 'bed_lie'
+        ? { x: centerX - 6, y: (item.tileY + 1.35) * TILE_SIZE }
+        : kind === 'bench_sit'
+          ? { x: centerX - 6, y: footY + 2 }
+          : { x: centerX - 8, y: footY - 2 };
+    const slot1 =
+      kind === 'bed_lie'
+        ? { x: centerX + 6, y: slot0.y }
+        : kind === 'bench_sit'
+          ? { x: centerX + 6, y: footY + 2 }
+          : { x: centerX + 8, y: footY - 2 };
+
+    const occupiedSlots: number[] = [];
+    for (const remote of this.remoteEntities.values()) {
+      if (remote.mapId !== this.currentMapId || remote.posture !== targetPosture) continue;
+      if (Math.hypot(remote.sprite.x - slot0.x, remote.sprite.y - slot0.y) < 10) {
+        occupiedSlots.push(0);
+      } else if (Math.hypot(remote.sprite.x - slot1.x, remote.sprite.y - slot1.y) < 10) {
+        occupiedSlots.push(1);
+      }
+    }
+
+    const slotIndex = pickAvailableSharedSlot(occupiedSlots, 0);
+    const chosen = slotIndex === 0 ? slot0 : slot1;
+    this.pathQueue = [];
+    this.tapMarker?.clear();
+    this.localSprite.setPosition(chosen.x, chosen.y);
+    this.localFacing = 'down';
+    this.localPosture = targetPosture;
+    this.playLocalMoveAnim(false);
+    this.emitCurrentTile(true);
+    this.emitLocalMovement('idle', true);
+    gameEventBus.emit('evt:local-posture-changed', {
+      posture: targetPosture,
+      slotIndex,
+      x: chosen.x,
+      y: chosen.y,
+      facing: 'down',
+      mapId: this.currentMapId,
+    });
+  }
+
+  private spawnEmoteBubble(x: number, y: number, symbol: string): void {
+    const bubble = this.add
+      .text(x, y, symbol, {
+        fontSize: '12px',
+        backgroundColor: 'rgba(255, 248, 239, 0.92)',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(9600);
+    this.tweens.add({
+      targets: bubble,
+      y: y - 16,
+      alpha: 0,
+      duration: 1400,
+      ease: 'Sine.Out',
+      onComplete: () => bubble.destroy(),
+    });
+  }
+
+  private refreshMailboxBadge(): void {
+    this.mailboxBadge?.destroy();
+    this.mailboxBadge = null;
+    if (this.currentMapId !== 'garden' || this.mailboxUnreadCount <= 0) return;
+
+    const badge = this.add.container(189, 34).setDepth(75);
+    const bg = this.add.circle(0, 0, 5.5, 0xe05b5b).setStrokeStyle(1, 0xfff8ef);
+    const txt = this.add
+      .text(0, 0, '✉', { fontSize: '8px', color: '#fff8ef' })
+      .setOrigin(0.5, 0.5);
+    badge.add([bg, txt]);
+    this.tweens.add({
+      targets: badge,
+      y: 31,
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+    this.mailboxBadge = badge;
+  }
+
+  private syncRemoteBlanket(entity: RemoteAvatarEntity): void {
+    if (entity.posture === 'lie_bed' && entity.mapId === this.currentMapId) {
+      if (!entity.blanket) {
+        entity.blanket = this.add
+          .rectangle(entity.sprite.x, entity.sprite.y - 4, 13, 8, 0xb8d9ee, 0.94)
+          .setStrokeStyle(0.75, 0xfff8ef, 0.9);
+      }
+      entity.blanket
+        .setPosition(entity.sprite.x, entity.sprite.y - 4)
+        .setDepth(entity.sprite.y + 2)
+        .setVisible(true);
+    } else if (entity.blanket) {
+      entity.blanket.setVisible(false);
     }
   }
 
@@ -1336,6 +1591,7 @@ export class WorldScene extends Phaser.Scene {
           targetY: py,
           facing: p.facing,
           anim: 'idle',
+          posture: 'none',
           textureKey: texKey,
           avatarConfig,
           nickname,
@@ -1354,6 +1610,7 @@ export class WorldScene extends Phaser.Scene {
         entity.sprite.destroy();
         entity.shadow.destroy();
         entity.label.destroy();
+        entity.blanket?.destroy();
         this.remoteEntities.delete(uid);
       }
     }
@@ -1402,6 +1659,7 @@ export class WorldScene extends Phaser.Scene {
         targetY: packet.y,
         facing: packet.facing,
         anim: packet.anim,
+        posture: 'none',
         textureKey: texKey,
         avatarConfig,
         nickname,
@@ -1416,6 +1674,10 @@ export class WorldScene extends Phaser.Scene {
     entity.targetY = packet.y;
     entity.facing = packet.facing;
     entity.anim = packet.anim;
+    if (packet.anim === 'walk' || changedMap) {
+      entity.posture = 'none';
+      entity.blanket?.setVisible(false);
+    }
     if (changedMap) {
       entity.sprite.setPosition(packet.x, packet.y);
       entity.shadow.setPosition(packet.x, packet.y - 1);
@@ -1430,6 +1692,7 @@ export class WorldScene extends Phaser.Scene {
       entity.sprite.setVisible(sameRoom);
       entity.shadow.setVisible(sameRoom);
       entity.label.setVisible(sameRoom);
+      this.syncRemoteBlanket(entity);
     }
   }
 
@@ -1450,6 +1713,10 @@ export class WorldScene extends Phaser.Scene {
       entity.shadow.setPosition(next.x, next.y - 1);
       entity.shadow.setDepth(next.y - 1);
       entity.label.setPosition(next.x, next.y - 25);
+      if (moving) {
+        entity.posture = 'none';
+        entity.blanket?.setVisible(false);
+      }
 
       const stale = this.remoteFilter.isStale(entity.sessionId, now);
       if ((entity.anim === 'walk' || moving) && !stale) {
@@ -1457,9 +1724,26 @@ export class WorldScene extends Phaser.Scene {
         if (!entity.sprite.anims.isPlaying || entity.sprite.anims.currentAnim?.key !== animKey) {
           entity.sprite.play(animKey, true);
         }
+      } else if (
+        entity.posture === 'sit_study' ||
+        entity.posture === 'sit_sofa' ||
+        entity.posture === 'sit_bench'
+      ) {
+        const sitKey = `${entity.textureKey}:sit-${entity.facing}`;
+        if (this.anims.exists(sitKey)) {
+          if (!entity.sprite.anims.isPlaying || entity.sprite.anims.currentAnim?.key !== sitKey) {
+            entity.sprite.play(sitKey, true);
+          }
+        } else {
+          entity.sprite.stop();
+          entity.sprite.setFrame(getIdleFrameIndex(entity.facing));
+        }
       } else {
         entity.sprite.stop();
         entity.sprite.setFrame(getIdleFrameIndex(entity.facing));
+        if (entity.posture === 'lie_bed') {
+          this.syncRemoteBlanket(entity);
+        }
       }
     }
   }

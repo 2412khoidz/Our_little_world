@@ -3,6 +3,7 @@ import {
   DEFAULT_AVATAR_PARTNER_B,
   parseAvatarConfig,
 } from '../../shared/avatar';
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
@@ -339,6 +340,11 @@ export function createDevLanBackend(): WorldBackend {
           handlers.onWorldMutated(parsed.reason ?? 'furniture');
         });
 
+        es.addEventListener('couple_event', (ev) => {
+          const pkt = JSON.parse((ev as MessageEvent).data) as CoupleEventPacket;
+          handlers.onCoupleEvent?.(pkt);
+        });
+
         es.addEventListener('world_reset', () => {
           handlers.onWorldMutated('member');
         });
@@ -362,6 +368,9 @@ export function createDevLanBackend(): WorldBackend {
         },
         notifyWorldMutated(reason) {
           postRealtime('world_mutated', { reason });
+        },
+        publishCoupleEvent(packet) {
+          postRealtime('couple_event', packet);
         },
         async reconnect() {
           if (simulatedOffline) {

@@ -1,3 +1,4 @@
+import type { CoupleEmoteId, CouplePostureKind } from '../shared/couple/coupleTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import type {
   Direction,
@@ -23,7 +24,17 @@ export interface DecorateStatePayload {
 }
 
 export interface NearbyInteractable {
-  kind: 'portal' | 'wardrobe' | 'study_room' | 'cinema_preview' | 'pet';
+  kind:
+    | 'portal'
+    | 'wardrobe'
+    | 'study_room'
+    | 'cinema_preview'
+    | 'pet'
+    | 'sofa_sit'
+    | 'bench_sit'
+    | 'bed_lie'
+    | 'photo_frame'
+    | 'mailbox';
   labelVi: string;
 }
 
@@ -49,6 +60,28 @@ export interface GameEventMap {
   'cmd:pet-reaction': { action: PetActionType };
   'cmd:set-study-pet-mode': { active: boolean };
   'cmd:seat-at-desk': { seat: 'left' | 'right' | null };
+  'cmd:apply-local-posture': {
+    posture: CouplePostureKind;
+    x?: number;
+    y?: number;
+    facing?: Direction;
+  };
+  'cmd:cancel-local-posture': undefined;
+  'cmd:sync-remote-posture': {
+    userId: string;
+    mapId: MapId;
+    posture: CouplePostureKind;
+    x: number;
+    y: number;
+    facing: Direction;
+  };
+  'cmd:spawn-emote': {
+    userId: string;
+    mapId: MapId;
+    emote: CoupleEmoteId | 'hug_hearts';
+    local?: boolean;
+  };
+  'cmd:sync-mailbox-unread': { unreadCount: number };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -58,6 +91,19 @@ export interface GameEventMap {
   'evt:open-avatar-customizer': undefined;
   'evt:open-pet-panel': undefined;
   'evt:open-study-panel': undefined;
+  'evt:open-photo-frame': undefined;
+  'evt:open-mailbox': undefined;
+  'evt:local-posture-changed': {
+    posture: CouplePostureKind;
+    slotIndex: number;
+    x: number;
+    y: number;
+    facing: Direction;
+    mapId: MapId;
+  };
+  'evt:request-couple-posture': {
+    kind: 'sofa_sit' | 'bench_sit' | 'bed_lie';
+  };
   'evt:preview-notice': { title: string; body: string; version: string };
   'evt:decorate-place': { mapId: MapId; sku: string; tileX: number; tileY: number };
   'evt:decorate-move': { placementId: string; tileX: number; tileY: number };
