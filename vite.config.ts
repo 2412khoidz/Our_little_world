@@ -1,11 +1,47 @@
-import { defineConfig } from 'vite';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { devLanServerPlugin } from './scripts/devLanServerPlugin.mjs';
 
-export default defineConfig({
+import productionPublicFiles from './scripts/production-public-files.json' with { type: 'json' };
+
+const privateArtDir = 'assets/private-unified';
+const privateArtFiles = ['world.png', 'avatars.png', 'manifest.json', 'CREDITS.md']
+  .map((file) => privateArtDir + '/' + file);
+
+function approvedPublicAssets(privateBuild: boolean): Plugin {
+  return {
+    name: 'olw-approved-public-assets',
+    apply: 'build',
+    generateBundle() {
+      for (const fileName of privateBuild ? [...productionPublicFiles, ...privateArtFiles] : productionPublicFiles) {
+        this.emitFile({
+          type: 'asset',
+          fileName,
+          source: readFileSync(resolve('public', fileName)),
+        });
+      }
+    },
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
+  const privateBuild = mode === 'private-art';
+  const localAtlasReady = privateArtFiles.every((file) => existsSync(resolve('public', file)));
+  if (privateBuild && !localAtlasReady) {
+    throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước.');
+  }
+
+  return {
+  define: {
+    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(privateBuild || (command === 'serve' && localAtlasReady)),
+  },
+  build: { copyPublicDir: false },
   plugins: [
     react(),
+    approvedPublicAssets(privateBuild),
     devLanServerPlugin(),
     VitePWA({
       registerType: 'prompt',
@@ -13,6 +49,7 @@ export default defineConfig({
         'icons/favicon-32x32.png',
         'icons/apple-touch-icon-180x180.png',
         'assets/manifest.json',
+        'assets/unified/CREDITS.md',
       ],
       manifest: {
         name: 'Our Little World',
@@ -41,7 +78,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,json,svg,webmanifest}'],
-        globIgnores: ['spike/**'],
+        globIgnores: ['spike/**', 'assets/private-unified/**'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/spike\//, /^\/api\//],
         runtimeCaching: [],
@@ -60,4 +97,5 @@ export default defineConfig({
     port: 4173,
     host: true,
   },
+  };
 });

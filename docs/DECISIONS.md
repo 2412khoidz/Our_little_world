@@ -60,7 +60,7 @@ Ngày 25/11/2026, chủ dự án đóng Master Research & Design và mở V0.1 F
 
 | ID | Quyết định đã duyệt | Việc cần xác minh khi triển khai |
 |---|---|---|
-| **PD-01** | Chỉ đưa asset có quyền phát hành Web/PWA rõ ràng vào production atlas. Asset chưa rõ quyền dùng fallback CC0. | OLW-010-01 ghi bằng chứng theo pack/version và kiểm cả atlas, dist, URL tĩnh và Service Worker. |
+| **PD-01** | Dự án cá nhân phi thương mại. Atlas phát triển riêng ưu tiên asset Demo E gốc được phép dùng trong game. Atlas công khai chỉ dùng asset đã xác minh quyền phát hành Web/PWA. | Asset chưa rõ quyền triển khai được ghi **Pending Deployment License Verification**. Giữ asset gốc ngoài Git và bản public. Xác minh quyền và giới hạn truy cập đường dẫn asset trước deploy Internet. |
 | **PD-02** | Ưu tiên Cloudflare Pages Free làm static host. | Kiểm giới hạn, đường dẫn gốc PWA và HTTPS trên artifact khi tới OLW-010-05. |
 | **PD-03** | Nghiên cứu Funnel HLS và WebRTC khi đến S0-5b. Transport chính thức chờ kết quả benchmark. | Đo mạng thật Windows → iPhone Safari, quyền truy cập, chi phí 0₫, reconnect và chất lượng. |
 | **PD-04** | Không mua tên miền. | Dùng hostname đi kèm nền tảng đã chọn. |

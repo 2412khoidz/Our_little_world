@@ -1,0 +1,26 @@
+{
+  "cat-orange": {
+    "file": "cat-orange/cat-orange_16px_top-down_outline_lit.png",
+    "sha256": "c28714ba063e0eb7672708e6b71f9ab26d549d627e0a8c1da67a0055c619c1e0",
+    "frame": "Sleep_South",
+    "rect": {
+      "h": 16,
+      "w": 16,
+      "x": 0,
+      "y": 128
+    },
+    "rgbaDeflate": "eNpjYBgFgxVYSan8B2Fy9f7YFgfGpJoB0/thwYb/fXZaYEysGSB1MD0g/W/6rMCYVDOQ9cDMJFU/DLOxcP0nNSyR/UGK3djij9w4pAcAANePUcM="
+  },
+  "puppy-shiba": {
+    "file": "puppy-shiba/puppy-shiba_16px_top-down_outline_lit.png",
+    "sha256": "35a984873e356fcf027988010fe0eec1caf33d2efb2fa4e86b60c218c1b14481",
+    "frame": "Idle_South",
+    "rect": {
+      "h": 16,
+      "w": 16,
+      "x": 0,
+      "y": 64
+    },
+    "rgbaDeflate": "eNpjYBi+wEpG6T8Ik6u3zUEHjEk1A6T+w4Y0FEysGdj03ulyAmNizIDpB7kbWR+x/oCFGRsL139sbFLC3UrFAIJJjIc4F4//v9/d/g+iV/S0gTGITUocgNQjY4ZRgBUAABGAaCU="
+  }
+}

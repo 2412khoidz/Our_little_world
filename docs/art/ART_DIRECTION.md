@@ -64,7 +64,7 @@ Kiểm tra trực tiếp file spritesheet nguồn cho thấy bản miễn phí c
 | **Sunnyside World v2.1** | **Thương mại & Phi thương mại** | **Có** | Khuyến khích ghi `Daniel Diggle` | **Có** | **Cấm** phân phối lại pack gốc | **Không commit** nguyên pack lên repo công khai |
 | **Free Pets Pack** | **Thương mại & Phi thương mại** | **Có** (`CC BY 4.0`) | **Bắt buộc** (`Frakassets`) | **Có** | Được chia sẻ nếu ghi credit | **Được phép** đưa sprite đã dùng + `LICENSE.txt` lên Git công khai |
 
-> **Kết luận bản quyền quan trọng:** Toàn bộ các file từ Itch.io non-commercial (`Sprout Lands`, `Modern Interiors`, `Cozy Lands`, `Sunnyside World`) chỉ lưu trữ ở repo **Private** (hoặc CDN/bucket private khi build) — tuyệt đối **không** đưa thư mục `asset-candidates/`, file `.zip` hay `.aseprite` vào `public/`, production `dist/` hay GitHub Public repo. Khi lên production chính thức, chỉ trích xuất đúng những sprite đã chọn lọc thành atlas tối ưu (chỉ vài trăm KB) vào thư mục được kiểm soát bản quyền riêng.
+> **Ghi chú lịch sử của đánh giá Demo E:** Toàn bộ các file từ Itch.io non-commercial (`Sprout Lands`, `Modern Interiors`, `Cozy Lands`, `Sunnyside World`) chỉ lưu trữ ở repo **Private** (hoặc CDN/bucket private khi build) — tuyệt đối **không** đưa thư mục `asset-candidates/`, file `.zip` hay `.aseprite` vào `public/`, production `dist/` hay GitHub Public repo. Khi lên production chính thức, chỉ trích xuất đúng những sprite đã chọn lọc thành atlas tối ưu (chỉ vài trăm KB) vào thư mục được kiểm soát bản quyền riêng.
 
 ---
 
@@ -87,3 +87,6 @@ Kiểm tra trực tiếp file spritesheet nguồn cho thấy bản miễn phí c
 - **Giai đoạn V0.1 → V0.2 (Khuyến nghị: `0₫`):** Hoạt động hoàn hảo bằng chính tập hợp **Demo E** hiện tại — không cần mua gì thêm để bắt đầu áp dụng vào nhà chính cho hai bạn sử dụng riêng.
 - **Nâng cấp đáng tiền nhất về sau (`~$1.20–$2.50` một lần duy nhất):** Mua **Modern Interiors Complete (LimeZu)** khi triển khai nhà bếp chuyên sâu, phòng ngủ đa dạng, phòng Cinema V0.4 và mở công cụ Character Generator đầy đủ của LimeZu.
 - **Tùy chọn mở rộng ngoại thất (`$2.99`, chỉ cần nếu sau này công khai/thương mại hoặc muốn nhiều kiểu nhà):** Mua **Cozy Lands Premium** hoặc **Sprout Lands Premium**; không cần mua ở thời điểm hiện tại.
+
+
+**PD-01 cập nhật:** Dùng artwork Demo E gốc cho phát triển phi thương mại riêng. Quyền bao gồm khả năng dùng trong game, còn phân phối pack, sprite trực tiếp và triển khai qua Internet cần kiểm riêng. Xem [profile và cổng triển khai](ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public).

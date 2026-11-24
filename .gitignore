@@ -2,6 +2,7 @@
 node_modules/
 dist/
 dist-ssr/
+dist-private/
 
 # Local environment secrets & dev-only LAN state
 .env
@@ -16,6 +17,7 @@ dist-ssr/
 
 # Licensed third-party assets (never redistribute paid packs to git)
 public/assets/local-licensed/
+public/assets/private-unified/
 
 # Test & coverage artifacts
 playwright-report/

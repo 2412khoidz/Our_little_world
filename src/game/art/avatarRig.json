@@ -1,0 +1,33 @@
+{
+  "frameWidth": 16,
+  "frameHeight": 32,
+  "frameCount": 6,
+  "directions": [
+    "right",
+    "up",
+    "left",
+    "down"
+  ],
+  "hairStyles": [
+    "short",
+    "bob",
+    "long"
+  ],
+  "ramps": {
+    "hair": [
+      "#52614e",
+      "#68755d",
+      "#889473"
+    ],
+    "skin": [
+      "#c37569",
+      "#efa586",
+      "#ffd2a5"
+    ],
+    "outfit": [
+      "#575071",
+      "#75678f",
+      "#a698b7"
+    ]
+  }
+}

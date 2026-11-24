@@ -11,15 +11,15 @@
 #### `OLW-010-01`: Tạo script trích xuất Production Atlas từ bộ Demo E (`0₫`)
 - **Milestone:** V0.1 (Art Integration) | **Priority:** P0 | **Risk:** Medium | **Recommended agent:** DeepSeek V4.1 Flash (Neon review license/paths)
 - **Mục tiêu:** Đóng gói chỉ đúng các sprite/tile đã chọn của Demo E từ `asset-candidates/` thành atlas gọn nhẹ (không nhúng nguyên pack gốc), sinh `CREDITS.md` (`Cup Nooble`, `LimeZu`, `Amo-QAQ`, `Daniel Diggle`, `Frakassets`).
-- **Dependencies:** ADR-008 và PD-01 đã duyệt. Sẵn sàng nhận sau baseline. Chỉ đóng gói asset có bằng chứng quyền phát hành Web/PWA, dùng fallback CC0 khi chưa rõ.
+- **Dependencies:** ADR-008 và PD-01 đã duyệt. Sẵn sàng nhận sau baseline. Ưu tiên asset Demo E gốc có quyền sử dụng riêng phi thương mại. Kiểm quyền Web/PWA cho profile public; quyền triển khai chưa rõ được ghi Pending Deployment License Verification.
 - **Relevant files:** `src/game/artDemos/semanticAssetRegistry.ts`, `src/game/artDemos/DemoEScene.ts`, `scripts/import-external-assets.mjs`, `.gitignore`, `vite.config.ts`.
 - **Relevant source references:** [ART_DIRECTION.md](art/ART_DIRECTION.md), [ASSET_PIPELINE.md](art/ASSET_PIPELINE.md).
-- **API contract:** `node scripts/build-unified-atlas.mjs` đọc pack local ngoài artifact deploy. Xuất manifest, sheet và credits cho subset V0.1 vào đường dẫn build đã chốt trong [asset pipeline](art/ASSET_PIPELINE.md#3-kế-hoạch-tích-hợp-vào-game-v01-chính-không-phá-vỡ-hệ-thống-hiện-có). Báo rõ bằng tiếng Việt khi thiếu nguồn/quyền.
+- **API contract:** `node scripts/build-unified-atlas.mjs` đọc pack local ngoài artifact deploy. Xuất manifest, sheet và credits riêng cho từng profile (`--private` dùng asset gốc). Dùng đường dẫn build đã chốt trong [asset pipeline](art/ASSET_PIPELINE.md#3-kế-hoạch-tích-hợp-vào-game-v01-chính-không-phá-vỡ-hệ-thống-hiện-có). Báo rõ bằng tiếng Việt khi thiếu nguồn/quyền.
 - **Data model:** Mỗi entry có semantic ID ổn định, texture, rect, anchor và pack/version/credit. Kiểm tra rect nằm trong sheet. Chỉ map ID dùng ở production V0.1.
 - **Invariants:** Tuyệt đối không copy `.zip`, `.aseprite`, `Sunnyside_World_Gamemaker/` hay file thừa vào `public/` hay `dist/`; giữ kích thước precache PWA nhỏ (`< 3 MB`).
 - **Scope:** Script trích xuất atlas + `CREDITS.md` + fallback cảnh báo tiếng Việt nếu thiếu file nguồn local.
 - **Out-of-scope:** Sửa `WorldScene`, sửa DB hoặc mua asset.
-- **Acceptance criteria:** Tái sinh deterministic atlas nhà/vườn và rig avatar từ nguồn được phép. Có credits, báo cáo từng asset vào dist, precache mục tiêu <3 MB và dùng CC0 tương đương nếu quyền phân phối còn chưa rõ; ghi riêng giấy phép/shipping cho emote, pet và asset các mốc sau.
+- **Acceptance criteria:** Tái sinh deterministic atlas nhà/vườn và rig avatar từ nguồn được phép. Có credits, báo cáo từng asset vào dist, precache mục tiêu <3 MB và dùng CC0 ở profile public nếu quyền Web/PWA còn chưa rõ và giữ asset gốc trong profile private; ghi riêng giấy phép/shipping cho emote, pet và asset các mốc sau.
 - **Test cases:** Thiếu pack, ID trùng, rect ngoài sheet, output lặp byte-identical, asset chưa xác nhận bị loại khỏi dist và sw.js; quét dist với production guard.
 
 #### `OLW-010-02`: Tích hợp Hệ thống Avatar Modern Interiors (`unifiedAvatarBuilder`) vào Game V0.1

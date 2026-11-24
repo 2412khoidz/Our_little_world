@@ -1,0 +1,33 @@
+{
+  "background": {
+    "home": "map.home",
+    "garden": "map.garden"
+  },
+  "furniture": {
+    "bed_cozy": "furn.bed_pastel_blue",
+    "wardrobe_oak": "furn.wardrobe_oak",
+    "bookshelf_warm": "furn.bookshelf_tall",
+    "lamp_floor": "furn.lamp_floor",
+    "sofa_cream": "furn.sofa_plush",
+    "table_wood": "furn.dining_table",
+    "desk_study": "furn.desk_study_a",
+    "plant_monstera": "furn.plant_monstera",
+    "rug_peach": "furn.rug_pastel_coral",
+    "bench_garden": "nature.bench_garden",
+    "lantern_garden": "nature.lantern_garden",
+    "flowerpot_sakura": "nature.flowerpot_sakura"
+  },
+  "scenery": {
+    "blossom": "nature.sakura_tree",
+    "cottage": "nature.cottage_pastel"
+  },
+  "rigs": {
+    "short": "actor.rig_short",
+    "bob": "actor.rig_bob",
+    "long": "actor.rig_long"
+  },
+  "pets": {
+    "cat": "actor.cat_preview",
+    "shiba": "actor.shiba_preview"
+  }
+}

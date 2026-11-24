@@ -51,3 +51,11 @@ Ngày 25/11/2026, chủ dự án đóng Master Research & Design và mở V0.1 F
 **Kiểm chứng baseline:** Lint, typecheck, Vitest **24/24**, build và production guard đều pass. Playwright Chromium **8/8** (22,8 giây), gồm desktop và viewport iPhone. Hai script Python đã qua kiểm tra cú pháp. Chạy kiểm thử trong bản sao tạm để giữ dữ liệu thử nghiệm local. Vite vẫn cảnh báo chunk >500 kB. Supabase Cloud, HTTPS deploy, iPhone Safari/PWA thật và Cinema WAN vẫn chờ gate tương ứng.
 
 **Task sẵn sàng nhận: OLW-010-01.** Đọc PD-01, ADR-008, [Art Direction](../art/ART_DIRECTION.md), [Asset Pipeline](../art/ASSET_PIPELINE.md) và block task. Bắt đầu từ bảng semantic ID trong `src/game/artDemos/semanticAssetRegistry.ts`, kiểm kê nguồn/version/giấy phép và chọn subset cần dùng cho V0.1. Chỉ dùng asset có quyền phát hành Web/PWA rõ ràng. Asset chưa rõ quyền dùng fallback CC0. Ghi credits, kiểm tra manifest/rect và artifact trước khi chuyển sang 010-02 và 010-03. Checkpoint kết thúc trước khi tạo atlas hoặc tích hợp artwork. [Backlog](../IMPLEMENTATION_BACKLOG.md)
+
+## OLW-010-01 — Atlas đã hoàn thành
+
+PD-01 được chủ dự án cập nhật trong lúc thực hiện. Dùng bản gốc Demo E cho phát triển riêng phi thương mại, giữ CC0 làm fallback cho môi trường public khi chưa rõ quyền. Hai profile có manifest và credits riêng. Chạy `npm run assets:atlas:private` với source pack sẵn có để tạo atlas ignored. Không đưa `dist-private` qua Internet trước khi xác minh. Vite public xuất theo allowlist. Guard đã kiểm cùng tệp ZIP giả và atlas private trong sandbox.
+
+Kiểm thử pass lint, typecheck, 26 Vitest, 8 Chromium E2E, public build/guard và private build. File private tái tạo trùng SHA-256. Public PWA precache 25 mục, 1.999,56 KiB. Không nghiệm thu thiết bị thật tại bước này.
+
+Bước kế: OLW-010-02. Dùng atlas avatar của profile đang hoạt động, kết hợp ramp từ unifiedAvatarBuilder, giữ API và animation key cũ. Sau đó dùng atlas world cho OLW-010-03. [Profile và giấy phép](../art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)

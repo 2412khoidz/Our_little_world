@@ -1,0 +1,12 @@
+{
+  "e-grass": "sprout-lands-basic/Tilesets/Grass.png",
+  "e-dirt-wide": "sprout-lands-basic/Tilesets/Tilled_Dirt_Wide_v2.png",
+  "e-sprout-furn": "sprout-lands-basic/Objects/Basic Furniture.png",
+  "e-grass-things": "sprout-lands-basic/Objects/Basic Grass Biom things 1.png",
+  "e-cherry": "sprout-lands-sorry/Early Access/Plant update 2/Cherry Blossom Biom.png",
+  "e-small-house": "sprout-lands-sorry/Early Access/Village pack/houses/small house/small_House_light_with_door_grass.png",
+  "e-room": "modern-interiors-free/Interiors_free/16x16/Room_Builder_free_16x16.png",
+  "e-interiors": "modern-interiors-free/Interiors_free/16x16/Interiors_free_16x16.png",
+  "e-cozy-other": "cozy-lands-basic/Objects/Object/other.png",
+  "e-sun-tiles": "sunnyside-world/Tileset/spr_tileset_sunnysideworld_16px.png"
+}

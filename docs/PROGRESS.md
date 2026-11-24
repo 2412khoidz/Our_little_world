@@ -63,3 +63,9 @@ Takeover chạy lại lint, typecheck, Vitest 24/24, production build, productio
 Mốc tiếp nhận là OLW-010-01. Quyền phát hành atlas được kiểm theo PD-01 và dùng fallback CC0 nếu chưa rõ. Việc tích hợp artwork, deploy và nghiệm thu thiết bị thật vẫn đang chờ. Baseline chỉ cập nhật quyết định sản phẩm, tài liệu và thông tin nhận dạng trong dữ liệu thử nghiệm. [Checkpoint](research/TAKEOVER_CHECKPOINT.md#checkpoint-baseline-v01-final-integration)
 
 Kiểm thử baseline trong bản sao tạm đã pass lint, typecheck, 24/24 Vitest, production build, production guard và 8/8 Playwright Chromium (22,8 giây). Vite vẫn có cảnh báo chunk >500 kB. Kết quả Supabase Cloud và iPhone Safari/PWA thật vẫn đang chờ.
+
+### OLW-010-01 — Atlas Demo E theo profile
+
+Đã tạo atlas private từ 15 tệp nguồn Demo E, cộng hai frame Frakassets đã xác minh. Profile public có PNG 16.142 B và tổng 27.960 B gồm manifest/credits. Profile private có PNG 46.875 B và tổng 74.780 B. Cả hai có 21 semantic ID. Private atlas tái tạo trùng hash. Public precache 25 mục, 1.999,56 KiB. Tệp ZIP giả và atlas private có sẵn trong sandbox đều nằm ngoài dist public và precache.
+
+Lint, typecheck, 26 Vitest, production build/guard, private build và 8 Playwright Chromium đều pass. Đã kiểm hình atlas 1:1, phần runtime sẽ nối ở OLW-010-02 và OLW-010-03. Quyền deploy Internet của bốn nhóm pack Demo E còn Pending Deployment License Verification. [Quy trình và credits](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)

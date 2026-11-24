@@ -58,10 +58,23 @@ Demo E đã được duyệt. Các bước sau áp dụng khi mở OLW-010-01:
    - Không sửa thuật toán pathfinding BFS trên lưới 16px, cơ chế optimistic placement/move/remove + `layoutVersion` hay Spike 0 Video Sync PoC.
 2. **Tạo Production Atlas Tối ưu & Kiểm soát Bản quyền:**
    - Viết script build riêng cắt đúng ~40–60 sprite & tile được sử dụng từ danh sách đã duyệt vào `src/game/assets-pack/` hoặc `public/assets/unified/` kèm file `CREDITS.md` (`Cup Nooble`, `LimeZu`, `Amo-QAQ`, `Daniel Diggle`, `Frakassets`).
-   - Khi phát hành PWA, kiểm tra quyền web/distribution của từng asset, kể cả file sinh ra trong dist hoặc precache. Repo riêng, gitignore và biến deploy chỉ cô lập input. Asset xuất ra URL tĩnh vẫn có thể tải được. Nếu quyền chưa rõ thì giữ bản tương đương CC0 và ghi PD-01.
+   - PD-01 phân biệt quyền sử dụng trong game cá nhân phi thương mại với quyền phân phối lại pack. Khi phát triển riêng, dùng subset asset gốc Demo E, ghi nguồn và giữ atlas private ngoài Git. Khi đưa qua Internet, xác minh quyền cho bản triển khai và cho URL asset. Atlas public dùng bản CC0 dự phòng cho nguồn chưa xác minh ở môi trường public.
    - Tuyệt đối không đưa `.zip`, `.aseprite`, `Sunnyside_World_Gamemaker/` hay hàng ngàn ảnh dư thừa vào `public/` hay `dist/` (giữ kích thước precache PWA nhẹ cho iPhone Safari).
 3. **Thay thế Tầng Render `WorldScene.ts` & `BootScene.ts`:**
    - Giữ map, collision, footprint, spawn và portal V0.1. Gắn semantic ID ở render. Mở rộng địa hình có thay đổi save/SQL thuộc milestone sau.
    - Chuyển `phaserAvatarTexture.ts` sang dùng `unifiedAvatarBuilder.ts` (giữ nguyên `avatarConfigSchema` trong `src/shared/avatar.ts` và UI `AvatarModal.tsx`).
 4. **Duy trì `verify-prod-guard.mjs`:**
    - Tiếp tục kiểm tra `dist/assets/*.js` sau mỗi lần build để đảm bảo toàn bộ mã thử nghiệm `?art-demo=A..E`, `/asset-candidates` và `/api/dev-lan` không rò rỉ vào bản phát hành chính thức.
+
+
+## 4. Tạo bản phát triển riêng và bản public
+
+| Lệnh | Đầu ra và mục đích |
+|---|---|
+| `npm run assets:atlas:private` | Đọc pack hiện có dưới `asset-candidates/extracted/` (Python + Pillow). Chỉ trích khung được chọn từ registry Demo E. `public/assets/private-unified/` bị ignore. Vite dev nhận atlas riêng khi khởi động với đủ bốn tệp. |
+| `npm run build:private` và `npm run preview:private` | `dist-private/` để xem bản build riêng qua loopback. Atlas riêng nằm ngoài precache. |
+| `npm run assets:atlas` và `npm run build` | `public/assets/unified/` là fallback có quyền Web/PWA. `dist/` chỉ nhận tệp công khai trong danh sách allowlist. Production guard kiểm tra asset, JS và Service Worker. |
+
+Manifest riêng ghi pack/version, SHA-256, lựa chọn khung và trạng thái quyền. Sprout Lands, Modern Interiors, Cozy Lands và Sunnyside được cắt cho bản phát triển riêng, với quyền triển khai Internet **Pending Deployment License Verification**. Hai frame Free Pets Pack đã xác minh CC BY 4.0 có ở cả hai profile. Emote và khung gameplay pet sau V0.1 nằm ngoài atlas.
+
+Nếu triển khai Internet riêng sau này, xác minh điều khoản cho đúng pack và cách phục vụ sprite trước khi dùng. Phương án đề xuất là gateway HTTPS xác thực cả trang và `/assets/private-unified/**` trước khi cấp file. Thử truy cập URL asset trực tiếp khi chưa đăng nhập và sau khi đăng xuất. Asset hạn chế nằm ngoài CDN public và Service Worker. Supabase RLS bảo vệ dữ liệu của Supabase, còn gateway phải kiểm quyền cho file tĩnh. Bản private hiện chỉ dành cho máy local hoặc LAN tin cậy, có ngân sách bổ sung 0₫.
