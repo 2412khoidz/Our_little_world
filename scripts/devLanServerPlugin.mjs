@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ensureV015Db, handleV015Route } from './devLanV015Handlers.mjs';
 
 const DEV_IDENTITIES = [
   {
@@ -211,7 +212,7 @@ function createInitialDb() {
       updatedAt: nowIso,
     };
   }
-  return {
+  const dbObj = {
     profiles,
     worlds: {},
     memberships: {},
@@ -219,6 +220,8 @@ function createInitialDb() {
     placements: {},
     idempotency: {},
   };
+  ensureV015Db(dbObj);
+  return dbObj;
 }
 
 function sendJson(res, status, payload) {
@@ -863,6 +866,21 @@ export function createDevLanHandler({
         sendJson(res, 200, { ok: true });
         return;
       }
+
+      const handledV015 = await handleV015Route({
+        req,
+        res,
+        route,
+        reqUrl,
+        body,
+        userId,
+        db,
+        isWorldMember,
+        sendJson,
+        saveDb,
+        broadcastEvent,
+      });
+      if (handledV015) return;
 
       sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy đường dẫn dev.' });
     } catch (err) {

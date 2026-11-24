@@ -1,3 +1,4 @@
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type {
   AvatarConfig,
   BackendMode,
@@ -12,6 +13,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 
@@ -33,17 +35,22 @@ export type ConnectionStatus =
 export interface RealtimeHandlers {
   onPresenceChange: (presences: PresencePayload[]) => void;
   onMovement: (packet: MovementPacket) => void;
-  onWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  onWorldMutated: (reason: WorldMutationReason) => void;
   onConnectionChange: (status: ConnectionStatus) => void;
 }
 
 export interface RealtimeHandle {
   publishMovement: (packet: MovementPacket) => void;
   updatePresence: (presence: PresencePayload) => void;
-  notifyWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  notifyWorldMutated: (reason: WorldMutationReason) => void;
   reconnect: () => Promise<void>;
   setSimulatedOffline?: (offline: boolean) => void;
   disconnect: () => Promise<void>;
+}
+
+export interface InventoryBackend {
+  getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
+  claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
 }
 
 export interface SpikeCinemaPacket {
@@ -131,4 +138,6 @@ export interface WorldBackend {
   ): Promise<RealtimeHandle>;
 
   createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus;
+
+  readonly inventory?: InventoryBackend;
 }

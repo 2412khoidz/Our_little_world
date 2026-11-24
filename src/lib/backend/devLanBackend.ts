@@ -3,6 +3,7 @@ import {
   DEFAULT_AVATAR_PARTNER_B,
   parseAvatarConfig,
 } from '../../shared/avatar';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type {
   AvatarConfig,
   CreatedInvite,
@@ -14,6 +15,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 import type {
@@ -330,7 +332,7 @@ export function createDevLanBackend(): WorldBackend {
 
         es.addEventListener('world_mutated', (ev) => {
           const parsed = JSON.parse((ev as MessageEvent).data) as {
-            reason?: 'furniture' | 'profile' | 'member';
+            reason?: WorldMutationReason;
           };
           handlers.onWorldMutated(parsed.reason ?? 'furniture');
         });
@@ -420,6 +422,18 @@ export function createDevLanBackend(): WorldBackend {
           }).catch(() => {});
         },
       };
+    },
+
+    inventory: {
+      async getInventory(worldId) {
+        return apiJson<InventorySnapshot>(`/inventory?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async claimFreeKibble(worldId, idempotencyKey) {
+        return apiJson<InventorySnapshot>('/inventory/claim-free-kibble', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, idempotencyKey }),
+        });
+      },
     },
   };
 }

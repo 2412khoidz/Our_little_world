@@ -13,6 +13,7 @@ import type {
   UserProfile,
   WorldInfo,
   WorldMember,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 import type {
@@ -172,7 +173,7 @@ type LocalWireMessage =
   | { kind: 'presence'; worldId: string; presence: PresencePayload }
   | { kind: 'presence_leave'; worldId: string; sessionId: string }
   | { kind: 'movement'; worldId: string; packet: MovementPacket }
-  | { kind: 'world_mutated'; worldId: string; reason: 'furniture' | 'profile' | 'member' };
+  | { kind: 'world_mutated'; worldId: string; reason: WorldMutationReason };
 
 function findUserWorldId(db: LocalPreviewDb, userId: string): string | null {
   for (const [worldId, members] of Object.entries(db.memberships)) {
@@ -236,7 +237,7 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
 
   function notifyWorldMutatedBroadcast(
     worldId: string,
-    reason: 'furniture' | 'profile' | 'member',
+    reason: WorldMutationReason,
   ): void {
     if (typeof BroadcastChannel !== 'undefined') {
       const bc = new BroadcastChannel(REALTIME_CHANNEL_NAME);

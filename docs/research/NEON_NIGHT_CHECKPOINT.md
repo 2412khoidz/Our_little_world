@@ -31,8 +31,8 @@ Cập nhật tự động bởi agent triển khai ban đêm trên nhánh `neon/
   - Đã kiểm tra trực quan 8 ảnh PNG trong `test-results/v01-demo-e-restored/`.
 
 ### Phase 3 — V0.1.5 Living Home (Đang triển khai tuần tự)
-- `OLW-015-01` Inventory Foundation (`K5`): *In progress*
-- `OLW-015-03/04` Living Pet MVP (`cat-orange`): *Pending*
+- `OLW-015-01` Inventory Foundation (`K5`): **Implemented & Locally tested** (`supabase/migrations/20261125000100_v015_inventory_and_catalog.sql`, `src/shared/inventory/*`, `DevLan` + `SupabaseBackend`, `InventoryModal.tsx`, `inventoryRules.test.ts` + `v015Inventory.test.ts` — `10` files / `38` tests PASS).
+- `OLW-015-03/04` Living Pet MVP (`cat-orange`): *In progress*
 - `OLW-015-05/06` Silent Study Room & Pomodoro: *Pending*
 - `OLW-015-07` Couple Interactions & Photo Frame: *Pending*
 - `OLW-015-02` Mailbox & Gifts: *Pending*

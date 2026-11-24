@@ -1,5 +1,6 @@
 import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
+  Backpack,
   FlaskConical,
   Gamepad2,
   LogOut,
@@ -18,6 +19,7 @@ interface MenuModalProps {
   showJoystick: boolean;
   onToggleJoystick: () => void;
   onOpenInvite: () => void;
+  onOpenInventory?: () => void;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
@@ -32,6 +34,7 @@ export function MenuModal({
   showJoystick,
   onToggleJoystick,
   onOpenInvite,
+  onOpenInventory,
   onOpenPwaGuide,
   onOpenSpikeLab,
   onQuickSwitchDev,
@@ -67,6 +70,20 @@ export function MenuModal({
         >
           <UserPlus size={17} /> Ghép cặp &amp; Mã mời
         </button>
+
+        {onOpenInventory && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-inventory"
+            onClick={() => {
+              onClose();
+              onOpenInventory();
+            }}
+          >
+            <Backpack size={17} /> Túi đồ &amp; Hạt mèo (0₫)
+          </button>
+        )}
 
         <button type="button" className="btn btn--secondary" onClick={onToggleJoystick}>
           <Gamepad2 size={17} />

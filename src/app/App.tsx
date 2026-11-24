@@ -24,7 +24,9 @@ import { GameViewport } from '../features/home/GameViewport';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
+import { InventoryModal } from '../features/inventory/InventoryModal';
 import { InviteModal } from '../features/pairing/InviteModal';
+import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
 import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
@@ -111,8 +113,10 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory'
   >(null);
+  const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -149,6 +153,40 @@ function MainCoupleApp() {
       return;
     }
     setWorldSnapshot(res.data);
+  }, [backend, showToast]);
+
+  const refreshInventorySnapshot = useCallback(
+    async (explicitWorldId?: string) => {
+      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.inventory) return;
+      setInventoryLoading(true);
+      const res = await backend.inventory.getInventory(targetWorldId);
+      setInventoryLoading(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        return;
+      }
+      setInventorySnapshot(res.data);
+    },
+    [backend, showToast],
+  );
+
+  const handleClaimFreeKibble = useCallback(async () => {
+    const targetWorldId = snapshotRef.current?.world.id;
+    if (!targetWorldId || !backend.inventory) return;
+    setInventoryLoading(true);
+    const res = await backend.inventory.claimFreeKibble(
+      targetWorldId,
+      makeIdempotencyKey('claim-kibble'),
+    );
+    setInventoryLoading(false);
+    if (!res.ok) {
+      showToast(res.message, true);
+      return;
+    }
+    setInventorySnapshot(res.data);
+    realtimeRef.current?.notifyWorldMutated('inventory');
+    showToast('Đã thêm 3 phần hạt mèo miễn phí vào túi chung!');
   }, [backend, showToast]);
 
   // Initial auth bootstrap & subscription
@@ -220,8 +258,12 @@ function MainCoupleApp() {
         onMovement: (packet) => {
           gameEventBus.emit('cmd:remote-movement', packet);
         },
-        onWorldMutated: () => {
-          void refreshWorldSnapshot();
+        onWorldMutated: (reason) => {
+          if (reason === 'inventory') {
+            void refreshInventorySnapshot(worldId);
+          } else {
+            void refreshWorldSnapshot();
+          }
         },
         onConnectionChange: (status) => {
           setConnectionStatus(status);
@@ -243,7 +285,7 @@ function MainCoupleApp() {
         void existing.disconnect();
       }
     };
-  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot]);
+  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot]);
 
   // Keep presence metadata synchronized when map/avatar changes
   useEffect(() => {
@@ -685,6 +727,14 @@ function MainCoupleApp() {
           showJoystick={showJoystick}
           onToggleJoystick={() => setShowJoystick((s) => !s)}
           onOpenInvite={() => setActiveModal('invite')}
+          onOpenInventory={
+            backend.inventory
+              ? () => {
+                  setActiveModal('inventory');
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
           onOpenPwaGuide={() => setActiveModal('pwa')}
           onOpenSpikeLab={() => {
             if (import.meta.env.DEV) setActiveModal('spike');
@@ -708,6 +758,17 @@ function MainCoupleApp() {
       )}
 
       {activeModal === 'pwa' && <IosInstallModal onClose={() => setActiveModal(null)} />}
+
+      {activeModal === 'inventory' && backend.inventory && (
+        <InventoryModal
+          snapshot={inventorySnapshot}
+          localUserId={currentUser.userId}
+          loading={inventoryLoading}
+          onClaimFreeKibble={handleClaimFreeKibble}
+          onRefresh={() => refreshInventorySnapshot()}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
 
       {import.meta.env.DEV && DevSpikeLabModal && activeModal === 'spike' && (
         <Suspense fallback={null}>

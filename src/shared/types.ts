@@ -123,6 +123,15 @@ export interface MovementPacket {
   anim: 'idle' | 'walk';
 }
 
+export type WorldMutationReason =
+  | 'furniture'
+  | 'profile'
+  | 'member'
+  | 'inventory'
+  | 'pet'
+  | 'study'
+  | 'mailbox';
+
 export type MutationErrorCode =
   | 'UNAUTHENTICATED'
   | 'FORBIDDEN'
@@ -139,6 +148,11 @@ export type MutationErrorCode =
   | 'STOCK_EXCEEDED'
   | 'NOT_FOUND'
   | 'VERSION_CONFLICT'
+  | 'COOLDOWN_ACTIVE'
+  | 'STACK_FULL'
+  | 'ALREADY_OPENED'
+  | 'INSUFFICIENT_ITEMS'
+  | 'IDEMPOTENCY_CONFLICT'
   | 'VALIDATION_ERROR'
   | 'NETWORK_ERROR';
 

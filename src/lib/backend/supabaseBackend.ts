@@ -1,4 +1,5 @@
 import { parseAvatarConfig } from '../../shared/avatar';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type {
   CreatedInvite,
   FurniturePlacement,
@@ -7,6 +8,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 import { getSupabaseClient } from '../supabase';
@@ -37,7 +39,12 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['NO_PLACE_ZONE', 'NO_PLACE_ZONE', 'Cần chừa lối đi trước cửa ra vào.'],
     ['WRONG_MAP', 'WRONG_MAP', 'Món nội thất không thuộc khu vực này.'],
     ['STOCK_EXCEEDED', 'STOCK_EXCEEDED', 'Bạn đã dùng hết số lượng món đồ khởi đầu này.'],
-    ['VERSION_CONFLICT', 'VERSION_CONFLICT', 'Nhà vừa được người kia chỉnh sửa. Đang đồng bộ lại...'],
+    ['VERSION_CONFLICT', 'VERSION_CONFLICT', 'Dữ liệu vừa được người kia cập nhật. Đang đồng bộ lại...'],
+    ['COOLDOWN_ACTIVE', 'COOLDOWN_ACTIVE', 'Hãy đợi thêm một chút trước khi thực hiện lại nhé.'],
+    ['STACK_FULL', 'STACK_FULL', 'Ngăn túi chứa món đồ này đã đầy rồi.'],
+    ['ALREADY_OPENED', 'ALREADY_OPENED', 'Lá thư hoặc món quà này đã được mở trước đó.'],
+    ['INSUFFICIENT_ITEMS', 'INSUFFICIENT_ITEMS', 'Trong túi không đủ vật phẩm cần dùng.'],
+    ['IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'Yêu cầu bị trùng khóa nhưng khác nội dung.'],
     ['NOT_FOUND', 'NOT_FOUND', 'Không tìm thấy dữ liệu được yêu cầu.'],
     ['VALIDATION_ERROR', 'VALIDATION_ERROR', 'Dữ liệu nhập chưa hợp lệ.'],
   ];
@@ -304,7 +311,7 @@ export function createSupabaseBackend(): WorldBackend {
         });
 
         ch.on('broadcast', { event: 'world_mutated' }, ({ payload }) => {
-          const reason = (payload as { reason?: 'furniture' | 'profile' | 'member' })?.reason ?? 'furniture';
+          const reason = (payload as { reason?: WorldMutationReason })?.reason ?? 'furniture';
           handlers.onWorldMutated(reason);
         });
 
@@ -389,6 +396,28 @@ export function createSupabaseBackend(): WorldBackend {
           });
         },
       };
+    },
+
+    inventory: {
+      async getInventory(worldId) {
+        const { data, error } = await supabase.rpc('inventory_get', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
+      async claimFreeKibble(worldId, idempotencyKey) {
+        const { data, error } = await supabase.rpc('inventory_claim_free_kibble', {
+          p_world_id: worldId,
+          p_idempotency_key: idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
     },
   };
 }
