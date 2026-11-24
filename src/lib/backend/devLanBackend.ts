@@ -5,6 +5,7 @@ import {
 } from '../../shared/avatar';
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
@@ -480,6 +481,27 @@ export function createDevLanBackend(): WorldBackend {
           method: 'POST',
           body: JSON.stringify(params),
         });
+      },
+    },
+
+    mailbox: {
+      async listMailbox(worldId) {
+        return apiJson<MailboxSnapshot>(`/mailbox?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async sendLetterOrGift(params) {
+        return apiJson<{ mailbox: MailboxSnapshot; inventory: InventorySnapshot }>('/mailbox/send', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async openItem(params) {
+        return apiJson<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>(
+          '/mailbox/open',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
       },
     },
   };

@@ -6,6 +6,7 @@ import {
   FlaskConical,
   Gamepad2,
   LogOut,
+  Mail,
   RotateCcw,
   Smartphone,
   UserCheck,
@@ -24,6 +25,8 @@ interface MenuModalProps {
   onOpenInventory?: () => void;
   onOpenPet?: () => void;
   onOpenStudy?: () => void;
+  onOpenMailbox?: () => void;
+  mailboxUnreadCount?: number;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
@@ -41,6 +44,8 @@ export function MenuModal({
   onOpenInventory,
   onOpenPet,
   onOpenStudy,
+  onOpenMailbox,
+  mailboxUnreadCount = 0,
   onOpenPwaGuide,
   onOpenSpikeLab,
   onQuickSwitchDev,
@@ -116,6 +121,20 @@ export function MenuModal({
             }}
           >
             <BookOpen size={17} /> Phòng học yên tĩnh (Pomodoro)
+          </button>
+        )}
+
+        {onOpenMailbox && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-mailbox"
+            onClick={() => {
+              onClose();
+              onOpenMailbox();
+            }}
+          >
+            <Mail size={17} /> Hộp thư &amp; Quà{mailboxUnreadCount > 0 ? ` (${mailboxUnreadCount} mới)` : ''}
           </button>
         )}
 

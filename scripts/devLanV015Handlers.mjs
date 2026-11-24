@@ -641,5 +641,188 @@ export async function handleV015Route({
     return true;
   }
 
+  // ---- OLW-015-02 Mailbox & Surprise Gifts ----
+  function buildMailboxSnapshot(targetWorldId, viewerId, nowMs = Date.now()) {
+    const rawList = (v015.letters[targetWorldId] ??= []);
+    const visible = rawList
+      .filter((item) => item.senderId === viewerId || item.recipientId === viewerId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map((item) => {
+        const redacted = item.recipientId === viewerId && item.openedAt === null && item.isSurprise;
+        return {
+          ...item,
+          body: redacted ? null : item.body,
+          giftItemSku: redacted ? null : item.giftItemSku,
+          giftQty: redacted ? 0 : item.giftQty,
+          bodyRedacted: redacted,
+          giftRedacted: redacted && item.kind === 'gift',
+        };
+      });
+    const unreadCount = rawList.filter(
+      (item) => item.recipientId === viewerId && item.openedAt === null,
+    ).length;
+    return {
+      worldId: targetWorldId,
+      items: visible,
+      unreadCount,
+      serverNowMs: nowMs,
+    };
+  }
+
+  if (req.method === 'GET' && route === '/mailbox') {
+    const worldId = reqUrl.searchParams.get('worldId') ?? '';
+    if (!worldId || !isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    sendJson(res, 200, { ok: true, data: buildMailboxSnapshot(worldId, userId) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/mailbox/send') {
+    const worldId = String(body.worldId ?? '').trim();
+    const recipientId = String(body.recipientId ?? '').trim();
+    const subject = String(body.subject ?? '').replace(/\u0000/g, '').trim().slice(0, 60);
+    const letterBody = String(body.body ?? '').replace(/\u0000/g, '').trim();
+    const giftItemSku = body.giftItemSku ? String(body.giftItemSku).trim() : null;
+    const giftQty = giftItemSku ? Number(body.giftQty) : 0;
+    const sourceScope = String(body.sourceScope ?? 'shared').trim();
+    const isSurprise = Boolean(body.isSurprise);
+    const key = String(body.idempotencyKey ?? '').trim();
+
+    if (!worldId || !recipientId || !letterBody || letterBody.length > 500 || !key) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Nội dung thư chưa hợp lệ (1–500 ký tự).' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId) || !isWorldMember(worldId, recipientId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Chỉ gửi thư/quà giữa hai thành viên trong ngôi nhà.' });
+      return true;
+    }
+    if (recipientId === userId) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Không thể tự gửi thư cho chính mình.' });
+      return true;
+    }
+    if (giftItemSku) {
+      if (!Number.isInteger(giftQty) || giftQty < 1 || giftQty > 10 || !['shared', 'personal'].includes(sourceScope)) {
+        sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Quà đính kèm hoặc số lượng chưa hợp lệ.' });
+        return true;
+      }
+    }
+
+    const reqHash = `mailbox_send:${recipientId}:${subject}:${letterBody}:${giftItemSku ?? ''}:${giftQty}:${sourceScope}:${isSurprise}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'mailbox_send', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (giftItemSku) {
+      const ownerScope = sourceScope === 'shared' ? 'shared' : `user:${userId}`;
+      const adj = adjustInventoryItem(v015, worldId, ownerScope, giftItemSku, -giftQty, nowIso);
+      if (!adj.ok) {
+        const status = adj.code === 'NOT_FOUND' ? 404 : 409;
+        sendJson(res, status, adj);
+        return true;
+      }
+    }
+
+    const list = (v015.letters[worldId] ??= []);
+    list.push({
+      id: `mail-${crypto.randomUUID()}`,
+      worldId,
+      senderId: userId,
+      recipientId,
+      kind: giftItemSku ? 'gift' : 'letter',
+      subject: subject || 'Thư nhỏ gửi bạn',
+      body: letterBody,
+      giftItemSku: giftItemSku ?? null,
+      giftQty: giftItemSku ? giftQty : 0,
+      isSurprise,
+      openedAt: null,
+      createdAt: nowIso,
+    });
+
+    const data = {
+      mailbox: buildMailboxSnapshot(worldId, userId, nowMs),
+      inventory: buildInventorySnapshot(v015, worldId, userId, nowMs),
+    };
+    saveV015Idempotency(v015, worldId, userId, 'mailbox_send', key, reqHash, data);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'mailbox' });
+    if (giftItemSku) broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    sendJson(res, 200, { ok: true, data });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/mailbox/open') {
+    const worldId = String(body.worldId ?? '').trim();
+    const letterId = String(body.letterId ?? '').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !letterId || !key) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thiếu thông tin mở thư.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+
+    const reqHash = `mailbox_open:${letterId}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'mailbox_open', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const list = (v015.letters[worldId] ??= []);
+    const row = list.find((item) => item.id === letterId);
+    if (!row) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy lá thư hoặc món quà này.' });
+      return true;
+    }
+    if (row.recipientId !== userId) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Chỉ người nhận mới mở được thư/quà này.' });
+      return true;
+    }
+    if (row.openedAt !== null) {
+      sendJson(res, 409, { ok: false, code: 'ALREADY_OPENED', message: 'Thư hoặc món quà này đã được mở rồi.' });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (row.kind === 'gift' && row.giftItemSku && row.giftQty > 0) {
+      // Credit to recipient personal compartment BEFORE setting openedAt so stack-full aborts cleanly
+      const adj = adjustInventoryItem(v015, worldId, `user:${userId}`, row.giftItemSku, row.giftQty, nowIso);
+      if (!adj.ok) {
+        sendJson(res, 409, adj);
+        return true;
+      }
+    }
+
+    row.openedAt = nowIso;
+    const data = {
+      openedId: row.id,
+      mailbox: buildMailboxSnapshot(worldId, userId, nowMs),
+      inventory: buildInventorySnapshot(v015, worldId, userId, nowMs),
+    };
+    saveV015Idempotency(v015, worldId, userId, 'mailbox_open', key, reqHash, data);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'mailbox' });
+    if (row.kind === 'gift') broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    sendJson(res, 200, { ok: true, data });
+    return true;
+  }
+
   return false;
 }

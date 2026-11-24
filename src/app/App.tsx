@@ -27,6 +27,7 @@ import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
 import { InventoryModal } from '../features/inventory/InventoryModal';
+import { MailboxModal } from '../features/mailbox/MailboxModal';
 import { InviteModal } from '../features/pairing/InviteModal';
 import { PetPanel } from '../features/pets/PetPanel';
 import { isPetSoundMuted, playPetFeedbackChime, setPetSoundMuted } from '../features/pets/petAudio';
@@ -42,6 +43,7 @@ import {
 } from '../shared/couple/coupleTypes';
 import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
+import type { MailboxGiftSourceScope, MailboxSnapshot } from '../shared/mailbox/mailboxTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import { deriveStudySessionAt, formatDurationMmSs } from '../shared/study/pomodoro';
 import type { StudyControlAction, StudyMode, StudySnapshot } from '../shared/study/studyTypes';
@@ -131,10 +133,12 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
+  const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
   const [petBusy, setPetBusy] = useState(false);
   const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
@@ -320,6 +324,77 @@ function MainCoupleApp() {
       }
     },
     [backend],
+  );
+
+  const refreshMailboxSnapshot = useCallback(
+    async (explicitWorldId?: string) => {
+      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.mailbox) return;
+      const res = await backend.mailbox.listMailbox(targetWorldId);
+      if (res.ok) {
+        setMailboxSnapshot(res.data);
+        gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.unreadCount });
+      }
+    },
+    [backend],
+  );
+
+  const handleSendMailbox = useCallback(
+    async (params: {
+      recipientId: string;
+      subject: string;
+      body: string;
+      giftItemSku: string | null;
+      giftQty: number;
+      sourceScope: MailboxGiftSourceScope;
+      isSurprise: boolean;
+    }): Promise<boolean> => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.mailbox) return false;
+      setMailboxBusy(true);
+      const res = await backend.mailbox.sendLetterOrGift({
+        worldId: targetWorldId,
+        ...params,
+        idempotencyKey: makeIdempotencyKey('mail-send'),
+      });
+      setMailboxBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        return false;
+      }
+      setMailboxSnapshot(res.data.mailbox);
+      setInventorySnapshot(res.data.inventory);
+      gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.mailbox.unreadCount });
+      realtimeRef.current?.notifyWorldMutated('mailbox');
+      if (params.giftItemSku) realtimeRef.current?.notifyWorldMutated('inventory');
+      showToast(params.giftItemSku ? 'Đã gửi quà bất ngờ vào hòm thư!' : 'Đã thả thư vào hòm thư chung!');
+      return true;
+    },
+    [backend, showToast],
+  );
+
+  const handleOpenMailboxItem = useCallback(
+    async (letterId: string) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.mailbox) return;
+      setMailboxBusy(true);
+      const res = await backend.mailbox.openItem({
+        worldId: targetWorldId,
+        letterId,
+        idempotencyKey: makeIdempotencyKey('mail-open'),
+      });
+      setMailboxBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        return;
+      }
+      setMailboxSnapshot(res.data.mailbox);
+      setInventorySnapshot(res.data.inventory);
+      gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.mailbox.unreadCount });
+      realtimeRef.current?.notifyWorldMutated('mailbox');
+      showToast('Đã mở thư! Kiểm tra ngăn riêng trong túi nếu có quà kèm nhé.');
+    },
+    [backend, showToast],
   );
 
   const handleStartStudy = useCallback(
@@ -670,6 +745,8 @@ function MainCoupleApp() {
             void refreshPetSnapshot(worldId);
           } else if (reason === 'study') {
             void refreshStudySnapshot(worldId);
+          } else if (reason === 'mailbox') {
+            void refreshMailboxSnapshot(worldId);
           } else {
             void refreshWorldSnapshot();
           }
@@ -690,6 +767,7 @@ function MainCoupleApp() {
         void refreshInventorySnapshot(worldId);
         void refreshPetSnapshot(worldId);
         void refreshStudySnapshot(worldId);
+        void refreshMailboxSnapshot(worldId);
       });
 
     return () => {
@@ -700,7 +778,7 @@ function MainCoupleApp() {
         void existing.disconnect();
       }
     };
-  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot]);
+  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot, refreshMailboxSnapshot]);
 
   // Keep presence metadata synchronized when map/avatar changes
   useEffect(() => {
@@ -795,6 +873,7 @@ function MainCoupleApp() {
     const unsubSceneReady = gameEventBus.on('evt:scene-ready', () => {
       void refreshPetSnapshot();
       void refreshStudySnapshot();
+      void refreshMailboxSnapshot();
     });
 
     const unsubPreview = gameEventBus.on('evt:preview-notice', (notice) => {
@@ -811,6 +890,12 @@ function MainCoupleApp() {
 
     const unsubPhoto = gameEventBus.on('evt:open-photo-frame', () => {
       setActiveModal('photo');
+    });
+
+    const unsubMailbox = gameEventBus.on('evt:open-mailbox', () => {
+      setActiveModal('mailbox');
+      void refreshMailboxSnapshot();
+      void refreshInventorySnapshot();
     });
 
     const unsubPosture = gameEventBus.on('evt:local-posture-changed', (evt) => {
@@ -842,9 +927,10 @@ function MainCoupleApp() {
       unsubSelect();
       unsubDiag();
       unsubPhoto();
+      unsubMailbox();
       unsubPosture();
     };
-  }, [currentUser, refreshInventorySnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
+  }, [currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
@@ -1262,6 +1348,16 @@ function MainCoupleApp() {
                 }
               : undefined
           }
+          onOpenMailbox={
+            backend.mailbox
+              ? () => {
+                  setActiveModal('mailbox');
+                  void refreshMailboxSnapshot();
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
+          mailboxUnreadCount={mailboxSnapshot?.unreadCount ?? 0}
           onOpenPwaGuide={() => setActiveModal('pwa')}
           onOpenSpikeLab={() => {
             if (import.meta.env.DEV) setActiveModal('spike');
@@ -1341,6 +1437,19 @@ function MainCoupleApp() {
         <PhotoFrameModal
           selectedPresetId={selectedPhotoPresetId}
           onSelectPreset={setSelectedPhotoPresetId}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'mailbox' && backend.mailbox && (
+        <MailboxModal
+          snapshot={mailboxSnapshot}
+          inventory={inventorySnapshot}
+          localUserId={currentUser.userId}
+          members={worldSnapshot.members}
+          busy={mailboxBusy}
+          onSend={handleSendMailbox}
+          onOpenItem={handleOpenMailboxItem}
           onClose={() => setActiveModal(null)}
         />
       )}

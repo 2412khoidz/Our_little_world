@@ -1,5 +1,10 @@
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type {
+  MailboxSnapshot,
+  OpenMailboxParams,
+  SendMailboxParams,
+} from '../../shared/mailbox/mailboxTypes';
 import type { PetActionType, PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   StudyControlAction,
@@ -112,6 +117,16 @@ export interface StudyBackend {
   }): Promise<MutationResult<StudySnapshot>>;
 }
 
+export interface MailboxBackend {
+  listMailbox(worldId: string): Promise<MutationResult<MailboxSnapshot>>;
+  sendLetterOrGift(
+    params: SendMailboxParams,
+  ): Promise<MutationResult<{ mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
+  openItem(
+    params: OpenMailboxParams,
+  ): Promise<MutationResult<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
+}
+
 export interface WorldBackend {
   readonly mode: BackendMode;
 
@@ -186,4 +201,5 @@ export interface WorldBackend {
   readonly inventory?: InventoryBackend;
   readonly pet?: PetBackend;
   readonly study?: StudyBackend;
+  readonly mailbox?: MailboxBackend;
 }

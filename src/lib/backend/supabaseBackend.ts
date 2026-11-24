@@ -1,6 +1,7 @@
 import { parseAvatarConfig } from '../../shared/avatar';
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
@@ -507,6 +508,52 @@ export function createSupabaseBackend(): WorldBackend {
           return { ok: false, ...mapSupabaseError(error) };
         }
         return { ok: true, data: data as StudySnapshot };
+      },
+    },
+
+    mailbox: {
+      async listMailbox(worldId) {
+        const { data, error } = await supabase.rpc('mailbox_list', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as MailboxSnapshot };
+      },
+      async sendLetterOrGift(params) {
+        const { data, error } = await supabase.rpc('mailbox_send_letter_or_gift', {
+          p_world_id: params.worldId,
+          p_recipient_id: params.recipientId,
+          p_subject: params.subject,
+          p_body: params.body,
+          p_gift_item_sku: params.giftItemSku,
+          p_gift_qty: params.giftQty,
+          p_source_scope: params.sourceScope,
+          p_is_surprise: params.isSurprise,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { mailbox: MailboxSnapshot; inventory: InventorySnapshot },
+        };
+      },
+      async openItem(params) {
+        const { data, error } = await supabase.rpc('mailbox_open_item', {
+          p_world_id: params.worldId,
+          p_letter_id: params.letterId,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot },
+        };
       },
     },
   };
