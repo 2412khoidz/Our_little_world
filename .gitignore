@@ -1,0 +1,52 @@
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# Local environment secrets & dev-only LAN state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+.dev-lan-state.json
+
+# Licensed third-party assets (never redistribute paid packs to git)
+public/assets/local-licensed/
+
+# Test & coverage artifacts
+playwright-report/
+test-results/
+coverage/
+.vitest-cache/
+
+# Local media, exports and source archives
+*.mp4
+!/public/spike/sample-cozy-sync.mp4
+*.webm
+*.m4v
+*.mkv
+*.mov
+*.avi
+*.srt
+*.ass
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.ase
+*.aseprite
+*.psd
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Local art direction evaluation candidates (never commit or bundle into production)
+asset-candidates/

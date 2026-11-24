@@ -1,0 +1,58 @@
+# AGENTS.md — Hướng dẫn cho Coding Agent
+
+Tài liệu này quy định nguyên tắc kỹ thuật, phạm vi và quy trình làm việc trong repository **Our Little World**.
+
+## 1. Bối cảnh sản phẩm
+- **Mục tiêu:** Cozy game 2D pixel art kết hợp không gian số riêng tư dành cho **một cặp đôi yêu xa** (2 thành viên tối đa).
+- **Thiết bị ưu tiên:** iPhone 16 Pro Max (Safari + PWA Add to Home Screen) và Windows Chrome/Edge; Android là nền tảng bổ sung.
+- **Ngôn ngữ UI:** Tiếng Việt mặc định (hướng tới dễ tách i18n về sau).
+- **Triết lý thiết kế:** Không buộc đăng nhập lại khi còn phiên hợp lệ, không daily streak, không phạt offline, cho phép mini-game PvP thân thiện tự nguyện, không quảng cáo, không camera/mic khi học.
+
+## 2. Stack & Phiên bản đã xác minh
+- **Package manager:** `npm` (duy nhất; khóa phiên bản qua `package-lock.json`).
+- **Frontend UI:** React 19 (`^19.3.1`), TypeScript (`~5.9.3`), Vite (`^8.3.8`), Zod (`^4.6.7`), Lucide React (`^1.79.0`).
+- **Game Engine:** Phaser 4 (`^4.2.1`) với `pixelArt: true`, `roundPixels: true`, `antialias: false`.
+- **PWA:** `vite-plugin-pwa` (`^2.0.0`) + `workbox-window` (`^7.4.1`).
+- **Backend / Realtime:** `@supabase/supabase-js` (`^2.119.2`) + Supabase Postgres (migrations + RLS + RPC) + Realtime private channels. Trong môi trường development khi chưa cấu hình `.env`, app chạy **Dev LAN Multiplayer Relay** (`scripts/devLanServerPlugin.mjs` + `devLanBackend.ts`) để test realtime đa thiết bị qua Wi-Fi; cơ chế giả lập danh tính bị khóa cứng sau `import.meta.env.DEV` và bị loại hoàn toàn khỏi production build.
+- **Testing:** Vitest (`^5.1.1`) + Testing Library + jsdom, Playwright (`^1.65.1`).
+
+## 2.1 Nguyên tắc Zero-Configuration Onboarding (Bắt buộc cho Production)
+Người dùng thứ hai không am hiểu công nghệ; toàn bộ trải nghiệm chính thức phải đạt chuẩn không cấu hình phức tạp:
+- **Chỉ cần một đường link HTTPS** để bắt đầu (không gửi file cài đặt, không yêu cầu cấu hình thủ công).
+- **Không cần cài VPN, Tailscale hoặc ứng dụng bên thứ ba** cho mọi tính năng thông thường.
+- **Đăng nhập đơn giản, duy trì phiên đăng nhập** ổn định qua các lần mở lại app.
+- **Hỗ trợ Add to Home Screen trên iPhone** với hướng dẫn tiếng Việt trực quan.
+- **Không hiển thị các thông số kỹ thuật không cần thiết** (ẩn FPS, DPR, RTT, mã trạng thái kỹ thuật, chế độ backend dev và bộ chuyển danh tính thử nghiệm khỏi giao diện production).
+- **Tự động kết nối lại khi mất mạng** hoặc mở lại từ nền mà không làm mất tiến trình đã lưu.
+- **Mọi thông báo lỗi phải được diễn đạt bằng tiếng Việt dễ hiểu** (tránh mã lỗi hay thuật ngữ kỹ thuật thô).
+- **Cinema (V0.4) không yêu cầu người xem cài VPN:** Cần nghiên cứu phương án phát phim local từ máy Windows qua HTTPS riêng tư không bắt bạn gái cài Tailscale/VPN, vẫn bảo đảm bảo mật, chất lượng video và chi phí thấp trước khi triển khai V0.4.
+- **Cô lập Dev Impersonation:** Mọi công cụ chọn nhanh danh tính, reset thế giới dev và Spike 0 diagnostics chỉ được tồn tại khi `import.meta.env.DEV === true`, tuyệt đối không xuất hiện trong bản production.
+
+## 3. Quy tắc phạm vi (Scope Discipline)
+- Chỉ triển khai task được giao thuộc milestone hiện tại (**V0.1 Final Integration**). Các mốc sau mở theo quyết định chủ dự án.
+- Pet, học, hộp thư, kinh tế, nhật ký và Cinema thuộc các mốc sau. Xem [lộ trình](docs/MASTER_ROADMAP.md) và [quyết định đã chốt](docs/DECISIONS.md#quyết-định-đã-chốt).
+- Đồ vật xem trước trên bản đồ (như bàn học, sofa) chỉ hiển thị thông báo trung thực "Chưa mở (V0.3 / V0.4)" — không tạo nút giả.
+- Mọi tính năng mới chưa hoàn chỉnh không được đưa vào menu điều hướng chính.
+
+## 4. Kiến trúc & Biên giới module
+- `src/shared/` — Domain types, schemas, placement/collision logic, map definitions, realtime throttling/interpolation, cinema sync math. **Thuần TypeScript, không phụ thuộc DOM, React hay Phaser.**
+- `src/lib/` — Env parsing, Supabase client, Backend Adapter (`WorldBackend`), `supabaseBackend`, `localPreviewBackend`.
+- `src/game/` — Phaser scenes, pixel-art avatar texture builder, grid pathfinding, typed `eventBus`. **Phaser không tự gọi DB trực tiếp.**
+- `src/features/` & `src/app/` — React UI shell (mobile-first), onboarding/pairing, avatar customizer, decorate drawer, PWA banner/guide, Spike 0 Lab cô lập.
+- `supabase/` — SQL migrations tuần tự theo milestone, `seed.sql` dữ liệu giả lập dev, và `tests/` SQL assertions.
+
+## 5. An toàn, Bảo mật & Tài nguyên
+- **KHÔNG** commit `.env`, API keys, `service_role` key, token Jellyfin, phim, ảnh riêng tư hoặc paid asset packs không được phép phân phối.
+- **KHÔNG** lưu mật khẩu hoặc nội dung riêng tư trong Service Worker cache.
+- **KHÔNG** dùng `ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY` trong migration (dễ lỗi quyền `42501`; bảng đã bật RLS sẵn trên Supabase).
+- **KHÔNG** dùng asset vi phạm bản quyền (Stardew Valley, ảnh tải lậu). Bộ asset mặc định trong repo là starter procedural CC0 tự sinh (`scripts/generate-starter-assets.mjs`); asset ngoài đặt ở `public/assets/local-licensed/` (đã gitignore).
+- **KHÔNG** báo cáo pass cho bài test chưa chạy hoặc đánh đồng test Chromium desktop/local với nghiệm thu trên iPhone thật, Supabase thật, hoặc Jellyfin/Tailscale thật.
+
+## 6. Definition of Done cho mỗi task
+1. Code chạy sạch: `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` đều exit 0.
+2. E2E Playwright (`npm run test:e2e`) chạy và pass cho các luồng liên quan.
+3. Tài liệu (`docs/PROGRESS.md`, `docs/ROADMAP.md`, `README.md` nếu cần) được cập nhật trung thực: nêu rõ phần đã test, phần chưa test trên thiết bị thật và rủi ro còn lại.
+
+**Bàn giao:** Đọc đúng task ở [backlog](docs/IMPLEMENTATION_BACKLOG.md) và [handover](docs/AGENT_HANDOVER.md). Chi phí bổ sung là 0₫. Dữ liệu dev và dev RPC bị cô lập khỏi production. Kiểm tra quyền ship của asset trước khi đưa vào bản build. Tra cứu qua [chỉ mục](docs/README.md) và [gate nghiệm thu](docs/MILESTONE_ACCEPTANCE.md).
+
+Mini-game PvP giữa hai thành viên chỉ mở ở các milestone đã định. Không xếp hạng cạnh tranh dài hạn, không mất tài sản và không bắt buộc chơi. [Đặc tả sản phẩm](docs/PRODUCT_SPEC.md)

@@ -1,0 +1,194 @@
+import { expect, test } from '@playwright/test';
+
+const BASE = 'http://127.0.0.1:4173';
+
+test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Contexts)', () => {
+  test.beforeEach(async ({ request }) => {
+    const res = await request.post(`${BASE}/api/dev-lan/reset`, { data: {} });
+    expect(res.ok()).toBe(true);
+  });
+
+  test('pairs Mây & Nắng across isolated device contexts, rejects 3rd outsider, syncs room/avatar/furniture', async ({
+    browser,
+  }) => {
+    const ctxMay = await browser.newContext();
+    const ctxNang = await browser.newContext();
+    const ctxOutsider = await browser.newContext();
+
+    const errors: string[] = [];
+    const pageA = await ctxMay.newPage();
+    const pageB = await ctxNang.newPage();
+    const pageC = await ctxOutsider.newPage();
+    pageA.on('pageerror', (e) => errors.push(e.message));
+    pageB.on('pageerror', (e) => errors.push(e.message));
+
+    // 1. Device A (Mây) creates world & invite code
+    await pageA.goto('/');
+    await expect(pageA.getByTestId('dev-lan-banner')).toBeVisible();
+    await pageA.getByTestId('preset-partner-a').click();
+    await pageA.getByTestId('btn-create-world').click();
+
+    await expect(pageA.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+    await pageA.getByTestId('btn-top-invite').click();
+    await pageA.getByTestId('btn-generate-invite').click();
+    const inviteCode = (await pageA.getByTestId('generated-invite-code').textContent())?.trim() ?? '';
+    expect(inviteCode).toMatch(/^OLW-/);
+    await pageA.getByRole('button', { name: 'Đóng' }).click();
+
+    // 2. Device B (Nắng, completely isolated storage) redeems invite
+    await pageB.goto('/');
+    await pageB.getByTestId('preset-partner-b').click();
+    await pageB.getByTestId('tab-join-world').click();
+    await pageB.getByTestId('input-invite-code').fill(inviteCode);
+    await pageB.getByTestId('btn-redeem-invite').click();
+
+    await expect(pageB.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+    await expect(pageA.getByTestId('partner-presence-pill')).toContainText('Nắng đang ở Trong nhà');
+    await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
+
+    // 3. Device C (Outsider 3rd account) is rejected
+    await pageC.goto('/');
+    await pageC.getByTestId('preset-outsider').click();
+    await pageC.getByTestId('tab-join-world').click();
+    await pageC.getByTestId('input-invite-code').fill(inviteCode);
+    await pageC.getByTestId('btn-redeem-invite').click();
+    await expect(pageC.getByTestId('onboarding-error')).toBeVisible();
+    await ctxOutsider.close();
+
+    // 4. Room switch syncs across isolated devices via SSE
+    await pageA.getByTestId('nav-garden').click();
+    await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Ngoài vườn');
+    await pageA.getByTestId('nav-home').click();
+    await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
+
+    // 5. Avatar rename propagates & persists across reload
+    await pageA.getByTestId('nav-avatar').click();
+    await pageA.getByTestId('input-avatar-nickname').fill('Mây Cute');
+    await pageA.getByTestId('btn-save-avatar').click();
+    await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây Cute');
+
+    await pageA.reload();
+    await expect(pageA.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    // 6. Furniture placement persists & occupied-tile conflict rejects duplicate placement
+    await pageA.getByTestId('nav-decorate').click();
+    await expect(pageA.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 1/2');
+    await pageA.getByTestId('decorate-sku-lamp_floor').click();
+    await pageA.waitForTimeout(120);
+
+    const canvasBox = await pageA.getByTestId('game-canvas-host').boundingBox();
+    expect(canvasBox).not.toBeNull();
+    if (canvasBox) {
+      await pageA.mouse.click(canvasBox.x + canvasBox.width * 0.5, canvasBox.y + canvasBox.height * 0.45);
+    }
+    await expect(pageA.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 0/2');
+
+    // Device A tries placing plant on the exact same occupied tile -> conflict message
+    await pageA.getByTestId('decorate-sku-plant_monstera').click();
+    await pageA.waitForTimeout(120);
+    const canvasBox2 = await pageA.getByTestId('game-canvas-host').boundingBox();
+    if (canvasBox2) {
+      await pageA.mouse.click(canvasBox2.x + canvasBox2.width * 0.5, canvasBox2.y + canvasBox2.height * 0.45);
+    }
+    await expect(pageA.getByTestId('stage-toast')).toContainText('chiếm chỗ');
+
+    // Reload Device B (Nắng) -> sees updated furniture count persisted on server!
+    await pageB.reload();
+    await pageB.getByTestId('nav-decorate').click();
+    await expect(pageB.getByTestId('decorate-sku-lamp_floor')).toContainText('Còn 0/2');
+
+    await ctxMay.close();
+    await ctxNang.close();
+    expect(errors).toEqual([]);
+  });
+
+  test('allows the same account to log in on multiple devices while keeping world at 2/2', async ({
+    browser,
+  }) => {
+    // Seed 2/2 world first via dev helper UI
+    const ctxDevice1 = await browser.newContext();
+    const ctxDevice2 = await browser.newContext();
+    const p1 = await ctxDevice1.newPage();
+    const p2 = await ctxDevice2.newPage();
+
+    await p1.goto('/');
+    await p1.getByTestId('btn-dev-seed-couple').click();
+    await p1.getByTestId('preset-partner-a').click();
+    await expect(p1.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    // Second device also logs in as Mây (same account) -> enters seamlessly
+    await p2.goto('/');
+    await p2.getByTestId('preset-partner-a').click();
+    await expect(p2.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    await p1.getByTestId('nav-menu').click();
+    await p1.getByTestId('menu-invite').click();
+    await expect(p1.getByText('Ghép cặp ngôi nhà (2/2)')).toBeVisible();
+
+    await ctxDevice1.close();
+    await ctxDevice2.close();
+  });
+
+  test('renders mobile-first layout cleanly on 430x932 viewport without horizontal overflow', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 430, height: 932 });
+    await page.goto('/');
+    await page.getByTestId('preset-partner-a').click();
+    await page.getByTestId('btn-create-world').click();
+
+    await expect(page.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    const layoutCheck = await page.evaluate(() => {
+      const overflowX = document.documentElement.scrollWidth > window.innerWidth;
+      const navButtons = Array.from(document.querySelectorAll('.quick-nav .nav-btn'));
+      const minHeight = Math.min(...navButtons.map((el) => el.getBoundingClientRect().height));
+      return { overflowX, navCount: navButtons.length, minHeight };
+    });
+
+    expect(layoutCheck.overflowX).toBe(false);
+    expect(layoutCheck.navCount).toBe(5);
+    expect(layoutCheck.minHeight).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Spike 0 Video Sync PoC synchronizes Play/Seek across 2 isolated contexts via Dev LAN SSE', async ({
+    browser,
+  }) => {
+    const ctx1 = await browser.newContext();
+    const ctx2 = await browser.newContext();
+    const pageA = await ctx1.newPage();
+    const pageB = await ctx2.newPage();
+
+    await pageA.goto('/');
+    await pageA.getByTestId('btn-dev-seed-couple').click();
+    await pageA.getByTestId('preset-partner-a').click();
+    await expect(pageA.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    await pageB.goto('/');
+    await pageB.getByTestId('preset-partner-b').click();
+    await expect(pageB.getByTestId('game-canvas-host').locator('canvas')).toBeVisible();
+
+    await pageA.getByTestId('nav-menu').click();
+    await pageA.getByTestId('menu-spike-lab').click();
+    await pageA.getByTestId('spike-tab-media').click();
+
+    await pageB.getByTestId('nav-menu').click();
+    await pageB.getByTestId('menu-spike-lab').click();
+    await pageB.getByTestId('spike-tab-media').click();
+
+    await pageA.getByTestId('spike-btn-ready').click();
+    await pageB.getByTestId('spike-btn-ready').click();
+
+    await pageA.getByTestId('spike-btn-seek-3').click();
+    await pageA.getByTestId('spike-btn-play').click();
+
+    await expect(pageB.getByTestId('spike-media-telemetry')).toContainText('playing');
+    await expect(pageB.getByTestId('spike-media-telemetry')).toContainText('rev #3');
+
+    await pageA.getByTestId('spike-btn-pause').click();
+    await expect(pageB.getByTestId('spike-media-telemetry')).toContainText('paused');
+
+    await ctx1.close();
+    await ctx2.close();
+  });
+});

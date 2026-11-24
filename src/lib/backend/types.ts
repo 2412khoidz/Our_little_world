@@ -1,0 +1,134 @@
+import type {
+  AvatarConfig,
+  BackendMode,
+  CinemaCommand,
+  CinemaSyncState,
+  CreatedInvite,
+  DevIdentityInfo,
+  FurniturePlacement,
+  MapId,
+  MovementPacket,
+  MutationResult,
+  PresencePayload,
+  UserProfile,
+  WorldInviteStatus,
+  WorldSnapshot,
+} from '../../shared/types';
+
+export interface AuthSessionUser {
+  userId: string;
+  email: string;
+  displayLabel: string;
+}
+
+export type LocalPresetAccountId = 'partner-a' | 'partner-b' | 'outsider';
+
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'offline';
+
+export interface RealtimeHandlers {
+  onPresenceChange: (presences: PresencePayload[]) => void;
+  onMovement: (packet: MovementPacket) => void;
+  onWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  onConnectionChange: (status: ConnectionStatus) => void;
+}
+
+export interface RealtimeHandle {
+  publishMovement: (packet: MovementPacket) => void;
+  updatePresence: (presence: PresencePayload) => void;
+  notifyWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  reconnect: () => Promise<void>;
+  setSimulatedOffline?: (offline: boolean) => void;
+  disconnect: () => Promise<void>;
+}
+
+export interface SpikeCinemaPacket {
+  kind: 'state' | 'command' | 'ready' | 'ping' | 'pong';
+  senderId: string;
+  sentAtClientMs: number;
+  serverNowMs?: number;
+  ready?: boolean;
+  command?: CinemaCommand;
+  state?: CinemaSyncState;
+}
+
+export interface SpikeCinemaBus {
+  subscribe: (onMessage: (pkt: SpikeCinemaPacket) => void) => () => void;
+  send: (pkt: SpikeCinemaPacket) => void;
+}
+
+export interface WorldBackend {
+  readonly mode: BackendMode;
+
+  getCurrentUser(): Promise<AuthSessionUser | null>;
+  onAuthChange(cb: (user: AuthSessionUser | null) => void): () => void;
+
+  signInWithPassword(email: string, password: string): Promise<MutationResult<AuthSessionUser>>;
+  signUpWithPassword(
+    email: string,
+    password: string,
+  ): Promise<MutationResult<{ user: AuthSessionUser | null; needsEmailVerification: boolean }>>;
+  signInLocalPreset?(presetId: LocalPresetAccountId): Promise<MutationResult<AuthSessionUser>>;
+  listDevIdentities?(): Promise<{
+    identities: DevIdentityInfo[];
+    worldExists: boolean;
+    worldName: string | null;
+    memberCount: number;
+  }>;
+  seedDevCoupleWorld?(): Promise<MutationResult<WorldSnapshot>>;
+  resetDevWorld?(): Promise<MutationResult<{ reset: true }>>;
+  signOut(): Promise<void>;
+
+  getWorldSnapshot(): Promise<MutationResult<WorldSnapshot | null>>;
+  createWorld(
+    worldName: string,
+    nickname: string,
+    avatarConfig: AvatarConfig,
+  ): Promise<MutationResult<WorldSnapshot>>;
+  createInvite(worldId: string): Promise<MutationResult<CreatedInvite>>;
+  getInviteStatus(worldId: string): Promise<MutationResult<WorldInviteStatus>>;
+  redeemInvite(
+    inviteCode: string,
+    nickname: string,
+    avatarConfig: AvatarConfig,
+  ): Promise<MutationResult<WorldSnapshot>>;
+  updateProfile(nickname: string, avatarConfig: AvatarConfig): Promise<MutationResult<UserProfile>>;
+
+  placeFurniture(params: {
+    worldId: string;
+    mapId: MapId;
+    sku: string;
+    tileX: number;
+    tileY: number;
+    expectedLayoutVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;
+
+  moveFurniture(params: {
+    worldId: string;
+    placementId: string;
+    tileX: number;
+    tileY: number;
+    expectedLayoutVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;
+
+  removeFurniture(params: {
+    worldId: string;
+    placementId: string;
+    expectedLayoutVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ layoutVersion: number; removedId: string }>>;
+
+  connectWorldRealtime(
+    worldId: string,
+    initialPresence: PresencePayload,
+    handlers: RealtimeHandlers,
+  ): Promise<RealtimeHandle>;
+
+  createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus;
+}

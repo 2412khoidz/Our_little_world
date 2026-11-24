@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-11-24T16:32:20.681Z",
+  "generator": "scripts/generate-starter-assets.mjs",
+  "tileSizePx": 16,
+  "perspective": "3/4 top-down RPG",
+  "assets": [
+    {
+      "path": "public/assets/starter/tileset-cozy.png",
+      "role": "Starter home & garden 16x16 tileset",
+      "author": "Our Little World (Procedural Starter)",
+      "license": "CC0-1.0",
+      "attributionRequired": false,
+      "redistributable": true,
+      "replaceable": true
+    },
+    {
+      "path": "public/assets/starter/furniture-cozy.png",
+      "role": "Starter 12-item interior & garden furniture sprite sheet",
+      "author": "Our Little World (Procedural Starter)",
+      "license": "CC0-1.0",
+      "attributionRequired": false,
+      "redistributable": true,
+      "replaceable": true
+    },
+    {
+      "path": "public/assets/maps/home.json",
+      "role": "Home room Tiled JSON map (16x12 tiles)",
+      "author": "Our Little World",
+      "license": "CC0-1.0",
+      "attributionRequired": false,
+      "redistributable": true,
+      "replaceable": true
+    },
+    {
+      "path": "public/assets/maps/garden.json",
+      "role": "Garden Tiled JSON map (18x14 tiles)",
+      "author": "Our Little World",
+      "license": "CC0-1.0",
+      "attributionRequired": false,
+      "redistributable": true,
+      "replaceable": true
+    },
+    {
+      "path": "public/icons/*",
+      "role": "PWA & iOS Safari icons",
+      "author": "Our Little World",
+      "license": "CC0-1.0",
+      "attributionRequired": false,
+      "redistributable": true,
+      "replaceable": true
+    }
+  ]
+}
