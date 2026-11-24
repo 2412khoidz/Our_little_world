@@ -43,3 +43,7 @@ Mốc review đã dừng trước bước Cloud. Cloud Test, license triển kha
 - Đã áp đủ bốn migration trên PostgreSQL 18.6 cục bộ với fixture cho `auth` và `realtime`. [SQL assertions](../../supabase/tests/v01_security_hardening.sql) pass cho grants, RLS, outsider, trần membership và retry nội thất. [Kiểm thử nhiều phiên](../../supabase/tests/v01_security_concurrency.cjs) pass ba kịch bản, gồm rotate đồng thời redeem, hai người tranh slot cuối và retry nội thất chờ giao dịch đầu rồi trả cùng kết quả.
 - Chạy lại bằng `psql -X -v ON_ERROR_STOP=1 -f supabase/tests/v01_security_hardening.sql` trên DB thử nghiệm đã áp migration. Bài nhiều phiên yêu cầu `pg` trong môi trường kiểm thử riêng và `OLW_SQL_TEST_DATABASE_URL` trỏ DB loopback có quyền tạo fixture. Dùng `NODE_PATH` trỏ tới `node_modules` của môi trường đó, rồi chạy `node supabase/tests/v01_security_concurrency.cjs`. Không cần sửa dependency app.
 - Lint, typecheck, Vitest 35/35, public build, production guard và Playwright Dev LAN Chromium 10/10 không retry đều pass. Vite vẫn có cảnh báo chunk lớn. Chi phí bổ sung 0₫.
+
+## Independent Domain Review
+
+[Báo cáo và kế hoạch tích hợp](GPT_INTEGRATION_REVIEW.md) đã chốt DeepSeek `5eda187201f1908e47a1530c7b13ddfd698a666b` và Neon `eb5d202ee9d56bc2d0b91b4e94c2c655c3c9248c`. Ưu tiên xử lý migration version trùng `20261125000100`, quyền helper K5, tính duy nhất của phần thưởng và projection Battleship trước khi nối backend. Đã chạy Economy Simulator và các probe trên archive DeepSeek. Merge, kiểm thử tích hợp và Supabase Test còn chờ.
