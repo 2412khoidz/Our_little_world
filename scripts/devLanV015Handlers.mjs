@@ -824,5 +824,150 @@ export async function handleV015Route({
     return true;
   }
 
+  // ---- OLW-015-08 Dev Console K6 (Dev LAN only; production has no /dev-console routes) ----
+  const OUTSIDER_DEV_ID = '33333333-3333-4333-8333-333333333333';
+  function assertDevAdminWorld(targetWorldId) {
+    if (!targetWorldId || userId === OUTSIDER_DEV_ID || !isWorldMember(targetWorldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Dev Console chỉ dành cho thành viên test trong môi trường Dev.' });
+      return false;
+    }
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/dev-console/spawn-item') {
+    const worldId = String(body.worldId ?? '').trim();
+    const scope = String(body.scope ?? 'personal').trim();
+    const itemSku = String(body.itemSku ?? '').trim();
+    const qty = Number(body.qty);
+    if (!assertDevAdminWorld(worldId)) return true;
+    if (!['shared', 'personal'].includes(scope) || !Number.isInteger(qty) || qty === 0 || qty < -100 || qty > 100) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Tham số spawn vật phẩm không hợp lệ.' });
+      return true;
+    }
+    const nowMs = Date.now();
+    const ownerScope = scope === 'shared' ? 'shared' : `user:${userId}`;
+    const adj = adjustInventoryItem(v015, worldId, ownerScope, itemSku, qty, new Date(nowMs).toISOString());
+    if (!adj.ok) {
+      sendJson(res, adj.code === 'NOT_FOUND' ? 404 : 409, adj);
+      return true;
+    }
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    sendJson(res, 200, { ok: true, data: buildInventorySnapshot(v015, worldId, userId, nowMs) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/dev-console/set-pet') {
+    const worldId = String(body.worldId ?? '').trim();
+    if (!assertDevAdminWorld(worldId)) return true;
+    const pet = v015.pets[worldId];
+    if (!pet) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa nhận nuôi bé mèo cam.' });
+      return true;
+    }
+    const clamp = (v) => Math.max(0, Math.min(100, Math.round(Number(v))));
+    const nowMs = Date.now();
+    pet.vitals = {
+      hunger: clamp(body.hunger ?? pet.vitals.hunger),
+      energy: clamp(body.energy ?? pet.vitals.energy),
+      fun: clamp(body.fun ?? pet.vitals.fun),
+    };
+    pet.emotion = derivePetMood(pet.vitals);
+    pet.simStateAtMs = nowMs;
+    pet.version += 1;
+    pet.updatedAt = new Date(nowMs).toISOString();
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
+    sendJson(res, 200, { ok: true, data: projectPet(pet, nowMs) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/dev-console/advance-study') {
+    const worldId = String(body.worldId ?? '').trim();
+    const sessionId = String(body.sessionId ?? '').trim();
+    const deltaSeconds = Number(body.deltaSeconds);
+    if (!assertDevAdminWorld(worldId)) return true;
+    if (!sessionId || !Number.isFinite(deltaSeconds)) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Tham số tua Pomodoro chưa hợp lệ.' });
+      return true;
+    }
+    const row = (v015.studySessions[worldId] ?? []).find((s) => s.id === sessionId);
+    if (!row) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy phiên học.' });
+      return true;
+    }
+    const deltaMs = Math.round(deltaSeconds * 1000);
+    const nowMs = Date.now();
+    row.startedAtMs -= deltaMs;
+    row.endsAtMs -= deltaMs;
+    row.remainingMs = Math.max(0, row.remainingMs - deltaMs);
+    row.version += 1;
+    row.updatedAt = new Date(nowMs).toISOString();
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'study' });
+    sendJson(res, 200, { ok: true, data: buildStudySnapshot(v015, worldId, userId, nowMs) });
+    return true;
+  }
+
+  if (req.method === 'GET' && route === '/dev-console/snapshot-export') {
+    const worldId = reqUrl.searchParams.get('worldId') ?? '';
+    if (!assertDevAdminWorld(worldId)) return true;
+    const nowMs = Date.now();
+    // Sanitized export intentionally strips auth tokens, user emails, private letters, and idempotency logs
+    const sanitized = {
+      schemaVersion: 1,
+      worldId,
+      exportedAt: new Date(nowMs).toISOString(),
+      placements: structuredClone(db.placements?.[worldId] ?? []),
+      inventory: structuredClone(getWorldInventoryList(v015, worldId)),
+      pet: v015.pets[worldId] ? structuredClone(v015.pets[worldId]) : null,
+      studySessions: structuredClone(v015.studySessions[worldId] ?? []),
+    };
+    sendJson(res, 200, { ok: true, data: sanitized });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/dev-console/snapshot-restore') {
+    const worldId = String(body.worldId ?? '').trim();
+    const snap = body.snapshot;
+    if (!assertDevAdminWorld(worldId)) return true;
+    if (
+      !snap ||
+      typeof snap !== 'object' ||
+      snap.schemaVersion !== 1 ||
+      snap.worldId !== worldId ||
+      !Array.isArray(snap.placements) ||
+      !Array.isArray(snap.inventory) ||
+      !Array.isArray(snap.studySessions)
+    ) {
+      sendJson(res, 400, {
+        ok: false,
+        code: 'VALIDATION_ERROR',
+        message: 'Snapshot không hợp lệ hoặc không khớp worldId / schemaVersion.',
+      });
+      return true;
+    }
+
+    db.placements[worldId] = structuredClone(snap.placements);
+    if (db.worlds?.[worldId]) {
+      db.worlds[worldId].layoutVersion = (db.worlds[worldId].layoutVersion ?? 1) + 1;
+    }
+    v015.inventory[worldId] = structuredClone(snap.inventory);
+    if (snap.pet && typeof snap.pet === 'object' && snap.pet.worldId === worldId) {
+      v015.pets[worldId] = structuredClone(snap.pet);
+    } else if (snap.pet === null) {
+      delete v015.pets[worldId];
+    }
+    v015.studySessions[worldId] = structuredClone(snap.studySessions);
+
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'furniture' });
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
+    broadcastEvent(worldId, 'world_mutated', { reason: 'study' });
+    sendJson(res, 200, { ok: true, data: { restored: true } });
+    return true;
+  }
+
   return false;
 }

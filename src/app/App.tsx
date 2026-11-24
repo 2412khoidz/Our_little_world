@@ -67,6 +67,14 @@ const DevArtDemoShowcase = import.meta.env.DEV
     )
   : null;
 
+const DevConsoleDrawer = import.meta.env.DEV
+  ? lazy(() =>
+      import('../features/devConsole/DevConsoleDrawer').then((m) => ({
+        default: m.DevConsoleDrawer,
+      })),
+    )
+  : null;
+
 function readDevArtDemoId(): 'A' | 'B' | 'C' | 'D' | 'E' | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
   const raw = new URLSearchParams(window.location.search).get('art-demo');
@@ -133,7 +141,7 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'dev_console'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -932,6 +940,18 @@ function MainCoupleApp() {
     };
   }, [currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setActiveModal((cur) => (cur === 'dev_console' ? null : 'dev_console'));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
     async ({ mapId, sku, tileX, tileY }: { mapId: MapId; sku: string; tileX: number; tileY: number }) => {
@@ -1362,6 +1382,11 @@ function MainCoupleApp() {
           onOpenSpikeLab={() => {
             if (import.meta.env.DEV) setActiveModal('spike');
           }}
+          onOpenDevConsole={
+            import.meta.env.DEV && backend.devConsole
+              ? () => setActiveModal('dev_console')
+              : undefined
+          }
           onQuickSwitchDev={
             import.meta.env.DEV && backend.mode === 'dev-lan'
               ? (preset) => void handleQuickSwitchDev(preset)
@@ -1468,6 +1493,29 @@ function MainCoupleApp() {
                 : undefined
             }
             onForceReconnect={handleReconnectAndResync}
+            onClose={() => setActiveModal(null)}
+          />
+        </Suspense>
+      )}
+
+      {import.meta.env.DEV && DevConsoleDrawer && activeModal === 'dev_console' && backend.devConsole && (
+        <Suspense fallback={null}>
+          <DevConsoleDrawer
+            devConsole={backend.devConsole}
+            worldId={worldSnapshot.world.id}
+            catalog={inventorySnapshot?.catalog ?? []}
+            pet={petSnapshot}
+            studySnapshot={studySnapshot}
+            onRefreshAll={async () => {
+              await Promise.all([
+                refreshWorldSnapshot(),
+                refreshInventorySnapshot(worldSnapshot.world.id),
+                refreshPetSnapshot(worldSnapshot.world.id),
+                refreshStudySnapshot(worldSnapshot.world.id),
+              ]);
+            }}
+            onJumpMap={handleSelectMap}
+            onToast={showToast}
             onClose={() => setActiveModal(null)}
           />
         </Suspense>

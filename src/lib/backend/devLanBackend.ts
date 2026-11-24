@@ -4,6 +4,7 @@ import {
   parseAvatarConfig,
 } from '../../shared/avatar';
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
+import type { DevSanitizedWorldSnapshot } from '../../shared/devConsole/devConsoleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
 import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
@@ -502,6 +503,38 @@ export function createDevLanBackend(): WorldBackend {
             body: JSON.stringify(params),
           },
         );
+      },
+    },
+
+    devConsole: {
+      async spawnItem(params) {
+        return apiJson<InventorySnapshot>('/dev-console/spawn-item', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async setPetVitals(params) {
+        return apiJson<PetSnapshot>('/dev-console/set-pet', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async advanceStudy(params) {
+        return apiJson<StudySnapshot>('/dev-console/advance-study', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async exportSnapshot(worldId) {
+        return apiJson<DevSanitizedWorldSnapshot>(
+          `/dev-console/snapshot-export?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async restoreSnapshot(worldId, snapshot) {
+        return apiJson<{ restored: true }>('/dev-console/snapshot-restore', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, snapshot }),
+        });
       },
     },
   };

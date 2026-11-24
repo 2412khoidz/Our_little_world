@@ -2,6 +2,7 @@ import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
   Backpack,
   BookOpen,
+  Bug,
   Cat,
   FlaskConical,
   Gamepad2,
@@ -9,6 +10,7 @@ import {
   Mail,
   RotateCcw,
   Smartphone,
+  Sparkles,
   UserCheck,
   UserPlus,
   X,
@@ -29,6 +31,8 @@ interface MenuModalProps {
   mailboxUnreadCount?: number;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
+  onOpenDevConsole?: () => void;
+  onOpenV03Prototypes?: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
   onResetDevWorld?: () => void;
   onSignOut: () => void;
@@ -48,6 +52,8 @@ export function MenuModal({
   mailboxUnreadCount = 0,
   onOpenPwaGuide,
   onOpenSpikeLab,
+  onOpenDevConsole,
+  onOpenV03Prototypes,
   onQuickSwitchDev,
   onResetDevWorld,
   onSignOut,
@@ -182,6 +188,34 @@ export function MenuModal({
             >
               <FlaskConical size={16} /> Spike 0 Lab (Đo hiệu năng &amp; Video Sync PoC)
             </button>
+
+            {onOpenDevConsole && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-dev-console"
+                onClick={() => {
+                  onClose();
+                  onOpenDevConsole();
+                }}
+              >
+                <Bug size={16} /> Dev Console K6 (Ctrl+Shift+D)
+              </button>
+            )}
+
+            {onOpenV03Prototypes && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-v03-prototypes"
+                onClick={() => {
+                  onClose();
+                  onOpenV03Prototypes();
+                }}
+              >
+                <Sparkles size={16} /> Prototype UI V0.3 (Dev-only)
+              </button>
+            )}
 
             {backendMode === 'dev-lan' && onQuickSwitchDev && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

@@ -1,4 +1,5 @@
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
+import type { DevSanitizedWorldSnapshot } from '../../shared/devConsole/devConsoleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type {
   MailboxSnapshot,
@@ -127,6 +128,31 @@ export interface MailboxBackend {
   ): Promise<MutationResult<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
 }
 
+export interface DevConsoleBackend {
+  spawnItem(params: {
+    worldId: string;
+    scope: 'shared' | 'personal';
+    itemSku: string;
+    qty: number;
+  }): Promise<MutationResult<InventorySnapshot>>;
+  setPetVitals(params: {
+    worldId: string;
+    hunger: number;
+    energy: number;
+    fun: number;
+  }): Promise<MutationResult<PetSnapshot>>;
+  advanceStudy(params: {
+    worldId: string;
+    sessionId: string;
+    deltaSeconds: number;
+  }): Promise<MutationResult<StudySnapshot>>;
+  exportSnapshot(worldId: string): Promise<MutationResult<DevSanitizedWorldSnapshot>>;
+  restoreSnapshot(
+    worldId: string,
+    snapshot: DevSanitizedWorldSnapshot,
+  ): Promise<MutationResult<{ restored: true }>>;
+}
+
 export interface WorldBackend {
   readonly mode: BackendMode;
 
@@ -202,4 +228,5 @@ export interface WorldBackend {
   readonly pet?: PetBackend;
   readonly study?: StudyBackend;
   readonly mailbox?: MailboxBackend;
+  readonly devConsole?: DevConsoleBackend;
 }
