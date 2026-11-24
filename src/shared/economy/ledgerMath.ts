@@ -18,6 +18,17 @@ import { DEFAULT_SATURATION, QUALITY_MULTIPLIER_BP } from './types.ts';
 /** Basis-point denominator. `10_000` bp = `1.0`. */
 export const BP_DENOM = 10_000;
 
+/**
+ * Domain limits chosen to fit PostgreSQL exactly:
+ * - inventory_items.qty is integer (int4) -> MAX_ITEM_QTY.
+ * - coins are kept far below 2^53 and inside igint, so TS and SQL can share
+ *   vectors with no precision loss.
+ * - any multiplier above 100x is a programming error, not a price.
+ */
+export const MAX_ITEM_QTY = 2_147_483_647;
+export const MAX_COINS = 1_000_000_000_000;
+export const MAX_PRICE_BP = 1_000_000;
+
 export type EconomyErrorCode =
   | 'NON_INTEGER_MONEY'
   | 'NEGATIVE_AMOUNT'
@@ -25,7 +36,11 @@ export type EconomyErrorCode =
   | 'INSUFFICIENT_ITEMS'
   | 'DUPLICATE_IDEMPOTENCY_KEY'
   | 'INVALID_SATURATION_CONFIG'
-  | 'UNSAFE_ARITHMETIC';
+  | 'UNSAFE_ARITHMETIC'
+  | 'WALLET_OVERFLOW'
+  | 'INVENTORY_OVERFLOW'
+  | 'INVALID_BP'
+  | 'INVALID_LEDGER_KIND';
 
 /** Typed domain error with a short Vietnamese message for the UI layer. */
 export class EconomyError extends Error {
@@ -52,9 +67,15 @@ function assertSafeInteger(value: number, code: EconomyErrorCode, label: string)
  */
 export function mulBp(amount: number, bp: number): number {
   assertSafeInteger(amount, 'UNSAFE_ARITHMETIC', 'Số tiền');
-  assertSafeInteger(bp, 'UNSAFE_ARITHMETIC', 'Hệ số basis point');
+  assertSafeInteger(bp, 'INVALID_BP', 'Hệ số basis point');
   if (amount < 0) {
     throw new EconomyError('NEGATIVE_AMOUNT', 'Số tiền không được âm');
+  }
+  if (bp < 0 || bp > MAX_PRICE_BP) {
+    throw new EconomyError(
+      'INVALID_BP',
+      `Hệ số basis point ngoài miền hợp lệ [0, ${MAX_PRICE_BP}] (nhận ${bp})`,
+    );
   }
   const product = amount * bp;
   if (!Number.isSafeInteger(product)) {
@@ -136,7 +157,16 @@ export interface CoinLedgerEntry {
 
 /** Signed coin delta implied by an entry kind. */
 export function signedDelta(entry: CoinLedgerEntry): number {
-  return entry.kind === 'spend' ? -entry.deltaCoins : entry.deltaCoins;
+  if (entry.kind === 'spend') {
+    return -entry.deltaCoins;
+  }
+  if (entry.kind === 'earn' || entry.kind === 'grant') {
+    return entry.deltaCoins;
+  }
+  throw new EconomyError(
+    'INVALID_LEDGER_KIND',
+    `Loại bút toán không hợp lệ: ${String((entry as { kind?: unknown }).kind)}`,
+  );
 }
 
 export interface WalletState {
@@ -148,10 +178,19 @@ export function createWallet(coins = 0): WalletState {
   if (coins < 0) {
     throw new EconomyError('NEGATIVE_AMOUNT', 'Số xu ví không được âm');
   }
+  if (coins > MAX_COINS) {
+    throw new EconomyError('WALLET_OVERFLOW', `Số xu vượt trần ${MAX_COINS}`);
+  }
   return { coins };
 }
 
 function assertEntry(entry: CoinLedgerEntry): void {
+  if (entry.kind !== 'earn' && entry.kind !== 'grant' && entry.kind !== 'spend') {
+    throw new EconomyError(
+      'INVALID_LEDGER_KIND',
+      `Loại bút toán không hợp lệ: ${String((entry as { kind?: unknown }).kind)}`,
+    );
+  }
   assertSafeInteger(entry.deltaCoins, 'NON_INTEGER_MONEY', 'Delta xu');
   if (entry.deltaCoins <= 0) {
     throw new EconomyError('NEGATIVE_AMOUNT', 'Delta xu phải là số dương');
@@ -167,6 +206,9 @@ export function applyLedgerEntry(wallet: WalletState, entry: CoinLedgerEntry): W
   const next = wallet.coins + signedDelta(entry);
   if (!Number.isSafeInteger(next)) {
     throw new EconomyError('UNSAFE_ARITHMETIC', 'Số dư ví vượt giới hạn an toàn');
+  }
+  if (next > MAX_COINS) {
+    throw new EconomyError('WALLET_OVERFLOW', `Số dư vượt trần ${MAX_COINS}`);
   }
   if (next < 0) {
     throw new EconomyError(
@@ -208,8 +250,20 @@ export function applyItemDelta(
       continue;
     }
     assertSafeInteger(change, 'NON_INTEGER_MONEY', `Delta vật phẩm ${sku}`);
+    if (Math.abs(change) > MAX_ITEM_QTY) {
+      throw new EconomyError('INVENTORY_OVERFLOW', `Delta ${sku} vượt miền int4`);
+    }
     const current = next[sku] ?? 0;
     const updated = current + change;
+    if (!Number.isSafeInteger(updated)) {
+      throw new EconomyError('INVENTORY_OVERFLOW', `Số lượng ${sku} vượt giới hạn an toàn`);
+    }
+    if (updated > MAX_ITEM_QTY) {
+      throw new EconomyError(
+        'INVENTORY_OVERFLOW',
+        `Số lượng ${sku} vượt trần int4 (${MAX_ITEM_QTY})`,
+      );
+    }
     if (updated < 0) {
       throw new EconomyError(
         'INSUFFICIENT_ITEMS',
@@ -282,6 +336,10 @@ export function replayLedger(
   const sinks: Record<string, number> = {};
   const seenKeys = new Set<string>();
   let wallet = createWallet(startCoins);
+  // The invariant is tracked with an incremental cursor instead of summing the
+  // totals: totals are presentation data and can grow without bound, while the
+  // cursor stays inside the wallet domain and therefore cannot lose precision.
+  let cursor = startCoins;
   let totalEarned = 0;
   let totalGranted = 0;
   let totalSpent = 0;
@@ -299,6 +357,7 @@ export function replayLedger(
       issues.push(`Bút toán bị từ chối (${entry.id}): ${message}`);
       continue;
     }
+    cursor += signedDelta(entry);
     if (entry.kind === 'earn') {
       totalEarned += entry.deltaCoins;
       sources[entry.reason] = (sources[entry.reason] ?? 0) + entry.deltaCoins;
@@ -311,9 +370,8 @@ export function replayLedger(
     }
   }
 
-  const expected = startCoins + totalEarned + totalGranted - totalSpent;
-  if (wallet.coins !== expected) {
-    issues.push(`Sai lệch ví: thực tế ${wallet.coins}, kỳ vọng ${expected}`);
+  if (wallet.coins !== cursor) {
+    issues.push(`Sai lệch ví: thực tế ${wallet.coins}, kỳ vọng ${cursor}`);
   }
 
   return {

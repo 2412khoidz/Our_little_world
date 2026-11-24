@@ -48,7 +48,7 @@ describe('basis-point math', () => {
   it('rejects negative or fractional money inputs', () => {
     expect(() => mulBp(-1, 10_000)).toThrow(/NEGATIVE_AMOUNT/);
     expect(() => mulBp(1.5, 10_000)).toThrow(/UNSAFE_ARITHMETIC/);
-    expect(() => mulBp(10, 10_000.5)).toThrow(/UNSAFE_ARITHMETIC/);
+    expect(() => mulBp(10, 10_000.5)).toThrow(/INVALID_BP/);
     expect(() => divFloor(10, 0)).toThrow(/UNSAFE_ARITHMETIC/);
   });
 
