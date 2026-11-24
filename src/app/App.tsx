@@ -83,6 +83,39 @@ const DevV03PrototypesModal = import.meta.env.DEV
     )
   : null;
 
+const DevPetArtSandbox = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/PetArtSandbox').then((m) => ({ default: m.PetArtSandbox })))
+  : null;
+
+const DevUiVariantsSandbox = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/UiVariantsSandbox').then((m) => ({ default: m.UiVariantsSandbox })))
+  : null;
+
+const DevWorldExpansionSandbox = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/WorldExpansionSandbox').then((m) => ({ default: m.WorldExpansionSandbox })))
+  : null;
+
+const DevPetLabSandbox = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/PetLabModal').then((m) => ({ default: m.PetLabModal })))
+  : null;
+
+const DevCombinedExperienceDemo = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/CombinedExperienceDemo').then((m) => ({ default: m.CombinedExperienceDemo })))
+  : null;
+
+type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo';
+
+function readDevSandboxKind(): DevSandboxKind | null {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+  const q = new URLSearchParams(window.location.search);
+  if (q.has('pet-art')) return 'pet-art';
+  if (q.has('ui-sandbox')) return 'ui-sandbox';
+  if (q.has('world-sandbox')) return 'world-sandbox';
+  if (q.has('pet-lab')) return 'pet-lab';
+  if (q.has('experience-demo')) return 'experience-demo';
+  return null;
+}
+
 function readDevArtDemoId(): 'A' | 'B' | 'C' | 'D' | 'E' | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
   const raw = new URLSearchParams(window.location.search).get('art-demo');
@@ -110,6 +143,7 @@ function makeIdempotencyKey(prefix: string): string {
 
 export function App() {
   const initialDevArtDemo = useMemo(() => readDevArtDemoId(), []);
+  const initialSandbox = useMemo(() => readDevSandboxKind(), []);
   if (import.meta.env.DEV && DevArtDemoShowcase && initialDevArtDemo !== null) {
     return (
       <Suspense
@@ -122,6 +156,29 @@ export function App() {
         }
       >
         <DevArtDemoShowcase initialDemoId={initialDevArtDemo} />
+      </Suspense>
+    );
+  }
+
+  if (import.meta.env.DEV && initialSandbox !== null) {
+    const exitToHome = () => {
+      window.location.href = '/';
+    };
+    return (
+      <Suspense
+        fallback={
+          <main className="onboarding-page">
+            <div className="cozy-card" style={{ textAlign: 'center' }}>
+              <strong>Đang tải Sandbox trải nghiệm...</strong>
+            </div>
+          </main>
+        }
+      >
+        {initialSandbox === 'pet-art' && DevPetArtSandbox && <DevPetArtSandbox onExit={exitToHome} />}
+        {initialSandbox === 'ui-sandbox' && DevUiVariantsSandbox && <DevUiVariantsSandbox onExit={exitToHome} />}
+        {initialSandbox === 'world-sandbox' && DevWorldExpansionSandbox && <DevWorldExpansionSandbox onExit={exitToHome} />}
+        {initialSandbox === 'pet-lab' && DevPetLabSandbox && <DevPetLabSandbox onClose={exitToHome} />}
+        {initialSandbox === 'experience-demo' && DevCombinedExperienceDemo && <DevCombinedExperienceDemo onExit={exitToHome} />}
       </Suspense>
     );
   }
