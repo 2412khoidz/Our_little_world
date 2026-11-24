@@ -1,5 +1,6 @@
 import { parseAvatarConfig } from '../../shared/avatar';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   CreatedInvite,
   FurniturePlacement,
@@ -417,6 +418,43 @@ export function createSupabaseBackend(): WorldBackend {
           return { ok: false, ...mapSupabaseError(error) };
         }
         return { ok: true, data: data as InventorySnapshot };
+      },
+    },
+
+    pet: {
+      async getPetSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('pet_get_snapshot', {
+          p_world_id: worldId,
+        });
+        if (error) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: (data as PetSnapshot | null) ?? null };
+      },
+      async adoptOrRenamePet(params) {
+        const { data, error } = await supabase.rpc('pet_adopt_or_rename', {
+          p_world_id: params.worldId,
+          p_name: params.name,
+          p_expected_version: params.expectedVersion ?? null,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetSnapshot };
+      },
+      async interactPet(params) {
+        const { data, error } = await supabase.rpc('pet_interact', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_action: params.action,
+          p_expected_version: params.expectedVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetInteractionResult };
       },
     },
   };

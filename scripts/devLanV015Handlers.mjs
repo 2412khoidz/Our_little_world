@@ -1,4 +1,5 @@
 // Server-side Dev LAN parity handlers for V0.1.5 Living Home (OLW-015-01..08)
+import crypto from 'node:crypto';
 
 export const V015_CATALOG = [
   {
@@ -143,6 +144,34 @@ function saveV015Idempotency(v015, worldId, userId, action, key, reqHash, respon
   map[key] = { actorId: userId, action, reqHash, response };
 }
 
+function catchupPetVitals(vitals, simStateAtMs, nowMs) {
+  const elapsedMs = Math.min(48 * 3600 * 1000, Math.max(0, nowMs - simStateAtMs));
+  const clamp = (v) => Math.max(30, Math.min(100, Math.round(v)));
+  const hunger = clamp(vitals.hunger - Math.floor((elapsedMs * 2) / 3600000));
+  let energy = clamp(vitals.energy - Math.floor(elapsedMs / 3600000));
+  if (elapsedMs >= 8 * 3600 * 1000) energy = Math.max(energy, 50);
+  const fun = clamp(vitals.fun - Math.floor(elapsedMs / 3600000));
+  return { hunger, energy, fun };
+}
+
+function derivePetMood(vitals) {
+  if (vitals.hunger <= 42) return 'hungry';
+  if (vitals.energy <= 45) return 'sleepy';
+  if (vitals.fun >= 78 && vitals.hunger >= 65) return 'happy';
+  return 'cozy';
+}
+
+function projectPet(pet, nowMs = Date.now()) {
+  if (!pet) return null;
+  const vitals = catchupPetVitals(pet.vitals, pet.simStateAtMs, nowMs);
+  return {
+    ...pet,
+    vitals,
+    emotion: derivePetMood(vitals),
+    serverNowMs: nowMs,
+  };
+}
+
 export async function handleV015Route({
   req,
   res,
@@ -216,6 +245,183 @@ export async function handleV015Route({
     saveDb();
     broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
     sendJson(res, 200, { ok: true, data: snap });
+    return true;
+  }
+
+  // === OLW-015-03: Living Pet MVP (cat-orange) ===
+  if (req.method === 'GET' && route === '/pet') {
+    const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();
+    if (!worldId || !isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const pet = v015.pets[worldId] ?? null;
+    sendJson(res, 200, { ok: true, data: projectPet(pet, Date.now()) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/pet/adopt-or-rename') {
+    const worldId = String(body.worldId ?? '').trim();
+    const cleanName = String(body.name ?? '').trim();
+    const expectedVersion = body.expectedVersion ?? null;
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !key || cleanName.length < 1 || cleanName.length > 24) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Tên bé mèo cần từ 1 đến 24 ký tự.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `pet_adopt_or_rename:${cleanName}:${expectedVersion ?? 'none'}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'pet_adopt_or_rename', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    let pet = v015.pets[worldId] ?? null;
+    if (!pet) {
+      pet = {
+        id: `pet-${crypto.randomUUID()}`,
+        worldId,
+        species: 'cat-orange',
+        name: cleanName,
+        vitals: { hunger: 100, energy: 100, fun: 100 },
+        emotion: 'happy',
+        mapId: 'home',
+        anchorTileX: 13,
+        anchorTileY: 9,
+        lastFedAtMs: null,
+        lastWateredAtMs: null,
+        lastPettedAtMs: null,
+        simStateAtMs: nowMs,
+        version: 1,
+        updatedAt: nowIso,
+      };
+      v015.pets[worldId] = pet;
+    } else {
+      if (expectedVersion === null || pet.version !== expectedVersion) {
+        sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Thông tin bé mèo vừa thay đổi. Đang đồng bộ lại...' });
+        return true;
+      }
+      pet = { ...pet, name: cleanName, version: pet.version + 1, updatedAt: nowIso };
+      v015.pets[worldId] = pet;
+    }
+    const events = (v015.petEvents[worldId] ??= []);
+    events.push({ id: `pevt-${crypto.randomUUID()}`, petId: pet.id, actorId: userId, type: 'adopt_or_rename', name: cleanName, key, at: nowIso });
+    const proj = projectPet(pet, nowMs);
+    saveV015Idempotency(v015, worldId, userId, 'pet_adopt_or_rename', key, reqHash, proj);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
+    sendJson(res, 200, { ok: true, data: proj });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/pet/interact') {
+    const worldId = String(body.worldId ?? '').trim();
+    const petId = String(body.petId ?? '').trim();
+    const action = String(body.action ?? '').trim();
+    const expectedVersion = Number(body.expectedVersion);
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !petId || !key || !['pet', 'feed', 'water'].includes(action) || !Number.isInteger(expectedVersion)) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thao tác với bé mèo chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `pet_interact:${petId}:${action}:${expectedVersion}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'pet_interact', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+
+    const existing = v015.pets[worldId] ?? null;
+    if (!existing || existing.id !== petId) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo nào trong nhà.' });
+      return true;
+    }
+    if (existing.version !== expectedVersion) {
+      sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Bé mèo vừa được người kia chăm rồi nhé!' });
+      return true;
+    }
+
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (action === 'feed' && existing.lastFedAtMs !== null && nowMs < existing.lastFedAtMs + 60000) {
+      sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bé mèo vừa ăn no mất rồi, đợi 1 phút nữa nhé!' });
+      return true;
+    }
+    if (action === 'pet' && existing.lastPettedAtMs !== null && nowMs < existing.lastPettedAtMs + 15000) {
+      sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bé mèo đang lim dim hưởng thụ, đợi chút nữa nhé.' });
+      return true;
+    }
+    if (action === 'water' && existing.lastWateredAtMs !== null && nowMs < existing.lastWateredAtMs + 20000) {
+      sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bát nước vẫn đang đầy ắp nhé.' });
+      return true;
+    }
+
+    let vitals = catchupPetVitals(existing.vitals, existing.simStateAtMs, nowMs);
+    if (action === 'feed') {
+      const adj = adjustInventoryItem(v015, worldId, 'shared', 'pet_kibble_basic', -1, nowIso);
+      if (!adj.ok) {
+        sendJson(res, 400, { ok: false, code: adj.code, message: 'Hết hạt mèo rồi — hãy nhận thêm hạt 0₫ trong túi đồ nhé!' });
+        return true;
+      }
+      vitals = {
+        hunger: Math.min(100, vitals.hunger + 30),
+        energy: Math.min(100, vitals.energy + 3),
+        fun: Math.min(100, vitals.fun + 5),
+      };
+    } else if (action === 'pet') {
+      vitals = {
+        hunger: vitals.hunger,
+        energy: Math.min(100, vitals.energy + 2),
+        fun: Math.min(100, vitals.fun + 12),
+      };
+    } else {
+      vitals = {
+        hunger: vitals.hunger,
+        energy: Math.min(100, vitals.energy + 2),
+        fun: Math.min(100, vitals.fun + 6),
+      };
+    }
+
+    const updated = {
+      ...existing,
+      vitals,
+      emotion: derivePetMood(vitals),
+      lastFedAtMs: action === 'feed' ? nowMs : existing.lastFedAtMs,
+      lastPettedAtMs: action === 'pet' ? nowMs : existing.lastPettedAtMs,
+      lastWateredAtMs: action === 'water' ? nowMs : existing.lastWateredAtMs,
+      simStateAtMs: nowMs,
+      version: existing.version + 1,
+      updatedAt: nowIso,
+    };
+    v015.pets[worldId] = updated;
+    const events = (v015.petEvents[worldId] ??= []);
+    events.push({ id: `pevt-${crypto.randomUUID()}`, petId: updated.id, actorId: userId, type: action, vitals, key, at: nowIso });
+
+    const kibbleRemaining = getWorldInventoryList(v015, worldId).find((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic')?.qty ?? 0;
+    const resPayload = { pet: projectPet(updated, nowMs), action, kibbleRemaining };
+    saveV015Idempotency(v015, worldId, userId, 'pet_interact', key, reqHash, resPayload);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: action === 'feed' ? 'inventory' : 'pet' });
+    if (action === 'feed') broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
+    sendJson(res, 200, { ok: true, data: resPayload });
     return true;
   }
 

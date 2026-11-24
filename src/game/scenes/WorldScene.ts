@@ -13,6 +13,7 @@ import {
   selectLatestPresenceByUser,
   stepInterpolatedPosition,
 } from '../../shared/realtime';
+import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   AvatarConfig,
   Direction,
@@ -22,6 +23,7 @@ import type {
   PresencePayload,
   WorldMember,
 } from '../../shared/types';
+import { PetEntity } from '../entities/PetEntity';
 import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
@@ -94,6 +96,8 @@ export class WorldScene extends Phaser.Scene {
   private txThrottle = new MovementTxThrottle();
 
   private furnitureSprites = new Map<string, Phaser.GameObjects.Image>();
+  private petEntity: PetEntity | null = null;
+  private petSnapshot: PetSnapshot | null = null;
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
@@ -147,6 +151,9 @@ export class WorldScene extends Phaser.Scene {
     }
 
     this.createLocalAvatar();
+    this.petEntity = new PetEntity(this, () => {
+      gameEventBus.emit('evt:open-pet-panel');
+    });
     this.buildMap(this.currentMapId);
     this.setupPointerInput();
     this.bindEventBus();
@@ -265,6 +272,7 @@ export class WorldScene extends Phaser.Scene {
     this.localLabel.setPosition(px, py - 25);
 
     this.rebuildFurnitureAndCollisions();
+    this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
     this.reconcileRemoteVisibility();
     this.redrawDecorateOverlay();
     this.handleResize(true);
@@ -871,6 +879,19 @@ export class WorldScene extends Phaser.Scene {
           this.scene.resume();
         }
       }),
+
+      gameEventBus.on('cmd:sync-pet', (pet) => {
+        this.petSnapshot = pet;
+        this.petEntity?.syncSnapshot(pet, this.currentMapId);
+      }),
+
+      gameEventBus.on('cmd:pet-reaction', ({ action }) => {
+        this.petEntity?.triggerReaction(action);
+      }),
+
+      gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
+        this.petEntity?.setStudyMode(active);
+      }),
     );
   }
 
@@ -952,6 +973,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const moved = this.updateLocalMovement(dtSec);
+    this.petEntity?.update(dtSec);
     this.updateRemoteEntities(deltaMs);
     this.checkPortalsAndNearbyInteractable();
     this.syncCameraDataset();
@@ -1127,6 +1149,13 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
+    if (this.currentMapId === 'home' && this.petEntity?.isNearbyTile(tileX, tileY)) {
+      return {
+        kind: 'pet',
+        labelVi: this.petSnapshot ? `Chăm ${this.petSnapshot.name}` : 'Nhận nuôi bé mèo',
+      };
+    }
+
     for (const p of this.placements) {
       if (p.mapId !== this.currentMapId) continue;
       const item = getCatalogItem(p.sku);
@@ -1193,6 +1222,8 @@ export class WorldScene extends Phaser.Scene {
       }
     } else if (near.kind === 'wardrobe') {
       gameEventBus.emit('evt:open-avatar-customizer');
+    } else if (near.kind === 'pet') {
+      gameEventBus.emit('evt:open-pet-panel');
     } else if (near.kind === 'study_preview') {
       gameEventBus.emit('evt:preview-notice', {
         title: 'Phòng học yên tĩnh',
@@ -1406,6 +1437,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.petEntity?.destroy();
+    this.petEntity = null;
     for (const unsub of this.unsubscribes) {
       unsub();
     }

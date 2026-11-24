@@ -4,6 +4,7 @@ import {
   parseAvatarConfig,
 } from '../../shared/avatar';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   AvatarConfig,
   CreatedInvite,
@@ -432,6 +433,24 @@ export function createDevLanBackend(): WorldBackend {
         return apiJson<InventorySnapshot>('/inventory/claim-free-kibble', {
           method: 'POST',
           body: JSON.stringify({ worldId, idempotencyKey }),
+        });
+      },
+    },
+
+    pet: {
+      async getPetSnapshot(worldId) {
+        return apiJson<PetSnapshot | null>(`/pet?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async adoptOrRenamePet(params) {
+        return apiJson<PetSnapshot>('/pet/adopt-or-rename', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async interactPet(params) {
+        return apiJson<PetInteractionResult>('/pet/interact', {
+          method: 'POST',
+          body: JSON.stringify(params),
         });
       },
     },

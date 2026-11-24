@@ -1,6 +1,7 @@
 import { ART_ATLAS_PATH } from '../../game/art/atlasProfile';
 import {
   Backpack,
+  Cat,
   FlaskConical,
   Gamepad2,
   LogOut,
@@ -20,6 +21,7 @@ interface MenuModalProps {
   onToggleJoystick: () => void;
   onOpenInvite: () => void;
   onOpenInventory?: () => void;
+  onOpenPet?: () => void;
   onOpenPwaGuide: () => void;
   onOpenSpikeLab: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
@@ -35,6 +37,7 @@ export function MenuModal({
   onToggleJoystick,
   onOpenInvite,
   onOpenInventory,
+  onOpenPet,
   onOpenPwaGuide,
   onOpenSpikeLab,
   onQuickSwitchDev,
@@ -82,6 +85,20 @@ export function MenuModal({
             }}
           >
             <Backpack size={17} /> Túi đồ &amp; Hạt mèo (0₫)
+          </button>
+        )}
+
+        {onOpenPet && (
+          <button
+            type="button"
+            className="btn btn--secondary"
+            data-testid="menu-pet"
+            onClick={() => {
+              onClose();
+              onOpenPet();
+            }}
+          >
+            <Cat size={17} /> Bé mèo cam
           </button>
         )}
 

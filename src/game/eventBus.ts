@@ -1,3 +1,4 @@
+import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import type {
   Direction,
   FurniturePlacement,
@@ -22,7 +23,7 @@ export interface DecorateStatePayload {
 }
 
 export interface NearbyInteractable {
-  kind: 'portal' | 'wardrobe' | 'study_preview' | 'cinema_preview';
+  kind: 'portal' | 'wardrobe' | 'study_preview' | 'cinema_preview' | 'pet';
   labelVi: string;
 }
 
@@ -44,6 +45,9 @@ export interface GameEventMap {
   'cmd:set-joystick': { vx: number; vy: number };
   'cmd:trigger-interact': undefined;
   'cmd:set-paused': { paused: boolean };
+  'cmd:sync-pet': PetSnapshot | null;
+  'cmd:pet-reaction': { action: PetActionType };
+  'cmd:set-study-pet-mode': { active: boolean };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -51,6 +55,7 @@ export interface GameEventMap {
   'evt:local-tile-changed': { mapId: MapId; tileX: number; tileY: number; facing: Direction };
   'evt:request-map-change': { targetMapId: MapId; spawnX: number; spawnY: number };
   'evt:open-avatar-customizer': undefined;
+  'evt:open-pet-panel': undefined;
   'evt:preview-notice': { title: string; body: string; version: string };
   'evt:decorate-place': { mapId: MapId; sku: string; tileX: number; tileY: number };
   'evt:decorate-move': { placementId: string; tileX: number; tileY: number };

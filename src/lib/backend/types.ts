@@ -1,4 +1,5 @@
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { PetActionType, PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
 import type {
   AvatarConfig,
   BackendMode,
@@ -51,6 +52,23 @@ export interface RealtimeHandle {
 export interface InventoryBackend {
   getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
   claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
+}
+
+export interface PetBackend {
+  getPetSnapshot(worldId: string): Promise<MutationResult<PetSnapshot | null>>;
+  adoptOrRenamePet(params: {
+    worldId: string;
+    name: string;
+    expectedVersion?: number | null;
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetSnapshot>>;
+  interactPet(params: {
+    worldId: string;
+    petId: string;
+    action: PetActionType;
+    expectedVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetInteractionResult>>;
 }
 
 export interface SpikeCinemaPacket {
@@ -140,4 +158,5 @@ export interface WorldBackend {
   createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus;
 
   readonly inventory?: InventoryBackend;
+  readonly pet?: PetBackend;
 }

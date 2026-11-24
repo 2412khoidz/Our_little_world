@@ -26,7 +26,11 @@ import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { InviteModal } from '../features/pairing/InviteModal';
+import { PetPanel } from '../features/pets/PetPanel';
+import { isPetSoundMuted, playPetFeedbackChime, setPetSoundMuted } from '../features/pets/petAudio';
+import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
+import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
 import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
@@ -113,10 +117,13 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
+  const [petBusy, setPetBusy] = useState(false);
+  const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -188,6 +195,86 @@ function MainCoupleApp() {
     realtimeRef.current?.notifyWorldMutated('inventory');
     showToast('Đã thêm 3 phần hạt mèo miễn phí vào túi chung!');
   }, [backend, showToast]);
+
+  const refreshPetSnapshot = useCallback(
+    async (explicitWorldId?: string) => {
+      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.pet) return;
+      const res = await backend.pet.getPetSnapshot(targetWorldId);
+      if (res.ok) {
+        setPetSnapshot(res.data);
+        gameEventBus.emit('cmd:sync-pet', res.data);
+      }
+    },
+    [backend],
+  );
+
+  const handleAdoptOrRenamePet = useCallback(
+    async (name: string) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.pet) return;
+      setPetBusy(true);
+      const res = await backend.pet.adoptOrRenamePet({
+        worldId: targetWorldId,
+        name,
+        expectedVersion: petSnapshot?.version ?? null,
+        idempotencyKey: makeIdempotencyKey('pet-name'),
+      });
+      setPetBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        if (res.code === 'VERSION_CONFLICT') void refreshPetSnapshot(targetWorldId);
+        return;
+      }
+      setPetSnapshot(res.data);
+      gameEventBus.emit('cmd:sync-pet', res.data);
+      realtimeRef.current?.notifyWorldMutated('pet');
+      playPetFeedbackChime('adopt');
+      showToast(`Đã cập nhật bé mèo "${res.data.name}"!`);
+    },
+    [backend, petSnapshot, refreshPetSnapshot, showToast],
+  );
+
+  const handleInteractPet = useCallback(
+    async (action: PetActionType) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.pet || !petSnapshot) return;
+      setPetBusy(true);
+      const res = await backend.pet.interactPet({
+        worldId: targetWorldId,
+        petId: petSnapshot.id,
+        action,
+        expectedVersion: petSnapshot.version,
+        idempotencyKey: makeIdempotencyKey(`pet-${action}`),
+      });
+      setPetBusy(false);
+      if (!res.ok) {
+        showToast(res.message, true);
+        if (res.code === 'VERSION_CONFLICT' || res.code === 'COOLDOWN_ACTIVE') {
+          void refreshPetSnapshot(targetWorldId);
+          void refreshInventorySnapshot(targetWorldId);
+        }
+        return;
+      }
+      setPetSnapshot(res.data.pet);
+      gameEventBus.emit('cmd:sync-pet', res.data.pet);
+      gameEventBus.emit('cmd:pet-reaction', { action });
+      if (action === 'feed') {
+        void refreshInventorySnapshot(targetWorldId);
+        realtimeRef.current?.notifyWorldMutated('inventory');
+      }
+      realtimeRef.current?.notifyWorldMutated('pet');
+      playPetFeedbackChime(action);
+      const msg =
+        action === 'feed'
+          ? `${res.data.pet.name} ăn hạt rất ngon!`
+          : action === 'water'
+            ? `${res.data.pet.name} đã uống nước mát!`
+            : `${res.data.pet.name} đang rừ rừ vui sướng!`;
+      showToast(msg);
+    },
+    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast],
+  );
 
   // Initial auth bootstrap & subscription
   useEffect(() => {
@@ -261,6 +348,8 @@ function MainCoupleApp() {
         onWorldMutated: (reason) => {
           if (reason === 'inventory') {
             void refreshInventorySnapshot(worldId);
+          } else if (reason === 'pet') {
+            void refreshPetSnapshot(worldId);
           } else {
             void refreshWorldSnapshot();
           }
@@ -275,6 +364,8 @@ function MainCoupleApp() {
           return;
         }
         realtimeRef.current = handle;
+        void refreshInventorySnapshot(worldId);
+        void refreshPetSnapshot(worldId);
       });
 
     return () => {
@@ -285,7 +376,7 @@ function MainCoupleApp() {
         void existing.disconnect();
       }
     };
-  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot]);
+  }, [backend, worldId, currentUser, sessionId, refreshWorldSnapshot, refreshInventorySnapshot, refreshPetSnapshot]);
 
   // Keep presence metadata synchronized when map/avatar changes
   useEffect(() => {
@@ -365,6 +456,16 @@ function MainCoupleApp() {
       setActiveModal('avatar');
     });
 
+    const unsubPetPanel = gameEventBus.on('evt:open-pet-panel', () => {
+      setActiveModal('pet');
+      void refreshPetSnapshot();
+      void refreshInventorySnapshot();
+    });
+
+    const unsubSceneReady = gameEventBus.on('evt:scene-ready', () => {
+      void refreshPetSnapshot();
+    });
+
     const unsubPreview = gameEventBus.on('evt:preview-notice', (notice) => {
       setPreviewNotice(notice);
     });
@@ -382,11 +483,13 @@ function MainCoupleApp() {
       unsubTile();
       unsubMapReq();
       unsubAvatar();
+      unsubPetPanel();
+      unsubSceneReady();
       unsubPreview();
       unsubSelect();
       unsubDiag();
     };
-  }, []);
+  }, [refreshInventorySnapshot, refreshPetSnapshot]);
 
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
@@ -735,6 +838,15 @@ function MainCoupleApp() {
                 }
               : undefined
           }
+          onOpenPet={
+            backend.pet
+              ? () => {
+                  setActiveModal('pet');
+                  void refreshPetSnapshot();
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
           onOpenPwaGuide={() => setActiveModal('pwa')}
           onOpenSpikeLab={() => {
             if (import.meta.env.DEV) setActiveModal('spike');
@@ -766,6 +878,25 @@ function MainCoupleApp() {
           loading={inventoryLoading}
           onClaimFreeKibble={handleClaimFreeKibble}
           onRefresh={() => refreshInventorySnapshot()}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'pet' && backend.pet && (
+        <PetPanel
+          pet={petSnapshot}
+          kibbleCount={getSharedKibbleQty(inventorySnapshot?.items ?? [])}
+          canClaimFreeKibble={Boolean(inventorySnapshot?.canClaimFreeKibble)}
+          busy={petBusy}
+          muted={petSoundMutedState}
+          onToggleMute={() => {
+            const next = !petSoundMutedState;
+            setPetSoundMuted(next);
+            setPetSoundMutedState(next);
+          }}
+          onAdoptOrRename={handleAdoptOrRenamePet}
+          onInteract={handleInteractPet}
+          onClaimFreeKibble={handleClaimFreeKibble}
           onClose={() => setActiveModal(null)}
         />
       )}
