@@ -75,6 +75,14 @@ const DevConsoleDrawer = import.meta.env.DEV
     )
   : null;
 
+const DevV03PrototypesModal = import.meta.env.DEV
+  ? lazy(() =>
+      import('../features/devPrototypes/V03PrototypesModal').then((m) => ({
+        default: m.V03PrototypesModal,
+      })),
+    )
+  : null;
+
 function readDevArtDemoId(): 'A' | 'B' | 'C' | 'D' | 'E' | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
   const raw = new URLSearchParams(window.location.search).get('art-demo');
@@ -141,7 +149,7 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'dev_console'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'dev_console' | 'v03_proto'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -1387,6 +1395,9 @@ function MainCoupleApp() {
               ? () => setActiveModal('dev_console')
               : undefined
           }
+          onOpenV03Prototypes={
+            import.meta.env.DEV ? () => setActiveModal('v03_proto') : undefined
+          }
           onQuickSwitchDev={
             import.meta.env.DEV && backend.mode === 'dev-lan'
               ? (preset) => void handleQuickSwitchDev(preset)
@@ -1518,6 +1529,12 @@ function MainCoupleApp() {
             onToast={showToast}
             onClose={() => setActiveModal(null)}
           />
+        </Suspense>
+      )}
+
+      {import.meta.env.DEV && DevV03PrototypesModal && activeModal === 'v03_proto' && (
+        <Suspense fallback={null}>
+          <DevV03PrototypesModal onClose={() => setActiveModal(null)} />
         </Suspense>
       )}
 
