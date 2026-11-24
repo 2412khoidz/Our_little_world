@@ -319,3 +319,59 @@ Kết quả chính (90 ngày, 3 seed, catalog production giữ nguyên):
   (giảm 20% thu nhập casual). E cần engine nhiều phiên bán/ngày mới đo được.
 - Catalog: giữ nguyên; đề xuất D1 (`carp_pond` 12,0 / `herb_carp` 30,0) và
   D2 (`sapling_peach` 240 xu, không bán lại) chờ chủ dự án duyệt.
+---
+
+## Đối chiếu GPT Independent Review (SHA reviewed `5eda187`)
+
+Trạng thái so với HEAD hiện tại sau khi sửa. Mã: **F** = Fixed, **P** = Partially
+Fixed, **PI** = Pending Integration.
+
+| Finding (GPT) | Trạng thái | Ghi chú / commit |
+|---|---|---|
+| Ledger: overflow kho, `MAX_SAFE_INTEGER + 1` được chấp nhận | **F** | `MAX_ITEM_QTY` = int4, `MAX_COINS` = 1e12, chặn tràn ví/kho; 12 regression test (`000e828`) |
+| Ledger: `mulBp` nhận bp âm, kind lạ coi là thu | **F** | bp chỉ trong `[0, MAX_PRICE_BP]`; kind validate runtime (`000e828`) |
+| Ledger: replay lệch ở biên | **F** | invariant dùng cursor tăng dần thay vì cộng tổng có thể tràn (`000e828`) |
+| Ledger: contract integer với PostgreSQL | **F (một phần)** | Hằng số TS khớp int4/bigint; vector SQL thật vẫn **PI** (cần DB Test) |
+| Arbitrage: làm tròn đơn vị che lãi 5c→2×3c | **F** | So sánh theo lô với phân số chính xác; fixture GPT thành test (`bb25859`) |
+| Arbitrage: giá shop che đường craft | **F** | Lấy min(shop, craft) (`bb25859`) |
+| Arbitrage: quality/thời gian/unlock | **F** | `qualityGatedFindings` riêng, milestone gate, time-gate = lao động |
+| Sim: optimizer dùng cùng crop cho cả hai nhánh | **F** | Strategy quyết định policy; balanced xoay nhóm (`c965dc0`) |
+| Sim: bán/mua vượt thời gian phiên | **F** | `overrunSeconds` tính vào thời gian online |
+| Sim: recovery add thẳng item | **F** | Probe dùng `claimForage` thật (availability + respawn) |
+| Sim: oracle độc lập cho kho/ledger/stack/quality | **F** | `simulatorOracle.test.ts` (journal + replay + stack) |
+| Sim: RNG/seed công bằng giữa hai nhánh | **F** | Tách kênh `choice` và `quality` |
+| Cooking: timestamp đi lùi, serve trước order, ownership | **F** | Chặn clock lùi, `TOO_EARLY`, `UNKNOWN_PLAYER`, tick theo bucket (`38 test + cookingTimestamp`) |
+| Cooking: tick dài vs nhiều tick ngắn | **F** | Tích phân bucket 750ms, có test tương đương |
+| Mini-game: `createSession` chứa cả hai hạm đội | **F (domain)** | `privacy.ts`: envelope server ↔ DTO theo viewer, `assertNoPrivateFields` |
+| Mini-game: `playerPrivateState` tin ID client | **F (domain)** | Yêu cầu `ViewerIdentity.authenticated` từ session layer |
+| Mini-game: version compare-and-swap | **F (domain)** | `submitSessionAction` chặn stale version |
+| Caro overline / luật chính thức | **PI (quyết định)** | Giữ `>= 5`; test pin hành vi hiện tại, chờ chủ dự án chốt |
+| Reward safety: business key, version, server time/RNG | **F (contract)** | `src/shared/gameplay/actionContracts.ts` + test |
+| Transaction atomicity thật (Postgres) | **PI** | Ngoài phạm vi domain; unit test không chứng minh atomicity |
+| Migration version trùng (GPT vs Neon) | **PI** | Không xử lý trên nhánh này; thuộc integration milestone |
+| Neon catalog K5 vs economy catalog/quality | **PI** | Đề xuất bên dưới |
+
+### Đề xuất thống nhất catalog & quality với Neon (P6)
+
+1. **Một nguồn catalog:** chuyển `ITEM_CATALOG` thành nguồn duy nhất, sinh SQL
+   `item_catalog` từ đó; Neon giữ `inventory_items` và ánh xạ `purpose` ↔ `group`
+   (`seed/veg/fruit/...`). Không tạo bảng catalog thứ hai.
+2. **Quality trong kho:** thêm cột `quality text not null default 'normal'` (hoặc
+   `quality_tier smallint`) vào `inventory_items` và đưa vào unique key
+   `(world_id, owner_scope, item_sku, quality)`. Trước khi có cột này, Shipping Bin
+   chỉ bán được ở `normal` (domain đã hỗ trợ optional `quality`).
+3. **Stack limit:** giữ `stackLimit` theo SKU trong catalog; `qty` là `integer`
+   (int4) — ledger domain đã chặn đúng ngưỡng này.
+4. **Cấm bán SKU K5** (kibble/pet) qua Shipping Bin: danh sách kênh bán đã nằm
+   trong catalog (`sellChannels`), server lọc theo đó.
+5. **Backfill:** mọi row hiện có gán `quality = 'normal'`; không đổi SKU.
+6. **Vector TS/SQL:** dùng chung bộ test floor/bão hòa/ngày/retry; SQL test chạy ở
+   Cloud Test trước khi bật Economy V0.2.0.
+
+### Baseline simulator sau khi sửa phương pháp (thay cho số cũ)
+
+`npm run economy:sim` (seed `20261125`, 1000 phiên × 180 ngày): 0 vi phạm, 0
+deadlock, 0 arbitrage. Dominant ratio theo chiến lược (coop): **1,22–1,51** tuỳ
+profile. Báo cáo A–E đo lại: A 2,15; B 2,09; C 2,13; D 1,47 (trần 2,2). Các số
+dominant trong `ECONOMY_BALANCE_REPORT.md` bản trước **được thay thế** vì
+phương pháp đã đổi (strategy tách khỏi persona, RNG tách kênh, tính overtime).

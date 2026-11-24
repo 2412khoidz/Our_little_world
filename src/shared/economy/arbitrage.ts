@@ -159,12 +159,12 @@ function batchCost(
     }
   }
 
-  let chosen: Fraction | null = null;
-  if (shopCost && craftCost) {
-    chosen = compareFractions(shopCost, craftCost) <= 0 ? shopCost : craftCost;
-  } else {
-    chosen = shopCost ?? craftCost;
-  }
+  const chosen: Fraction | null =
+    shopCost && craftCost
+      ? compareFractions(shopCost, craftCost) <= 0
+        ? shopCost
+        : craftCost
+      : (shopCost ?? craftCost);
   memo.set(sku, chosen);
   return chosen;
 }

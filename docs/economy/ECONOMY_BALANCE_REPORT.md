@@ -220,3 +220,21 @@ không phải lỗi nghiêm trọng (món đầu tiên thường mua ngay bằng
 
 Cho tới khi D1–D4 được duyệt: catalog production, `DEFAULT_SATURATION` và
 Shipping Bin **không thay đổi**.
+
+---
+
+## Phụ lục — Đính chính phương pháp (sau GPT independent review)
+
+Các số dominant strategy trong báo cáo gốc **không còn dùng làm bằng chứng** vì
+phương pháp đo đã thay đổi theo review:
+
+- Strategy (balanced/monoculture) tách khỏi persona; trước đây persona
+  `optimizer` ép cả hai nhánh cùng chọn crop tốt nhất → ratio 1 giả tạo.
+- RNG tách kênh `choice`/`quality` để hai nhánh nhận cùng "may mắn".
+- Thời gian bán/mua vượt phiên được tính là `overrunSeconds` (không còn miễn phí).
+- Recovery probe dùng `claimForage` thật (availability + respawn) thay vì cộng item.
+- Oracle độc lập: journal vật phẩm, replay ledger, stack limit, quality.
+
+Baseline đo lại (`seed 20261125`, 60–90 ngày): dominant ratio A = **2,15**,
+B = 2,09, C = 2,13, D = 1,47 (trần 2,2). Kết luận định tính không đổi (A đạt
+trần nhưng sát; D cân bằng nhất nhưng giảm thu nhập casual), định lượng thay đổi.
