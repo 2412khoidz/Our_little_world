@@ -144,3 +144,142 @@ Vite/Vitest resolve bình thường.
    `actorId` và `expectedVersion`. Với Battleship chỉ gửi `publicStateFor(...)`
    cho đối phương qua Realtime.
 6. **Kiểm tra trước khi merge:** `npm run lint && npm run typecheck && npm run test && npm run economy:sim`.
+
+---
+
+# Phiên 2 — V0.2 Gameplay Expansion & Pet AI Foundation (25/11/2026)
+
+Baseline phiên 2: `5eda187`. Mọi module dưới đây là domain thuần TypeScript, chưa
+tích hợp gameplay chính.
+
+## Module đã hoàn thành
+
+| Module | Mốc | Commit | Test |
+|---|---|---|---|
+| Shipping Bin + Forage (phục hồi ví 0) | V0.2.0 | `772d4ca` | 21 |
+| NPC Order Board (3 slot, restaurant facade) | V0.2.5 | `fdcb479` | 16 |
+| Balance experiments (`npm run economy:experiments`) | V0.2.x | `d84763a` | 9 |
+| Mini-game UI (Caro/Othello/Memory/Battleship) | V0.2.5 | `5db093a` | 13 RTL |
+| Shop & Home Progression | V0.2.4 | `50d90fa` | 12 |
+| Pet AI primitives | V0.2.3 prep | `388e140` | 32 |
+| Cross-module verification | — | (commit này) | 14 + 1 boundary |
+
+Tổng sau phiên 2: **341 test / 24 file** + 1 test biên server; lint, `tsc -b` và
+public build đều sạch.
+
+## API mới (rút gọn)
+
+```ts
+// economy/shippingBin.ts
+quoteShippingBinSale(state, lines, saturation?) / sellToShippingBin(state, request, history?)
+buildShippingBinTransaction({...})            // payload RPC, không có giá từ client
+vietnamDayIndex(nowMs)                        // reset bão hòa theo ngày HCM
+
+// economy/forage.ts
+FORAGE_NODES / createForageState / claimForage(state, { nodeId, nowMs })
+
+// economy/orderBoard.ts
+generateOrderBoard({ seed, windowIndex, milestone, nowMs })
+completeOrder(board, { orderId, inventory, nowMs, idempotencyKey, actorId })
+generateRestaurantOrder(...) / settleRestaurantOrder(order, { dishSku, stars, servedAtMs, ... })
+
+// economy/sim/experiments.ts
+incomeMetrics(result)      // 4 mẫu số: /phút thao tác, /phút phiên, /ngày thực
+daysToAfford({...})        // pacing mua sắm
+cropEconomics() / cookEconomics() / runSaturationSweep() / runBalanceExperiments()
+
+// shop
+quoteCatalogPurchase / quoteFurniturePurchase / quoteToolUpgrade
+quoteExpansion / applyExpansion / gardenPlotCount / isFeatureAvailable
+LIFESTYLE_FEATURES (luôn mở) / isFeatureGatedByEconomy
+
+// petAdvanced/primitives
+clamp01, normalize01, RESPONSE_CURVES, needUrgency, weightedScore, scoreAction,
+deterministicTieBreak
+isOnCooldown, canSwitch, shouldInterrupt, createSwitchHistory, isRepeatSuppressed
+appendMemoryEvent, expireEvents, recencyWeight, preferenceScore,
+scorePreferenceByCaregiver, serializeMemory/deserializeMemory
+filterAffordances, scoreAffordance, selectAffordance
+runSandbox({ seed, steps, stepMs, config })
+```
+
+## Kết quả simulator (seed `20261125`, fingerprint `7076075b`, exit 0)
+
+- 1000 phiên × 180 ngày chạy ~0,98 s; **0 vi phạm invariant, 0 deadlock, 0 arbitrage**.
+- 5 profile: V0.2.0 (3,1–3,9 xu/phút), V0.2.1 (5,8–10,2), V0.2.2 (tương đương),
+  **V0.2.5 order board mới** (casual 9,44; coop 7,42; optimizer 7,23 xu/phút phiên),
+  V0.3.0 (giả định).
+- Đường phục hồi ví 0: 75 giây (1 hái 60s + 1 bán 15s) < 600s mục tiêu.
+- Dominant strategy: 1,22–1,33× (trần 2,2) trên cả 4 profile có farming.
+
+## Kết quả thí nghiệm cân bằng
+
+1. **Ngưỡng bão hòa hiện tại (20/ngày/nhóm) gần như không có tác dụng** ở vườn 12 ô:
+   optimizer bán ~12 đơn vị/nhóm/ngày. Hạ ngưỡng xuống 12 cũng không đổi; chỉ ngưỡng
+   5 mới giảm ~6% thu nhập optimizer (6,35 vs 6,79 xu/phút). Kết luận: cơ chế chống
+   monoculture phải đến từ bảng đơn (yêu cầu đa dạng) chứ không phải saturation.
+2. **Cây nhanh vs cây chậm**: khi tính theo *phút thao tác*, cây chậm lãi hơn
+   (dâu/cải 14 xu/phút; lúa mì 4). "Lãi/ô/ngày" nếu bỏ giới hạn thời gian thao tác
+   cho ra lúa mì 960 xu/ô/ngày — con số ảo; bản báo cáo tách `trần/ô/ngày` và
+   `lãi/ô/ngày` (giới hạn theo phiên 12 phút, 12 ô).
+3. **Nấu ăn**: bán thô 1,75–5,75 xu/phút thao tác; qua đơn NPC 8,0–23,5; qua nhà hàng
+   10,25–28,5. Nấu ăn chỉ có lý khi có đơn — đúng thiết kế, nhưng cần Order Board.
+4. **Pacing casual**: 45 xu = 23 phút phiên; 180 xu = 45 phút; 420 xu = 87 phút;
+   1.400 xu = 182 phút. Nằm trong dải BALANCING_PLAN (5–15 / 30–60 / 60–180 / 180–480).
+5. **Order Board** chỉ tăng nhẹ thu nhập casual (8,91 → 9,03 xu/phút phiên) trong
+   90 ngày vì đơn yêu cầu món chưa chắc có sẵn; giá trị chính là đa dạng hoá.
+
+## Đo thu nhập: 4 mẫu số (bắt buộc phân biệt)
+
+| Chỉ số | Ý nghĩa | Optimizer | Casual |
+|---|---|---|---|
+| xu/phút thao tác | công sức thực | 17,02 | 9,73 |
+| xu/phút phiên | cảm giác mỗi buổi chơi | 6,79 | 9,68 |
+| xu/ngày thực | pacing (kể cả ngày vắng) | 203,58 | 122,20 |
+| lãi/ô/ngày | chi phí cơ hội ô đất | 14 (cải/dâu) | — |
+
+Kết luận dominant strategy **phụ thuộc mẫu số**: theo phút thao tác optimizer gấp
+1,75× casual; theo phút phiên optimizer lại thấp hơn (0,70×) vì ngồi không sau khi
+lấp đầy 12 ô. Không được kết luận "monoculture lãi hơn" chỉ từ một chỉ số.
+
+## Đề xuất cho hai lỗ hổng dữ liệu (không tự sửa)
+
+- **`carp_pond` (V ghi 11,0; công thức 12,0)**: đề xuất sửa bảng thành 12,0 và
+  `herb_carp` thành 30,0 (giá bán giữ nguyên) — hoặc chấp nhận lệch 1 xu và ghi
+  chú. Cần chủ dự án duyệt.
+- **`peach` thiếu SKU cây giống**: đề xuất thêm `sapling_peach` (giá 20–30 xu, bán
+  không được) để cây ăn quả lâu năm có đường sở hữu; hiện simulator loại `peach`.
+
+## Pet AI primitives (bàn giao Neon)
+
+- 32 test; module đặt tại `src/shared/petAdvanced/primitives/`, không đụng
+  `src/shared/pet/`, `PetSnapshot`, `PetEntity`, `WorldScene`.
+- Đã có: utility math + response curve cấu hình được, stabilization (cooldown,
+  commitment, hysteresis, anti-spam), bounded memory (capacity 64, khuyến nghị
+  persist 24 theo PET_SIMULATION_SPEC), affordance contract, sandbox deterministic.
+- **Chưa có** (thuộc Neon): personality mapping, 8 needs, 9 emotions, action set
+  thật, anti-sleep-loop policy, wiring `AgentBrain`, Sim-Host election, UI debugger.
+- Handover: `docs/pet/PET_AI_PRIMITIVES_HANDOVER.md`.
+
+## Việc cần Neon/GPT
+
+| Việc | Ghi chú |
+|---|---|
+| `item_catalog` SQL + generator | `ITEM_CATALOG` đã sẵn sàng; thêm cột `quality` cho `inventory_items` nếu muốn bán theo phẩm cấp |
+| RPC `sell_bin` / `order_board` / `buy` | Domain đã có payload + idempotency; unit test **không** chứng minh transaction Postgres atomic |
+| Nối mini-game vào menu/navigation | Component đã có trong `src/features/minigames/`, chưa thêm vào App.tsx |
+| Affordance thật cho bát ăn/sofa/cửa sổ | Contract đã có, Neon thiết kế dữ liệu |
+| Quyết định `sapling_peach` + `carp_pond` | Đề xuất ở trên |
+
+## File dễ merge conflict
+
+`package.json` (thêm `economy:experiments`, đổi `typecheck` sang `tsc -b`),
+`tsconfig.node.json` (thêm script), `src/shared/economy/types.ts` (MilestoneId
+thêm V0.1.5/V0.2.4/V0.4.0), `tests/unit/economyCatalog.test.ts`.
+`minigames.html` ở root (dev-only, không vào build production).
+
+## Lưu ý kỹ thuật phát hiện trong phiên
+
+`npm run typecheck` trước đây là `tsc --noEmit` trên config gốc `files: []` nên
+**không kiểm tra gì**. Đã đổi sang `tsc -b` (giống bước typecheck của `npm run
+build`); lần đầu chạy đã phát hiện 6 lỗi kiểu thật đã được sửa.
