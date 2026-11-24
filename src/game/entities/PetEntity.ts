@@ -1,10 +1,18 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../../shared/maps';
 import type { PetActionType, PetSnapshot } from '../../shared/pet/petTypes';
-import { WORLD_PROPS_KEY } from '../art/worldAtlas';
-import extIds from '../art/worldExtendedArtIds.json';
-
-type FacingCardinal = 'South' | 'East' | 'North' | 'West';
+import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../shared/petLiving/petVisualTypes';
+import {
+  createLocomotionSnapshot,
+  stepPetLocomotion,
+  type PetBehaviorIntent,
+  type PetLocomotionSnapshot,
+} from '../pet/PetAnimationController';
+import {
+  ensureLivingCatSpritesheet,
+  getLivingCatAnimKey,
+  getLivingCatTextureKey,
+} from '../pet/petSpriteBuilder';
 
 const HOME_WAYPOINTS = [
   { x: 13.5 * TILE_SIZE, y: 10.2 * TILE_SIZE }, // Coral pet rug
@@ -19,9 +27,13 @@ const FOOD_BOWL_SPOT = { x: 12.4 * TILE_SIZE, y: 10.1 * TILE_SIZE };
 export class PetEntity {
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
-  private readonly shadow: Phaser.GameObjects.Sprite;
+  private readonly shadow: Phaser.GameObjects.Ellipse;
   private readonly nameTag: Phaser.GameObjects.Text;
   private bubble: Phaser.GameObjects.Text | null = null;
+
+  private variant: CatCoatVariantId = 'ginger-tabby';
+  private accessory: CatAccessoryId = 'ribbon_rose';
+  private loco: PetLocomotionSnapshot = createLocomotionSnapshot(13.5 * TILE_SIZE, 10.2 * TILE_SIZE);
 
   private petSnapshot: PetSnapshot | null = null;
   private visible = false;
@@ -29,38 +41,27 @@ export class PetEntity {
 
   private targetX = 13.5 * TILE_SIZE;
   private targetY = 10.2 * TILE_SIZE;
-  private facing: FacingCardinal = 'South';
   private nextDecisionAtMs = 0;
   private reactionUntilMs = 0;
-  private reactionAnim: 'Happy_South' | 'Sleep_South' = 'Happy_South';
+  private reactionIntent: PetBehaviorIntent = 'happy_hop';
   private bubbleTimerMs = 0;
 
   constructor(scene: Phaser.Scene, onTap: () => void) {
     this.scene = scene;
 
-    const startX = 13.5 * TILE_SIZE;
-    const startY = 10.2 * TILE_SIZE;
-
-    const hasShadow =
-      scene.textures.exists(WORLD_PROPS_KEY) &&
-      scene.textures.get(WORLD_PROPS_KEY).has(`${extIds.sheets.cat_orange_shadow}:48`);
+    ensureLivingCatSpritesheet(scene, this.variant, this.accessory);
+    const texKey = getLivingCatTextureKey(this.variant, this.accessory);
+    const startX = this.loco.x;
+    const startY = this.loco.y;
 
     this.shadow = scene.add
-      .sprite(
-        startX,
-        startY,
-        WORLD_PROPS_KEY,
-        hasShadow ? `${extIds.sheets.cat_orange_shadow}:48` : `${extIds.sheets.cat_orange}:48`,
-      )
-      .setOrigin(0.5, 0.85)
-      .setScale(1.25)
-      .setAlpha(hasShadow ? 0.85 : 0.25)
+      .ellipse(startX, startY - 1, 13, 5, 0x22151c, 0.34)
       .setVisible(false);
 
+    // Native 1:1 24x24 pixel sprite for razor-sharp Demo E parity without blurry scaling
     this.sprite = scene.add
-      .sprite(startX, startY, WORLD_PROPS_KEY, `${extIds.sheets.cat_orange}:48`)
+      .sprite(startX, startY, texKey, 0)
       .setOrigin(0.5, 0.85)
-      .setScale(1.25)
       .setVisible(false);
 
     this.sprite.setInteractive({ useHandCursor: true });
@@ -71,7 +72,7 @@ export class PetEntity {
     });
 
     this.nameTag = scene.add
-      .text(startX, startY - 19, 'Quýt', {
+      .text(startX, startY - 21, 'Bé mèo', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '6px',
         fontStyle: 'bold',
@@ -83,6 +84,15 @@ export class PetEntity {
       .setResolution(4)
       .setDepth(9400)
       .setVisible(false);
+  }
+
+  setAppearance(variant: CatCoatVariantId, accessory: CatAccessoryId): void {
+    if (this.variant === variant && this.accessory === accessory) return;
+    this.variant = variant;
+    this.accessory = accessory;
+    ensureLivingCatSpritesheet(this.scene, variant, accessory);
+    this.sprite.setTexture(getLivingCatTextureKey(variant, accessory), 0);
+    this.playAnimState(this.loco.animState);
   }
 
   setVisible(visible: boolean): void {
@@ -99,10 +109,10 @@ export class PetEntity {
   syncSnapshot(pet: PetSnapshot | null, currentMapId: 'home' | 'garden'): void {
     this.petSnapshot = pet;
     const show = currentMapId === 'home';
-    this.nameTag.setText(pet ? pet.name : 'Mèo cam');
+    this.nameTag.setText(pet ? pet.name : 'Mèo con');
     this.setVisible(show);
-    if (show && !this.sprite.anims.isPlaying) {
-      this.playSyncedAnim(pet ? 'Idle_South' : 'Sleep_South');
+    if (show) {
+      this.playAnimState(pet ? this.loco.animState : 'sleep');
     }
   }
 
@@ -117,12 +127,12 @@ export class PetEntity {
   triggerReaction(action: PetActionType): void {
     const now = Date.now();
     this.reactionUntilMs = now + 2600;
-    this.reactionAnim = 'Happy_South';
+    this.reactionIntent = action === 'feed' ? 'eat' : action === 'water' ? 'drink' : 'pet_purr';
     if (action === 'feed' || action === 'water') {
       this.targetX = FOOD_BOWL_SPOT.x;
       this.targetY = FOOD_BOWL_SPOT.y;
     }
-    this.spawnFloatingBubble(action === 'feed' ? '❤️🐟' : action === 'water' ? '💧✨' : '❤️');
+    this.spawnFloatingBubble(action === 'feed' ? '🐟' : action === 'water' ? '💧' : '❤️');
   }
 
   getWorldPosition(): { x: number; y: number } {
@@ -139,56 +149,60 @@ export class PetEntity {
     if (!this.visible) return;
     const now = Date.now();
 
-    // Unadopted kitty sleeps cutely in the pet corner Waiting to be named
     if (!this.petSnapshot) {
+      this.loco = stepPetLocomotion(this.loco, {
+        intent: 'sleep',
+        targetX: 13.6 * TILE_SIZE,
+        targetY: 10.3 * TILE_SIZE,
+        dtSec,
+        nowMs: now,
+      });
       this.sprite.setPosition(13.6 * TILE_SIZE, 10.3 * TILE_SIZE);
       this.syncShadowAndLabel();
-      this.playSyncedAnim('Sleep_South');
+      this.playAnimState(this.loco.animState);
       this.tickAmbientBubble(dtSec, 'zz');
       return;
     }
 
-    const dx = this.targetX - this.sprite.x;
-    const dy = this.targetY - this.sprite.y;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.hypot(this.targetX - this.loco.x, this.targetY - this.loco.y);
+    let desiredIntent: PetBehaviorIntent;
 
     if (dist > 2) {
-      const speed = 28;
-      const step = Math.min(speed * dtSec, dist);
-      this.sprite.x += (dx / dist) * step;
-      this.sprite.y += (dy / dist) * step;
-      this.facing =
-        Math.abs(dx) > Math.abs(dy)
-          ? dx >= 0
-            ? 'East'
-            : 'West'
-          : dy >= 0
-            ? 'South'
-            : 'North';
-      this.syncShadowAndLabel();
-      this.playSyncedAnim(`Walk_${this.facing}`);
+      desiredIntent = 'move';
     } else if (now < this.reactionUntilMs) {
-      this.syncShadowAndLabel();
-      this.playSyncedAnim(this.reactionAnim);
+      desiredIntent = this.reactionIntent;
     } else if (this.studyMode || this.petSnapshot.emotion === 'sleepy') {
-      this.syncShadowAndLabel();
-      this.playSyncedAnim('Sleep_South');
+      desiredIntent = 'sleep';
       this.tickAmbientBubble(dtSec, '~');
     } else {
-      this.syncShadowAndLabel();
-      const shouldNap = Math.floor(now / 12000) % 3 === 2;
-      this.playSyncedAnim(shouldNap ? 'Sleep_South' : `Idle_${this.facing}`);
-      if (shouldNap) this.tickAmbientBubble(dtSec, 'Zzz');
+      const cycle = Math.floor(now / 12000) % 4;
+      desiredIntent = cycle === 2 ? 'sleep' : cycle === 3 ? 'sit' : 'idle';
+      if (desiredIntent === 'sleep') {
+        this.tickAmbientBubble(dtSec, 'Zzz');
+      } else if (this.petSnapshot.emotion === 'hungry' && cycle === 0) {
+        this.tickAmbientBubble(dtSec, '🐟?');
+      }
 
       if (now >= this.nextDecisionAtMs) {
-        this.nextDecisionAtMs = now + 5500 + ((now % 4) * 1000);
-        // Deterministic waypoint selection derived cleanly from server clock & pet version
+        this.nextDecisionAtMs = now + 6000 + ((now % 4) * 1000);
         const seed = Math.floor(now / 6000) + this.petSnapshot.version;
         const wp = HOME_WAYPOINTS[seed % HOME_WAYPOINTS.length]!;
         this.targetX = wp.x;
         this.targetY = wp.y;
       }
     }
+
+    this.loco = stepPetLocomotion(this.loco, {
+      intent: desiredIntent,
+      targetX: this.targetX,
+      targetY: this.targetY,
+      dtSec,
+      nowMs: now,
+    });
+
+    this.sprite.setPosition(Math.round(this.loco.x), Math.round(this.loco.y));
+    this.syncShadowAndLabel();
+    this.playAnimState(this.loco.animState);
 
     if (this.bubble && this.bubble.active) {
       this.bubble.y -= 10 * dtSec;
@@ -203,19 +217,15 @@ export class PetEntity {
   private syncShadowAndLabel(): void {
     const depth = Math.round(this.sprite.y);
     this.sprite.setDepth(depth);
-    this.shadow.setPosition(this.sprite.x, this.sprite.y + 1);
+    this.shadow.setPosition(this.sprite.x, this.sprite.y);
     this.shadow.setDepth(depth - 1);
-    this.nameTag.setPosition(this.sprite.x, this.sprite.y - 18);
+    this.nameTag.setPosition(this.sprite.x, this.sprite.y - 20);
   }
 
-  private playSyncedAnim(tag: string): void {
-    const mainKey = `olw-cat-${tag}`;
-    if (this.scene.anims.exists(mainKey) && this.sprite.anims.currentAnim?.key !== mainKey) {
-      this.sprite.play(mainKey, true);
-    }
-    const shKey = `olw-cat-shadow-${tag}`;
-    if (this.scene.anims.exists(shKey) && this.shadow.anims.currentAnim?.key !== shKey) {
-      this.shadow.play(shKey, true);
+  private playAnimState(state: PetAnimState): void {
+    const animKey = getLivingCatAnimKey(this.variant, this.accessory, state);
+    if (this.scene.anims.exists(animKey) && this.sprite.anims.currentAnim?.key !== animKey) {
+      this.sprite.play(animKey, true);
     }
   }
 
@@ -230,7 +240,7 @@ export class PetEntity {
   private spawnFloatingBubble(text: string): void {
     if (this.bubble) this.bubble.destroy();
     this.bubble = this.scene.add
-      .text(this.sprite.x + 4, this.sprite.y - 24, text, {
+      .text(this.sprite.x + 4, this.sprite.y - 25, text, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '7px',
         fontStyle: 'bold',
