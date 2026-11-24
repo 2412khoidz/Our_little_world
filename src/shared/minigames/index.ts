@@ -11,3 +11,5 @@ export * from './othello';
 export * from './battleship';
 export * from './memory';
 export * from './registry';
+
+export * from './privacy';
