@@ -10,12 +10,13 @@
  */
 
 /** Milestones that can own a SKU. Ordered from earliest to latest. */
-export type MilestoneId = 'V0.2.0' | 'V0.2.1' | 'V0.2.2' | 'V0.2.5' | 'V0.3.0';
+export type MilestoneId = 'V0.2.0' | 'V0.2.1' | 'V0.2.2' | 'V0.2.4' | 'V0.2.5' | 'V0.3.0';
 
 export const MILESTONE_ORDER: readonly MilestoneId[] = [
   'V0.2.0',
   'V0.2.1',
   'V0.2.2',
+  'V0.2.4',
   'V0.2.5',
   'V0.3.0',
 ];
