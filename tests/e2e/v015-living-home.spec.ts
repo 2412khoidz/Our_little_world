@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const pwPort = process.env.PLAYWRIGHT_PORT || '4173';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
-const QA_DIR = path.join(process.cwd(), 'test-results', 'v015-living-home');
+const QA_DIR = process.env.OLW_LIVING_HOME_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'v015-living-home');
 
 function ensureQaDir() {
   fs.mkdirSync(QA_DIR, { recursive: true });

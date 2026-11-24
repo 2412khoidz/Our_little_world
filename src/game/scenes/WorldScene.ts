@@ -1659,6 +1659,7 @@ export class WorldScene extends Phaser.Scene {
 
   private applyRemoteMovementPacket(packet: MovementPacket): void {
     const entity = this.remoteEntities.get(packet.userId);
+    if (!entity || entity.sessionId !== packet.sessionId) return;
 
     const changedMap = entity.mapId !== packet.mapId;
     this.setRemoteTarget(entity, packet, changedMap);

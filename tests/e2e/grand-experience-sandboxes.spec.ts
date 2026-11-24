@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { expect, test, type Page } from '@playwright/test';
 
-const SHOWCASE_DIR = path.join(process.cwd(), 'test-results', 'grand-showcase');
+const SHOWCASE_DIR = process.env.OLW_SHOWCASE_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'grand-showcase');
 
 function ensureShowcaseDir() {
   fs.mkdirSync(SHOWCASE_DIR, { recursive: true });

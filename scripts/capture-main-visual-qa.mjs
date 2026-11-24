@@ -2,11 +2,12 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
-const PORT = 4176;
+const PORT = process.env.OLW_QA_PORT || '4176';
 const BASE = `http://127.0.0.1:${PORT}`;
-const OUT_DIR = path.join(process.cwd(), 'test-results', 'v01-demo-e-restored');
+const OUT_DIR = process.env.OLW_QA_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'v01-demo-e-restored');
 const TMP_STATE = path.join(os.tmpdir(), `olw-qa-${Date.now()}.json`);
 
 async function waitForServer() {
@@ -35,12 +36,11 @@ async function waitSceneStable(page) {
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const srv = spawn(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['vite', '--host', '127.0.0.1', '--port', String(PORT), '--strictPort'],
+    process.execPath,
+    [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', PORT, '--strictPort'],
     {
       env: { ...process.env, OLW_DEV_LAN_STATE_FILE: TMP_STATE },
       stdio: 'ignore',
-      shell: process.platform === 'win32',
     },
   );
 

@@ -52,6 +52,16 @@ describe('realtime movement throttling & remote filtering', () => {
     expect(tx.shouldEmit(253, 'walk', 'garden', turned)).toBe(true);
   });
 
+  it('publishes an explicit posture position while idle and keeps the walking cadence', () => {
+    const tx = new MovementTxThrottle();
+    const seated = { ...position, x: 55 };
+    expect(tx.shouldEmit(0, 'idle', 'home', position)).toBe(true);
+    expect(tx.shouldEmit(10, 'idle', 'home', seated, true)).toBe(true);
+    expect(tx.shouldEmit(11, 'idle', 'home', seated)).toBe(false);
+    expect(tx.shouldEmit(134, 'walk', 'home', position)).toBe(false);
+    expect(tx.shouldEmit(135, 'walk', 'home', position)).toBe(true);
+  });
+
   it('sends the resting position after a short movement and preserves sequence across reconnect', () => {
     const tx = new MovementTxThrottle();
     const moved = { ...position, x: 33 };
