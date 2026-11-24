@@ -72,7 +72,9 @@ export function registerWorldAtlas(scene: Phaser.Scene): void {
         }
         if (entry.frameWidth && entry.frameHeight && entry.frameCount) {
           const cols = Math.max(1, Math.floor(w / entry.frameWidth));
-          for (let i = 0; i < entry.frameCount; i += 1) {
+          const rows = Math.max(1, Math.floor(h / entry.frameHeight));
+          const cellLimit = Math.max(entry.frameCount, cols * rows);
+          for (let i = 0; i < cellLimit; i += 1) {
             const fx = x + (i % cols) * entry.frameWidth;
             const fy = y + Math.floor(i / cols) * entry.frameHeight;
             const frameKey = `${entry.id}:${i}`;

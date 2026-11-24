@@ -148,4 +148,32 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
       h2.closeAll();
     }
   });
+
+  it('adds deltas atomically on concurrent brand-new SKU grants without overwriting', async () => {
+    // Note: Dev LAN verifies single-process JS handler parity; real Postgres transaction concurrency
+    // requires executing supabase/tests/v015_inventory_security.sql on PostgreSQL.
+    const [r1, r2] = await Promise.all([
+      callApi(handler, 'POST', '/dev-console/spawn-item', MAY_ID, {
+        worldId,
+        scope: 'shared',
+        itemSku: 'gift_star_jar',
+        qty: 2,
+      }),
+      callApi(handler, 'POST', '/dev-console/spawn-item', NANG_ID, {
+        worldId,
+        scope: 'shared',
+        itemSku: 'gift_star_jar',
+        qty: 2,
+      }),
+    ]);
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+
+    const inv = await callApi(handler, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+    const jar = inv.json.data.items.find(
+      (i: { ownerScope: string; itemSku: string }) =>
+        i.ownerScope === 'shared' && i.itemSku === 'gift_star_jar',
+    );
+    expect(jar?.qty).toBe(4);
+  });
 });
