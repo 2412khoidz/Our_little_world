@@ -9,3 +9,5 @@ export * from './types.ts';
 export * from './ledgerMath.ts';
 export * from './catalogConfig.ts';
 export * from './arbitrage.ts';
+export * from './shippingBin.ts';
+export * from './forage.ts';
