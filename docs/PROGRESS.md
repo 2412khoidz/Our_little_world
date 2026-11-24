@@ -94,3 +94,7 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ### OLW-010-05 — Review và checklist
 
 Đã review tĩnh SQL/RLS/RPC, Auth và private Realtime. Có checklist Supabase Test/Prod, Cloudflare Pages Free, quyền triển khai Web/PWA của artwork và xác thực URL asset. Các mục Cloud và thiết bị thật chưa thực hiện. [Review và checklist](research/GPT_NIGHT_OLW_010_05_REVIEW.md)
+
+### V0.1 Security Hardening
+
+Đã thêm migration bổ sung cho quyền EXECUTE của RPC, thứ tự khóa world/invite, trần hai thành viên, phân quyền Realtime và receipt idempotency. PostgreSQL 18.6 local vượt SQL assertions và ba kịch bản nhiều phiên. Supabase Test/Auth/PostgREST/WebSocket thật còn **Pending Verification**. [Checkpoint và hướng dẫn tích hợp](research/GPT_NIGHT_CHECKPOINT.md#v01-security-hardening--hoàn-thành-local-cloud-pending-verification)
