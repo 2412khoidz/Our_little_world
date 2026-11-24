@@ -8,18 +8,20 @@
 import { createRng, deriveSeed } from '../../rng.ts';
 import { isMilestoneAtOrBefore } from '../types.ts';
 import type { RngStream } from '../../rng.ts';
-import { CATALOG_BY_SKU, computeSellLot, itemsForMilestone } from '../catalogConfig.ts';
-import { applyLedgerEntry, createWallet, replayLedger } from '../ledgerMath.ts';
+import { CATALOG_BY_SKU, computeSellPriceBp, itemsForMilestone } from '../catalogConfig.ts';
+import { applyLedgerEntry, createWallet, divFloor, mulBp, replayLedger } from '../ledgerMath.ts';
 import type { CoinLedgerEntry } from '../ledgerMath.ts';
 import { completeOrder, generateOrderBoard, orderWindowIndex } from '../orderBoard.ts';
 import type { OrderBoardState } from '../orderBoard.ts';
-import type { ItemDefinition, ItemQuality, SaturationConfig } from '../types.ts';
+import type { ItemDefinition, ItemQuality } from '../types.ts';
 import { DEFAULT_SATURATION } from '../types.ts';
 import {
   ACTION_SECONDS,
   FISH_TABLE,
   QUALITY_WEIGHTS,
 } from './config.ts';
+import { baselinePolicy, NO_SATURATION } from './marketPolicies.ts';
+import type { MarketPolicy } from './marketPolicies.ts';
 import type { DecorSink } from './config.ts';
 import type { PersonaDefinition, SimProfile, SimStats, StrategyId } from './types.ts';
 
@@ -45,7 +47,12 @@ export interface WorldState {
   entrySeq: number;
   activeSeconds: number;
   workedSeconds: number;
-  saturation: SaturationConfig;
+  idleSeconds: number;
+  plotDays: number;
+  market: MarketPolicy;
+  soldTodayBySku: Record<string, number>;
+  soldValueToday: number;
+  firstSaleAtMs: number | null;
   stats: SimStats;
   decorPurchases: string[];
   actionLog: string[];
@@ -76,7 +83,7 @@ export function createWorld(
   startingCoins: number,
   nowMs: number,
   seed = 0,
-  saturation: SaturationConfig = DEFAULT_SATURATION,
+  market: MarketPolicy = baselinePolicy(DEFAULT_SATURATION),
 ): WorldState {
   const state: WorldState = {
     day: 1,
@@ -90,7 +97,12 @@ export function createWorld(
     entrySeq: 0,
     activeSeconds: 0,
     workedSeconds: 0,
-    saturation,
+    idleSeconds: 0,
+    plotDays: 0,
+    market,
+    soldTodayBySku: {},
+    soldValueToday: 0,
+    firstSaleAtMs: null,
     stats: emptyStats(),
     decorPurchases: [],
     actionLog: [],
@@ -639,10 +651,30 @@ export function sellAll(state: WorldState): number {
       if (qty <= 0) {
         continue;
       }
-      const start = state.soldTodayByGroup[item.group] ?? 0;
-      const quote = computeSellLot(sku, quality, start, qty, { saturation: state.saturation });
-      recordCoin(state, 'earn', quote.totalCoins, `sell_${sku}`);
-      state.soldTodayByGroup[item.group] = start + qty;
+      let coins = 0;
+      // Price unit by unit so value-based and time-recovering policies can react
+      // to what has already been sold today.
+      for (let unit = 0; unit < qty; unit += 1) {
+        const baseBp = computeSellPriceBp(sku, quality, 0, { saturation: NO_SATURATION });
+        const multiplierBp = state.market.multiplierBp({
+          sku,
+          group: item.group,
+          soldSkuUnits: state.soldTodayBySku[sku] ?? 0,
+          soldGroupUnits: state.soldTodayByGroup[item.group] ?? 0,
+          soldValueCoins: state.soldValueToday,
+          nowMs: state.nowMs,
+          firstSaleAtMs: state.firstSaleAtMs,
+        });
+        const unitCoins = divFloor(mulBp(baseBp, multiplierBp), 10_000);
+        coins += unitCoins;
+        state.soldValueToday += unitCoins;
+        if (state.firstSaleAtMs === null) {
+          state.firstSaleAtMs = state.nowMs;
+        }
+        state.soldTodayBySku[sku] = (state.soldTodayBySku[sku] ?? 0) + 1;
+        state.soldTodayByGroup[item.group] = (state.soldTodayByGroup[item.group] ?? 0) + 1;
+      }
+      recordCoin(state, 'earn', coins, `sell_${sku}`);
       state.groupUnitsSold[item.group] = (state.groupUnitsSold[item.group] ?? 0) + qty;
       counts[quality] = 0;
       state.stats.itemsSold += qty;
@@ -720,6 +752,8 @@ export function runDay(
   // 6 minutes of a 20-minute session and idles still played 20 minutes.
   state.activeSeconds += sessionLength;
   state.workedSeconds += Math.min(clock.used, sessionLength);
+  state.idleSeconds += Math.max(0, sessionLength - Math.min(clock.used, sessionLength));
+  state.plotDays += state.plots.length;
   state.actionLog.push(
     `d${state.day}:${persona.id}:${Math.round(clock.used)}s wallet=${state.coins}c`,
   );
@@ -738,10 +772,17 @@ export function resetWorldForProbe(state: WorldState): void {
   state.plots = [];
 }
 
+export function resetDayAccounting(state: WorldState): void {
+  state.soldTodayByGroup = {};
+  state.soldTodayBySku = {};
+  state.soldValueToday = 0;
+  state.firstSaleAtMs = null;
+}
+
 export function advanceDay(state: WorldState, dayMs: number): void {
   state.day += 1;
   state.nowMs += dayMs;
-  state.soldTodayByGroup = {};
+  resetDayAccounting(state);
 }
 
 export interface WorldInvariants {

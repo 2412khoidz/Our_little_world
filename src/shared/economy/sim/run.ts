@@ -8,6 +8,8 @@ import type { ArbitrageReport } from '../arbitrage.ts';
 import { CATALOG_VERSION, catalogFingerprint, requireItem } from '../catalogConfig.ts';
 import { replayLedger } from '../ledgerMath.ts';
 import { createRng, deriveSeed } from '../../rng.ts';
+import { DEFAULT_SATURATION } from '../types.ts';
+import { baselinePolicy } from './marketPolicies.ts';
 import {
   ACTION_SECONDS,
   DAY_MS,
@@ -27,6 +29,7 @@ import {
   availableCrops,
   checkInvariants,
   createWorld,
+  resetDayAccounting,
   inventoryValueCoins,
   pickBestCropForReport,
   plotValueCoins,
@@ -72,9 +75,14 @@ function makeSnapshot(
     wealthCoins: wealth,
     activeSeconds: state.activeSeconds,
     workedSeconds: state.workedSeconds,
+    idleSeconds: state.idleSeconds,
+    plotDays: state.plotDays,
+    soldValueToday: state.soldValueToday,
     netIncomeCoins: netIncome,
     incomePerMinute: minutes > 0 ? round2(netIncome / minutes) : 0,
     incomePerWorkedMinute: workedMinutes > 0 ? round2(netIncome / workedMinutes) : 0,
+    netPerPlotDay: state.plotDays > 0 ? round2(netIncome / state.plotDays) : 0,
+    idleShare: state.activeSeconds > 0 ? round2(state.idleSeconds / state.activeSeconds) : 0,
     sources: summary.sources,
     sinks: summary.sinks,
     groupUnitsSold: { ...state.groupUnitsSold },
@@ -93,7 +101,8 @@ export function runSimulation(options: SimOptions): SimResult {
   // Strategy is not part of the seed: both arms see the same random stream so a
   // comparison measures the strategy, not a different roll of the dice.
   const rng = createRng(deriveSeed(options.seed, profile.id, persona.id));
-  const state = createWorld(startingCoins, START_MS, options.seed, options.saturation);
+  const market = options.market ?? baselinePolicy(options.saturation ?? DEFAULT_SATURATION);
+  const state = createWorld(startingCoins, START_MS, options.seed, market);
   const snapshots: MilestoneSnapshot[] = [];
   const issues: InvariantIssue[] = [];
   let nextPlayDay = 1;
@@ -105,7 +114,7 @@ export function runSimulation(options: SimOptions): SimResult {
   for (let day = 1; day <= days; day += 1) {
     state.day = day;
     state.nowMs = START_MS + (day - 1) * DAY_MS;
-    state.soldTodayByGroup = {};
+    resetDayAccounting(state);
     if (options.resetWalletAtDay === day) {
       resetWorldForProbe(state);
     }

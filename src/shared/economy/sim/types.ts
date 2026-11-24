@@ -11,6 +11,7 @@ import type {
   MilestoneId,
   SaturationConfig,
 } from '../types.ts';
+import type { MarketPolicy } from './marketPolicies.ts';
 
 export type PersonaId =
   | 'casual'
@@ -19,7 +20,8 @@ export type PersonaId =
   | 'optimizer'
   | 'decorator'
   | 'long_absence'
-  | 'mixed_craft_fish';
+  | 'mixed_craft_fish'
+  | 'optimizer_mixed';
 
 export type ProfileId = 'v020' | 'v021' | 'v022' | 'v025' | 'v030';
 
@@ -87,6 +89,8 @@ export interface SimOptions {
   readonly resetWalletAtDay?: number | null;
   /** Override the soft-saturation rules for balance experiments only. */
   readonly saturation?: SaturationConfig;
+  /** Full experimental market policy (supersedes saturation when set). */
+  readonly market?: MarketPolicy;
 }
 
 export interface SimStats {
@@ -109,9 +113,16 @@ export interface MilestoneSnapshot {
   readonly activeSeconds: number;
   /** Seconds actually spent on productive actions (not idle session time). */
   readonly workedSeconds: number;
+  readonly idleSeconds: number;
+  readonly plotDays: number;
+  readonly soldValueToday: number;
   readonly netIncomeCoins: number;
   readonly incomePerMinute: number;
   readonly incomePerWorkedMinute: number;
+  /** Net coins per occupied plot-day (labour opportunity cost of land). */
+  readonly netPerPlotDay: number;
+  /** Share of the session spent with no available action. */
+  readonly idleShare: number;
   readonly sources: Readonly<Record<string, number>>;
   readonly sinks: Readonly<Record<string, number>>;
   readonly groupUnitsSold: Readonly<Record<string, number>>;

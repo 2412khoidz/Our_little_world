@@ -24,6 +24,7 @@ import {
   validateCatalog,
 } from '../catalogConfig.ts';
 import { DEFAULT_SATURATION } from '../types.ts';
+import { divFloor, mulBp } from '../ledgerMath.ts';
 import type { SaturationConfig } from '../types.ts';
 import { createRng, deriveSeed } from '../../rng.ts';
 import {
@@ -35,7 +36,9 @@ import {
   getPersona,
   getProfile,
 } from './config.ts';
-import { advanceDay, availableCrops, createWorld, runDay } from './engine.ts';
+import { advanceDay, availableCrops, createWorld, resetDayAccounting, runDay } from './engine.ts';
+import { baselinePolicy, buildPolicySet, recoveringPolicy } from './marketPolicies.ts';
+import type { MarketPolicy } from './marketPolicies.ts';
 import { runSimulation } from './run.ts';
 import type { PersonaId, ProfileId, SimResult } from './types.ts';
 
@@ -96,13 +99,18 @@ export function daysToAfford(input: {
   const persona = getPersona(input.personaId);
   const maxDays = input.maxDays ?? 365;
   const rng = createRng(deriveSeed(input.seed, profile.id, persona.id, 'afford', input.cost));
-  const state = createWorld(STARTING_COINS, START_MS, input.seed, input.saturation);
+  const state = createWorld(
+    STARTING_COINS,
+    START_MS,
+    input.seed,
+    baselinePolicy(input.saturation ?? DEFAULT_SATURATION),
+  );
   let nextPlayDay = 1;
 
   for (let day = 1; day <= maxDays; day += 1) {
     state.day = day;
     state.nowMs = START_MS + (day - 1) * DAY_MS;
-    state.soldTodayByGroup = {};
+    resetDayAccounting(state);
     const playsToday = persona.playEveryDays === null || day >= nextPlayDay;
     if (playsToday) {
       runDay(state, persona, profile, rng, 'balanced', DECOR_SINKS);
@@ -385,8 +393,12 @@ export interface ExperimentReport {
   readonly catalogFingerprint: string;
   readonly catalogWarnings: readonly string[];
   readonly sweeps: readonly SweepRow[];
+  readonly policies: readonly PolicyMetricsRow[];
   readonly crops: readonly CropEconomics[];
   readonly cooking: readonly CookEconomics[];
+  readonly cookingChannels: readonly CookingChannelRow[];
+  readonly gaps: readonly CatalogGapFinding[];
+  readonly recoverySplit: readonly RecoverySplitRow[];
   readonly pacing: readonly PacingRow[];
   readonly orders: {
     readonly withOrders: IncomeMetrics;
@@ -458,11 +470,270 @@ export function runBalanceExperiments(options: ExperimentOptions = {}): Experime
       (warning) => `${warning.code} [${warning.sku}] ${warning.messageVi}`,
     ),
     sweeps,
+    policies: compareMarketPolicies({ seeds, days, profileId }),
     crops: cropEconomics({ saturation: options.saturation }),
     cooking: cookEconomics(),
+    cookingChannels: cookingChannelEconomics(),
+    gaps: analyzeCatalogGaps(),
+    recoverySplit: recoverySplitExperiment(),
     pacing,
     orders: { withOrders, withoutOrders },
   };
 }
 
 
+
+
+// --------------------------------------------------------------------------
+// Market-policy comparison (A–E) with the five denominators
+// --------------------------------------------------------------------------
+
+export interface PolicyMetricsRow {
+  readonly policyId: string;
+  readonly policyLabel: string;
+  readonly personaId: PersonaId;
+  readonly coinsPerWorkedMinute: number;
+  readonly coinsPerSessionMinute: number;
+  readonly coinsPerRealDay: number;
+  readonly netPerPlotDay: number;
+  readonly idleShare: number;
+  readonly topGroupShare: number;
+  readonly distinctGroups: number;
+  readonly medianWealth: number;
+}
+
+/** Runs each experimental market policy against each persona. */
+export function compareMarketPolicies(input: {
+  seeds: readonly number[];
+  days: number;
+  profileId: ProfileId;
+  personas?: readonly PersonaId[];
+  policies?: readonly MarketPolicy[];
+}): PolicyMetricsRow[] {
+  const personas =
+    input.personas ?? (['casual', 'optimizer_mixed', 'optimizer'] as readonly PersonaId[]);
+  const policies = input.policies ?? buildPolicySet();
+  const rows: PolicyMetricsRow[] = [];
+
+  for (const policy of policies) {
+    for (const personaId of personas) {
+      const metrics: IncomeMetrics[] = [];
+      const diversity: DiversityMetrics[] = [];
+      const wealth: number[] = [];
+      const plotRates: number[] = [];
+      const idle: number[] = [];
+      for (const seed of input.seeds) {
+        const result = runSimulation({
+          seed,
+          profileId: input.profileId,
+          personaId,
+          days: input.days,
+          market: policy,
+        });
+        const last = result.snapshots[result.snapshots.length - 1];
+        metrics.push(incomeMetrics(result));
+        diversity.push(diversityMetrics(result));
+        wealth.push(last?.wealthCoins ?? 0);
+        plotRates.push(last?.netPerPlotDay ?? 0);
+        idle.push(last?.idleShare ?? 0);
+      }
+      rows.push({
+        policyId: policy.id,
+        policyLabel: policy.labelVi,
+        personaId,
+        coinsPerWorkedMinute: round2(median(metrics.map((entry) => entry.coinsPerWorkedMinute))),
+        coinsPerSessionMinute: round2(median(metrics.map((entry) => entry.coinsPerSessionMinute))),
+        coinsPerRealDay: round2(median(metrics.map((entry) => entry.coinsPerRealDay))),
+        netPerPlotDay: round2(median(plotRates)),
+        idleShare: round2(median(idle)),
+        topGroupShare: round2(median(diversity.map((entry) => entry.topGroupShare))),
+        distinctGroups: Math.round(median(diversity.map((entry) => entry.distinctGroups))),
+        medianWealth: Math.round(median(wealth)),
+      });
+    }
+  }
+  return rows;
+}
+
+// --------------------------------------------------------------------------
+// Cooking channels inside the approved multiplier band
+// --------------------------------------------------------------------------
+
+export interface CookingChannelRow {
+  readonly dishSku: string;
+  readonly inputValueCoins: number;
+  readonly binProfitCoins: number;
+  readonly binPerMinute: number;
+  readonly orderPerMinute: number;
+  readonly restaurant160PerMinute: number;
+  readonly restaurant180PerMinute: number;
+  readonly restaurant200PerMinute: number;
+}
+
+/**
+ * Raw vs cooked vs order vs restaurant, using ONLY the approved 1.60x–2.00x
+ * restaurant band from docs/economy/MARKET_AND_NPC.md §1.
+ */
+export function cookingChannelEconomics(): CookingChannelRow[] {
+  const dishes = ITEM_CATALOG.filter((item) => item.group === 'dish');
+  const actionMinutes = ACTION_SECONDS.cook / 60;
+  return dishes.map((dish) => {
+    const inputValue = dish.inputs.reduce(
+      (sum, input) => sum + requireItem(input.sku).sellPrice * input.qty,
+      0,
+    );
+    const binProfit = dish.sellPrice - inputValue;
+    const orderPrice = computeSellPrice(dish.sku, 'normal', 0, {
+      demandBp: dish.orderMultiplierBp ?? 10_000,
+    });
+    const at = (bp: number): number =>
+      round2(
+        (computeSellPrice(dish.sku, 'normal', 0, { demandBp: bp }) - inputValue) / actionMinutes,
+      );
+    return {
+      dishSku: dish.sku,
+      inputValueCoins: inputValue,
+      binProfitCoins: binProfit,
+      binPerMinute: round2(binProfit / actionMinutes),
+      orderPerMinute: round2((orderPrice - inputValue) / actionMinutes),
+      restaurant160PerMinute: at(16_000),
+      restaurant180PerMinute: at(18_000),
+      restaurant200PerMinute: at(20_000),
+    };
+  });
+}
+
+// --------------------------------------------------------------------------
+// Catalog consistency findings
+// --------------------------------------------------------------------------
+
+export interface CatalogGapFinding {
+  readonly id: string;
+  readonly severity: 'info' | 'warning';
+  readonly summaryVi: string;
+  readonly evidence: Readonly<Record<string, number | string>>;
+  readonly proposalVi: string;
+}
+
+/**
+ * Explains (with numbers) the two approved-table gaps found by `validateCatalog`:
+ * `carp_pond` standard-value drift and the missing peach sapling acquisition.
+ */
+export function analyzeCatalogGaps(): CatalogGapFinding[] {
+  const carp = requireItem('carp_pond');
+  const bait = requireItem(carp.inputs[0]?.sku ?? 'bait_free_worm');
+  const inputValueBp = (carp.inputs[0]?.qty ?? 0) * bait.standardValueBp;
+  const laborBp = carp.laborMilli * 50;
+  const depreciationBp = carp.depreciation * 10_000;
+  const derivedBp = inputValueBp + laborBp + depreciationBp;
+  const herbCarp = requireItem('herb_carp');
+  const herbDerivedBp = herbCarp.inputs.reduce(
+    (sum, input) => sum + input.qty * requireItem(input.sku).standardValueBp,
+    0,
+  ) + herbCarp.laborMilli * 50 + herbCarp.depreciation * 10_000;
+
+  const peach = requireItem('peach');
+  const peachHarvestCoins = peach.sellPrice * peach.batchQty;
+
+  return [
+    {
+      id: 'carp_pond_drift',
+      severity: 'warning',
+      summaryVi:
+        'V_i của carp_pond lệch 1 xu: bảng ghi 11,0 nhưng công thức (nguyên liệu + lao động + khấu hao) cho 12,0; herb_carp được tính theo 11,0 nên lệch dây chuyền.',
+      evidence: {
+        inputValueBp,
+        laborBp,
+        depreciationBp,
+        derivedBp,
+        authoredBp: carp.standardValueBp,
+        herbCarpAuthoredBp: herbCarp.standardValueBp,
+        herbCarpDerivedFrom11Bp: herbDerivedBp,
+        sellPriceCarp: carp.sellPrice,
+        sellPriceHerbCarp: herbCarp.sellPrice,
+      },
+      proposalVi:
+        'Sửa bảng thành carp_pond 12,0 và herb_carp 30,0 (giá bán giữ nguyên 14/32), hoặc giữ 11,0/29,0 và ghi chú sai số PoC. Cần chủ dự án duyệt; giá người chơi thấy không đổi.',
+    },
+    {
+      id: 'peach_no_acquisition',
+      severity: 'warning',
+      summaryVi:
+        'peach có giá bán nhưng không có SKU cây giống: không mua được, không có nguyên liệu, không hái lượm được → hiện bị loại khỏi mô phỏng.',
+      evidence: {
+        sellPrice: peach.sellPrice,
+        batchQty: peach.batchQty,
+        revenuePerHarvestCoins: peachHarvestCoins,
+        storeBuy: 'null',
+        inputs: 0,
+        forageable: 0,
+      },
+      proposalVi:
+        'Thêm SKU sapling_peach (mua 240 xu, không bán lại) cho 6 vụ × 3 quả; khi đó lãi 14 xu/phút thao tác, ngang dâu tây. Nếu giữ giá cây 30 xu như farming đang giả định thì peach lãi ~49 xu/phút và phá trần dominant strategy 2,2×.',
+    },
+  ];
+}
+// --------------------------------------------------------------------------
+// Demand-recovery shape (policy E) — analytic, because the simulator sells once
+// per session and therefore cannot show intra-day spreading by itself.
+// --------------------------------------------------------------------------
+
+export interface RecoverySplitRow {
+  readonly units: number;
+  readonly dumpCoins: number;
+  readonly splitAcrossThreeSessionsCoins: number;
+  readonly recoveredShare: number;
+}
+
+/**
+ * Compares dumping N units of the same group in one moment vs spreading them over
+ * three moments (0h / 3h / 6h) with the recovering policy.
+ */
+export function recoverySplitExperiment(units = 24, unitBaseBp = 80_000): RecoverySplitRow[] {
+  const base = baselinePolicy();
+  const recovering = recoveringPolicy({ halfLifeMs: 6 * 3_600_000 });
+
+  let dump = 0;
+  for (let index = 0; index < units; index += 1) {
+    const multiplier = base.multiplierBp({
+      sku: 'wheat',
+      group: 'grain',
+      soldSkuUnits: index,
+      soldGroupUnits: index,
+      soldValueCoins: 0,
+      nowMs: 0,
+      firstSaleAtMs: 0,
+    });
+    dump += divFloor(mulBp(unitBaseBp, multiplier), 10_000);
+  }
+
+  let split = 0;
+  const third = Math.ceil(units / 3);
+  let sold = 0;
+  for (let session = 0; session < 3; session += 1) {
+    const nowMs = session * 3 * 3_600_000;
+    const count = session === 2 ? units - sold : Math.min(third, units - sold);
+    for (let index = 0; index < count; index += 1) {
+      const multiplier = recovering.multiplierBp({
+        sku: 'wheat',
+        group: 'grain',
+        soldSkuUnits: sold,
+        soldGroupUnits: sold,
+        soldValueCoins: 0,
+        nowMs,
+        firstSaleAtMs: 0,
+      });
+      split += divFloor(mulBp(unitBaseBp, multiplier), 10_000);
+      sold += 1;
+    }
+  }
+
+  return [
+    {
+      units,
+      dumpCoins: dump,
+      splitAcrossThreeSessionsCoins: split,
+      recoveredShare: dump > 0 ? round2((split - dump) / dump) : 0,
+    },
+  ];
+}

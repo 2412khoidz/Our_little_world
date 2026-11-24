@@ -283,3 +283,39 @@ thêm V0.1.5/V0.2.4/V0.4.0), `tests/unit/economyCatalog.test.ts`.
 `npm run typecheck` trước đây là `tsc --noEmit` trên config gốc `files: []` nên
 **không kiểm tra gì**. Đã đổi sang `tsc -b` (giống bước typecheck của `npm run
 build`); lần đầu chạy đã phát hiện 6 lỗi kiểu thật đã được sửa.
+## Bổ sung Phase 3 — Economy Balancing (cùng ngân sách phiên 2)
+
+Yêu cầu: không coi farming nhanh là lỗi; mục tiêu là đa dạng hoạt động, giữ giá trị
+lao động và lợi ích sản xuất offline. Báo cáo đầy đủ:
+[ECONOMY_BALANCE_REPORT.md](../economy/ECONOMY_BALANCE_REPORT.md).
+
+Đã thêm:
+
+- `sim/marketPolicies.ts`: 5 policy thử nghiệm A–E (baseline, ngưỡng thấp, ngưỡng
+  theo nhóm/SKU, bão hòa theo tổng giá trị, nhu cầu hồi phục theo thời gian). Mọi
+  policy clamp về `[floorBp, 10_000]` và xử lý NaN/∞/số âm.
+- Engine: `market` policy injectable, `plotDays`, `idleSeconds`,
+  `soldValueToday`, `soldTodayBySku`, `firstSaleAtMs`; snapshot thêm
+  `netPerPlotDay`, `idleShare`, `soldValueToday`.
+- Persona mới `optimizer_mixed` (chuyển sang câu cá/hái lượm/nấu khi ô đất kín).
+- `experiments.ts`: `compareMarketPolicies`, `cookingChannelEconomics`,
+  `analyzeCatalogGaps`, `recoverySplitExperiment`; report mở rộng.
+- 15 test mới (`economyMarketPolicies.test.ts`).
+
+Kết quả chính (90 ngày, 3 seed, catalog production giữ nguyên):
+
+| Policy | Dominant ratio (optimizer/casual, phút thao tác) | Tài sản optimizer |
+|---|---:|---:|
+| A baseline | 1,75 | 18.442 |
+| B ngưỡng 8 | 1,70 | 17.944 (−2,7%) |
+| C theo nhóm | 1,73 | 18.276 (−0,9%) |
+| D theo giá trị | 1,22 | 10.274 (−44%) |
+| E hồi phục | trùng A trong sim | — |
+
+- Persona `optimizer` idle 60% phiên → xu/phút thao tác 17,02 nhưng xu/phút phiên
+  chỉ 6,79 (casual: 9,73 / 9,68). `optimizer_mixed` idle 37%, giữ 5 nhóm, đạt
+  9,35 / 5,85 → **không có dominant strategy mới**.
+- Khuyến nghị: giữ A cho production; B/C chỉ cần khi vườn 24/36 ô; **không** dùng D
+  (giảm 20% thu nhập casual). E cần engine nhiều phiên bán/ngày mới đo được.
+- Catalog: giữ nguyên; đề xuất D1 (`carp_pond` 12,0 / `herb_carp` 30,0) và
+  D2 (`sapling_peach` 240 xu, không bán lại) chờ chủ dự án duyệt.

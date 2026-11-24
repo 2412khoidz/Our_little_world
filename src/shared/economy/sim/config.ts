@@ -113,6 +113,16 @@ export const PERSONAS: readonly PersonaDefinition[] = [
     awayDaysRange: null,
   },
   {
+    id: 'optimizer_mixed',
+    nameVi: 'Optimizer hỗn hợp',
+    descriptionVi: 'Tối đa hoá xu/phút nhưng chuyển sang câu cá/hái lượm/nấu khi ô đất đã kín',
+    dailyActiveSeconds: [1_800, 1_800],
+    weights: { forage: 0.15, farm: 0.5, fish: 0.25, cook: 0.1 },
+    decorAffinity01: 0,
+    playEveryDays: null,
+    awayDaysRange: null,
+  },
+  {
     id: 'decorator',
     nameVi: 'Decorator',
     descriptionVi: 'Ưu tiên mua nội thất, ít cày nấu ăn/đơn',

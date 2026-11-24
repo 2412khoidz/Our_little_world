@@ -76,6 +76,43 @@ function renderText(report: ExperimentReport): string {
   lines.push(`  có đơn:   ${fixed(report.orders.withOrders.coinsPerSessionMinute)} xu/phút phiên`);
 
   lines.push('');
+  lines.push('-- So sánh market policy A–E (median qua các seed) --');
+  lines.push(
+    `  ${pad('policy', 22)}${pad('persona', 16)}${pad('xu/phút thao tác', 17)}${pad('xu/phút phiên', 15)}${pad('xu/ngày', 10)}${pad('xu/ô-ngày', 12)}${pad('idle', 7)}${pad('top', 7)}${pad('nhóm', 6)}${pad('tài sản', 10)}`,
+  );
+  for (const row of report.policies) {
+    lines.push(
+      `  ${pad(row.policyId, 22)}${pad(row.personaId, 16)}${fixed(row.coinsPerWorkedMinute, 17)}${fixed(row.coinsPerSessionMinute, 15)}${fixed(row.coinsPerRealDay, 10)}${fixed(row.netPerPlotDay, 12)}${fixed(row.idleShare, 7)}${fixed(row.topGroupShare, 7)}${pad(row.distinctGroups, 6)}${pad(row.medianWealth, 10)}`,
+    );
+  }
+
+  lines.push('');
+  lines.push('-- Kênh bán món ăn (xu/phút thao tác, trần nhà hàng 1,60–2,00×) --');
+  lines.push(
+    `  ${pad('món', 18)}${pad('NVL', 6)}${pad('bán thô', 10)}${pad('đơn NPC', 9)}${pad('NH 1,6', 8)}${pad('NH 1,8', 8)}${pad('NH 2,0', 8)}`,
+  );
+  for (const row of report.cookingChannels) {
+    lines.push(
+      `  ${pad(row.dishSku, 18)}${pad(row.inputValueCoins, 6)}${fixed(row.binPerMinute, 10)}${fixed(row.orderPerMinute, 9)}${fixed(row.restaurant160PerMinute, 8)}${fixed(row.restaurant180PerMinute, 8)}${fixed(row.restaurant200PerMinute, 8)}`,
+    );
+  }
+
+  lines.push('');
+  lines.push('-- E · Bán dồn vs bán rải rác (24 đơn vị nhóm grain) --');
+  for (const row of report.recoverySplit) {
+    lines.push(
+      `  bán dồn: ${row.dumpCoins}c | chia 3 phiên (0h/3h/6h): ${row.splitAcrossThreeSessionsCoins}c | chênh lệch ${(row.recoveredShare * 100).toFixed(1)}%`,
+    );
+  }
+
+  lines.push('');
+  lines.push('-- Sai lệch catalog --');
+  for (const gap of report.gaps) {
+    lines.push(`  [${gap.severity}] ${gap.id}: ${gap.summaryVi}`);
+    lines.push(`    đề xuất: ${gap.proposalVi}`);
+  }
+
+  lines.push('');
   lines.push('-- Cảnh báo catalog --');
   for (const warning of report.catalogWarnings) {
     lines.push(`  ${warning}`);
