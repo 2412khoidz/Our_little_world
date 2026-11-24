@@ -86,3 +86,11 @@ Game chính dùng hai nền atlas và ánh xạ đủ 12 SKU. Profile private gi
 - PNG atlas public **16.454 B**, tổng cả manifest và credits **28.272 B**. Atlas riêng **47.649 B** PNG và **75.570 B** tổng. Public SW **25 mục, 2.006,19 KiB**. Private SW **25 mục, 2.006,20 KiB**, không precache atlas riêng. Build public không sao chép atlas riêng hoặc tệp thử nghiệm không hợp lệ.
 - Screenshot game chính ở desktop 1440×900 và 1280×720, mobile portrait 430×932 và landscape 844×390, cùng Tủ đồ và preview tỷ lệ pet, lưu ngoài Git tại `test-results/v01-final-art/`. Dữ liệu ảnh là fixture Dev LAN.
 - Chưa thử bản này trên iPhone Safari/PWA thật, Android thật hay Supabase Cloud. Quyền phục vụ atlas riêng qua Internet còn Pending Deployment License Verification. [Giấy phép và credits](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)
+
+### OLW-010-04 — Realtime Optimization
+
+Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nhật hướng theo cadence. Gửi gói chốt khi idle, đổi map hoặc kết nối lại. Một avatar đại diện cho mỗi người, chọn theo phiên Presence mới nhất. Trace cục bộ giảm từ 153 xuống 99 gói. Lint, typecheck, 35 Vitest, public build, production guard và 10 Playwright Chromium không retry pass. Số liệu Supabase Cloud và nghiệm thu Safari/PWA trên iPhone thật đang chờ. [Checkpoint kỹ thuật](research/GPT_NIGHT_CHECKPOINT.md)
+
+### OLW-010-05 — Review và checklist
+
+Đã review tĩnh SQL/RLS/RPC, Auth và private Realtime. Có checklist Supabase Test/Prod, Cloudflare Pages Free, quyền triển khai Web/PWA của artwork và xác thực URL asset. Các mục Cloud và thiết bị thật chưa thực hiện. [Review và checklist](research/GPT_NIGHT_OLW_010_05_REVIEW.md)
