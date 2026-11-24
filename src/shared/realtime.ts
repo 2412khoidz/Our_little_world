@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { getMapDefinition, TILE_SIZE } from './maps';
 import type { MapId, MovementPacket, PresencePayload } from './types';
 
-export const MOVEMENT_SEND_INTERVAL_MS = 100; // ~10 Hz when moving
+export const MOVEMENT_SEND_INTERVAL_MS = 125;
+export const MOVEMENT_POSITION_DELTA_PX = 2;
 export const REMOTE_STALE_TIMEOUT_MS = 5000;
 
 export const movementPacketSchema = z.object({
@@ -25,39 +26,35 @@ export function isPositionWithinMapBounds(mapId: MapId, x: number, y: number): b
   return x >= 0 && y >= 0 && x <= maxW && y <= maxH;
 }
 
+type MovementPosition = Pick<MovementPacket, 'x' | 'y' | 'facing'>;
+
 export class MovementTxThrottle {
   private lastSentAtMs = -Infinity;
-  private lastSentAnim: 'idle' | 'walk' | null = null;
   private lastSentMapId: MapId | null = null;
+  private lastSentPosition: MovementPosition | undefined;
+  private wasWalking = false;
   private seq = 0;
 
   constructor(private readonly intervalMs: number = MOVEMENT_SEND_INTERVAL_MS) {}
 
-  shouldEmit(nowMs: number, anim: 'idle' | 'walk', mapId: MapId): boolean {
-    if (mapId !== this.lastSentMapId) {
-      this.lastSentAtMs = nowMs;
-      this.lastSentAnim = anim;
-      this.lastSentMapId = mapId;
-      return true;
-    }
+  shouldEmit(nowMs: number, anim: MovementPacket['anim'], mapId: MapId, position?: MovementPosition): boolean {
+    const stopped = anim === 'idle' && this.wasWalking;
+    this.wasWalking = anim === 'walk';
+    const urgent = mapId !== this.lastSentMapId || stopped;
+    if (!urgent) {
+      if (anim === 'idle' || nowMs - this.lastSentAtMs < this.intervalMs) return false;
 
-    // Emit final idle frame once when stopping, then stop idle spam
-    if (anim === 'idle') {
-      if (this.lastSentAnim === 'walk') {
-        this.lastSentAtMs = nowMs;
-        this.lastSentAnim = 'idle';
-        return true;
+      const last = this.lastSentPosition;
+      if (position && last && position.facing === last.facing &&
+          Math.hypot(position.x - last.x, position.y - last.y) < MOVEMENT_POSITION_DELTA_PX) {
+        return false;
       }
-      return false;
     }
 
-    if (nowMs - this.lastSentAtMs >= this.intervalMs) {
-      this.lastSentAtMs = nowMs;
-      this.lastSentAnim = anim;
-      return true;
-    }
-
-    return false;
+    this.lastSentAtMs = nowMs;
+    this.lastSentMapId = mapId;
+    this.lastSentPosition = position;
+    return true;
   }
 
   nextSeq(): number {
@@ -67,8 +64,9 @@ export class MovementTxThrottle {
 
   reset(): void {
     this.lastSentAtMs = -Infinity;
-    this.lastSentAnim = null;
     this.lastSentMapId = null;
+    this.lastSentPosition = undefined;
+    this.wasWalking = false;
   }
 }
 
@@ -98,6 +96,10 @@ export class RemoteAvatarFilter {
 
     this.peers.set(pkt.sessionId, { packet: pkt, receivedAtMs: nowMs });
     return pkt;
+  }
+
+  getLatestPacket(sessionId: string): MovementPacket | undefined {
+    return this.peers.get(sessionId)?.packet;
   }
 
   isStale(sessionId: string, nowMs: number): boolean {
