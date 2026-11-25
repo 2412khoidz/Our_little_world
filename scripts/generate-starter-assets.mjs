@@ -683,6 +683,16 @@ function buildHomeMap() {
   ground[idx(4, 7)] = 3;
   ground[idx(3, 8)] = 3;
   ground[idx(4, 8)] = 2;
+  // Living room rug (cobble accents) + window-side planters (warm read)
+  for (let x = 6; x <= 10; x += 1) {
+    for (let y = 7; y <= 9; y += 1) {
+      ground[idx(x, y)] = (x + y) % 2 === 0 ? 2 : 3;
+    }
+  }
+  decor[idx(2, 3)] = 28;
+  decor[idx(13, 3)] = 28;
+  decor[idx(7, 5)] = 11;
+  decor[idx(8, 5)] = 11;
 
   const map = makeTiledJson('home', w, h, [
     { id: 1, name: 'Ground', type: 'tilelayer', data: ground, height: h, width: w, opacity: 1, visible: true, x: 0, y: 0 },
