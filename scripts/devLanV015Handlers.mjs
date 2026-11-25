@@ -1202,6 +1202,8 @@ export async function handleV015Route({
     projectPetCareBowl,
     catchupPetVitals,
     derivePetMood,
+    adjustInventoryItem,
+    getWorldInventoryList,
   };
   if (tryHandlePetLivingRoute(petLivingCtx)) {
     return true;

@@ -126,6 +126,7 @@ export interface PetLivingBackend {
     instanceId: string;
     proposal: 'movement_ready' | 'animation_finished';
     idempotencyKey: string;
+    proof?: { standTileX: number; standTileY: number } | null;
   }): Promise<MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
   createFoodOffer(params: {
     worldId: string;
@@ -138,9 +139,20 @@ export interface PetLivingBackend {
   respondFoodOffer(params: {
     worldId: string;
     offerId: string;
-    response: 'accept' | 'refuse' | 'defer' | 'cancel';
+    response: 'cancel';
     idempotencyKey: string;
   }): Promise<MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
+  evaluateFoodOffer(params: {
+    worldId: string;
+    petId: string;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      outcome?: string;
+      offerId?: string;
+      snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+    }>
+  >;
 }
 
 export interface SpikeCinemaPacket {

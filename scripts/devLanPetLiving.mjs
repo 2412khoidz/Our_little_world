@@ -1,9 +1,7 @@
 /** Dev LAN parity for Mission 04B-2 pet living authority (transaction semantics mirror SQL). */
 
 import crypto from 'node:crypto';
-
-const TRAVEL_MS = { eat_bowl: 1400, drink_water: 1000 };
-const PERFORM_MS = { eat_bowl: 2800, drink_water: 2200 };
+import { STALE_ACTION_MS, buildDevLanMovementPlan } from './devLanPetLivingPlan.mjs';
 
 export function ensurePetLivingDb(v015) {
   v015.petLiving ??= {};
@@ -34,6 +32,18 @@ function findActiveAction(living) {
   return (
     Object.values(living.actions).find((a) => a.status === 'moving' || a.status === 'performing') ?? null
   );
+}
+
+function recoverStaleActions(living, nowMs) {
+  for (const action of Object.values(living.actions)) {
+    if (
+      (action.status === 'moving' || action.status === 'performing') &&
+      nowMs > action.performUntilMs + STALE_ACTION_MS
+    ) {
+      action.status = 'cancelled';
+      action.completedAtMs = nowMs;
+    }
+  }
 }
 
 function authorityConsumeFood({ v015, worldId, petId, caregiverId, ensurePetBowl, catchupPetVitals, derivePetMood }) {
@@ -125,6 +135,7 @@ export function buildLivingSnapshot(v015, worldId, { projectPet, projectPetCareB
   const nowMs = Date.now();
   const pet = v015.pets[worldId] ?? null;
   const living = ensureLivingWorld(v015, worldId);
+  recoverStaleActions(living, nowMs);
   if (pet) ensurePetLivingVersion(pet);
   const bowl = projectPetCareBowl(v015, worldId);
   const active = findActiveAction(living);
@@ -214,6 +225,8 @@ export function tryHandlePetLivingRoute(ctx) {
     projectPetCareBowl,
     catchupPetVitals,
     derivePetMood,
+    adjustInventoryItem,
+    getWorldInventoryList,
   } = ctx;
 
   const deps = { projectPet, projectPetCareBowl };
@@ -285,9 +298,14 @@ export function tryHandlePetLivingRoute(ctx) {
       sendJson(res, 409, { ok: false, code: 'BOWL_EMPTY', message: 'Bát nước đang trống.' });
       return true;
     }
+    recoverStaleActions(living, Date.now());
+    const planRes = buildDevLanMovementPlan(pet, actionId, targetAffordanceId);
+    if (!planRes.ok) {
+      sendJson(res, 409, { ok: false, code: planRes.code, message: 'Không thể lập kế hoạch di chuyển máy chủ.' });
+      return true;
+    }
+    const plan = planRes.plan;
     const nowMs = Date.now();
-    const travel = TRAVEL_MS[actionId];
-    const perform = PERFORM_MS[actionId];
     const instanceId = crypto.randomUUID();
     living.actions[instanceId] = {
       id: instanceId,
@@ -297,15 +315,19 @@ export function tryHandlePetLivingRoute(ctx) {
       targetAffordanceId,
       status: 'moving',
       startedAtMs: nowMs,
-      arriveAtMs: nowMs + travel,
-      performUntilMs: nowMs + travel + perform,
+      arriveAtMs: nowMs + plan.travelMs,
+      performUntilMs: nowMs + plan.travelMs + plan.performMs,
+      destTileX: plan.destTileX,
+      destTileY: plan.destTileY,
+      pathSteps: plan.pathSteps,
+      movementPlanHash: plan.planHash,
       movementVerified: false,
       animationVerified: false,
       consumptionRecorded: false,
       completedAtMs: null,
     };
     pet.livingVersion += 1;
-    const payload = { instanceId, snapshot: snap(worldId) };
+    const payload = { instanceId, movementPlan: plan, snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_living_begin_action', key, reqHash, payload);
     saveDb();
     broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
@@ -316,7 +338,8 @@ export function tryHandlePetLivingRoute(ctx) {
   if (req.method === 'POST' && route === '/pet/living/submit-proposal') {
     const worldId = String(body.worldId ?? '').trim();
     const instanceId = String(body.instanceId ?? '').trim();
-    const proposal = String(body.proposal ?? '').trim();
+    const proposal = body.proposal == null ? '' : String(body.proposal).trim();
+    const proof = body.proof ?? null;
     const key = String(body.idempotencyKey ?? '').trim();
     if (!worldId || !instanceId || !key || !['movement_ready', 'animation_finished'].includes(proposal)) {
       sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Đề xuất chưa hợp lệ.' });
@@ -326,7 +349,7 @@ export function tryHandlePetLivingRoute(ctx) {
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
       return true;
     }
-    const reqHash = JSON.stringify([instanceId, proposal]);
+    const reqHash = JSON.stringify([instanceId, proposal, proof ?? {}]);
     const prior = checkV015Idempotency(v015, worldId, userId, 'pet_living_submit_proposal', key, reqHash);
     if (prior) {
       if (prior.conflict) {
@@ -343,6 +366,10 @@ export function tryHandlePetLivingRoute(ctx) {
       return true;
     }
     const nowMs = Date.now();
+    if (row.status === 'cancelled') {
+      sendJson(res, 409, { ok: false, code: 'ACTION_STALE', message: 'Hành động đã quá hạn.' });
+      return true;
+    }
     if (row.status === 'completed' && row.consumptionRecorded) {
       const payload = { snapshot: snap(worldId) };
       saveV015Idempotency(v015, worldId, userId, 'pet_living_submit_proposal', key, reqHash, payload);
@@ -354,6 +381,18 @@ export function tryHandlePetLivingRoute(ctx) {
       return true;
     }
     if (proposal === 'movement_ready') {
+      if (row.destTileX == null || row.destTileY == null) {
+        sendJson(res, 403, { ok: false, code: 'CONSUMPTION_NOT_AUTHORIZED', message: 'Thiếu kế hoạch di chuyển máy chủ.' });
+        return true;
+      }
+      if (!proof || proof.standTileX == null || proof.standTileY == null) {
+        sendJson(res, 400, { ok: false, code: 'MOVEMENT_PROOF_REQUIRED', message: 'Cần chứng minh vị trí đứng.' });
+        return true;
+      }
+      if (proof.standTileX !== row.destTileX || proof.standTileY !== row.destTileY) {
+        sendJson(res, 409, { ok: false, code: 'MOVEMENT_PROOF_INVALID', message: 'Vị trí đứng không khớp kế hoạch.' });
+        return true;
+      }
       if (nowMs < row.arriveAtMs) {
         sendJson(res, 409, { ok: false, code: 'MOVEMENT_NOT_READY', message: 'Chưa đủ thời gian di chuyển (máy chủ).' });
         return true;
@@ -437,6 +476,27 @@ export function tryHandlePetLivingRoute(ctx) {
       sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo.' });
       return true;
     }
+    const nowIso = new Date().toISOString();
+    const list = getWorldInventoryList(v015, worldId);
+    let reservedScope = 'shared';
+  const sharedQty =
+      list.find((i) => i.ownerScope === 'shared' && i.itemSku === itemSku && (i.quality ?? 'normal') === quality)?.qty ?? 0;
+    if (sharedQty <= 0) {
+      const personalScope = `user:${userId}`;
+      const personalQty =
+        list.find((i) => i.ownerScope === personalScope && i.itemSku === itemSku && (i.quality ?? 'normal') === quality)
+          ?.qty ?? 0;
+      if (personalQty <= 0) {
+        sendJson(res, 409, { ok: false, code: 'INSUFFICIENT_ITEMS', message: 'Không đủ vật phẩm để đưa lời mời.' });
+        return true;
+      }
+      reservedScope = personalScope;
+    }
+    const debit = adjustInventoryItem(v015, worldId, reservedScope, itemSku, -1, nowIso, quality);
+    if (!debit.ok) {
+      sendJson(res, 409, { ok: false, code: debit.code, message: debit.message });
+      return true;
+    }
     const nowMs = Date.now();
     const living = ensureLivingWorld(v015, worldId);
     const offerId = crypto.randomUUID();
@@ -450,6 +510,8 @@ export function tryHandlePetLivingRoute(ctx) {
       status: 'pending',
       expiresAtMs: nowMs + ttlSeconds * 1000,
       createdAtMs: nowMs,
+      reservedOwnerScope: reservedScope,
+      inventoryReserved: true,
     });
     const payload = { offerId, snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_create', key, reqHash, payload);
@@ -463,7 +525,11 @@ export function tryHandlePetLivingRoute(ctx) {
     const offerId = String(body.offerId ?? '').trim();
     const response = String(body.response ?? '').trim();
     const key = String(body.idempotencyKey ?? '').trim();
-    if (!worldId || !offerId || !key || !['accept', 'refuse', 'defer', 'cancel'].includes(response)) {
+    if (!worldId || !offerId || !key || response !== 'cancel') {
+      if (response !== 'cancel') {
+        sendJson(res, 403, { ok: false, code: 'BRAIN_AUTHORITY_REQUIRED', message: 'Chỉ máy chủ quyết định phản hồi mèo.' });
+        return true;
+      }
       sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Phản hồi lời mời chưa hợp lệ.' });
       return true;
     }
@@ -488,24 +554,120 @@ export function tryHandlePetLivingRoute(ctx) {
       return true;
     }
     const nowMs = Date.now();
-    if (!['pending', 'deferred'].includes(offer.status)) {
+    if (!['pending', 'deferred', 'accepted'].includes(offer.status)) {
       sendJson(res, 409, { ok: false, code: 'VALIDATION_ERROR', message: 'Lời mời không còn chờ phản hồi.' });
       return true;
     }
     if (nowMs > offer.expiresAtMs) {
+      if (offer.inventoryReserved) {
+        adjustInventoryItem(
+          v015,
+          worldId,
+          offer.reservedOwnerScope,
+          offer.itemSku,
+          1,
+          new Date(nowMs).toISOString(),
+          offer.quality,
+        );
+        offer.inventoryReserved = false;
+      }
       offer.status = 'expired';
       sendJson(res, 409, { ok: false, code: 'OFFER_EXPIRED', message: 'Lời mời đã hết hạn.' });
       return true;
     }
-    if (response === 'cancel' && offer.caregiverId !== userId) {
+    if (offer.caregiverId !== userId) {
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Chỉ người đưa lời mời mới hủy được.' });
       return true;
     }
-    const statusMap = { accept: 'accepted', refuse: 'refused', defer: 'deferred', cancel: 'cancelled' };
-    offer.status = statusMap[response];
+    if (offer.inventoryReserved) {
+      adjustInventoryItem(
+        v015,
+        worldId,
+        offer.reservedOwnerScope,
+        offer.itemSku,
+        1,
+        new Date(nowMs).toISOString(),
+        offer.quality,
+      );
+      offer.inventoryReserved = false;
+    }
+    offer.status = 'cancelled';
     offer.respondedAtMs = nowMs;
     const payload = { snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_respond', key, reqHash, payload);
+    saveDb();
+    sendJson(res, 200, { ok: true, data: payload });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/pet/living/food-offer/evaluate') {
+    const worldId = String(body.worldId ?? '').trim();
+    const petId = String(body.petId ?? '').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !petId || !key) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Yêu cầu đánh giá chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = JSON.stringify([petId]);
+    const prior = checkV015Idempotency(v015, worldId, userId, 'pet_food_offer_evaluate', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+    const pet = v015.pets[worldId];
+    if (!pet || pet.id !== petId) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo.' });
+      return true;
+    }
+    const living = ensureLivingWorld(v015, worldId);
+    const offer = [...living.offers]
+      .sort((a, b) => a.createdAtMs - b.createdAtMs)
+      .find((o) => o.worldId === worldId && o.petId === petId && o.status === 'pending');
+    const nowMs = Date.now();
+    if (!offer) {
+      const payload = { snapshot: snap(worldId) };
+      saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_evaluate', key, reqHash, payload);
+      sendJson(res, 200, { ok: true, data: payload });
+      return true;
+    }
+    const vitals = catchupPetVitals(pet.vitals, pet.simStateAtMs, nowMs);
+    let outcome;
+    if (vitals.hunger >= 88) outcome = 'refused';
+    else if (vitals.hunger <= 55 && offer.itemSku === 'pet_kibble_basic') outcome = 'accepted';
+    else outcome = 'deferred';
+    if (outcome === 'refused' && offer.inventoryReserved) {
+      adjustInventoryItem(
+        v015,
+        worldId,
+        offer.reservedOwnerScope,
+        offer.itemSku,
+        1,
+        new Date(nowMs).toISOString(),
+        offer.quality,
+      );
+      offer.inventoryReserved = false;
+    }
+    offer.status = outcome;
+    offer.respondedAtMs = nowMs;
+    appendMemory(living, {
+      id: crypto.randomUUID(),
+      worldId,
+      petId,
+      kind: `food_offer_${outcome}`,
+      caregiverId: offer.caregiverId,
+      atMs: nowMs,
+      payload: { offerId: offer.id, sku: offer.itemSku, quality: offer.quality },
+    });
+    const payload = { outcome, offerId: offer.id, snapshot: snap(worldId) };
+    saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_evaluate', key, reqHash, payload);
     saveDb();
     sendJson(res, 200, { ok: true, data: payload });
     return true;

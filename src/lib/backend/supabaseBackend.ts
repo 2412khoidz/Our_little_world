@@ -69,6 +69,12 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['ALREADY_CONSUMED', 'VALIDATION_ERROR', 'Phần ăn/uống này đã được ghi nhận.'],
     ['ACTION_IN_PROGRESS', 'VALIDATION_ERROR', 'Bé mèo đang thực hiện hành động khác.'],
     ['OFFER_EXPIRED', 'VALIDATION_ERROR', 'Lời mời thức ăn đã hết hạn.'],
+    ['TARGET_MISMATCH', 'VALIDATION_ERROR', 'Đích di chuyển không khớp hành động mèo.'],
+    ['TARGET_UNREACHABLE', 'VALIDATION_ERROR', 'Không tìm thấy đường tới đích trên bản đồ nhà.'],
+    ['MOVEMENT_PROOF_REQUIRED', 'VALIDATION_ERROR', 'Cần xác nhận vị trí đứng hợp lệ từ máy chủ.'],
+    ['MOVEMENT_PROOF_INVALID', 'VALIDATION_ERROR', 'Vị trí đứng không khớp kế hoạch di chuyển máy chủ.'],
+    ['BRAIN_AUTHORITY_REQUIRED', 'FORBIDDEN', 'Chỉ máy chủ quyết định mèo chấp nhận hay từ chối món ăn.'],
+    ['ACTION_STALE', 'VALIDATION_ERROR', 'Hành động đã quá hạn — hãy đồng bộ lại.'],
     ['PET_FULL', 'COOLDOWN_ACTIVE', 'Bé mèo no rồi!'],
   ];
 
@@ -591,6 +597,7 @@ export function createSupabaseBackend(): WorldBackend {
           p_instance_id: params.instanceId,
           p_proposal: params.proposal,
           p_idempotency_key: params.idempotencyKey,
+          p_proof: params.proof ?? null,
         });
         if (error || !data) {
           return { ok: false, ...mapSupabaseError(error) };
@@ -622,6 +629,20 @@ export function createSupabaseBackend(): WorldBackend {
           return { ok: false, ...mapSupabaseError(error) };
         }
         return { ok: true, data: data as { snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async evaluateFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_evaluate', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { outcome?: string; offerId?: string; snapshot: PetLivingAuthoritySnapshot },
+        };
       },
     },
 

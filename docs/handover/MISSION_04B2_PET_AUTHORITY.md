@@ -1,105 +1,71 @@
 # Mission 04B-2 — Server-Authoritative Living Pet
 
-**Branch:** `cursor/mission-04b2-pet-authority-d77e`  
-**Base:** `integration/night-merge` (post PR #9, ancestry includes `e2eacc1`)  
-**Out of scope:** PR #8 movement runtime files, `App.tsx`, `WorldScene`, production `PetEntity` rendering.
+**Branch:** `cursor/mission-04b2-pet-authority-d77e` → PR #10  
+**Base:** `integration/night-merge` @ `6a58fa1` (PR #8 movement merged)  
+**Out of scope:** Production `App.tsx` / `WorldScene` wiring (04B-3); Supabase Cloud apply.
 
 ## Architecture
 
-Living Pet execution is **lazy and RPC-driven**: there is no always-on worker, no LLM on the hot path, and no trust in client vitals, bowl debits, elapsed time, or RNG.
+Lazy RPC execution on PostgreSQL + Dev LAN parity. **No** always-on worker, **no** LLM on hot path, **no** trust in client vitals, durations, bowl debits, or arbitrary affordances.
 
 | Layer | Role |
 | --- | --- |
-| **Pet Brain (TS, Mission 04A)** | Proposes intents (`eat_bowl`, affordance targets). Not authoritative. |
-| **Movement runtime (PR #8)** | Client proposals: `movement_ready`, `animation_finished`. Not authoritative. |
-| **PostgreSQL RPC (04B-2)** | Server clock (`clock_timestamp()`), action instances, travel/perform windows, atomic bowl + vitals + memory. |
-| **WorldBackend.petLiving** | Typed client bridge for 04B-3 UI/sync. |
+| **Pet Brain (04A)** | Advisory intents. |
+| **Movement runtime (04B-1, merged)** | Client simulation + proposals; mirrors anchors/path math in TS. |
+| **`petAuthorityMovementPlan.ts` + SQL BFS** | Server-owned plan at `begin_action`: target binding, path steps, dest stand tile, travel/perform ms from 04B-1 animation map. |
+| **PostgreSQL RPC** | Membership, idempotency, proof validation, consumption, inventory holds. |
 
-**Trusted computation:** Brain output is *advisory*. The server only commits consumption when:
+### Trusted consumption (fail-closed)
 
-1. A signed-in world member started a `pet_living_begin_action` with matching `living_version`.
-2. Bowl preconditions held at begin time.
-3. `movement_ready` arrives at or after `arrive_at_ms` (fixed travel ms).
-4. `animation_finished` arrives at or after `perform_until_ms` with `movement_verified`.
-5. Internal `_pet_living_authority_consume_*` runs once per instance (`consumption_recorded`).
+1. `begin_action`: `is_world_member`, action↔affordance binding (`food_bowl` / `water_bowl` only), home map, **BFS reachability** from `pets.anchor_tile_*`, server `arrive_at_ms` / `perform_until_ms`.
+2. `movement_ready`: requires `p_proof.standTile{X,Y}` matching server `dest_tile_*` + server time ≥ `arrive_at_ms`.
+3. `animation_finished`: prior movement verified + server time ≥ `perform_until_ms` + no double consume.
+4. NULL/empty `p_proposal` → `VALIDATION_ERROR` (never completion branch).
 
-**Not claimed:** continuous background simulation. Offline vitals still use bounded `_pet_catchup_vitals` on read paths (existing OLW-015 behavior). Multi-day offline is not tick-simulated.
+### Food offers
 
-### Travel / perform constants (server-owned)
+- **Create:** reserves 1× stack (`shared` else caregiver personal); SKU in `item_catalog`.
+- **Respond (client):** `cancel` only (caregiver, member).
+- **`pet_food_offer_evaluate`:** server rules on hunger (no client accept/refuse/defer); releases inventory on refuse; memory `food_offer_*`.
 
-| `action_id` | Travel ms | Perform ms |
-| --- | ---: | ---: |
-| `eat_bowl` | 1400 | 2800 |
-| `drink_water` | 1000 | 2200 |
+### Stale / reconnect
 
-## Migration order
+- `_pet_living_recover_stale_actions`: `moving`/`performing` older than `perform_until_ms + 180s` → `cancelled` (on snapshot/begin/submit).
 
-Apply after existing V0.1.5 pet care migrations:
+## Migrations
 
 1. `20261125120000_pet_living_authority_04b2.sql`
+2. `20261125140000_pet_living_authority_hardening.sql`
 
-**Preserves data:** `ALTER TABLE pets ADD COLUMN IF NOT EXISTS` only; no pet/world reset.
+## Key RPCs
 
-## Schema (summary)
-
-- **`pets`:** `personality_json`, `living_version`, `brain_state_json` (opaque).
-- **`pet_living_action_instances`:** Server-owned action lifecycle; clients SELECT only.
-- **`pet_food_offers`:** Offer contract (SKU/quality immutable per row).
-- **`pet_living_memory`:** Append-only, capped at 64 events/world via `_pet_living_append_memory`.
-
-Internal functions (`_pet_living_authority_consume_food/water`, `_pet_living_append_memory`, `_pet_living_now_ms`) have **no** client `EXECUTE`.
-
-## RPC contracts (authenticated)
-
-| RPC | Purpose |
+| RPC | Notes |
 | --- | --- |
-| `pet_living_get_snapshot(world_id)` | Authoritative snapshot: pet, bowl, active action, offers, memory, `serverNowMs`, `livingVersion`. |
-| `pet_living_begin_action(...)` | Start `eat_bowl` / `drink_water`; requires `expected_living_version`; idempotent via `v015_rpc_idempotency`. |
-| `pet_living_submit_proposal(...)` | `movement_ready` \| `animation_finished`; gates on server timestamps; consumes at most once. |
-| `pet_food_offer_create(...)` | Offer row only — **no inventory debit**. |
-| `pet_food_offer_respond(...)` | `accept` \| `refuse` \| `defer` \| `cancel` (cancel: caregiver only). |
+| `pet_living_submit_proposal(..., p_proof jsonb)` | `movement_ready` needs proof; `FORBIDDEN` if not member. |
+| `pet_food_offer_respond` | `cancel` only; other responses → `BRAIN_AUTHORITY_REQUIRED`. |
+| `pet_food_offer_evaluate` | Server pet decision for pending offer. |
 
-**Legacy block:** `pet_care_apply` with `eat_food` / `drink_water` still raises `SERVER_AUTHORITY_REQUIRED`.
+## TypeScript
 
-## TypeScript backend
-
-- **`src/shared/petLiving/petAuthorityTypes.ts`** — DTOs for snapshots/actions/offers.
-- **`WorldBackend.petLiving`** (`src/lib/backend/types.ts`):
-  - `getLivingSnapshot`
-  - `beginLivingAction`
-  - `submitLivingProposal`
-  - `createFoodOffer`
-  - `respondFoodOffer`
-- **Supabase:** RPC wrappers in `supabaseBackend.ts`.
-- **Dev LAN:** `scripts/devLanPetLiving.mjs` + routes under `/pet/living/*` with same idempotency and timing rules.
+- `src/shared/petLiving/petMovement/petAuthorityMovementPlan.ts` — Vitest parity with SQL plan.
+- `WorldBackend.petLiving.submitLivingProposal({ proof? })`, `evaluateFoodOffer`.
 
 ## Security evidence
 
-- RLS: member SELECT on living tables; no client INSERT/UPDATE/DELETE.
-- `SECURITY DEFINER` RPCs use `search_path = pg_catalog, public, pg_temp`.
-- World lock `FOR UPDATE` on `worlds` for mutating RPCs.
-- Idempotency: `v015_rpc_idempotency` per action/key/hash.
-- Cross-world: all queries scoped by `world_id` + membership.
-- SQL regression: `supabase/tests/pet_living_authority.sql` (direct eat blocked, gated consume, idempotent finish, refuse offer).
+`supabase/tests/pet_living_authority.sql`: outsider denied, fake target `TARGET_MISMATCH`, NULL proposal, bad movement proof, idempotent finish, inventory reserve/release on offer, brain-only response, timed gate.
 
-## Limitations (honest)
+## Limitations
 
-1. **Movement verification** is timing-based until PR #8 reachability math is wired in 04B-3; fake early proposals are rejected, not rewarded.
-2. **Food offers** do not yet pour into bowl or tie to inventory stacks (platform for accept → fill → living action in 04B-3).
-3. **Position** is not yet stored in SQL; `target_affordance_id` is recorded for future verification.
-4. **No Supabase Cloud apply** in this mission — local SQL suite only.
+- SQL BFS uses home static blockers + anchor table (not per-world furniture placements yet) — fail-closed if unreachable; 04B-3 may pass placement snapshot for verified worlds.
+- Full furniture-blocked grid parity with client executor is Vitest-covered in TS plan; SQL uses static wall set + anchor tiles.
 
-## 04B-3 integration guide (Composer Agent 2)
+## 04B-3 integration
 
-1. On Pet Brain commit to `eat_bowl` / `drink_water`, call `backend.petLiving.beginLivingAction` with current `livingVersion` from snapshot (not client pet version).
-2. When movement runtime fires proposals, call `submitLivingProposal` with stable idempotency keys per proposal attempt.
-3. Subscribe to `world_mutated` / poll `getLivingSnapshot` after each RPC; render from `snapshot.pet` and `snapshot.activeAction` — never locally increment hunger.
-4. Do **not** call `pet_care_apply(eat_food)` or legacy `interactPet(feed)`.
-5. Align client animation duration with server windows (1400+2800 / 1000+2200) or expect server-side rejection while animating early.
-6. Food offer UI: create/respond via `petLiving`; physical pour remains `pet.applyPetCare(fill_food)`; consumption chain stays living RPCs.
+1. Read `movementPlan` from `beginLivingAction` and active action `destTileX/Y`.
+2. On client `movement_ready`, submit `{ standTileX, standTileY }` from executor arrival tile (must match server plan).
+3. Call `evaluateFoodOffer` after brain considers an offer — never `respondFoodOffer` with accept/refuse/defer.
+4. On stale `ACTION_STALE`, refresh snapshot and re-begin from brain.
 
-## Verification checklist
+## Verification (local)
 
-- `npm run lint`, `typecheck`, `test`, `test:sql`, `build`
-- `supabase/tests/pet_living_authority.sql` in `run-local-sql-suite.mjs`
-- Existing E2E unchanged (no App/WorldScene edits)
+lint, typecheck, Vitest 524, SQL fresh+upgrade, `npm run build` (PWA), Playwright 31 pass / 1 skip.

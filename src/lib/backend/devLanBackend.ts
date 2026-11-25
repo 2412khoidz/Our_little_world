@@ -526,6 +526,16 @@ export function createDevLanBackend(): WorldBackend {
           },
         );
       },
+      async evaluateFoodOffer(params) {
+        return apiJson<{
+          outcome?: string;
+          offerId?: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer/evaluate', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
     },
 
     study: {

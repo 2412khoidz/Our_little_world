@@ -138,4 +138,4 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 
 ## 12. Mission 04B-2 — server-authoritative living pet
 
-Đã thêm migration `20261125120000_pet_living_authority_04b2.sql`, RPC lazy authority (begin action, proposals, food offer), `WorldBackend.petLiving` (Supabase + Dev LAN), và `supabase/tests/pet_living_authority.sql`. Không sửa PR #8 movement, App.tsx hay WorldScene. **Đã chạy local:** lint/typecheck, Vitest 508, SQL fresh+upgrade, `npm run build`, Playwright 31 pass / 1 skip. **Chưa:** Supabase Cloud apply, iPhone thật, reachability movement verify (04B-3). [Bàn giao 04B-2](handover/MISSION_04B2_PET_AUTHORITY.md)
+Đã thêm migrations 04B-2 + hardening `20261125140000`, server movement plan (BFS + stand-tile proof), membership on submit/respond, inventory-bound offers + `pet_food_offer_evaluate`, stale action recovery, baseline merge PR #8 @ `6a58fa1`. **Local:** lint/typecheck, Vitest 524, SQL, build/PWA, Playwright 31/1 skip. **Chưa:** Cloud apply, iPhone, per-world furniture grid in SQL. [Bàn giao 04B-2](handover/MISSION_04B2_PET_AUTHORITY.md)
