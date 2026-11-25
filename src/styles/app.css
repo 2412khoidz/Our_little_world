@@ -583,6 +583,34 @@
   pointer-events: none;
 }
 
+.pet-care-overlay__portrait {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+}
+
+.pet-care-overlay__bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0 0 8px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: rgba(40, 30, 36, 0.88);
+  color: #ffe8c7;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 88vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pet-care-overlay__title {
   position: absolute;
   top: calc(52px + var(--safe-top));

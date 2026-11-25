@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { gameEventBus } from '../../game/eventBus';
+import type { PetSnapshot } from '../../shared/pet/petTypes';
+import { PetCareJ4lpanPortrait } from './PetCareJ4lpanPortrait';
 
 interface PetCareTouchOverlayProps {
   active: boolean;
+  petSnapshot: PetSnapshot | null;
   onExit: () => void;
 }
 
 /** Cozy care chrome — minimal copy, Nintendogs-like focal layout. */
-export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps) {
+export function PetCareTouchOverlay({ active, petSnapshot, onExit }: PetCareTouchOverlayProps) {
   const [hint, setHint] = useState('');
   const [goalsLabel, setGoalsLabel] = useState('');
 
@@ -45,6 +48,7 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
       aria-label="Chế độ chăm sóc mèo"
     >
       <div className="pet-care-overlay__vignette" />
+      <PetCareJ4lpanPortrait active={active} fallbackSnapshot={petSnapshot} />
       <p className="pet-care-overlay__title">
         Chăm sóc bé
         {goalsLabel ? ` · ${goalsLabel}` : ''}

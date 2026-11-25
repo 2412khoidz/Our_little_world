@@ -206,6 +206,15 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 **Kept / adapted:** Presentation-only; vitals/mood authority unchanged.  
 **Excluded:** Desktop tray locomotion, multi-pet AI, Tauri shell.
 
+### Recovery @ `8e4454d` (PetCareScene default)
+
+| Upstream path | OLW path |
+|---------------|----------|
+| `selectFace` + blink loops | `PetCarePortraitRig` → `evt:pet-care-j4lpan-portrait` → `PetCareJ4lpanPortrait` |
+| — | `petCareJ4lpanPortraitFlag.ts` — default on; `?pet-care-procedural=1` for legacy painter |
+
+**Proof:** `petCareJ4lpanBridge.test.ts` · `petShopCareFace.test.ts` · `data-testid="pet-care-j4lpan-portrait"`
+
 ## Wave 2 — NUVORA inventory depth (stack `6d0e7fd`+)
 
 | Field | Value |
