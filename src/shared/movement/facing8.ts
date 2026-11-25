@@ -1,6 +1,6 @@
 import type { Direction } from '../types';
 
-/** 8-way facing for movement; avatar clips still map to nearest cardinal row. */
+/** 8-way facing for movement; diagonal walk uses dedicated sprite rows in Phaser. */
 export type Facing8 =
   | Direction
   | 'down-right'
@@ -8,7 +8,26 @@ export type Facing8 =
   | 'up-right'
   | 'up-left';
 
-const DIAGONALS: ReadonlySet<Facing8> = new Set(['down-right', 'down-left', 'up-right', 'up-left']);
+export const DIAGONAL_FACINGS = ['down-right', 'down-left', 'up-right', 'up-left'] as const;
+export type DiagonalFacing = (typeof DIAGONAL_FACINGS)[number];
+
+const DIAGONALS: ReadonlySet<Facing8> = new Set(DIAGONAL_FACINGS);
+
+export function diagonalPrimaryCardinal(diag: DiagonalFacing): Direction {
+  return diag.startsWith('down') ? 'down' : 'up';
+}
+
+export function diagonalSecondaryCardinal(diag: DiagonalFacing): Direction {
+  return diag.endsWith('right') ? 'right' : 'left';
+}
+
+export const FACING8_VALUES = [
+  'down',
+  'up',
+  'left',
+  'right',
+  ...DIAGONAL_FACINGS,
+] as const;
 
 export function isDiagonalFacing(facing: Facing8): boolean {
   return DIAGONALS.has(facing);

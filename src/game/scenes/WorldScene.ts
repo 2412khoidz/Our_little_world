@@ -101,6 +101,7 @@ interface RemoteAvatarEntity {
   targetX: number;
   targetY: number;
   facing: Direction;
+  facing8?: Facing8;
   anim: 'idle' | 'walk';
   posture: CouplePostureKind;
   blanket?: Phaser.GameObjects.Rectangle;
@@ -1078,7 +1079,14 @@ export class WorldScene extends Phaser.Scene {
           entity.facing = facing;
           entity.sprite.setPosition(x, y);
         }
-        playAvatarPostureAnim(this, entity.sprite, entity.textureKey, entity.posture, entity.facing, false);
+        playAvatarPostureAnim(
+          this,
+          entity.sprite,
+          entity.textureKey,
+          entity.posture,
+          entity.facing8 ?? entity.facing,
+          false,
+        );
         this.syncRemoteBlanket(entity);
         this.syncRemoteRestAura(entity);
         this.reconcileRemoteVisibility();
@@ -1103,11 +1111,23 @@ export class WorldScene extends Phaser.Scene {
       }),
     );
 
-    if (import.meta.env.DEV && typeof globalThis !== 'undefined') {
-      (globalThis as { __olwDevEnterPosture?: (kind: 'sofa_sit' | 'bench_sit' | 'bed_lie') => void }).__olwDevEnterPosture =
-        (kind) => {
-          this.enterSharedPosture(kind);
-        };
+    const devVqgHooks =
+      import.meta.env.DEV ||
+      (typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('vqg-capture') === '1');
+    if (devVqgHooks && typeof globalThis !== 'undefined') {
+      const globalDev = globalThis as {
+        __olwDevEnterPosture?: (kind: 'sofa_sit' | 'bench_sit' | 'bed_lie') => void;
+        __olwDevSetFacing8?: (f8: Facing8) => void;
+      };
+      globalDev.__olwDevEnterPosture = (kind) => {
+        this.enterSharedPosture(kind);
+      };
+      globalDev.__olwDevSetFacing8 = (f8) => {
+        this.localFacing8 = f8;
+        this.localFacing = cardinalFromFacing8(f8);
+        this.game.canvas.dataset.localFacing8 = f8;
+        this.playLocalMoveAnim(true);
+      };
     }
   }
 
@@ -1418,7 +1438,7 @@ export class WorldScene extends Phaser.Scene {
     if (moving) {
       if (this.localBlanket) this.localBlanket.setVisible(false);
       this.syncLocalRestAura(false);
-      playAvatarPostureAnim(this, this.localSprite, this.localTextureKey, 'none', this.localFacing, true);
+      playAvatarPostureAnim(this, this.localSprite, this.localTextureKey, 'none', this.localFacing8, true);
       return;
     }
 
@@ -1427,7 +1447,7 @@ export class WorldScene extends Phaser.Scene {
       this.localSprite,
       this.localTextureKey,
       this.localPosture,
-      this.localFacing,
+      this.localFacing8,
       false,
     );
 
@@ -1887,6 +1907,7 @@ export class WorldScene extends Phaser.Scene {
       seq: this.txThrottle.nextSeq(),
       timestampMs: Date.now(),
       ...position,
+      ...(anim === 'walk' ? { facing8: this.localFacing8 } : {}),
       anim,
     };
     gameEventBus.emit('evt:local-movement', packet);
@@ -1988,7 +2009,7 @@ export class WorldScene extends Phaser.Scene {
 
   private setRemoteTarget(
     entity: RemoteAvatarEntity,
-    position: Pick<MovementPacket, 'mapId' | 'x' | 'y' | 'facing' | 'anim'>,
+    position: Pick<MovementPacket, 'mapId' | 'x' | 'y' | 'facing' | 'facing8' | 'anim'>,
     snap: boolean,
   ): void {
     entity.mapId = position.mapId;
@@ -1996,6 +2017,13 @@ export class WorldScene extends Phaser.Scene {
     entity.targetY = position.y;
     entity.facing = position.facing;
     entity.anim = position.anim;
+    if ('facing8' in position && position.facing8) {
+      entity.facing8 = position.facing8;
+    } else if (position.anim === 'walk') {
+      const dx = position.x - entity.sprite.x;
+      const dy = position.y - entity.sprite.y;
+      entity.facing8 = resolveFacing8(dx, dy, entity.facing8 ?? entity.facing);
+    }
     if (position.anim === 'walk' || snap) {
       entity.posture = 'none';
       entity.blanket?.setVisible(false);
@@ -2050,7 +2078,7 @@ export class WorldScene extends Phaser.Scene {
         entity.sprite,
         entity.textureKey,
         remoteMoving ? 'none' : entity.posture,
-        entity.facing,
+        entity.facing8 ?? entity.facing,
         remoteMoving,
       );
       if (entity.posture === 'lie_bed' && !remoteMoving) {
