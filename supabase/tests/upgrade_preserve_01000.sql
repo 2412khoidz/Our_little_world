@@ -38,6 +38,8 @@ BEGIN
     IF SQLERRM <> 'SERVER_AUTHORITY_REQUIRED' THEN RAISE; END IF;
   END;
 
+  -- Legacy v1 receipt hash (8-tuple) cannot replay under v2 digest (includes gift_quality);
+  -- client must use a new idempotency key, not re-submit the same in-flight send.
   BEGIN
     PERFORM public.mailbox_send_letter_or_gift(
       v_world, v_partner, 'Legacy', 'body', 'gift_flower_bouquet',

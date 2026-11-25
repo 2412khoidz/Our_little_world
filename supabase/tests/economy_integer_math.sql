@@ -15,6 +15,8 @@ BEGIN
   ASSERT public._economy_saturation_mul_bp(0, 20, 250, 7000) = 10000;
   ASSERT public._economy_saturation_mul_bp(20, 20, 250, 7000) = 9750;
   ASSERT public._economy_saturation_mul_bp(35, 20, 250, 7000) = 7000;
+  ASSERT public._economy_saturation_mul_bp(39_960, 20, 250, 7000) = 7000;
+  ASSERT public._economy_saturation_mul_bp(39_961, 20, 250, 7000) = 7000;
   ASSERT NOT has_function_privilege('authenticated', 'public._economy_saturation_mul_bp(integer,integer,integer,integer)', 'EXECUTE');
 END;
 $$;

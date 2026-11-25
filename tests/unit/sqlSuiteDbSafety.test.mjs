@@ -10,6 +10,7 @@ describe('sqlSuiteDbSafety', () => {
   it('allows dedicated olw_sql_* names', () => {
     expect(assertDisposableDatabaseName('olw_sql_test')).toBe('olw_sql_test');
     expect(deriveUpgradeDatabaseName('olw_sql_test')).toBe('olw_sql_test_upgrade');
+    expect(deriveUpgradeDatabaseName('olw_sql_test')).not.toBe('olw_sql_test');
   });
 
   it('refuses postgres and template databases', () => {
