@@ -15,9 +15,9 @@ Owner directive: **ship authored donor maps**, not cozy overlays, procedural gla
 
 | Map | Owner donor | Remove | Target |
 |-----|-------------|--------|--------|
-| **farm** | Cabacos `Cabacos_map.tmj` crop | `OLW_ContractSoil` cozy overlay | Native `farm`/`farm3` tiles; **184 plot IDs** unchanged (`farmPlotContract.v1.json`) |
+| **farm** | PyDew `data/map.tmx` @ `5b33bfda` | Cabacos crop window / `OLW_ContractSoil` | Native 64px Farmable layer; **184** plot IDs |
 | **forest** | Tuxemon `tt_forest_route1.tmx` @ `4e63c45b` | `pydewGladeTilemap` procedural (removed) | Native multi-tileset + portal slice |
-| **beach** | Hollowmere `gull_bay.json` | `scatter` ops + post `polishBeachGrid` | rects / pier / buildings only |
+| **beach** | Cabacos `Cabacos_map.tmj` east coast crop | Hollowmere cozy rebuild / scatter | Native `ts_map` layers + pier interactables |
 | **shop** | `Seed_shop` / `tool_shop` / `Crop_market` / `Town_hall` `.tmj` + PNGs | `Casa_player.tmj` as shop | `shop_*.json` `olwShopRender=image` |
 
 ## Runtime

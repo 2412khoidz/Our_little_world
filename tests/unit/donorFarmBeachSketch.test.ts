@@ -51,7 +51,9 @@ describe('donor farm/beach sketch', () => {
     const polish = (beachJson as { properties?: { name: string; value: string }[] }).properties?.find(
       (p) => p.name === 'olwCoastPolish',
     );
-    expect(['2025-11-25-pier-lifebuoy', 'recovery-authored-only']).toContain(polish?.value);
+    expect(['2025-11-25-pier-lifebuoy', 'recovery-authored-only', 'cabacos-east-coast-native']).toContain(
+      polish?.value,
+    );
     const hdRef = (beachJson as { properties?: { name: string; value: string }[] }).properties?.find(
       (p) => p.name === 'olwHarvestDuoRef',
     );

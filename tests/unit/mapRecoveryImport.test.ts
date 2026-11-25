@@ -22,9 +22,18 @@ describe('map recovery import contract', () => {
     expect(recoveryEnabled(farmJson)).toBe(true);
   });
 
-  it('beach recovery disables hollowmere scatter flag when applied', () => {
-    if (!beachJson.properties?.some((p) => p.name === 'olwHollowmereNoScatter')) return;
+  it('beach recovery uses Cabacos east coast when tagged', () => {
+    const cabacosPrimary = beachJson.properties?.some(
+      (p) => p.name === 'olwBeachCabacosPrimary' && p.value === true,
+    );
+    if (!cabacosPrimary) {
+      if (!beachJson.properties?.some((p) => p.name === 'olwHollowmereNoScatter')) return;
+      expect(recoveryEnabled(beachJson)).toBe(true);
+      return;
+    }
+    expect(beachJson.properties?.find((p) => p.name === 'olwDonor')?.value).toBe('cabacos');
     expect(recoveryEnabled(beachJson)).toBe(true);
+    expect(beachJson.tilesets?.some((t) => t.name === 'ts_map')).toBe(true);
   });
 
   it('shop recovery uses donor image interiors not Casa_player', () => {

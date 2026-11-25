@@ -6,7 +6,7 @@ import { assertCanvasPixelVariance, assertScreenshotCenterVariance } from './lib
 
 const PORT = process.env.OLW_PORT || '4182';
 const BASE = `http://127.0.0.1:${PORT}`;
-const OUT = process.env.OUT || '/opt/cursor/artifacts/donor-hollowmere-beach-olw.png';
+const OUT = process.env.OUT || '/opt/cursor/artifacts/map-transplant-beach-olw.png';
 
 async function waitServer() {
   for (let i = 0; i < 60; i += 1) {
