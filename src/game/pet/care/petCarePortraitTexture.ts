@@ -1,26 +1,21 @@
 import type Phaser from 'phaser';
+import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import {
-  CAT_VARIANTS,
-  PET_ANIMATION_SPECS,
-  type CatAccessoryId,
-  type CatCoatVariantId,
-  type PetAnimState,
-} from '../../../shared/petLiving/petVisualTypes';
-import { ensureLivingCatSpritesheet, getLivingCatAnimKey, getLivingCatTextureKey } from '../petSpriteBuilder';
-
-/** Close-up care frames — separate atlas from overworld (48px), not upscaled world sprite. */
-export const PET_CARE_PORTRAIT_FRAME = 48;
-const SHEET_COLS = 6;
+  buildCarePortraitCanvas,
+  carePortraitFrameIndex,
+  carePortraitFramesForAnim,
+  getCarePortraitAnimList,
+  PET_CARE_ATLAS_FRAME,
+} from './petCarePortraitPainter';
 
 function portraitTextureKey(variant: CatCoatVariantId, accessory: CatAccessoryId): string {
-  return `olw-pet-care-portrait-${variant}-${accessory}`;
+  return `olw-pet-care-atlas-${variant}-${accessory}`;
 }
 
 function portraitAnimKey(variant: CatCoatVariantId, accessory: CatAccessoryId, state: PetAnimState): string {
   return `${portraitTextureKey(variant, accessory)}:${state}`;
 }
 
-/** Copy overworld sheet into portrait key so care uses its own texture namespace (future HD paint). */
 export function ensurePetCarePortraitSheet(
   scene: Phaser.Scene,
   variant: CatCoatVariantId,
@@ -29,40 +24,31 @@ export function ensurePetCarePortraitSheet(
   const key = portraitTextureKey(variant, accessory);
   if (scene.textures.exists(key)) return key;
 
-  ensureLivingCatSpritesheet(scene, variant, accessory);
-  const srcKey = getLivingCatTextureKey(variant, accessory);
-  const src = scene.textures.get(srcKey);
-  const srcImg = src.getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+  const canvas = buildCarePortraitCanvas(variant, accessory);
+  scene.textures.addCanvas(key, canvas);
 
-  const w = src.get().width;
-  const h = src.get().height;
-  const canvasTex = scene.textures.createCanvas(key, w, h);
-  if (!canvasTex) return srcKey;
-  const ctx = canvasTex.getContext();
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(srcImg, 0, 0);
-  canvasTex.refresh();
-
-  const OVERWORLD = 24;
-  const scale = PET_CARE_PORTRAIT_FRAME / OVERWORLD;
-  const states = PET_ANIMATION_SPECS.map((s) => s.key);
-  for (const state of states) {
-    const owAnim = getLivingCatAnimKey(variant, accessory, state);
-    if (!scene.anims.exists(owAnim)) continue;
-    const frames =
-      scene.anims.get(owAnim)?.frames.map((f) => ({
-        key,
-        frame: f.index,
-        duration: f.duration,
-      })) ?? [];
-    if (frames.length > 0 && !scene.anims.exists(portraitAnimKey(variant, accessory, state))) {
-      scene.anims.create({ key: portraitAnimKey(variant, accessory, state), frames, repeat: -1 });
+  for (const state of getCarePortraitAnimList()) {
+    const frameCount = carePortraitFramesForAnim(state);
+    const frames = Array.from({ length: frameCount }, (_, fi) => ({
+      key,
+      frame: carePortraitFrameIndex(state, fi),
+    }));
+    const fps =
+      state === 'sleep' || state === 'idle_south'
+        ? 5
+        : state === 'play_pounce'
+          ? 9
+          : 7;
+    if (!scene.anims.exists(portraitAnimKey(variant, accessory, state))) {
+      scene.anims.create({
+        key: portraitAnimKey(variant, accessory, state),
+        frames,
+        frameRate: fps,
+        repeat: -1,
+      });
     }
   }
 
-  void scale;
-  void CAT_VARIANTS;
-  void SHEET_COLS;
   return key;
 }
 
@@ -71,9 +57,13 @@ export function getPetCarePortraitAnimKey(
   accessory: CatAccessoryId,
   state: PetAnimState,
 ): string {
-  return portraitAnimKey(variant, accessory, state);
+  const allowed = getCarePortraitAnimList();
+  const anim = (allowed as readonly string[]).includes(state) ? state : 'sit_south';
+  return portraitAnimKey(variant, accessory, anim);
 }
 
 export function getPetCarePortraitTextureKey(variant: CatCoatVariantId, accessory: CatAccessoryId): string {
   return portraitTextureKey(variant, accessory);
 }
+
+export { PET_CARE_ATLAS_FRAME };

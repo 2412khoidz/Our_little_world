@@ -554,12 +554,21 @@ export function createSupabaseBackend(): WorldBackend {
           } as PetCareApplyResult,
         };
       },
-      async consumeHandFood() {
-        return {
-          ok: false,
-          code: 'SERVER_AUTHORITY_REQUIRED',
-          message: 'Đưa thức ăn trực tiếp cần máy chủ Mission 04 — hiện dùng đổ vào bát.',
-        };
+      async consumeHandFood(params) {
+        const { data, error } = await supabase.rpc('pet_consume_hand_food', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_expected_version: params.expectedVersion,
+          p_scope: params.ownerScope,
+          p_sku: params.itemSku,
+          p_quality: params.quality,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as { pet: PetSnapshot; sku: string; quality: string };
+        return { ok: true, data: raw };
       },
     },
 

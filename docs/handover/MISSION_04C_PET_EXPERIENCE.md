@@ -23,7 +23,14 @@
 
 Không fork `PetSnapshot` / memory / personality.
 
-## Slice 3 (branch hiện tại)
+## Slice 4 (branch hiện tại)
+
+- **Dedicated care atlas** `petCarePortraitPainter.ts` (48px procedural, không copy upscaled 24px)
+- **`pet_consume_hand_food`** migration + Supabase `consumeHandFood` (prod path); DEV fallback presentation chỉ khi `?living-pet=1` + `SERVER_AUTHORITY_REQUIRED`
+- E2E **pet-care-session-acceptance** (60s CI / 6 phút với `OLW_ACCEPTANCE_LONG=1`, trace on)
+- Owner checklist: `PET_CARE_OWNER_CHECKLIST.md`
+
+## Slice 3
 
 - **`PetCareScene`** tách khỏi WorldScene — giảm xung đột map/PR #12
 - **`PetCarePortraitRig`**: atlas care riêng + **mắt/đồng tử** + nhịp thở; toys kéo (len/hộp) + chase

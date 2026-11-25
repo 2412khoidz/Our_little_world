@@ -26,6 +26,7 @@ import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
 import { registerLivingPetDevAcceptanceHooks } from '../shared/petLiving/mainGame/livingPetDevAcceptance';
+import { isLivingPetLocalSimulationEnabled } from '../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
@@ -625,6 +626,20 @@ function MainCoupleApp() {
           });
           setPetBusy(false);
           if (!res.ok) {
+            if (
+              import.meta.env.DEV &&
+              res.code === 'SERVER_AUTHORITY_REQUIRED' &&
+              isLivingPetLocalSimulationEnabled()
+            ) {
+              gameEventBus.emit('cmd:pet-local-food-offer', {
+                offerId: `care-fallback-${Date.now()}`,
+                caregiverId: 'dev-care-fallback',
+                sku,
+                quality,
+              });
+              showToast('Bé ngửi món (mô phỏng DEV — chưa trừ kho).', true);
+              return;
+            }
             showToast(res.message, true);
             if (res.code === 'VERSION_CONFLICT') {
               void refreshPetSnapshot(targetWorldId);

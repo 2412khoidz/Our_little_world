@@ -17,12 +17,13 @@ import {
 } from './petCarePortraitTexture';
 import { PetCareToyLayer } from './PetCareToyLayer';
 
-const BODY_SCALE = 4.2;
+const BODY_SCALE = 3.15;
 
 export class PetCarePortraitRig {
   private readonly scene: Phaser.Scene;
   private readonly root: Phaser.GameObjects.Container;
   private readonly body: Phaser.GameObjects.Sprite;
+  private readonly tail: Phaser.GameObjects.Ellipse;
   private readonly eyeL: Phaser.GameObjects.Ellipse;
   private readonly eyeR: Phaser.GameObjects.Ellipse;
   private readonly pupilL: Phaser.GameObjects.Ellipse;
@@ -66,12 +67,13 @@ export class PetCarePortraitRig {
     this.root = scene.add.container(x, y).setScrollFactor(0).setDepth(12_000);
 
     const floor = scene.add.ellipse(0, 42, 150, 30, 0x281e24, 0.35);
+    this.tail = scene.add.ellipse(-38, 8, 12, 34, 0xd98956, 0.88).setAngle(-24);
     this.body = scene.add.sprite(0, 6, texKey, 0).setOrigin(0.5, 0.88).setScale(BODY_SCALE);
 
-    this.eyeL = scene.add.ellipse(-12, -58, 10, 12, 0xfff6ea, 1);
-    this.eyeR = scene.add.ellipse(12, -58, 10, 12, 0xfff6ea, 1);
-    this.pupilL = scene.add.ellipse(-12, -56, 4, 5, 0x2a1a14, 1);
-    this.pupilR = scene.add.ellipse(12, -56, 4, 5, 0x2a1a14, 1);
+    this.eyeL = scene.add.ellipse(-12, -58, 10, 12, 0xfff6ea, 0);
+    this.eyeR = scene.add.ellipse(12, -58, 10, 12, 0xfff6ea, 0);
+    this.pupilL = scene.add.ellipse(-12, -56, 3, 4, 0x2a1a14, 0.72);
+    this.pupilR = scene.add.ellipse(12, -56, 3, 4, 0x2a1a14, 0.72);
 
     this.bubble = scene.add
       .text(0, -108, '', {
@@ -93,6 +95,7 @@ export class PetCarePortraitRig {
 
     this.root.add([
       floor,
+      this.tail,
       this.body,
       this.toys.getLayer(),
       this.eyeL,
@@ -172,6 +175,12 @@ export class PetCarePortraitRig {
     const breath = 1 + Math.sin(this.breathPhase) * mood.breathAmplitude;
     this.body.setScale(BODY_SCALE * breath, BODY_SCALE * (breath - 0.004));
 
+    const tailMode = this.expression?.tail ?? 'idle';
+    const wag =
+      tailMode === 'wag_fast' ? Math.sin(this.breathPhase * 2.2) * 12 : Math.sin(this.breathPhase) * 7;
+    const tuck = tailMode === 'tuck' ? -20 : tailMode === 'puff' ? 16 : wag;
+    this.tail.setAngle(-24 + tuck);
+
     this.toys.update(deltaMs, this.eyeTargetX, this.eyeTargetY);
     const chase = this.toys.isChaseActive();
     if (chase) {
@@ -229,6 +238,10 @@ export class PetCarePortraitRig {
 
   private applyExpression(expr: PetCareExpression): void {
     this.expression = expr;
+    const tailMode = expr.tail ?? 'idle';
+    if (tailMode === 'wag_fast') this.tail.setFillStyle(0xe8a56e, 0.95);
+    else if (tailMode === 'tuck') this.tail.setFillStyle(0xc76e2e, 0.85);
+    else this.tail.setFillStyle(0xd98956, 0.88);
     this.playAnim(expr.anim);
     if (expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
     if (expr.eyeMood === 'sleep') {

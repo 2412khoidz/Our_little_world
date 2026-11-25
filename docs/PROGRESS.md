@@ -2,9 +2,23 @@
 
 *Cập nhật lần cuối: 25/11/2026*
 
+## 0. V0.2 P0 — A Home Comes Alive (đồng bộ Roadmap v2)
+
+**Nguồn:** [V02_ROADMAP.md](V02_ROADMAP.md) · [V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md) · [V02_INTEGRATION_PLAYBOOK.md](V02_INTEGRATION_PLAYBOOK.md)
+
+| Stream | PR | Trạng thái agent | Ghi chú tích hợp |
+|--------|-----|------------------|------------------|
+| Composer 1 Farming | #14 | Dev LAN playable | Chờ Supabase RPC + plot contract C3 |
+| Composer 2 Pet | #13 | Slice 4 in progress | PetCareScene, hand-feed RPC `20261125001200`, e2e session |
+| Composer 3 World | #12 | Zone/farm art | Không sửa care scene |
+| Foundation authority | #10 | SQL open | #13 wires `pet_consume_hand_food`; merge trước prod Supabase |
+| Living overworld | #11 | DEV `?living-pet=1` | Gộp vào #12/#13 khi integrate |
+
+**Chưa owner-verified:** build tích hợp 15–20 phút (nhà → mèo → shop → farm → explore). **Không** merge `main`.
+
 ## 1. Trạng thái tổng thể
-- **Milestone hiện tại:** V0.1 Final Integration
-- **Trạng thái:** Đã hoàn tất tích hợp Demo E trong V0.1 ở profile riêng. V0.1 còn cổng quyền triển khai Internet, HTTPS/Supabase Cloud và nghiệm thu thiết bị thật.
+- **Milestone hiện tại:** V0.2 P0 (song song V0.1 gate còn thiết bị thật)
+- **Trạng thái:** Ba PR feature (#12–#14) + foundation #10/#11; tích hợp theo playbook, chưa release.
 
 ## 2. Checklist nghiệm thu Spike 0 & V0.1
 

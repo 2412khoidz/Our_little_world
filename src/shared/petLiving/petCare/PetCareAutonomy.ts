@@ -17,7 +17,10 @@ export class PetCareAutonomy {
 
   tick(nowMs: number, playerQuietMs: number): PetCareAutonomyCue {
     if (nowMs < this.nextTickAt) return { kind: 'idle' };
-    this.nextTickAt = nowMs + 4500 + Math.random() * 5500;
+    const fast =
+      typeof window !== 'undefined' &&
+      (window as unknown as { __OLW_PET_CARE_FAST?: boolean }).__OLW_PET_CARE_FAST === true;
+    this.nextTickAt = nowMs + (fast ? 1800 : 4500) + Math.random() * (fast ? 2200 : 5500);
 
     if (playerQuietMs < 3500) return { kind: 'idle' };
 

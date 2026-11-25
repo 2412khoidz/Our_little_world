@@ -37,7 +37,7 @@ Renderer: `src/game/pet/care/` — **not** WorldScene tile layers.
 ## Authority (PR #10 aligned)
 
 - Bowl fill: `applyPetCare('fill_food'|'fill_water')` — existing.
-- Hand feed in care: `consumeHandFood` (dev LAN: POST `/pet/consume-hand-food`).
+- Hand feed in care: `consumeHandFood` — dev LAN `POST /pet/consume-hand-food`; production Supabase RPC `pet_consume_hand_food` (migration `20261125001200`, aligns with PR #10).
 - Không client-mutate vitals; sau success: `cmd:sync-pet` + `refreshInventory`.
 - Living `?living-pet=1` overworld brain vẫn presentation-only; **care eat** luôn qua server khi có backend.
 
