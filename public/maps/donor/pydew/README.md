@@ -1,7 +1,7 @@
 # PyDew (clear-code-projects/PyDew) — forest glade slice
 
 **License:** CC0 — see `UPSTREAM-LICENSE.txt`  
-**OLW status:** `partial_reuse` (portal smoke slice)
+**OLW status:** `partial_reuse` (`glade-v1-playable` tilemap)
 
 This folder vendors **metadata only** (no PyDew tile sprites):
 
@@ -17,7 +17,11 @@ This folder vendors **metadata only** (no PyDew tile sprites):
 npm run import-donor:pydew-forest
 ```
 
-Patches `forest.json` (`olwDonor=pydew`) and adds `village-to-forest` on Cabacos `village.json`. Forest art stays cozy procedural until a future tile transplant.
+Rebuilds `forest.json` as a playable glade (cozy tileset): collision, path spine, west/east portal art. Patches Cabacos `village-to-forest`.
+
+```bash
+node scripts/capture-donor-pydew-forest.mjs
+```
 
 ## Tests
 
