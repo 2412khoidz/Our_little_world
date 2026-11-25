@@ -61,7 +61,7 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'Yêu cầu bị trùng khóa nhưng khác nội dung.'],
     ['NOT_FOUND', 'NOT_FOUND', 'Không tìm thấy dữ liệu được yêu cầu.'],
     ['VALIDATION_ERROR', 'VALIDATION_ERROR', 'Dữ liệu nhập chưa hợp lệ.'],
-    ['INVALID_PLOT', 'VALIDATION_ERROR', 'Ô đất không hợp lệ.'],
+    ['INVALID_PLOT', 'VALIDATION_ERROR', 'Ô đất không hợp lệ — chỉ ruộng 0–183 (ruộng chính + phụ).'],
     [
       'SERVER_AUTHORITY_REQUIRED',
       'SERVER_AUTHORITY_REQUIRED',
