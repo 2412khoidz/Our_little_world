@@ -46,12 +46,20 @@ async function main() {
       await seedRelaunch.click();
       await page.getByTestId('preset-partner-a').click();
     }
+    await page.getByTestId('nav-outdoor').waitFor({ state: 'visible', timeout: 15_000 });
     await page.getByTestId('nav-outdoor').click({ force: true });
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
     await canvas.waitFor({ state: 'visible', timeout: 20_000 });
     for (let i = 0; i < 40; i += 1) {
       if ((await canvas.getAttribute('data-map-id')) === 'village') break;
       await page.waitForTimeout(250);
+    }
+    if ((await canvas.getAttribute('data-map-id')) !== 'village') {
+      await page.evaluate(() => window.__OLW_VQG?.jump?.('village', 40, 24));
+      for (let i = 0; i < 40; i += 1) {
+        if ((await canvas.getAttribute('data-map-id')) === 'village') break;
+        await page.waitForTimeout(250);
+      }
     }
     await page.waitForTimeout(1200);
     await page.screenshot({ path: OUT, fullPage: false });
