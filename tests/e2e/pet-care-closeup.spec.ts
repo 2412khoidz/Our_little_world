@@ -33,6 +33,10 @@ test.describe('Pet care — close-up rig', () => {
 
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
     await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === 'portrait')).toBe(true);
+    await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareJ4lpan === '1')).toBe(true);
+    await expect(page.getByTestId('pet-care-j4lpan-portrait')).toBeVisible();
+    await expect(page.getByTestId('pet-shop-closeup-cat')).toBeVisible();
+    await expect(page.locator('[data-testid="pet-shop-closeup-cat"] svg')).toBeVisible();
 
     await page.getByTestId('pet-care-call').click();
     await page.getByTestId('pet-care-exit').click();

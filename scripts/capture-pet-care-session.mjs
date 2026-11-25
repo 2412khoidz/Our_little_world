@@ -27,6 +27,7 @@ async function main() {
 
   await page.evaluate(() => window.dispatchEvent(new Event('olw-dev-enter-pet-care')));
   await page.getByTestId('pet-care-overlay').waitFor({ timeout: 30_000 });
+  await page.getByTestId('pet-care-j4lpan-portrait').waitFor({ timeout: 15_000 });
   await page.waitForTimeout(600);
   await page.screenshot({ path: path.join(outDir, 'pet-care-session-enter.png') });
 
