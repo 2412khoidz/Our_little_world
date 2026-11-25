@@ -1,5 +1,5 @@
 import { catalogFingerprint } from '../src/shared/economy/catalogConfig.ts';
-import { buildUnifiedCatalogRows } from '../src/shared/catalog/unifiedCatalog.ts';
+import { buildUnifiedCatalogRows } from '../src/shared/catalog/canonicalCatalog.ts';
 
 const sql = (value: string) => "'" + value.replaceAll("'", "''") + "'";
 const rows = buildUnifiedCatalogRows();

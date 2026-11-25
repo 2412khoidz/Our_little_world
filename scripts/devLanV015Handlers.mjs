@@ -125,28 +125,36 @@ export function getWorldInventoryList(v015, worldId) {
   return v015.inventory[worldId];
 }
 
-export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, nowIso) {
+export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, nowIso, quality = 'normal') {
   if (ownerScope !== 'shared' && !/^user:[0-9a-f-]+$/i.test(ownerScope)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Phạm vi kho đồ không hợp lệ.' };
+  }
+  if (!['normal', 'silver', 'gold'].includes(quality)) {
+    return { ok: false, code: 'VALIDATION_ERROR', message: 'Cấp chất lượng không hợp lệ.' };
   }
   const cat = CATALOG_BY_SKU.get(itemSku);
   if (!cat) {
     return { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy vật phẩm.' };
   }
   const list = getWorldInventoryList(v015, worldId);
-  const idx = list.findIndex((i) => i.ownerScope === ownerScope && i.itemSku === itemSku);
+  const idx = list.findIndex(
+    (i) => i.ownerScope === ownerScope && i.itemSku === itemSku && (i.quality ?? 'normal') === quality,
+  );
   const cur = idx >= 0 ? list[idx].qty : 0;
   const next = cur + delta;
+  const totalSameSku = list
+    .filter((i) => i.ownerScope === ownerScope && i.itemSku === itemSku)
+    .reduce((sum, row) => sum + row.qty, 0);
   if (next < 0) {
     return { ok: false, code: 'INSUFFICIENT_ITEMS', message: 'Không đủ vật phẩm trong túi.' };
   }
-  if (next > cat.stackLimit) {
+  if (totalSameSku + delta > cat.stackLimit) {
     return { ok: false, code: 'STACK_FULL', message: `Ngăn chứa ${cat.nameVi} đã đầy (${cat.stackLimit}).` };
   }
   if (next === 0) {
     if (idx >= 0) list.splice(idx, 1);
   } else {
-    const entry = { worldId, ownerScope, itemSku, qty: next, updatedAt: nowIso };
+    const entry = { worldId, ownerScope, itemSku, quality, qty: next, updatedAt: nowIso };
     if (idx >= 0) list[idx] = entry;
     else list.push(entry);
   }
@@ -362,6 +370,58 @@ export async function handleV015Route({
     v015.kibbleClaims[worldId] = { date: utcDate, userId, updatedAt: nowIso };
     const snap = buildInventorySnapshot(v015, worldId, userId, nowMs);
     saveV015Idempotency(v015, worldId, userId, 'claim_free_kibble', key, reqHash, snap);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    sendJson(res, 200, { ok: true, data: snap });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/inventory/transfer-quality') {
+    const worldId = String(body.worldId ?? '').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    const fromUi = String(body.fromScope ?? 'shared').trim();
+    const toUi = String(body.toScope ?? 'personal').trim();
+    const itemSku = String(body.itemSku ?? '').trim();
+    const quality = String(body.quality ?? 'normal').trim();
+    const qty = Number(body.qty);
+    if (!worldId || !key || !itemSku || !Number.isFinite(qty) || qty < 1) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thiếu thông tin chuyển vật phẩm.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const fromScope = fromUi === 'personal' ? `user:${userId}` : 'shared';
+    const toScope = toUi === 'personal' ? `user:${userId}` : 'shared';
+    if (fromScope === toScope) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Không thể chuyển trong cùng một ngăn.' });
+      return true;
+    }
+    const reqHash = JSON.stringify([fromScope, toScope, itemSku, quality, qty]);
+    const prior = checkV015Idempotency(v015, worldId, userId, 'inventory_transfer', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác thao tác.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+    const nowIso = new Date().toISOString();
+    const out = adjustInventoryItem(v015, worldId, fromScope, itemSku, -qty, nowIso, quality);
+    if (!out.ok) {
+      sendJson(res, 400, { ok: false, code: out.code, message: out.message });
+      return true;
+    }
+    const inn = adjustInventoryItem(v015, worldId, toScope, itemSku, qty, nowIso, quality);
+    if (!inn.ok) {
+      adjustInventoryItem(v015, worldId, fromScope, itemSku, qty, nowIso, quality);
+      sendJson(res, 400, { ok: false, code: inn.code, message: inn.message });
+      return true;
+    }
+    const snap = buildInventorySnapshot(v015, worldId, userId);
+    saveV015Idempotency(v015, worldId, userId, 'inventory_transfer', key, reqHash, snap);
     saveDb();
     broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
     sendJson(res, 200, { ok: true, data: snap });
@@ -793,6 +853,7 @@ export async function handleV015Route({
           body: redacted ? null : item.body,
           giftItemSku: redacted ? null : item.giftItemSku,
           giftQty: redacted ? 0 : item.giftQty,
+          giftQuality: redacted ? 'normal' : (item.giftQuality ?? 'normal'),
           bodyRedacted: redacted,
           giftRedacted: redacted && item.kind === 'gift',
         };
@@ -825,6 +886,7 @@ export async function handleV015Route({
     const letterBody = String(body.body ?? '').replace(/\u0000/g, '').trim();
     const giftItemSku = body.giftItemSku ? String(body.giftItemSku).trim() : null;
     const giftQty = giftItemSku ? Number(body.giftQty) : 0;
+    const giftQuality = String(body.giftQuality ?? 'normal').trim();
     const sourceScope = String(body.sourceScope ?? 'shared').trim();
     const isSurprise = Boolean(body.isSurprise);
     const key = String(body.idempotencyKey ?? '').trim();
@@ -848,7 +910,7 @@ export async function handleV015Route({
       }
     }
 
-    const reqHash = `mailbox_send:${recipientId}:${subject}:${letterBody}:${giftItemSku ?? ''}:${giftQty}:${sourceScope}:${isSurprise}`;
+    const reqHash = `mailbox_send:${recipientId}:${subject}:${letterBody}:${giftItemSku ?? ''}:${giftQty}:${sourceScope}:${isSurprise}:${giftQuality}`;
     const prior = checkV015Idempotency(v015, worldId, userId, 'mailbox_send', key, reqHash);
     if (prior) {
       if (prior.conflict) {
@@ -863,7 +925,7 @@ export async function handleV015Route({
     const nowIso = new Date(nowMs).toISOString();
     if (giftItemSku) {
       const ownerScope = sourceScope === 'shared' ? 'shared' : `user:${userId}`;
-      const adj = adjustInventoryItem(v015, worldId, ownerScope, giftItemSku, -giftQty, nowIso);
+      const adj = adjustInventoryItem(v015, worldId, ownerScope, giftItemSku, -giftQty, nowIso, giftQuality);
       if (!adj.ok) {
         const status = adj.code === 'NOT_FOUND' ? 404 : 409;
         sendJson(res, status, adj);
@@ -882,6 +944,7 @@ export async function handleV015Route({
       body: letterBody,
       giftItemSku: giftItemSku ?? null,
       giftQty: giftItemSku ? giftQty : 0,
+      giftQuality: giftItemSku ? giftQuality : 'normal',
       isSurprise,
       openedAt: null,
       createdAt: nowIso,
@@ -942,7 +1005,15 @@ export async function handleV015Route({
     const nowIso = new Date(nowMs).toISOString();
     if (row.kind === 'gift' && row.giftItemSku && row.giftQty > 0) {
       // Credit to recipient personal compartment BEFORE setting openedAt so stack-full aborts cleanly
-      const adj = adjustInventoryItem(v015, worldId, `user:${userId}`, row.giftItemSku, row.giftQty, nowIso);
+      const adj = adjustInventoryItem(
+        v015,
+        worldId,
+        `user:${userId}`,
+        row.giftItemSku,
+        row.giftQty,
+        nowIso,
+        row.giftQuality ?? 'normal',
+      );
       if (!adj.ok) {
         sendJson(res, 409, adj);
         return true;

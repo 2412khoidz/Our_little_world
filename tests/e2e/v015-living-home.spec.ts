@@ -116,7 +116,7 @@ test.describe('V0.1.5 Living Home — Multi-Device E2E & Visual QA', () => {
     await pageA.getByTestId('mailbox-tab-compose').click();
     await pageA.getByTestId('mailbox-input-subject').fill('Quà bất ngờ');
     await pageA.getByTestId('mailbox-input-body').fill(secretPayload);
-    await pageA.getByTestId('mailbox-select-gift').selectOption('shared:pet_kibble_basic');
+    await pageA.getByTestId('mailbox-select-gift').selectOption('shared:normal:pet_kibble_basic');
     await pageA.getByTestId('mailbox-input-qty').fill('1');
     await expect(pageA.getByTestId('mailbox-checkbox-surprise')).toBeChecked();
     await pageA.getByTestId('mailbox-submit-send').click();

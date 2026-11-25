@@ -476,6 +476,7 @@ function MainCoupleApp() {
       body: string;
       giftItemSku: string | null;
       giftQty: number;
+      giftQuality: 'normal' | 'silver' | 'gold';
       sourceScope: MailboxGiftSourceScope;
       isSurprise: boolean;
     }): Promise<boolean> => {

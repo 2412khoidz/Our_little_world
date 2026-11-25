@@ -446,6 +446,27 @@ export function createSupabaseBackend(): WorldBackend {
         }
         return { ok: true, data: data as InventorySnapshot };
       },
+      async transferInventoryQuality(params) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const uid = sessionData.session?.user.id;
+        if (!uid) {
+          return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn cần đăng nhập lại.' };
+        }
+        const toDbScope = (scope: 'shared' | 'personal') => (scope === 'personal' ? `user:${uid}` : 'shared');
+        const { data, error } = await supabase.rpc('inventory_transfer_quality', {
+          p_world_id: params.worldId,
+          p_from_scope: toDbScope(params.fromScope),
+          p_to_scope: toDbScope(params.toScope),
+          p_item_sku: params.itemSku,
+          p_quality: params.quality,
+          p_qty: params.qty,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
     },
 
     pet: {
@@ -594,6 +615,7 @@ export function createSupabaseBackend(): WorldBackend {
           p_source_scope: params.sourceScope,
           p_is_surprise: params.isSurprise,
           p_idempotency_key: params.idempotencyKey,
+          p_gift_quality: params.giftQuality,
         });
         if (error || !data) {
           return { ok: false, ...mapSupabaseError(error) };

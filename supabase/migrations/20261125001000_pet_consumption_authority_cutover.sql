@@ -161,6 +161,10 @@ BEGIN
 END;
 $$;
 
+-- Mailbox send idempotency hash v2 includes gift_quality (default normal).
+-- Receipts created before migration 01000 used a 9-arg digest without quality;
+-- retries with the same key must use the same payload or receive IDEMPOTENCY_CONFLICT.
+
 DROP FUNCTION IF EXISTS public.mailbox_send_letter_or_gift(
   uuid, uuid, text, text, text, integer, text, boolean, text);
 

@@ -12,6 +12,10 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'VALIDATION_ERROR' THEN RAISE; END IF;
   END;
   ASSERT NOT has_function_privilege('authenticated', 'public._economy_mul_bp(bigint,integer)', 'EXECUTE');
+  ASSERT public._economy_saturation_mul_bp(0, 20, 250, 7000) = 10000;
+  ASSERT public._economy_saturation_mul_bp(20, 20, 250, 7000) = 9750;
+  ASSERT public._economy_saturation_mul_bp(35, 20, 250, 7000) = 7000;
+  ASSERT NOT has_function_privilege('authenticated', 'public._economy_saturation_mul_bp(integer,integer,integer,integer)', 'EXECUTE');
 END;
 $$;
 ROLLBACK;

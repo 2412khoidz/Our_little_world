@@ -447,6 +447,12 @@ export function createDevLanBackend(): WorldBackend {
           body: JSON.stringify({ worldId, idempotencyKey }),
         });
       },
+      async transferInventoryQuality(params) {
+        return apiJson<InventorySnapshot>('/inventory/transfer-quality', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
     },
 
     pet: {

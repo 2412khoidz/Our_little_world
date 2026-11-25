@@ -72,6 +72,15 @@ export interface RealtimeHandle {
 export interface InventoryBackend {
   getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
   claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
+  transferInventoryQuality(params: {
+    worldId: string;
+    fromScope: 'shared' | 'personal';
+    toScope: 'shared' | 'personal';
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    qty: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<InventorySnapshot>>;
 }
 
 export interface PetBackend {

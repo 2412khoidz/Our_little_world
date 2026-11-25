@@ -198,6 +198,10 @@ export function PetPanel({
               )}
             </div>
 
+            <p style={{ margin: '0 0 8px', fontSize: 12, lineHeight: 1.45, color: 'var(--ink-muted, #6b4b3e)' }}>
+              Giai đoạn chuyển tiếp: hai nút dưới chỉ đổ thức ăn/nước vào bát — bé chưa tự ăn uống trên máy chủ
+              (Mission 04).
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <button
                 type="button"
@@ -215,7 +219,7 @@ export function PetPanel({
                 data-testid="btn-pet-feed"
                 onClick={() => void onInteract('feed')}
               >
-                <Utensils size={14} /> {feedCdSec > 0 ? `${feedCdSec}s` : 'Cho ăn'}
+                <Utensils size={14} /> {feedCdSec > 0 ? `${feedCdSec}s` : 'Đổ vào bát ăn'}
               </button>
               <button
                 type="button"
@@ -224,7 +228,7 @@ export function PetPanel({
                 data-testid="btn-pet-water"
                 onClick={() => void onInteract('water')}
               >
-                <Droplets size={14} /> {waterCdSec > 0 ? `${waterCdSec}s` : 'Uống nước'}
+                <Droplets size={14} /> {waterCdSec > 0 ? `${waterCdSec}s` : 'Rót vào bát nước'}
               </button>
             </div>
           </>
