@@ -26,6 +26,7 @@
     "assets:pack-demo-e-minimal": "node scripts/pack-demo-e-minimal.mjs",
     "preview:private": "vite preview --outDir dist-private --host 127.0.0.1 --port 4174 --strictPort",
     "assets:import": "node scripts/import-external-assets.mjs",
+    "import-donor:cabacos": "node scripts/import-donor-cabacos.mjs",
     "spike:video": "node scripts/generate-spike-video.mjs",
     "test:sql": "node scripts/run-local-sql-suite.mjs"
   },
