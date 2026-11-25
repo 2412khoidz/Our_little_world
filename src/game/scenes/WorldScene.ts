@@ -1975,7 +1975,8 @@ export class WorldScene extends Phaser.Scene {
         maxRadiusPx: 44,
       });
     }
-    interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId));
+    const economyPlayable = isDonorEconomyUiEnabled();
+    interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId, economyPlayable));
     return interactables;
   }
 
@@ -2000,6 +2001,7 @@ export class WorldScene extends Phaser.Scene {
       playerY: this.localSprite.y,
       facing: this.localFacing,
       interactables,
+      economyPlayable: isDonorEconomyUiEnabled(),
     });
   }
 

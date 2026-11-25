@@ -116,34 +116,35 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       y: anchors.minigameTablePx.y,
       maxRadiusPx: 44,
     });
-    targets.push({
-      id: 'outdoor_fishing',
-      kind: 'fishing_spot',
-      labelVi: donorEconomyDev ? 'Cầu câu ao Meadowbrook (chill)' : 'Cầu câu — chưa mở fishing V0.2',
-      x: anchors.pondDockPx.x,
-      y: anchors.pondDockPx.y,
-      maxRadiusPx: 52,
-      donorPlayable: donorEconomyDev === true,
-    });
     if (donorEconomyDev) {
+      targets.push({
+        id: 'outdoor_fishing',
+        kind: 'fishing_spot',
+        labelVi: 'Cầu câu ao Meadowbrook',
+        x: anchors.pondDockPx.x,
+        y: anchors.pondDockPx.y,
+        maxRadiusPx: 52,
+        donorPlayable: true,
+      });
       targets.push({
         id: 'outdoor_stream',
         kind: 'fishing_spot',
-        labelVi: 'Suối phía Đông (tension — canvas-games)',
+        labelVi: 'Suối phía Đông — câu tension',
         x: anchors.streamBankPx.x,
         y: anchors.streamBankPx.y,
         maxRadiusPx: 54,
         donorPlayable: true,
       });
+      targets.push({
+        id: 'outdoor_market',
+        kind: 'shop_npc',
+        labelVi: 'Chợ Bác Hai — mua hạt giống',
+        x: anchors.marketStallPx.x,
+        y: anchors.marketStallPx.y,
+        maxRadiusPx: 50,
+        donorPlayable: true,
+      });
     }
-    targets.push({
-      id: 'outdoor_market',
-      kind: 'shop_npc',
-      labelVi: donorEconomyDev ? 'Chợ Bác Hai — mua hạt giống' : 'Chợ Bác Hai — chưa mở giao dịch',
-      x: anchors.marketStallPx.x,
-      y: anchors.marketStallPx.y,
-      maxRadiusPx: 50,
-    });
     targets.push({
       id: 'outdoor_sunset',
       kind: 'bench',
@@ -186,34 +187,36 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
   }
 
   if (mapId === PRIMARY_FARM_MAP_ID || mapId === FARM_ZONE_MAP_ID) {
-    targets.push(...buildFarmSlicePlotInteractables());
-    targets.push({
-      id: 'farm_seed_shop',
-      kind: 'shop_npc',
-      labelVi: 'Gian hạt Bác Hai — mua hạt (C1)',
-      x: FARM_SLICE_SEED_SHOP_TILE.tileX * TILE_SIZE + TILE_SIZE / 2,
-      y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
-      maxRadiusPx: 44,
-      donorPlayable: donorEconomyDev === true,
-    });
-    targets.push({
-      id: 'farm_pond_fishing',
-      kind: 'fishing_spot',
-      labelVi: donorEconomyDev ? 'Ao cá — câu chill (donor)' : 'Ao cá — câu (V0.2)',
-      x: 52 * TILE_SIZE + TILE_SIZE / 2,
-      y: 11 * TILE_SIZE + TILE_SIZE / 2,
-      maxRadiusPx: 54,
-      donorPlayable: donorEconomyDev === true,
-    });
-    targets.push({
-      id: 'farm_barn_mill',
-      kind: 'workshop_building',
-      labelVi: donorEconomyDev ? 'Xưởng — cối + lò + chế biến' : 'Xưởng — chưa mở',
-      x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
-      y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
-      maxRadiusPx: 48,
-      donorPlayable: donorEconomyDev === true,
-    });
+    if (donorEconomyDev) {
+      targets.push(...buildFarmSlicePlotInteractables());
+      targets.push({
+        id: 'farm_seed_shop',
+        kind: 'shop_npc',
+        labelVi: 'Gian hạt Bác Hai',
+        x: FARM_SLICE_SEED_SHOP_TILE.tileX * TILE_SIZE + TILE_SIZE / 2,
+        y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
+        maxRadiusPx: 44,
+        donorPlayable: true,
+      });
+      targets.push({
+        id: 'farm_pond_fishing',
+        kind: 'fishing_spot',
+        labelVi: 'Ao cá — câu chill',
+        x: 52 * TILE_SIZE + TILE_SIZE / 2,
+        y: 11 * TILE_SIZE + TILE_SIZE / 2,
+        maxRadiusPx: 54,
+        donorPlayable: true,
+      });
+      targets.push({
+        id: 'farm_barn_mill',
+        kind: 'workshop_building',
+        labelVi: 'Xưởng — cối + lò Hollow',
+        x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
+        y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
+        maxRadiusPx: 48,
+        donorPlayable: true,
+      });
+    }
   }
 
   for (const p of placements) {

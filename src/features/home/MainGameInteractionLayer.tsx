@@ -207,6 +207,7 @@ export function MainGameInteractionLayer({
         facing: frame.facing,
         heldItem: heldRef.current,
         interactables: frame.interactables,
+        economyPlayable: frame.economyPlayable ?? donorLanPlayable,
       });
       setResolution((cur) =>
         cur.targetId === next.targetId &&
@@ -218,7 +219,7 @@ export function MainGameInteractionLayer({
       );
     };
     return gameEventBus.on('evt:interaction-frame', onFrame);
-  }, []);
+  }, [donorLanPlayable]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

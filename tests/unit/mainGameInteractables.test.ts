@@ -15,6 +15,32 @@ describe('mainGameInteractables', () => {
     expect(list.some((t) => t.kind === 'pet')).toBe(true);
   });
 
+  it('hides outdoor economy stalls when donor preview is off', () => {
+    const list = buildMainGameInteractables({
+      mapId: 'outdoor',
+      placements: [],
+      petWorldPosition: null,
+      petVisible: false,
+      mailboxUnread: 0,
+      donorEconomyDev: false,
+    });
+    expect(list.some((t) => t.id === 'outdoor_market')).toBe(false);
+    expect(list.some((t) => t.id === 'outdoor_fishing')).toBe(false);
+  });
+
+  it('includes outdoor economy when donor preview is on', () => {
+    const list = buildMainGameInteractables({
+      mapId: 'outdoor',
+      placements: [],
+      petWorldPosition: null,
+      petVisible: false,
+      mailboxUnread: 0,
+      donorEconomyDev: true,
+    });
+    const market = list.find((t) => t.id === 'outdoor_market');
+    expect(market?.donorPlayable).toBe(true);
+  });
+
   it('includes mailbox on garden map', () => {
     const list = buildMainGameInteractables({
       mapId: 'garden',

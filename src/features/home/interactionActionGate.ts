@@ -28,6 +28,7 @@ export function validateActionAgainstLatestFrame(
     facing: frame.facing,
     heldItem,
     interactables: frame.interactables,
+    economyPlayable: frame.economyPlayable ?? true,
   });
   const intendedAction = which === 'primary' ? intended.primary : intended.secondary;
   const freshAction = which === 'primary' ? fresh.primary : fresh.secondary;
