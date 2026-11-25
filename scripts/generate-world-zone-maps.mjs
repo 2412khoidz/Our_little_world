@@ -617,6 +617,8 @@ function buildFarmMap() {
   }
   paths[idx(w, 7, 7)] = T.pathB;
   paths[idx(w, 8, 7)] = T.pathA;
+  vegetation[idx(w, 7, 6)] = T.fenceP;
+  vegetation[idx(w, 8, 6)] = T.flower;
 
   // Đường đến làng (đông)
   for (let x = 50; x < w - 1; x += 1) {
