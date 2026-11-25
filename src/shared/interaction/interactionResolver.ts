@@ -1,8 +1,11 @@
 import type { Direction } from '../types';
 import {
-  ECONOMY_SHOP_TARGET_IDS,
+  ECONOMY_FARM_MARKET_TARGET_IDS,
+  ECONOMY_SHIPPING_TARGET_IDS,
+  resolveDonorFishingSpotId,
   shouldOmitEconomyTargetFromResolve,
 } from './economyInteractablePolicy';
+import { parseDonorFishingSpot } from '../donor/donorFishingSpots';
 import type {
   ContextualAction,
   ContextualResolution,
@@ -232,7 +235,20 @@ function actionForTarget(
       if (target.id.startsWith('npc:')) {
         return { code: 'talk_npc', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
       }
-      if (ECONOMY_SHOP_TARGET_IDS.has(target.id)) {
+      if (ECONOMY_SHIPPING_TARGET_IDS.has(target.id)) {
+        return {
+          code: 'open_shipping_bin',
+          keyHint: 'J',
+          labelVi: 'Bán nông sản tại chợ',
+          targetId: target.id,
+          available: target.donorPlayable === true,
+          reasonVi:
+            target.donorPlayable === true
+              ? undefined
+              : 'Chợ nông sản chỉ mở trên bản preview ruộng.',
+        };
+      }
+      if (ECONOMY_FARM_MARKET_TARGET_IDS.has(target.id)) {
         return {
           code: 'open_farm_market',
           keyHint: 'J',
@@ -257,7 +273,8 @@ function actionForTarget(
           target.donorPlayable === true ? undefined : 'Thùng gom chỉ mở trên bản preview ruộng.',
       };
     case 'fishing_spot': {
-      const stream = target.id.includes('stream');
+      const spotId = parseDonorFishingSpot(resolveDonorFishingSpotId(target));
+      const stream = spotId === 'east_stream';
       return {
         code: stream ? 'open_donor_stream_fishing' : 'open_donor_fishing',
         keyHint: 'J',
@@ -265,6 +282,7 @@ function actionForTarget(
         targetId: target.id,
         available: target.donorPlayable === true,
         reasonVi: target.donorPlayable ? undefined : 'Cầu câu sẽ mở khi máy chủ preview farm/fish bật.',
+        donorFishingSpotId: spotId,
       };
     }
     case 'workshop_building':

@@ -3,6 +3,11 @@ import type { MapId } from '../types';
 import type { InteractableTarget } from '../interaction/interactionTypes';
 import { FARM_WORLD_INTERACTABLES } from './farmPlotContract';
 import { getParsedTiledWorld } from './tiledMapRegistry';
+import {
+  isTiledWayfindingDuplicateId,
+  isUnopenedShopLabel,
+  TILED_INTERACTABLE_SKIP_IDS,
+} from '../interaction/economyInteractablePolicy';
 
 function tileCenterPx(tileX: number, tileY: number): { x: number; y: number } {
   return { x: tileX * TILE_SIZE + TILE_SIZE / 2, y: tileY * TILE_SIZE + TILE_SIZE / 2 };
@@ -18,15 +23,25 @@ export function buildTiledWorldInteractableTargets(
 
   const fromJson: InteractableTarget[] = [];
   for (const spawn of parsed.interactableSpawns) {
+    if (TILED_INTERACTABLE_SKIP_IDS.has(spawn.id)) continue;
+    if (isTiledWayfindingDuplicateId(spawn.id)) continue;
+    if (isUnopenedShopLabel(spawn.labelVi)) continue;
     if (
       !economyPlayable &&
-      (spawn.kind === 'shipping_bin' || spawn.kind === 'fishing_spot' || spawn.kind === 'workshop_building')
+      (spawn.kind === 'shipping_bin' ||
+        spawn.kind === 'fishing_spot' ||
+        spawn.kind === 'workshop_building' ||
+        spawn.kind === 'shop_npc')
     ) {
       continue;
     }
     const center = tileCenterPx(spawn.tileX, spawn.tileY);
     const economyKind =
-      spawn.kind === 'shipping_bin' || spawn.kind === 'fishing_spot' || spawn.kind === 'workshop_building';
+      spawn.kind === 'shipping_bin' ||
+      spawn.kind === 'fishing_spot' ||
+      spawn.kind === 'workshop_building' ||
+      spawn.kind === 'shop_npc';
+    const playable = economyPlayable && economyKind;
     fromJson.push({
       id: spawn.id,
       kind: spawn.kind,
@@ -37,7 +52,8 @@ export function buildTiledWorldInteractableTargets(
       x: center.x,
       y: center.y,
       maxRadiusPx: spawn.maxRadiusPx ?? 48,
-      donorPlayable: economyKind ? economyPlayable : undefined,
+      donorPlayable: playable ? true : undefined,
+      fishingSpotId: spawn.fishingSpotId,
     });
   }
   if (fromJson.length > 0) return fromJson;

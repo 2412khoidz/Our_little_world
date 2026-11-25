@@ -477,6 +477,7 @@ function buildFromHollowmere(mapData) {
           { name: 'labelVi', type: 'string', value: 'Cầu câu Gull Bay (donor)' },
           { name: 'maxRadiusPx', type: 'int', value: 56 },
           { name: 'donorPlayable', type: 'bool', value: true },
+          { name: 'fishingSpotId', type: 'string', value: 'gull_bay' },
         ],
       },
     ],
