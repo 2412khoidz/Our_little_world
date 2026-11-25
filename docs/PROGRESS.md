@@ -139,6 +139,7 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ## 12. Mission 05 — Farming vertical slice (checkpoint)
 
 - **Branch:** `cursor/mission-05-farming-slice-d77e` — vòng lặp Dev LAN trong game chính: cuốc → gieo → tưới → thu hoạch → bán/mua hạt (`docs/handover/MISSION_05_FARMING_PLAYABLE.md`).
-- **Đã kiểm:** Vitest 520 pass (gồm `till` + farming), typecheck/lint/build; thử tay 1 client Chromium trên Dev LAN (chưa 2 tab Playwright / Supabase).
-- **Chưa kiểm:** Hai client đồng thời tránh duplicate harvest; migration Supabase `farm_apply` + SQL regression; plot sprite trên map (Composer 3); icon hotbar farming (Composer 2).
+- **Đã kiểm (local DoD):** Vitest **534** pass (`farmPlotContract` + 184 plots), lint/typecheck/build; Playwright `farming-co-op.spec.ts` — 2 client + API versioned apply, annex ô `120`, `INVALID_PLOT` (log: `/opt/cursor/artifacts/farming-co-op-e2e-184.log`).
+- **Lưới:** `farmPlotContract` **v1.0.1** (#12 vendored), **184** ô (`farm_main`+`farm_annex`), Dev LAN + Supabase `_farm_plot_on_contract_soil`; SQL `farming_authority.sql` chưa chạy trên Postgres thật.
+- **Chưa kiểm:** Supabase migration apply trên remote; duplicate-harvest 2 client; icon hotbar farming (Composer 2).
 - **PR #10:** readiness + Composer 2 authority trong `docs/handover/PR10_INTEGRATION_COMPOSER2.md` (pet branch riêng).

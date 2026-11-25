@@ -14,6 +14,7 @@ import {
   sellCropLine,
 } from '../shared/farming/serverApply';
 import type { FarmApplyParams } from '../shared/farming/farmSnapshotTypes';
+import { isFarmPlotIndexOnContractSoil, isValidFarmPlotIndex } from '../shared/farming/farmPlotIndex';
 import type { InventoryOwnerScope, InventorySnapshot } from '../shared/inventory/inventoryTypes';
 
 export interface DevLanFarmDb {
@@ -148,6 +149,10 @@ export async function tryHandleFarmDevLan(ctx: {
       return true;
     }
     const plotIndex = Number(body.plotIndex);
+    if (!isValidFarmPlotIndex(plotIndex) || !isFarmPlotIndexOnContractSoil(plotIndex)) {
+      sendJson(res, 409, { ok: false, code: 'INVALID_PLOT', message: 'Ô đất không hợp lệ.' });
+      return true;
+    }
     const action = String(body.action ?? '') as FarmApplyParams['action'];
     const seedSku = body.seedSku ? String(body.seedSku) : null;
     const items = getInventoryList(worldId);
