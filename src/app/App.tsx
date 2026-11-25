@@ -1899,6 +1899,7 @@ function MainCoupleApp() {
           presentation={worldClockPresentation}
           mode={timeOfDayMode}
           hidden={petCareMode || isAnyModalOpen || decorateActive}
+          walletCoins={backend.farm ? farmWalletCoins : null}
           onModeChange={handleTimeOfDayModeChange}
         />
       ) : null}
@@ -2337,7 +2338,7 @@ function MainCoupleApp() {
 
 
       {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
+        <div className="modal-backdrop nuvora-inv-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
           <div onClick={(e) => e.stopPropagation()}>
             <FarmEconomyPanel
               mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}

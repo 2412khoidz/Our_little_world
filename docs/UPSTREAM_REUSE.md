@@ -360,3 +360,14 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 | **OLW targets** | `nuvoraSlotInteraction.ts`, `NuvoraInteractiveTray.tsx`, `NuvoraCraftDesk.tsx`, `FarmEconomyPanel` shipping desk |
 | **Proof** | `tests/unit/nuvoraSlotInteraction.test.ts`, `nuvoraPresentationBridge.test.ts` |
 | **Excluded** | `public/hand.js` (Three.js first-person) |
+
+## Worker F — Cabacos inventory UI + shop/HUD (`integration/donor-reuse-recovery`)
+
+| Field | Value |
+|-------|--------|
+| **Cabacos** | `src/game/ui/{ShopRow,GameHud,SeedShopPanel}.ts` @ `79e423d` — layout reference only |
+| **Assets** | `npm run import-donor:cabacos-ui-inventory` → `public/assets/donor/cabacos-ui/` (`uiInventoryRegistry.ts`) |
+| **Kept NUVORA** | `NuvoraInteractiveTray`, `GameHotbar` `--nuvora`, wooden desk modals |
+| **Catalog images** | `CatalogSkuIcon` → `CatalogPropsIcon` / props-manifest (not text labels) on shop rows + ship grid |
+| **Wallet HUD** | `WorldClockHud` coin pill when `backend.farm` active |
+| **Proof** | `tests/unit/catalogSkuIcon.test.ts`, `farmEconomyShopCatalog.test.ts` |
