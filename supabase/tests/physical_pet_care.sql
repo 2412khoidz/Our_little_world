@@ -21,18 +21,17 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'VERSION_CONFLICT' THEN RAISE; END IF;
   END;
   BEGIN
-    PERFORM public.pet_care_apply(w, pet_id, 'eat_food', 2, NULL, NULL, NULL, 'care-full');
-    RAISE EXCEPTION 'full pet ate food';
-  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'PET_FULL' THEN RAISE; END IF;
+    PERFORM public.pet_care_apply(w, pet_id, 'eat_food', 2, NULL, NULL, NULL, 'care-eat');
+    RAISE EXCEPTION 'client consumption was accepted';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'SERVER_AUTHORITY_REQUIRED' THEN RAISE; END IF;
   END;
-  UPDATE public.pets SET vitals_jsonb = '{"hunger":50,"energy":100,"fun":100}'::jsonb WHERE id = pet_id;
-  result := public.pet_care_apply(w, pet_id, 'eat_food', 2, NULL, NULL, NULL, 'care-eat');
-  ASSERT result = public.pet_care_apply(w, pet_id, 'eat_food', 2, NULL, NULL, NULL, 'care-eat');
-  ASSERT (result#>>'{bowl,food_portions}')::integer = 0;
-  result := public.pet_care_apply(w, pet_id, 'fill_water', 3, NULL, NULL, NULL, 'care-water-fill');
+  result := public.pet_care_apply(w, pet_id, 'fill_water', 2, NULL, NULL, NULL, 'care-water-fill');
   ASSERT (result#>>'{bowl,water_volume}')::integer = 100;
-  result := public.pet_care_apply(w, pet_id, 'drink_water', 4, NULL, NULL, NULL, 'care-drink');
-  ASSERT (result#>>'{bowl,water_volume}')::integer = 90;
+  BEGIN
+    PERFORM public.pet_care_apply(w, pet_id, 'drink_water', 3, NULL, NULL, NULL, 'care-drink');
+    RAISE EXCEPTION 'client drinking was accepted';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'SERVER_AUTHORITY_REQUIRED' THEN RAISE; END IF;
+  END;
   ASSERT NOT has_function_privilege('anon', 'public.pet_care_apply(uuid,uuid,text,integer,text,text,text,text)', 'EXECUTE');
 END;
 $$;
