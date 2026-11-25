@@ -30,6 +30,8 @@ Recommended integration branch (when owner approves): `integration/playtest-all`
 4. Reload tab · second browser profile → cùng world: pet vitals + inventory sync.
 5. Capture: `node scripts/capture-pet-care-session.mjs` + farming script from #14 when ready.
 
+**Parallel streams (2026-11-25):** #12 `WORLD_EXPLORATION_CAPTURE_CHECKLIST.md` + farm **1.0.1** shop portal (38,13); #14 `npm run economy:sim` green @ `ed6640f` (12-plot sim — 184-grid pacing separate).
+
 ## Conflict owners (single editor per merge)
 
 | Surface | Owner agent |
