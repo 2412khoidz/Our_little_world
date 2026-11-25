@@ -11,6 +11,7 @@ import {
   tickTiledWorldNpcs,
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
+import { applyTiledZoneAccents } from '../world/tiledZoneAccents';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
@@ -314,6 +315,7 @@ export class WorldScene extends Phaser.Scene {
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
       this.buildTiledWorldMap(mapId);
+      applyTiledZoneAccents(mapId, this.placeProp.bind(this), (obj) => this.mapLayers.push(obj), this);
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
