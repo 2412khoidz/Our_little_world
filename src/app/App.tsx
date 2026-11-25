@@ -11,6 +11,10 @@ import { DEFAULT_AVATAR_PARTNER_A } from '../shared/avatar';
 import { getCatalogItem } from '../shared/catalog';
 import { getMapDefinition } from '../shared/maps';
 import { normalizeMapId } from '../shared/world/mapIdCompat';
+import { resolveEnvHookForMapChange } from '../shared/world/envInteractionHooks';
+import type { SharedPetCarePatch } from '../shared/petLiving/petCare/sharedPetCareSession';
+import type { PetCareSessionEventPacket } from '../shared/petLiving/petCare/sharedPetCareTypes';
+import { isPetCareModeActive } from '../shared/petLiving/petCare/petCareModeFlag';
 import { isExtendedWorldDevEnabled } from '../shared/worldIntegration/extendedWorldDevFlag';
 import type {
   AvatarConfig,
@@ -323,6 +327,8 @@ function MainCoupleApp() {
   useEffect(() => {
     snapshotRef.current = worldSnapshot;
   }, [worldSnapshot]);
+  const publishPetCarePatchRef = useRef<(patch: SharedPetCarePatch) => Promise<void>>(async () => {});
+
   const localTileRef = useRef<{ mapId: MapId; tileX: number; tileY: number; facing: Direction }>({
     mapId: 'home',
     tileX: 8,
@@ -1070,6 +1076,11 @@ function MainCoupleApp() {
         onCoupleEvent: (packet) => {
           handleCoupleEventRef.current(packet);
         },
+        onPetCareSession: (packet: PetCareSessionEventPacket) => {
+          if (packet.type === 'PET_CARE_SESSION') {
+            gameEventBus.emit('cmd:sync-shared-pet-care-session', packet.session);
+          }
+        },
       })
       .then((handle) => {
         if (cancelled) {
@@ -1165,6 +1176,8 @@ function MainCoupleApp() {
       setDecorateActive(false);
       setActiveSku(null);
       setSelectedPlacementId(null);
+      const hook = resolveEnvHookForMapChange(currentMapIdRef.current, targetMapId);
+      if (hook) gameEventBus.emit('cmd:env-transition', hook);
       setCurrentMapId(targetMapId);
       gameEventBus.emit('cmd:set-map', {
         mapId: targetMapId,
@@ -1250,6 +1263,70 @@ function MainCoupleApp() {
       unsubPosture();
     };
   }, [currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
+
+  useEffect(() => {
+    publishPetCarePatchRef.current = async (patch) => {
+      const worldId = snapshotRef.current?.world.id;
+      if (!worldId || !currentUser || backend.mode !== 'dev-lan') return;
+      await fetch('/api/dev-lan/pet-care/session/patch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-dev-user-id': currentUser.userId,
+        },
+        body: JSON.stringify({ worldId, patch }),
+      });
+    };
+  }, [backend.mode, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsubStroke = gameEventBus.on('evt:pet-care-stroke-done', ({ zone }) => {
+      if (!isPetCareModeActive()) return;
+      void publishPetCarePatchRef.current({
+        kind: 'stroke',
+        zone,
+        actorUserId: currentUser.userId,
+        atMs: Date.now(),
+      });
+    });
+    const unsubAction = gameEventBus.on('cmd:pet-care-action', (payload) => {
+      if (!isPetCareModeActive()) return;
+      if (payload.kind === 'brush') {
+        void publishPetCarePatchRef.current({
+          kind: 'brush',
+          actorUserId: currentUser.userId,
+          atMs: Date.now(),
+        });
+      }
+      if (payload.kind === 'offer_food' && payload.sku) {
+        void publishPetCarePatchRef.current({
+          kind: 'feed',
+          itemSku: payload.sku,
+          actorUserId: currentUser.userId,
+          atMs: Date.now(),
+        });
+      }
+    });
+    const unsubCareMode = gameEventBus.on('cmd:pet-care-mode', ({ active }) => {
+      if (!active || backend.mode !== 'dev-lan') return;
+      const worldId = snapshotRef.current?.world.id;
+      if (!worldId) return;
+      void fetch(`/api/dev-lan/pet-care/session?worldId=${encodeURIComponent(worldId)}`, {
+        headers: { 'x-dev-user-id': currentUser.userId },
+      })
+        .then((r) => r.json())
+        .then((j) => {
+          if (j?.ok && j.data) gameEventBus.emit('cmd:sync-shared-pet-care-session', j.data);
+        })
+        .catch(() => undefined);
+    });
+    return () => {
+      unsubStroke();
+      unsubAction();
+      unsubCareMode();
+    };
+  }, [backend.mode, currentUser]);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
