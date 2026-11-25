@@ -32,7 +32,10 @@ npm run test          # Vitest toàn bộ suite pass 100%
 npm run build         # tsc -b + vite build + sinh dist/sw.js
 node scripts/verify-prod-guard.mjs   # Bắt buộc 0 leaks dev/cheat/asset-candidates trong dist/
 npm run test:e2e      # Chạy khi sửa UI/luồng multiplayer/game viewport
+npm run test:e2e:pwa  # Sau sửa vite-plugin-pwa/Workbox: build + vite preview + SW/cache/offline
 ```
+
+**Acceptance blockers (Mission 01 / PR #1):** Workbox precache không được trùng URL — `verify-prod-guard.mjs` + `tests/server/swPrecache.test.mjs`. Dev LAN state file trong git history: [GIT_HISTORY_REMEDIATION.md](handover/GIT_HISTORY_REMEDIATION.md) (fixture, không secret; clean branch chỉ sau phê duyệt chủ dự án). Private build: `npm run build:private && npm run verify:private` chỉ trên máy local đủ Demo E (40 file); cloud không khai khống pass.
 
 ---
 
