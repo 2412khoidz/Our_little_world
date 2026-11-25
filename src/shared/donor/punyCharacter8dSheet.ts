@@ -47,3 +47,21 @@ export function punyDirForFacing8(facing: Facing8 | Direction): number {
   if (i >= 0) return i;
   return PUNY_CARDINAL_DIR[facing as Direction] ?? 0;
 }
+
+/** Gameplay donor PNGs: vendored into private-unified when `build-private-atlas.py` runs. */
+export function punyDonorAssetBasePath(usePrivateUnified: boolean): string {
+  return usePrivateUnified
+    ? '/assets/private-unified/donor-cc0-puny-8d'
+    : '/assets/donor/cc0-puny-8d';
+}
+
+export const PUNY_DONOR_GAMEPLAY_MANIFEST = {
+  provider: 'shade-puny-characters-cc0',
+  frameWidth: PUNY_SHEET.frameWidth,
+  frameHeight: PUNY_SHEET.frameHeight,
+  colsPerRow: PUNY_SHEET.cols,
+  framesPerDirection: PUNY_SHEET.framesPerDir,
+  rows: PUNY_SHEET.rows,
+  facing8Order: PUNY_FACING8_ORDER,
+  postureSameRig: { sit: 'idle', lie: 'idle', tool: 'slash' },
+} as const;

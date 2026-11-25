@@ -6,13 +6,7 @@ import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } 
 import { donorPunyTextureForConfig, registerDonorPunyAvatarAnims } from './donorPunyAvatarTexture';
 
 export { avatarIdleFrame, avatarIdleFrameForFacing8, isDonorPunyAvatarTexture, playDonorToolUseAnim } from './donorPunyAvatarTexture';
-import {
-  AVATAR_ATLAS_ROW_LIE,
-  AVATAR_ATLAS_ROW_SIT,
-  AVATAR_ATLAS_ROW_WALK,
-  atlasRowForDiagonalFacing,
-  avatarWalkAnimKey,
-} from './avatarAtlasLayout';
+import { AVATAR_ATLAS_ROW_LIE, AVATAR_ATLAS_ROW_SIT, AVATAR_ATLAS_ROW_WALK, avatarWalkAnimKey } from './avatarAtlasLayout';
 import {
   AVATAR_DIRECTIONS,
   AVATAR_FRAME_COUNT,
@@ -66,28 +60,6 @@ function registerDirectionalClips(
     frameRate,
     repeat,
   });
-}
-
-function registerDiagonalClips(scene: Phaser.Scene, key: string, tex: Phaser.Textures.CanvasTexture): void {
-  for (const diag of DIAGONAL_FACINGS) {
-    const primary = diag.startsWith('down') ? 'down' : 'up';
-    const atlasRow = atlasRowForDiagonalFacing(diag);
-    const xBase = directionStrideX(primary);
-    const animKey = avatarWalkAnimKey(key, diag);
-    if (scene.anims.exists(animKey)) continue;
-    const frames: string[] = [];
-    for (let i = 0; i < AVATAR_FRAME_COUNT; i += 1) {
-      const frameName = `${diag}-walk-${i}`;
-      tex.add(frameName, 0, xBase + i * AVATAR_FRAME_WIDTH, rowY(atlasRow), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
-      frames.push(frameName);
-    }
-    scene.anims.create({
-      key: animKey,
-      frames: frames.map((frame) => ({ key, frame })),
-      frameRate: 10,
-      repeat: -1,
-    });
-  }
 }
 
 export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarConfig): string {
@@ -158,9 +130,7 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
     }
   }
 
-  if (usingAtlasLayout) {
-    registerDiagonalClips(scene, key, tex);
-  } else if (procSheet) {
+  if (procSheet && !usingAtlasLayout) {
     const frameH = 24;
     const frameW = 16;
     const frameCount = 3;

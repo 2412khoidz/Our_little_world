@@ -26,22 +26,28 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
 | **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
 
-## P0 avatar — Puny Characters CC0 transplant (2026-11-25)
+## P0 avatar — Puny CC0 + private profile sync (recovery @ `8e4454d`)
 
 | Field | Value |
 |-------|--------|
-| **Chosen pack** | Shade — [Puny Characters](https://opengameart.org/content/puny-characters) (**CC0**) |
-| **Vendored** | `public/assets/donor/cc0-puny-8d/{character-base,soldier-blue,soldier-red}.png` (768×256 @ 32×32) |
-| **Refresh** | `node scripts/vendor-donor-puny-avatar.mjs` |
-| **Rejected** | Procedural baked `avatars.png` 8-row atlas (#53); Cabacos 96×64 flip-X walk; Farm Rai `farmer.webp` 3×3 @ 48px (4-way + flip, tool prop split — not 8-dir transplant). |
-| **OLW mapping** | Rows: idle, **walk (8-dir)**, slash=tool, hurt=sit, death=lie · `donorPunyAvatarTexture.ts` + BootScene spritesheets · wardrobe fallback still uses unified atlas recolor. |
-| **Tool** | Hotbar icon via `HeldItemRenderer` + body `:tool-{dir}` slash row when `temporaryActionState` active. |
+| **Gameplay pack (one)** | Shade — [Puny Characters](https://opengameart.org/content/puny-characters) **CC0** · `public/assets/donor/cc0-puny-8d/` |
+| **Private profile** | `build-private-atlas.py` copies same sheets → `private-unified/donor-cc0-puny-8d/` + `manifest.avatarGameplay` (32×32 × 24 cols — matches `punyCharacter8dSheet.ts`) |
+| **Wardrobe atlas** | `avatars.png` **384×288** (Demo E idle/run/sit) — public unified + private unified **aligned**; not used for in-world 8-dir walk when Puny loads |
+| **Posture policy** | Sit/lie = **idle row same rig** (no hurt/death shape-shift); tool = slash row; diagonal = native 8-dir walk |
+| **Rejected** | Baked 768 procedural atlas (#53); Cabacos / Farm Rai farmer for human rig |
 
-### Proof (Gate B = visible motion)
+### QA (private art)
+
+```bash
+node scripts/vendor-donor-puny-avatar.mjs   # refresh CC0 sheets
+npm run assets:atlas:private                # when asset-candidates present — vend Puny into private-unified
+node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
+```
+
+### Proof (Gate B)
 
 - E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts`
-- Unit: `donorPunyAvatarSheet.test.ts`
-- VQG captures in Project `media/vqg-phase-ii-*.png`
+- Unit: `donorPunyAvatarSheet.test.ts`, `privateArtAvatarPipeline.test.ts`
 
 ## Wave 1 C1 — farm presentation + donor clone area (2026-11-25)
 

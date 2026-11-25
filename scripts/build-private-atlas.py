@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 import sys
 
@@ -471,6 +472,37 @@ def main() -> None:
         },
         "entries": world_entries + avatar_entries,
         "upstream": list(used.values()),
+        "avatarGameplay": {
+            "provider": "shade-puny-characters-cc0",
+            "sourceUrl": "https://opengameart.org/content/puny-characters",
+            "frameWidth": 32,
+            "frameHeight": 32,
+            "colsPerRow": 24,
+            "framesPerDirection": 3,
+            "rowIndex": {
+                "idle": 0,
+                "walk": 1,
+                "slash": 2,
+                "bow": 3,
+                "stave": 4,
+                "throw": 5,
+                "hurt": 6,
+                "death": 7,
+            },
+            "facing8Order": [
+                "down",
+                "down-left",
+                "left",
+                "up-left",
+                "up",
+                "up-right",
+                "right",
+                "down-right",
+            ],
+            "posturePolicy": {"sit": "idle-row", "lie": "idle-row", "tool": "slash-row"},
+            "wardrobeAvatarsPx": {"width": avatars_sheet.width, "height": avatars_sheet.height},
+            "files": gameplay_files,
+        },
     }
     props_manifest = {
         "version": 1,
@@ -478,6 +510,18 @@ def main() -> None:
         "texture": {"file": "world-props.png", "width": props_sheet.width, "height": props_sheet.height},
         "entries": props_entries,
     }
+    repo_root = output.parent.parent.parent
+    puny_src = repo_root / "public/assets/donor/cc0-puny-8d"
+    puny_dst = output / "donor-cc0-puny-8d"
+    puny_dst.mkdir(parents=True, exist_ok=True)
+    gameplay_files: dict[str, str] = {}
+    for name in ("character-base.png", "soldier-blue.png", "soldier-red.png", "CREDITS.md"):
+        src = puny_src / name
+        if not src.is_file():
+            raise FileNotFoundError(f"Thiếu donor gameplay avatar (Puny CC0): {src}")
+        shutil.copy2(src, puny_dst / name)
+        gameplay_files[name] = f"donor-cc0-puny-8d/{name}"
+
     output.mkdir(parents=True, exist_ok=True)
     world_sheet.save(output / "world.png", optimize=True)
     avatars_sheet.save(output / "avatars.png", optimize=True)
