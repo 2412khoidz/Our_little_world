@@ -12,7 +12,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 |----|------------|---------|-------|
 | **C2-pet** | [SawyerHood/nintendogs-threejs](https://github.com/SawyerHood/nintendogs-threejs) @ `43d231c` · PR **#20** @ `e0a8741` | Phaser pet atlas stride fix + DEV `?donor-pet-three=1` Three.js care slice (cat-orange billboard) | `src/donors/nintendogs-threejs-43d231c/UPSTREAM_REUSE.md` · store `media/vqg-pet-care-c2.png` |
 | **C3-world** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · PR **#21** @ `ad156cc` | Cabacos overworld + Casa_player → `village.json` / `shop.json` | § Cabacos below · store `media/donor-cabacos-olw-village-after.png` |
-| **C3-beach** | [Hollowmere](https://github.com/robintrepte/hollowmere.tretu.de) `gull_bay` | Authored beach → `beach.json` + Cabacos edge portals | § Hollowmere below · `donor-hollowmere-beach-olw.png` |
+| **C3-beach** | Hollowmere `gull_bay` · PR **#23** @ `b1aa9e4` | Authored beach → `beach.json` + village edge portals | § Hollowmere below · `donor-hollowmere-beach-olw.png` |
 | **C1-economy** | webfarmville `c420bc2` + harvest-hollow `9b23e1a` + chill-fishing MIT · PR **#22** @ `db7e290` | Dev LAN mill queue + pond reel → shared inventory | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
 | **OLWH-27** | Demo E props manifest · PR **#19** @ `80e118d` | Inventory + hotbar `CatalogPropsIcon` (CSS atlas slices) | `scripts/vqg-inventory-modal-capture.mjs` · unit: `catalogSkuPropsIcon.test.ts` |
 
@@ -21,7 +21,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | Track | Branch / PR | Notes |
 |-------|-------------|-------|
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
-| **C3 world** | PyDew / Hollowmere / next map donors | Per [`docs/multi-donor-expansion-sprint.md`](/cursor/stores/self/docs/multi-donor-expansion-sprint.md) |
+| **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
 
 ## Frozen acceptance (do not move)
 
