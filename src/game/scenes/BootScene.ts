@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL, USE_PRIVATE_ART } from '../art/atlasProfile';
-import { DONOR_PUNY_TEXTURE_IDS } from '../art/donorPunyAvatarTexture';
-import { PUNY_SHEET, punyDonorAssetBasePath } from '../../shared/donor/punyCharacter8dSheet';
+import { DONOR_PYDEW_TEXTURE_IDS } from '../art/donorPydewFarmerAvatarTexture';
+import {
+  PYDEW_FARMER_ATLAS_FILES,
+  PYDEW_FARMER_SHEET,
+  pydewDonorAssetBasePath,
+} from '../../shared/donor/pydewFarmerCharacterSheet';
 import { preloadWorldAtlas, registerWorldAtlas } from '../art/worldAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 import farmWorldJson from '../../../public/assets/maps/farm.json';
@@ -35,11 +39,23 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image(AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL);
-    const punyRoot = punyDonorAssetBasePath(USE_PRIVATE_ART);
-    const punyFrame = { frameWidth: PUNY_SHEET.frameWidth, frameHeight: PUNY_SHEET.frameHeight };
-    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.base, `${punyRoot}/character-base.png`, punyFrame);
-    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.soldierBlue, `${punyRoot}/soldier-blue.png`, punyFrame);
-    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.soldierRed, `${punyRoot}/soldier-red.png`, punyFrame);
+    const farmerRoot = pydewDonorAssetBasePath(USE_PRIVATE_ART);
+    const farmerFrame = { frameWidth: PYDEW_FARMER_SHEET.frameWidth, frameHeight: PYDEW_FARMER_SHEET.frameHeight };
+    this.load.spritesheet(
+      DONOR_PYDEW_TEXTURE_IDS.may,
+      `${farmerRoot}/${PYDEW_FARMER_ATLAS_FILES.may}`,
+      farmerFrame,
+    );
+    this.load.spritesheet(
+      DONOR_PYDEW_TEXTURE_IDS.nang,
+      `${farmerRoot}/${PYDEW_FARMER_ATLAS_FILES.nang}`,
+      farmerFrame,
+    );
+    this.load.spritesheet(
+      DONOR_PYDEW_TEXTURE_IDS.rose,
+      `${farmerRoot}/${PYDEW_FARMER_ATLAS_FILES.rose}`,
+      farmerFrame,
+    );
     preloadWorldAtlas(this);
     this.load.image('tileset-cozy', '/assets/starter/tileset-cozy.png');
     this.load.image('furniture-cozy', '/assets/starter/furniture-cozy.png');
@@ -177,9 +193,9 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-sunflower',
       'donor-cabacos-cabbage',
       'donor-cabacos-beetroot',
-      DONOR_PUNY_TEXTURE_IDS.base,
-      DONOR_PUNY_TEXTURE_IDS.soldierBlue,
-      DONOR_PUNY_TEXTURE_IDS.soldierRed,
+      DONOR_PYDEW_TEXTURE_IDS.may,
+      DONOR_PYDEW_TEXTURE_IDS.nang,
+      DONOR_PYDEW_TEXTURE_IDS.rose,
       ...PYDEW_RAIN_DROP_TEXTURE_KEYS,
     ]) {
       this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);

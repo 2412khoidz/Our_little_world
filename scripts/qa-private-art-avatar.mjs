@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Private-art avatar QA — wardrobe avatars.png must match 384×288;
- * gameplay Puny sheets vendored beside private-unified with manifest.avatarGameplay.
+ * gameplay PyDew farmer sheets vendored beside private-unified with manifest.avatarGameplay.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const privateDir = path.join(root, 'public/assets/private-unified');
-const publicPuny = path.join(root, 'public/assets/donor/cc0-puny-8d');
+const publicFarmer = path.join(root, 'public/assets/donor/pydew-characters');
 
 function fail(msg) {
   console.error('QA FAIL:', msg);
@@ -29,19 +29,19 @@ if (avatars.width !== 384 || avatars.height !== 288) {
 
 const gameplay = manifest.avatarGameplay;
 if (!gameplay) fail('manifest thiếu avatarGameplay (build-private-atlas.py donor sync).');
-if (gameplay.frameWidth !== 32 || gameplay.frameHeight !== 32 || gameplay.colsPerRow !== 24) {
-  fail('avatarGameplay indexing không khớp punyCharacter8dSheet.ts');
+if (gameplay.frameWidth !== 64 || gameplay.frameHeight !== 64 || gameplay.colsPerRow !== 16) {
+  fail('avatarGameplay indexing không khớp pydewFarmerCharacterSheet.ts');
 }
 
-const punyPrivate = path.join(privateDir, 'donor-cc0-puny-8d');
-for (const file of ['character-base.png', 'soldier-blue.png', 'soldier-red.png']) {
-  if (!fs.existsSync(path.join(punyPrivate, file))) {
-    fail(`Thiếu private-unified/donor-cc0-puny-8d/${file}`);
+const farmerPrivate = path.join(privateDir, 'donor-pydew-characters');
+for (const file of ['farmer-may-atlas.png', 'farmer-nang-atlas.png', 'farmer-rose-atlas.png']) {
+  if (!fs.existsSync(path.join(farmerPrivate, file))) {
+    fail(`Thiếu private-unified/donor-pydew-characters/${file}`);
   }
 }
 
-if (!fs.existsSync(path.join(publicPuny, 'character-base.png'))) {
-  fail('Thiếu public/assets/donor/cc0-puny-8d/character-base.png');
+if (!fs.existsSync(path.join(publicFarmer, 'farmer-may-atlas.png'))) {
+  fail('Thiếu public/assets/donor/pydew-characters/farmer-may-atlas.png');
 }
 
 console.log(
@@ -50,7 +50,7 @@ console.log(
       ok: true,
       wardrobeAvatars: `${avatars.width}x${avatars.height}`,
       avatarGameplayProvider: gameplay.provider,
-      privatePunyDir: punyPrivate,
+      privateFarmerDir: farmerPrivate,
     },
     null,
     2,

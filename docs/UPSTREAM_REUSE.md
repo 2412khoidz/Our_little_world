@@ -30,10 +30,10 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 
 | Field | Value |
 |-------|--------|
-| **Gameplay pack (one)** | Shade — [Puny Characters](https://opengameart.org/content/puny-characters) **CC0** · `public/assets/donor/cc0-puny-8d/` |
-| **Private profile** | `build-private-atlas.py` copies same sheets → `private-unified/donor-cc0-puny-8d/` + `manifest.avatarGameplay` (32×32 × 24 cols — matches `punyCharacter8dSheet.ts`) |
+| **Gameplay pack (one)** | [PyDew Valley](https://github.com/artemn0va/pydew-valley) farmer **CC0** · `public/assets/donor/pydew-characters/` |
+| **Private profile** | `build-private-atlas.py` copies farmer atlases → `private-unified/donor-pydew-characters/` (64×64 × 16 cols) |
 | **Wardrobe atlas** | `avatars.png` **384×288** (Demo E idle/run/sit) — public unified + private unified **aligned**; not used for in-world 8-dir walk when Puny loads |
-| **Posture policy** | Sit/lie = **idle row same rig** (no hurt/death shape-shift); tool = slash row; diagonal = native 8-dir walk |
+| **Posture policy** | Sit=hurt lie=death; hoe=stave water/affection=bow harvest/fish=throw; **slash excluded**; diagonal = native 8-dir walk |
 | **Rejected** | Baked 768 procedural atlas (#53); `avatarDiagonalWalk` alpha composite; Cabacos / Farm Rai farmer for **8-dir gameplay** |
 | **Reference vend** | Cabacos `characters/player/*` → `public/assets/donor/cabacos-characters/` (`npm run vendor-donor:cabacos-characters`) — Sunnyside lineage contact sheet only |
 
@@ -50,6 +50,18 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 - E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts`
 - Unit: `donorPunyAvatarSheet.test.ts`, `privateArtAvatarPipeline.test.ts`
 
+## Worker G — cozy character recovery @ `integration/donor-reuse-recovery`
+
+| Field | Value |
+|-------|--------|
+| **Upstream** | [artemn0va/pydew-valley](https://github.com/artemn0va/pydew-valley) @ `5b33bfda76d54866c648e7e54eff4e4e8a1eec8a` **CC0** |
+| **Chosen rig** | **PyDew farmer** — cozy farm aesthetic; Facing8 via cardinal clips (no diagonal composite) |
+| **Rejected** | Puny (owner aesthetic), Purple Cat (paid/no redistribute), Cabacos strips (MIT reference only) |
+| **2P sheets** | `farmer-may-atlas.png`, `farmer-nang-atlas.png`, `farmer-rose-atlas.png` |
+| **Vend** | `npm run vendor-donor:pydew-characters` → `public/assets/donor/pydew-characters/` |
+| **Custom OLW** | `pydewFarmerCharacterSheet.ts` · `donorPydewFarmerAvatarTexture.ts` · wardrobe preview |
+| **Evidence** | `python3 scripts/build-worker-g-avatar-evidence.py` → store `media/worker-g-avatar-*.gif` |
+
 ## Asset transplant Worker A — characters @ `8fce8af` (2026-11-25)
 
 | Field | Value |
@@ -57,7 +69,7 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 | **Gameplay 8-dir** | Shade [Puny Characters](https://opengameart.org/content/puny-characters) **CC0** · `src/shared/donor/punyCharacter8dSheet.ts` |
 | **Cabacos reference** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · `public/assets/donor/cabacos-characters/` |
 | **Registry** | `src/shared/assets/olwAssetRegistry.ts` · `public/assets/donor/manifest.v1.json` |
-| **Mây / Nắng** | `soldier-blue` / `soldier-red` Puny sheets (`donorPunyTextureForConfig`) |
+| **Mây / Nắng** | `character-base` / `mage-cyan` Puny sheets (`donorPunyTextureForConfig`) — soldiers reference-only |
 | **Purple Cat** | Not vendored — Cabacos audit = flipX 4-way; Puny chosen for true diagonals |
 | **Banned** | Procedural diagonal composite rows in `buildAvatarSpritesheetCanvas` / `phaserAvatarTexture` fallback |
 

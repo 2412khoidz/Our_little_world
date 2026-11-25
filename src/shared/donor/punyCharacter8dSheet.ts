@@ -19,6 +19,21 @@ export const PUNY_SHEET = {
   },
 } as const;
 
+/** Donor-framed posture & tool rows — no idle/slash aliases on the gameplay path. */
+export const COZY_PUNY_ACTION_ROWS = {
+  sit: PUNY_SHEET.rows.hurt,
+  lie: PUNY_SHEET.rows.death,
+  hoe: PUNY_SHEET.rows.stave,
+  water: PUNY_SHEET.rows.bow,
+  harvest: PUNY_SHEET.rows.throw,
+  fish: PUNY_SHEET.rows.throw,
+  hold: PUNY_SHEET.rows.idle,
+  affection: PUNY_SHEET.rows.bow,
+  run: PUNY_SHEET.rows.walk,
+} as const;
+
+export type CozyPunyDonorAction = keyof typeof COZY_PUNY_ACTION_ROWS;
+
 /** South-first isometric order matching Puny walk strips. */
 export const PUNY_FACING8_ORDER = [
   'down',
@@ -63,5 +78,13 @@ export const PUNY_DONOR_GAMEPLAY_MANIFEST = {
   framesPerDirection: PUNY_SHEET.framesPerDir,
   rows: PUNY_SHEET.rows,
   facing8Order: PUNY_FACING8_ORDER,
-  postureSameRig: { sit: 'idle', lie: 'idle', tool: 'slash' },
+  cozyActionRows: COZY_PUNY_ACTION_ROWS,
+  /** Combat slash row is not registered for cozy farming gameplay. */
+  gameplayExcludedRows: ['slash'] as const,
+} as const;
+
+export const COZY_PUNY_TEXTURE_FILES = {
+  base: 'character-base.png',
+  mageCyan: 'mage-cyan.png',
+  mageRed: 'mage-red.png',
 } as const;
