@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildPydewGladeForestMap, finalizeForestMap } from './lib/pydewGladeTilemap.mjs';
+import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const ROOT = path.resolve('public/maps/donor/pydew');
 const OUT_MAPS = path.resolve('public/assets/maps');
@@ -51,6 +52,27 @@ function patchVillageForestPortal(village) {
 }
 
 function main() {
+  if (MAP_RECOVERY_MODE) {
+    console.warn(
+      'MAP_RECOVERY: skip procedural pydewGladeTilemap — vendor public/maps/donor/pydew/main.tmx and import-donor:pydew-tmx (pending)',
+    );
+    if (!fs.existsSync(FOREST_JSON)) {
+      console.error('forest.json missing; cannot leave forest unmapped in recovery');
+      process.exit(1);
+    }
+    const forest = loadJson(FOREST_JSON);
+    forest.properties = [
+      ...(forest.properties ?? []).filter((p) => p.name !== 'olwRecovery'),
+      { name: 'olwRecovery', type: 'string', value: RECOVERY_SLICE },
+      { name: 'olwForestPendingRealMap', type: 'string', value: 'pydew-main.tmx' },
+    ];
+    writeJson(FOREST_JSON, forest);
+    if (fs.existsSync(VILLAGE_JSON)) {
+      const village = patchVillageForestPortal(loadJson(VILLAGE_JSON));
+      writeJson(VILLAGE_JSON, village);
+    }
+    return;
+  }
   const draft = buildPydewGladeForestMap(slice, manifest);
   const forest = finalizeForestMap(draft);
   writeJson(FOREST_JSON, forest);

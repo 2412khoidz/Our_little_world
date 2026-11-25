@@ -15261,6 +15261,16 @@
       "name": "olwDonorNote",
       "type": "string",
       "value": "PyDew glade tilemap — cozy art, collision + portal gates"
+    },
+    {
+      "name": "olwRecovery",
+      "type": "string",
+      "value": "map-recovery-v1-8e4454d"
+    },
+    {
+      "name": "olwForestPendingRealMap",
+      "type": "string",
+      "value": "pydew-main.tmx"
     }
   ]
 }

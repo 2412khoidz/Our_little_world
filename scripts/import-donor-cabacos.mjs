@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const ROOT = path.resolve('public/maps/donor/cabacos');
 const OUT_MAPS = path.resolve('public/assets/maps');
@@ -275,7 +276,168 @@ function exportVillage() {
   console.log('Wrote village.json', src.width, 'x', src.height, 'donor=cabacos');
 }
 
-function exportShopInterior() {
+const SHOP_LAYER_NAMES = ['land', 'paths', 'building', 'seeds_market', 'decoration_01', 'decoration_02', 'decoration_03'];
+const SHOP_CROP = { ox: 30, oy: 20, w: 22, h: 16 };
+const CABACOS_TILESETS = [
+  {
+    columns: 64,
+    firstgid: 1,
+    image: '/maps/donor/cabacos/ts_map.png',
+    imageheight: 1024,
+    imagewidth: 1024,
+    margin: 0,
+    name: 'ts_map',
+    spacing: 0,
+    tilecount: 4096,
+    tileheight: 16,
+    tilewidth: 16,
+  },
+  {
+    columns: 10,
+    firstgid: 4097,
+    image: '/maps/donor/cabacos/ts_forest.png',
+    imageheight: 576,
+    imagewidth: 320,
+    margin: 0,
+    name: 'ts_forest',
+    spacing: 0,
+    tilecount: 180,
+    tileheight: 32,
+    tilewidth: 32,
+  },
+];
+
+function cropLayerData(srcData, srcW, srcH, ox, oy, outW, outH) {
+  const out = new Array(outW * outH).fill(0);
+  for (let y = 0; y < outH; y += 1) {
+    for (let x = 0; x < outW; x += 1) {
+      const sx = ox + x;
+      const sy = oy + y;
+      if (sx >= 0 && sy >= 0 && sx < srcW && sy < srcH) {
+        out[y * outW + x] = srcData[sy * srcW + sx] ?? 0;
+      }
+    }
+  }
+  return out;
+}
+
+function exportShopFromSeedsMarket() {
+  const overworld = loadJson('Cabacos_map.tmj');
+  const { ox, oy, w, h } = SHOP_CROP;
+  let id = 1;
+  const tileLayers = [];
+  for (const name of SHOP_LAYER_NAMES) {
+    const src = overworld.layers.find((l) => l.name === name && l.type === 'tilelayer');
+    if (!src?.data) continue;
+    tileLayers.push({
+      id: id++,
+      name,
+      type: 'tilelayer',
+      visible: true,
+      opacity: src.opacity ?? 1,
+      x: 0,
+      y: 0,
+      width: w,
+      height: h,
+      data: cropLayerData(src.data, overworld.width, overworld.height, ox, oy, w, h),
+    });
+  }
+
+  const blocked = new Set();
+  for (const layer of tileLayers) {
+    if (layer.name.includes('collision')) continue;
+    for (let i = 0; i < layer.data.length; i += 1) {
+      const gid = layer.data[i];
+      if (gid > 0 && (layer.name === 'building' || layer.name.startsWith('decoration'))) {
+        blocked.add(`${i % w},${Math.floor(i / w)}`);
+      }
+    }
+  }
+  const collision = new Array(w * h).fill(0);
+  for (const key of blocked) {
+    const [tx, ty] = key.split(',').map(Number);
+    collision[ty * w + tx] = 1;
+  }
+  const doorTx = Math.floor((523 - ox * TW) / TW);
+  const doorTy = Math.floor((383.5 - oy * TW) / TW);
+  for (let dy = 0; dy < 2; dy += 1) {
+    const ty = Math.min(h - 1, Math.max(0, doorTy + dy));
+    const tx = Math.min(w - 1, Math.max(0, doorTx));
+    collision[ty * w + tx] = 0;
+    collision[ty * w + tx + 1] = 0;
+  }
+
+  const shop = {
+    compressionlevel: -1,
+    height: h,
+    width: w,
+    infinite: false,
+    layers: [
+      ...tileLayers,
+      {
+        id: id++,
+        name: 'Collision',
+        type: 'tilelayer',
+        data: collision,
+        width: w,
+        height: h,
+        opacity: 1,
+        visible: false,
+        x: 0,
+        y: 0,
+      },
+      {
+        id: id++,
+        name: 'Portals',
+        type: 'objectgroup',
+        visible: true,
+        opacity: 1,
+        draworder: 'topdown',
+        x: 0,
+        y: 0,
+        objects: [
+          {
+            id: 3,
+            name: 'shop-to-village',
+            type: 'portal',
+            x: doorTx * TW,
+            y: doorTy * TW,
+            width: TW * 2,
+            height: TW,
+            properties: [
+              { name: 'targetMapId', type: 'string', value: 'village' },
+              { name: 'labelVi', type: 'string', value: 'Ra làng' },
+              { name: 'spawnX', type: 'int', value: Math.floor(523 / TW) },
+              { name: 'spawnY', type: 'int', value: Math.floor(400 / TW) },
+            ],
+          },
+        ],
+      },
+    ],
+    nextlayerid: id + 2,
+    nextobjectid: 10,
+    orientation: 'orthogonal',
+    properties: [
+      { name: 'mapId', type: 'string', value: 'shop' },
+      { name: 'olwDonor', type: 'string', value: 'cabacos' },
+      { name: 'olwDonorInterior', type: 'string', value: 'seeds_market_overworld_slice' },
+      { name: 'olwShopRender', type: 'string', value: 'tiled' },
+      { name: 'olwRecovery', type: 'string', value: RECOVERY_SLICE },
+      { name: 'olwDonorCrop', type: 'string', value: `${ox},${oy},${w},${h}` },
+    ],
+    renderorder: 'right-down',
+    tiledversion: '1.10.2',
+    tileheight: TW,
+    tilesets: CABACOS_TILESETS,
+    tilewidth: TW,
+    type: 'map',
+    version: '1.10',
+  };
+  writeJson('shop.json', shop);
+  console.log(`Wrote shop.json seeds_market slice ${w}×${h} (recovery, no Casa_player)`);
+}
+
+function exportShopInteriorCasaPlayer() {
   const interior = loadJson('Casa_player.tmj');
   const w = 24;
   const h = 18;
@@ -356,6 +518,14 @@ function exportShopInterior() {
   };
   writeJson('shop.json', shop);
   console.log('Wrote shop.json (Casa_player collision + image ref)');
+}
+
+function exportShopInterior() {
+  if (MAP_RECOVERY_MODE) {
+    exportShopFromSeedsMarket();
+    return;
+  }
+  exportShopInteriorCasaPlayer();
 }
 
 exportVillage();
