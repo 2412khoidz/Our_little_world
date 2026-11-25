@@ -25,6 +25,34 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
 | **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
 
+## Wave 1 C1 — farm presentation + donor clone area (2026-11-25)
+
+| Field | Value |
+|-------|--------|
+| **Farm Rai Larn Na** | [kensfpon/Farm-Rai-Larn-Na](https://github.com/kensfpon/Farm-Rai-Larn-Na) @ `2bbb65c8c7bcafeae0f70623ea57a2c86b4bb9ba` |
+| **Cabacos (farming loop)** | [goncalojbsousa/Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423defc12bd99327cfcc28bf7ec0085996244` |
+| **Clone refresh** | `node scripts/vendor-wave1-farm-donors.mjs` → `vendor/farm-rai-larn-na-upstream/`, `vendor/farming-simulator-cabacos-upstream/` (local; not shipped in production bundle) |
+
+### Source → OLW (this slice)
+
+| Upstream | OLW path | Kept |
+|----------|----------|------|
+| Farm Rai `src/rules/actions.ts` (hoe → tilled) | `src/shared/donor/farm-rai-2bbb65c/tillSoilAuthoritySlice.ts` | Till **presentation** intent only; authority stays `src/shared/farming/crops.ts` |
+| Cabacos `FarmingSystem.ts` soil image + `ItemData.ts` wheat spritesheet | `public/assets/donor/cabacos-plantation/soil.png`, `crops/wheat.png` | `src/game/farming/FarmPlotVisualController.ts`, `src/shared/donor/cabacos-79e423d/cropGrowthSpriteStage.ts` |
+| Cabacos `stageGrowthDays` mental model | `src/shared/farming/farmGrowthClock.ts` (`cabacosGrowthStageForPermille`) | Maps `growthPermille` → frame 0–3; no duplicate crop state |
+
+### Excluded
+
+- Farm Rai DOM/HTML estate UI, save format, stamina economy.
+- Cabacos day/night energy, full `FarmingSystem` persistence, non-wheat crops (until catalog alignment).
+
+### Proof
+
+- `tests/unit/farmGrowthClock.test.ts` — `timeScale` matches harvest vs snapshot.
+- `tests/unit/donorDevLanSession.test.ts` — donor workshop client sends `x-dev-user-id`.
+- `tests/unit/farmPlotInspect.test.ts` — inspect ETA copy.
+- Dev LAN: workshop modal + farm plot inspect on `farm` map.
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`

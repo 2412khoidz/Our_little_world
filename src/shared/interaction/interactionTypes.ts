@@ -149,4 +149,7 @@ export interface InteractionResolveInput {
   interactables: readonly InteractableTarget[];
   /** Donor-reuse / dev-lan economy preview — false hides dead economy J prompts. */
   economyPlayable?: boolean;
+  /** Live farm authority projection for crop plot inspect + ready gating. */
+  farmPlotByIndex?: ReadonlyMap<number, import('../farming/farmSnapshotTypes').FarmPlotView>;
+  serverNowMs?: number;
 }

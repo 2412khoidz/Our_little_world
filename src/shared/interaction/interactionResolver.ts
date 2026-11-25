@@ -6,6 +6,9 @@ import {
   shouldOmitEconomyTargetFromResolve,
 } from './economyInteractablePolicy';
 import { parseDonorFishingSpot } from '../donor/donorFishingSpots';
+import { farmPlotInspectLabelVi } from '../farming/farmPlotInspect';
+import type { FarmPlotView } from '../farming/farmSnapshotTypes';
+import { plotIndexFromAnchorId } from '../farming/farmPlotIndex';
 import type {
   ContextualAction,
   ContextualResolution,
@@ -75,10 +78,35 @@ function facingVector(facing: Direction): { x: number; y: number } {
   }
 }
 
+function plotViewForTarget(
+  target: InteractableTarget,
+  farmPlotByIndex: ReadonlyMap<number, FarmPlotView> | undefined,
+): FarmPlotView | undefined {
+  const idx = plotIndexFromAnchorId(target.id);
+  if (idx === null || !farmPlotByIndex) return undefined;
+  return farmPlotByIndex.get(idx);
+}
+
+function inspectCropPlotAction(
+  target: InteractableTarget,
+  plot: FarmPlotView,
+  serverNowMs: number,
+): ContextualAction {
+  return {
+    code: 'inspect_prop',
+    keyHint: 'J',
+    labelVi: farmPlotInspectLabelVi(plot, serverNowMs),
+    targetId: target.id,
+    available: true,
+  };
+}
+
 function actionForTarget(
   target: InteractableTarget,
   held: HeldItemState,
   economyPlayable: boolean,
+  farmPlotByIndex: ReadonlyMap<number, FarmPlotView> | undefined,
+  serverNowMs: number,
 ): ContextualAction {
   switch (target.kind) {
     case 'pet': {
@@ -220,7 +248,11 @@ function actionForTarget(
     case 'portal':
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'crop_plot': {
+      const plot = plotViewForTarget(target, farmPlotByIndex);
       if (held.itemSku === 'tool_hoe') {
+        if (plot && plot.soil !== 'empty') {
+          return inspectCropPlotAction(target, plot, serverNowMs);
+        }
         return {
           code: 'till_plot',
           keyHint: 'J',
@@ -230,6 +262,9 @@ function actionForTarget(
         };
       }
       if (held.itemSku?.startsWith('seed_')) {
+        if (plot && plot.soil !== 'tilled') {
+          return inspectCropPlotAction(target, plot, serverNowMs);
+        }
         return {
           code: 'plant_crop',
           keyHint: 'J',
@@ -239,18 +274,41 @@ function actionForTarget(
         };
       }
       if (held.itemSku === 'tool_watering_can' || held.itemSku === 'water_pitcher') {
+        if (plot && plot.soil === 'planted' && !plot.ready) {
+          return {
+            code: 'water_crop',
+            keyHint: 'J',
+            labelVi: 'Tưới cây',
+            targetId: target.id,
+            available: true,
+          };
+        }
+        if (plot) return inspectCropPlotAction(target, plot, serverNowMs);
         return {
           code: 'water_crop',
           keyHint: 'J',
           labelVi: 'Tưới cây',
           targetId: target.id,
+          available: false,
+          reasonVi: 'Không có cây đang lớn trên ô này.',
+        };
+      }
+      if (plot?.soil === 'planted' && plot.ready) {
+        return {
+          code: 'harvest_crop',
+          keyHint: 'J',
+          labelVi: 'Thu hoạch',
+          targetId: target.id,
           available: true,
         };
       }
+      if (plot) {
+        return inspectCropPlotAction(target, plot, serverNowMs);
+      }
       return {
-        code: 'harvest_crop',
+        code: 'inspect_prop',
         keyHint: 'J',
-        labelVi: 'Thu hoạch',
+        labelVi: 'Ô ruộng',
         targetId: target.id,
         available: true,
       };
@@ -325,6 +383,7 @@ function actionForTarget(
 }
 
 export function resolveContextualActions(input: InteractionResolveInput): ContextualResolution {
+  const serverNowMs = input.serverNowMs ?? Date.now();
   const { playerX, playerY, facing, heldItem, interactables, economyPlayable = true } = input;
   const fVec = facingVector(facing);
 
@@ -335,7 +394,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const dist = Math.hypot(dx, dy);
     if (dist > t.maxRadiusPx) continue;
 
-    const action = actionForTarget(t, heldItem, economyPlayable);
+    const action = actionForTarget(t, heldItem, economyPlayable, input.farmPlotByIndex, serverNowMs);
     if (shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;
     const nx = dist > 0.01 ? dx / dist : 0;
     const ny = dist > 0.01 ? dy / dist : 0;

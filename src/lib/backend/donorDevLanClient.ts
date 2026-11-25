@@ -1,13 +1,14 @@
 import type { DonorFishSessionView } from '../../shared/donor/donorFishSessionTypes';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
 import type { TidefallFishingPhase } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
+import { devLanRequestHeaders } from './devLanSessionHeaders';
 
 export type { DonorFishingSpotId };
 
 async function donorDevLanJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/dev-lan${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    headers: devLanRequestHeaders(init?.headers),
   });
   let json: { ok: boolean; data?: T; message?: string };
   try {

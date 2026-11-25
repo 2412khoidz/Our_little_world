@@ -8,6 +8,10 @@ export interface FarmPlotView {
   waterCount: number;
   growthPermille: number;
   ready: boolean;
+  /** Wall-clock ETA for harvest when `soil === 'planted'`. */
+  harvestReadyAtMs: number | null;
+  /** Cabacos-style growth frame 0–3 (null when empty fallow). */
+  growthStage: number | null;
 }
 
 export interface FarmSnapshot {
@@ -17,6 +21,8 @@ export interface FarmSnapshot {
   farm: Farm;
   plots: readonly FarmPlotView[];
   walletCoins: number;
+  /** Dev LAN fast-grow only; 1 in production. */
+  growthTimeScale?: number;
 }
 
 export interface FarmApplyParams {

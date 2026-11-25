@@ -24,6 +24,11 @@ export class BootScene extends Phaser.Scene {
     this.load.image('donor-cabacos-ts_map', '/maps/donor/cabacos/ts_map.png');
     this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
     this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
+    this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
+    this.load.spritesheet('donor-cabacos-wheat', '/assets/donor/cabacos-plantation/crops/wheat.png', {
+      frameWidth: 13,
+      frameHeight: 16,
+    });
   }
 
   create(): void {
@@ -41,7 +46,13 @@ export class BootScene extends Phaser.Scene {
     }
 
     registerWorldAtlas(this);
-    for (const key of ['donor-cabacos-ts_map', 'donor-cabacos-ts_forest', 'donor-cabacos-house-interior']) {
+    for (const key of [
+      'donor-cabacos-ts_map',
+      'donor-cabacos-ts_forest',
+      'donor-cabacos-house-interior',
+      'donor-cabacos-soil',
+      'donor-cabacos-wheat',
+    ]) {
       this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
     this.scene.start('WorldScene');

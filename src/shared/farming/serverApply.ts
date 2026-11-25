@@ -4,16 +4,15 @@ import type { InventoryEntry } from '../inventory/inventoryTypes';
 import {
   createFarm,
   getCropDefinition,
-  growthProgress03,
   harvest,
-  isReady,
   plant,
   till,
   water,
 } from './crops';
 import type { Farm } from './types';
 import type { CropSku, QualityTier } from './types';
-import type { FarmApplyParams, FarmApplyResult, FarmPlotView, FarmSnapshot } from './farmSnapshotTypes';
+import type { FarmApplyParams, FarmApplyResult, FarmSnapshot } from './farmSnapshotTypes';
+import { growthClockMs, projectFarmPlots } from './farmGrowthClock';
 
 const TOOL_HOE = 'tool_hoe';
 const TOOL_WATERING_CAN = 'tool_watering_can';
@@ -35,21 +34,7 @@ function sharedQty(items: readonly InventoryEntry[], sku: string, quality: Quali
     .reduce((n, i) => n + i.qty, 0);
 }
 
-export function projectFarmPlots(farm: Farm, nowMs: number): FarmPlotView[] {
-  return farm.plots.map((p) => {
-    const crop = p.soil === 'planted' ? p.crop : undefined;
-    const growthPermille = crop ? growthProgress03(crop, nowMs) : 0;
-    return {
-      plotId: p.plotId,
-      soil: p.soil,
-      cropSku: crop?.cropSku ?? null,
-      plantedAtMs: crop?.plantedAtMs ?? null,
-      waterCount: crop?.waterCount ?? 0,
-      growthPermille,
-      ready: crop ? isReady(crop, nowMs) : false,
-    };
-  });
-}
+export { projectFarmPlots } from './farmGrowthClock';
 
 export function buildFarmSnapshot(
   worldId: string,
@@ -57,14 +42,16 @@ export function buildFarmSnapshot(
   farm: Farm,
   walletCoins: number,
   nowMs: number,
+  timeScale = 1,
 ): FarmSnapshot {
   return {
     worldId,
     version,
     serverNowMs: nowMs,
     farm,
-    plots: projectFarmPlots(farm, nowMs),
+    plots: projectFarmPlots(farm, nowMs, timeScale),
     walletCoins,
+    ...(timeScale > 1 ? { growthTimeScale: timeScale } : {}),
   };
 }
 
@@ -120,11 +107,6 @@ export interface ApplyFarmActionInput {
   params: FarmApplyParams;
   /** Dev / QA: multiply elapsed growth time (1 = default). */
   timeScale?: number;
-}
-
-function growthClockMs(plantedAtMs: number, nowMs: number, timeScale: number): number {
-  if (timeScale <= 1) return nowMs;
-  return plantedAtMs + Math.floor((nowMs - plantedAtMs) * timeScale);
 }
 
 export function applyFarmAction(input: ApplyFarmActionInput): FarmServerMutation {
