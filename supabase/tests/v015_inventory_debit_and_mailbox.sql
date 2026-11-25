@@ -49,11 +49,17 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);
   PERFORM public.inventory_claim_free_kibble(v_world, 'debit-kibble');
   v_pet := (public.pet_adopt_or_rename(v_world, 'Test cat', NULL, 'debit-adopt')->>'id')::uuid;
-  v_feed := public.pet_interact(v_world, v_pet, 'feed', 1, 'debit-feed');
-  ASSERT (v_feed->>'kibbleRemaining')::integer = 2;
-  ASSERT v_feed = public.pet_interact(v_world, v_pet, 'feed', 1, 'debit-feed');
+  BEGIN
+    PERFORM public.pet_interact(v_world, v_pet, 'feed', 1, 'debit-feed');
+    RAISE EXCEPTION 'legacy feed still debits inventory';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM <> 'SERVER_AUTHORITY_REQUIRED' THEN RAISE; END IF;
+  END;
+
+  PERFORM public.pet_care_apply(v_world, v_pet, 'fill_food', 1, 'shared', 'pet_kibble_basic', 'normal', 'debit-fill');
+  PERFORM public.pet_care_apply(v_world, v_pet, 'fill_food', 1, 'shared', 'pet_kibble_basic', 'normal', 'debit-fill');
   ASSERT (SELECT qty FROM public.inventory_items
-          WHERE world_id = v_world AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic') = 2;
+          WHERE world_id = v_world AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal') = 2;
 
   v_send := public.mailbox_send_letter_or_gift(
     v_world, v_partner, 'Gift fixture', 'Hidden text', 'gift_flower_bouquet', 1, 'personal', true, 'debit-send');
