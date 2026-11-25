@@ -48,11 +48,23 @@ Production: `verify-prod-guard.mjs` forbids `living-pet-local-sim` / `living-pet
 | UI | `LivingPetDevBanner`, `executeMainGameContextAction`, `MainGameInteractionLayer` |
 | Guard | `verify-prod-guard.mjs` |
 
-## Tests (đã chạy trên Cloud agent)
+## Gameplay acceptance
 
-- `npm run lint` / `typecheck` / `test` (523 Vitest) / `build` / `node scripts/verify-prod-guard.mjs` — pass
-- `tests/unit/petMainGameLiving.test.ts` — affordances + ~3 phút tick mô phỏng driver
-- `tests/e2e/living-pet-main-game.spec.ts` — seed couple + banner + canvas (2 project Chromium)
+- **Telemetry (DEV):** `data-testid="living-pet-telemetry"` (mirror Phaser mèo: `data-x`, `data-y`, `data-anim`, `data-brain-phase`, `data-food-offer`).
+- **E2E di chuyển:** `living-pet-main-game.spec.ts` — ~60s lấy mẫu vị trí/anim, food offer qua `olw-dev-living-pet-food-offer`.
+- **Trace 3 phút:** `living-pet-gameplay-acceptance.spec.ts` → `living-pet-acceptance-trace.txt` + screenshots `living-pet-acceptance-min*.png` (thư mục `OLW_LIVING_PET_ARTIFACT_DIR`, mặc định `/opt/cursor/artifacts`).
+- Banner DEV thu nhỏ — góc dưới trái, không che canvas.
+
+## Tests
+
+- `npm run lint` / `typecheck` / `Vitest` / `build` / `verify-prod-guard`
+- `tests/unit/petMainGameLiving.test.ts`
+- `tests/e2e/living-pet-main-game.spec.ts` (2 Chromium projects)
+- `tests/e2e/living-pet-gameplay-acceptance.spec.ts` (trace on, ~3 min)
+
+## Sau PR #10 — Mission 04B-3B
+
+Xem `MISSION_04B3B_AUTHORITY_WIRING.md`.
 
 ## Not in scope
 

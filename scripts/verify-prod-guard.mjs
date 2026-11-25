@@ -35,6 +35,8 @@ const FORBIDDEN_PROD_MARKERS = [
   'living-pet=1',
   'extended-world-dev-preview',
   'extended-world=1',
+  'living-pet-telemetry',
+  'olw-dev-living-pet-food-offer',
 ];
 
 const jsFiles = fs.readdirSync(distAssets).filter((f) => f.endsWith('.js'));
