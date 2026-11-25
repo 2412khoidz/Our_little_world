@@ -1411,7 +1411,11 @@ export class WorldScene extends Phaser.Scene {
     for (const portal of def.portals) {
       if (portal.targetMapId === this.currentMapId) continue;
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-      if (dist <= 0.85) {
+      const dy = Math.abs(tileY - portal.tileY);
+      const onWestGateLane = portal.tileX === 0 && tileX <= 4 && dy <= 1;
+      const onEastGateLane =
+        portal.tileX === def.widthTiles - 1 && tileX >= def.widthTiles - 5 && dy <= 1;
+      if (dist <= 0.85 || onWestGateLane || onEastGateLane) {
         this.lastPortalAtMs = now;
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
