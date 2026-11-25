@@ -81,7 +81,7 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['MOVEMENT_PROOF_INVALID', 'VALIDATION_ERROR', 'Vị trí đứng không khớp kế hoạch di chuyển máy chủ.'],
     ['BRAIN_AUTHORITY_REQUIRED', 'FORBIDDEN', 'Chỉ máy chủ quyết định mèo chấp nhận hay từ chối món ăn.'],
     ['ACTION_STALE', 'VALIDATION_ERROR', 'Hành động đã quá hạn — hãy đồng bộ lại.'],
-    ['PET_FULL', 'COOLDOWN_ACTIVE', 'Bé mèo no rồi!'],
+    ['PET_FULL', 'PET_FULL', 'Bé no rồi — để dành món sau nhé.'],
   ];
 
   for (const [token, code, message] of map) {

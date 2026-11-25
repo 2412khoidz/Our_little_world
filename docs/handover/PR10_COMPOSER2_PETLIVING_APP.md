@@ -1,6 +1,6 @@
 # PR #10 ↔ Composer 2 — `petLiving` + hand-feed wiring
 
-**Foundation (#10)** owns SQL + `WorldBackend.petLiving` + `consumeHandFood` RPCs. **App / PetCareScene (#13)** owns shell wiring after stack merge (`integration/playtest-all`).
+**Foundation (#10)** owns SQL + `WorldBackend.petLiving` + `consumeHandFood` RPCs. **App / PetCareScene (#13)** owns shell wiring on `integration/playtest-all`. Canonical #10 handover @ `de7a4a5`.
 
 ## On stack after merge
 
@@ -8,16 +8,20 @@
 |---------|----------|
 | SQL / RPC | `20261125001200_pet_consume_hand_food.sql`, `pet_living_*` migrations (#10) |
 | Hand-feed authority | `src/features/petCare/petCareHandFeedAuthority.ts` → `backend.pet.consumeHandFood` (#13) |
+| `PET_FULL` toast | `supabaseBackend` maps `PET_FULL` → user-facing “Bé no rồi…” (#13 / #10 align) |
 | Optional living refresh | After success: `backend.petLiving?.getLivingSnapshot(worldId)` when present |
 | DEV isolation | `?living-pet=1` fallback **only** in DEV when `SERVER_AUTHORITY_REQUIRED` |
 | `WorldBackend.petLiving` | `supabaseBackend` + Dev LAN pet living routes (#10) |
 
 ## C2 wiring checklist
 
-1. Merge **#10** before prod Supabase living + consume on a single migration file.
-2. Drop duplicate `20261125001200` if both branches carried it — **keep one** on integration.
-3. Map server codes (`INSUFFICIENT_ITEMS`, `VERSION_CONFLICT`, `COOLDOWN_ACTIVE`) to toasts in consume path.
-4. Living proposals — use `backend.petLiving` for authority flows; do not use deprecated client-only proof paths in prod.
+1. Single migration `20261125001200` on integration (deduped).
+2. Map server codes (`INSUFFICIENT_ITEMS`, `VERSION_CONFLICT`, `PET_FULL`) to toasts in consume path.
+3. Living proposals — use `backend.petLiving` for authority flows; no client-only proof in prod.
+
+## Related
+
+- **PR #11:** overworld `?living-pet=1` (DEV); shares `PetSnapshot` with care scene.
 
 ## Not in this slice
 
