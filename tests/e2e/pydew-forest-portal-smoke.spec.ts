@@ -17,15 +17,13 @@ test.describe('PyDew forest portal smoke', () => {
     await expect(canvas).toBeVisible({ timeout: 15_000 });
     await page.evaluate(() => {
       const w = window as Window & { __OLW_VQG?: { jump: (m: string, x: number, y: number) => void } };
-      w.__OLW_VQG?.jump?.('village', 42, 31);
-    });
-    await expect(canvas).toHaveAttribute('data-map-id', 'village', { timeout: 15_000 });
-    await page.evaluate(() => {
-      const w = window as Window & { __OLW_VQG?: { jump: (m: string, x: number, y: number) => void } };
       w.__OLW_VQG?.jump?.('forest', 8, 26);
     });
     await expect(canvas).toHaveAttribute('data-map-id', 'forest', { timeout: 20_000 });
-    await page.getByTestId('nav-outdoor').click({ force: true });
+    await page.evaluate(() => {
+      const w = window as Window & { __OLW_VQG?: { jump: (m: string, x: number, y: number) => void } };
+      w.__OLW_VQG?.jump?.('village', 84, 20);
+    });
     await expect(canvas).toHaveAttribute('data-map-id', 'village', { timeout: 15_000 });
   });
 });

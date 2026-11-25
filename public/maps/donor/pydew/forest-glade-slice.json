@@ -4,6 +4,7 @@
   "heightTiles": 48,
   "theme": "forest_glade",
   "spawnDefault": { "tileX": 8, "tileY": 26 },
+  "glade": { "originX": 16, "originY": 20, "radiusX": 12, "radiusY": 8 },
   "portals": {
     "village": {
       "villageEdgeTile": { "tileX": 84, "tileY": 20 },
