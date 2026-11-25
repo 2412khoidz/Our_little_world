@@ -461,6 +461,18 @@ def main() -> None:
 
     props_sheet, props_entries = pack_sprites(props_items, 1024)
 
+    repo_root = output.parent.parent.parent
+    puny_src = repo_root / "public/assets/donor/cc0-puny-8d"
+    puny_dst = output / "donor-cc0-puny-8d"
+    puny_dst.mkdir(parents=True, exist_ok=True)
+    gameplay_files: dict[str, str] = {}
+    for name in ("character-base.png", "soldier-blue.png", "soldier-red.png", "CREDITS.md"):
+        src = puny_src / name
+        if not src.is_file():
+            raise FileNotFoundError(f"Thiếu donor gameplay avatar (Puny CC0): {src}")
+        shutil.copy2(src, puny_dst / name)
+        gameplay_files[name] = f"donor-cc0-puny-8d/{name}"
+
     # === 6. Save all outputs cleanly ===
     manifest = {
         "version": 1,
@@ -510,17 +522,6 @@ def main() -> None:
         "texture": {"file": "world-props.png", "width": props_sheet.width, "height": props_sheet.height},
         "entries": props_entries,
     }
-    repo_root = output.parent.parent.parent
-    puny_src = repo_root / "public/assets/donor/cc0-puny-8d"
-    puny_dst = output / "donor-cc0-puny-8d"
-    puny_dst.mkdir(parents=True, exist_ok=True)
-    gameplay_files: dict[str, str] = {}
-    for name in ("character-base.png", "soldier-blue.png", "soldier-red.png", "CREDITS.md"):
-        src = puny_src / name
-        if not src.is_file():
-            raise FileNotFoundError(f"Thiếu donor gameplay avatar (Puny CC0): {src}")
-        shutil.copy2(src, puny_dst / name)
-        gameplay_files[name] = f"donor-cc0-puny-8d/{name}"
 
     output.mkdir(parents=True, exist_ok=True)
     world_sheet.save(output / "world.png", optimize=True)
