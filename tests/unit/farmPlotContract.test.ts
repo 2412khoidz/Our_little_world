@@ -35,6 +35,10 @@ describe('farmPlotContract', () => {
       expect(spawn!.tileY).toBe(def.tileY);
       expect(spawn!.kind).toBe(def.kind);
     }
+    const door = parsed.interactableSpawns.find((s) => s.id === 'farm_barn_door');
+    if (door) {
+      expect(door.kind).toBe('door');
+    }
   });
 
   it('≥160 plot region tiles are walkable on parsed collision', () => {

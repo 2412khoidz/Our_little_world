@@ -4,6 +4,11 @@ import { DONOR_PUNY_TEXTURE_IDS } from '../art/donorPunyAvatarTexture';
 import { PUNY_SHEET, punyDonorAssetBasePath } from '../../shared/donor/punyCharacter8dSheet';
 import { preloadWorldAtlas, registerWorldAtlas } from '../art/worldAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
+import farmWorldJson from '../../../public/assets/maps/farm.json';
+
+function pydewTextureKey(tilesetName: string): string {
+  return `donor-pydew-${tilesetName.replace(/\s+/g, '-').toLowerCase()}`;
+}
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -43,6 +48,16 @@ export class BootScene extends Phaser.Scene {
     for (const [key, url, fw, fh] of cropSheets) {
       this.load.spritesheet(key, url, { frameWidth: fw, frameHeight: fh });
     }
+
+    const isPydewFarm = (farmWorldJson as { properties?: { name: string; value: string }[] }).properties?.some(
+      (p) => p.name === 'olwDonor' && p.value === 'pydew-valley',
+    );
+    if (isPydewFarm) {
+      for (const ts of (farmWorldJson as { tilesets?: { name: string; image: string }[] }).tilesets ?? []) {
+        if (!ts.image || !ts.name) continue;
+        this.load.image(pydewTextureKey(ts.name), ts.image);
+      }
+    }
   }
 
   create(): void {
@@ -60,6 +75,16 @@ export class BootScene extends Phaser.Scene {
     }
 
     registerWorldAtlas(this);
+    if (
+      (farmWorldJson as { properties?: { name: string; value: string }[] }).properties?.some(
+        (p) => p.name === 'olwDonor' && p.value === 'pydew-valley',
+      )
+    ) {
+      for (const ts of (farmWorldJson as { tilesets?: { name: string }[] }).tilesets ?? []) {
+        this.textures.get(pydewTextureKey(ts.name))?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
+    }
+
     for (const key of [
       'donor-cabacos-ts_map',
       'donor-cabacos-ts_forest',

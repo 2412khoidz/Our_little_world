@@ -19,11 +19,21 @@ describe('donor farm/beach sketch', () => {
     }
     expect(check.plotCount).toBe(184);
     const donor = (farmJson as { properties?: { name: string; value: string }[] }).properties?.find(
+      (p) => p.name === 'olwDonor',
+    );
+    expect(['cabacos', 'pydew-valley']).toContain(donor?.value);
+    const sketch = (farmJson as { properties?: { name: string; value: string }[] }).properties?.find(
       (p) => p.name === 'olwDonorSketch',
     );
-    expect(['farm-v1-deep', 'farm-recovery-native']).toContain(donor?.value);
-    const tilesets = (farmJson as { tilesets?: { name: string }[] }).tilesets?.map((t) => t.name) ?? [];
-    expect(tilesets).toContain('ts_map');
+    expect(['farm-v1-deep', 'farm-recovery-native', 'pydew-valley-tmx-v1']).toContain(sketch?.value);
+    expect((farmJson as { tilewidth?: number }).tilewidth).toBeGreaterThan(0);
+    if (donor?.value === 'pydew-valley') {
+      expect((farmJson as { tilewidth?: number }).tilewidth).toBe(64);
+      expect(farmJson.layers.some((l) => l.name === 'Farmable')).toBe(true);
+    } else {
+      const tilesets = (farmJson as { tilesets?: { name: string }[] }).tilesets?.map((t) => t.name) ?? [];
+      expect(tilesets).toContain('ts_map');
+    }
     if (nativeSoil) {
       expect(farmJson.layers.some((l) => l.name === 'OLW_ContractSoil')).toBe(false);
     } else {
