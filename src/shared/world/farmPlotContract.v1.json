@@ -1,0 +1,1190 @@
+{
+  "contractVersion": "1.0.0",
+  "mapId": "farm",
+  "mapSizeTiles": {
+    "width": 64,
+    "height": 56
+  },
+  "defaultSpawnTile": {
+    "tileX": 55,
+    "tileY": 20
+  },
+  "tiledJsonPath": "/assets/maps/farm.json",
+  "tileGids": {
+    "soilDry": 53,
+    "soilWet": 54,
+    "waterDeep": 51,
+    "shoreGrass": 52
+  },
+  "tileLayerIds": {
+    "ground": 1,
+    "paths": 2,
+    "water": 3,
+    "buildings": 4,
+    "vegetation": 5,
+    "collision": 6
+  },
+  "objectLayerIds": {
+    "portals": 10,
+    "interactables": 11
+  },
+  "plotRegions": [
+    {
+      "id": "farm_main",
+      "labelVi": "Ruộng chính",
+      "originTileX": 16,
+      "originTileY": 10,
+      "columns": 12,
+      "rows": 10
+    },
+    {
+      "id": "farm_annex",
+      "labelVi": "Ruộng phụ",
+      "originTileX": 40,
+      "originTileY": 28,
+      "columns": 8,
+      "rows": 8
+    }
+  ],
+  "plotMinWalkableTiles": 160,
+  "plotAnchors": [
+    {
+      "anchorId": "farm_main_0",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_1",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_2",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_3",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_4",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_5",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_6",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_7",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_8",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_9",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_10",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_11",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 10
+    },
+    {
+      "anchorId": "farm_main_12",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_13",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_14",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_15",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_16",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_17",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_18",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_19",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_20",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_21",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_22",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_23",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 11
+    },
+    {
+      "anchorId": "farm_main_24",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_25",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_26",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_27",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_28",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_29",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_30",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_31",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_32",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_33",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_34",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_35",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 12
+    },
+    {
+      "anchorId": "farm_main_36",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_37",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_38",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_39",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_40",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_41",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_42",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_43",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_44",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_45",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_46",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_47",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 13
+    },
+    {
+      "anchorId": "farm_main_48",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_49",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_50",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_51",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_52",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_53",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_54",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_55",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_56",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_57",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_58",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_59",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 14
+    },
+    {
+      "anchorId": "farm_main_60",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_61",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_62",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_63",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_64",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_65",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_66",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_67",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_68",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_69",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_70",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_71",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 15
+    },
+    {
+      "anchorId": "farm_main_72",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_73",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_74",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_75",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_76",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_77",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_78",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_79",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_80",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_81",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_82",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_83",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 16
+    },
+    {
+      "anchorId": "farm_main_84",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_85",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_86",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_87",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_88",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_89",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_90",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_91",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_92",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_93",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_94",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_95",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 17
+    },
+    {
+      "anchorId": "farm_main_96",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_97",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_98",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_99",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_100",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_101",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_102",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_103",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_104",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_105",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_106",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_107",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 18
+    },
+    {
+      "anchorId": "farm_main_108",
+      "regionId": "farm_main",
+      "tileX": 16,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_109",
+      "regionId": "farm_main",
+      "tileX": 17,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_110",
+      "regionId": "farm_main",
+      "tileX": 18,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_111",
+      "regionId": "farm_main",
+      "tileX": 19,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_112",
+      "regionId": "farm_main",
+      "tileX": 20,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_113",
+      "regionId": "farm_main",
+      "tileX": 21,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_114",
+      "regionId": "farm_main",
+      "tileX": 22,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_115",
+      "regionId": "farm_main",
+      "tileX": 23,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_116",
+      "regionId": "farm_main",
+      "tileX": 24,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_117",
+      "regionId": "farm_main",
+      "tileX": 25,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_118",
+      "regionId": "farm_main",
+      "tileX": 26,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_main_119",
+      "regionId": "farm_main",
+      "tileX": 27,
+      "tileY": 19
+    },
+    {
+      "anchorId": "farm_annex_0",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_1",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_2",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_3",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_4",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_5",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_6",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_7",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 28
+    },
+    {
+      "anchorId": "farm_annex_8",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_9",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_10",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_11",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_12",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_13",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_14",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_15",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 29
+    },
+    {
+      "anchorId": "farm_annex_16",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_17",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_18",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_19",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_20",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_21",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_22",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_23",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 30
+    },
+    {
+      "anchorId": "farm_annex_24",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_25",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_26",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_27",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_28",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_29",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_30",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_31",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 31
+    },
+    {
+      "anchorId": "farm_annex_32",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_33",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_34",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_35",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_36",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_37",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_38",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_39",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 32
+    },
+    {
+      "anchorId": "farm_annex_40",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_41",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_42",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_43",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_44",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_45",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_46",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_47",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 33
+    },
+    {
+      "anchorId": "farm_annex_48",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_49",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_50",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_51",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_52",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_53",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_54",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_55",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 34
+    },
+    {
+      "anchorId": "farm_annex_56",
+      "regionId": "farm_annex",
+      "tileX": 40,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_57",
+      "regionId": "farm_annex",
+      "tileX": 41,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_58",
+      "regionId": "farm_annex",
+      "tileX": 42,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_59",
+      "regionId": "farm_annex",
+      "tileX": 43,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_60",
+      "regionId": "farm_annex",
+      "tileX": 44,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_61",
+      "regionId": "farm_annex",
+      "tileX": 45,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_62",
+      "regionId": "farm_annex",
+      "tileX": 46,
+      "tileY": 35
+    },
+    {
+      "anchorId": "farm_annex_63",
+      "regionId": "farm_annex",
+      "tileX": 47,
+      "tileY": 35
+    }
+  ],
+  "worldInteractables": {
+    "shipping_bin": {
+      "id": "farm_shipping_bin",
+      "anchorId": "farm_shipping_bin",
+      "kind": "shipping_bin",
+      "tileX": 7,
+      "tileY": 7,
+      "labelVi": "Thùng gom hàng — bán qua đêm (V0.2)"
+    },
+    "pond_water": {
+      "id": "farm_pond_water",
+      "anchorId": "farm_pond_water",
+      "kind": "water_source",
+      "tileX": 52,
+      "tileY": 11,
+      "labelVi": "Ao nước — múc nước tưới"
+    },
+    "barn_door": {
+      "id": "farm_barn_door",
+      "anchorId": "farm_barn_door",
+      "kind": "door",
+      "tileX": 9,
+      "tileY": 9,
+      "labelVi": "Cửa chuồng — chưa mở"
+    }
+  },
+  "villageShopPortal": {
+    "portalObjectId": "village-to-shop",
+    "mapId": "village",
+    "targetMapId": "shop",
+    "doorTileX": 38,
+    "doorTileY": 14,
+    "labelVi": "Vào cửa hàng Bác Hai"
+  }
+}

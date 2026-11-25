@@ -82,6 +82,67 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     }
   }
 
+  if (mapId === 'outdoor') {
+    const anchors = MAIN_GAME_WORLD_ANCHORS.outdoor;
+    targets.push({
+      id: 'outdoor_mailbox',
+      kind: 'mailbox',
+      labelVi:
+        mailboxUnread > 0 ? `Hòm thư hiên (${mailboxUnread} thư mới)` : 'Hòm thư hiên nhà',
+      x: anchors.porchMailboxPx.x,
+      y: anchors.porchMailboxPx.y,
+      maxRadiusPx: 44,
+    });
+    targets.push({
+      id: 'outdoor_picnic',
+      kind: 'bench',
+      labelVi: 'Ngồi picnic (xem ảnh kỷ niệm)',
+      x: anchors.picnicPx.x,
+      y: anchors.picnicPx.y,
+      maxRadiusPx: 48,
+    });
+    targets.push({
+      id: 'outdoor_minigame',
+      kind: 'bench',
+      labelVi: 'Bàn mini-game (hotseat — chưa multiplayer)',
+      x: anchors.minigameTablePx.x,
+      y: anchors.minigameTablePx.y,
+      maxRadiusPx: 44,
+    });
+    targets.push({
+      id: 'outdoor_fishing',
+      kind: 'fishing_spot',
+      labelVi: 'Cầu câu — chưa mở fishing V0.2',
+      x: anchors.pondDockPx.x,
+      y: anchors.pondDockPx.y,
+      maxRadiusPx: 52,
+    });
+    targets.push({
+      id: 'outdoor_market',
+      kind: 'shop_npc',
+      labelVi: 'Chợ Bác Hai — chưa mở giao dịch',
+      x: anchors.marketStallPx.x,
+      y: anchors.marketStallPx.y,
+      maxRadiusPx: 50,
+    });
+    targets.push({
+      id: 'outdoor_sunset',
+      kind: 'bench',
+      labelVi: 'Ghế ngắm hoàng hôn',
+      x: anchors.sunsetBenchPx.x,
+      y: anchors.sunsetBenchPx.y,
+      maxRadiusPx: 46,
+    });
+    targets.push({
+      id: 'outdoor_farm',
+      kind: 'crop_plot',
+      labelVi: 'Luống rau — chưa mở farming V0.2',
+      x: anchors.farmGatePx.x,
+      y: anchors.farmGatePx.y,
+      maxRadiusPx: 48,
+    });
+  }
+
   if (mapId === 'garden') {
     const anchors = MAIN_GAME_WORLD_ANCHORS.garden;
     targets.push({
