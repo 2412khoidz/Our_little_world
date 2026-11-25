@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import {
   CARO_SIZE,
   CARO_WIN_LENGTH,
   caroGame,
   type CaroCell,
 } from '../../shared/minigames';
+import { CozyGameTable } from './CozyGameTable';
+import { playMinigameChime } from './minigameAudio';
 import { MinigameShell } from './MinigameShell';
 import { MINIGAME_PLAYER_IDS, playerLabel, useMinigame } from './useMinigame';
 
@@ -64,6 +67,7 @@ export function CaroGame() {
     caroGame,
     MINIGAME_PLAYER_IDS,
   );
+  const [hoverCell, setHoverCell] = useState<number | null>(null);
 
   const lastMove = state.lastMove;
   const winningLine =
@@ -88,7 +92,9 @@ export function CaroGame() {
 
   function handlePlace(cell: number): void {
     if (finished) return;
-    play({ type: 'place', cell }, turnPlayerId);
+    const next = play({ type: 'place', cell }, turnPlayerId);
+    if (next) playMinigameChime('place');
+    if (next && next.winner !== null) playMinigameChime('win');
   }
 
   return (
@@ -103,35 +109,46 @@ export function CaroGame() {
       statusHint={null}
       onRestart={restart}
     >
-      <div
-        className="mn-grid mn-grid--caro"
-        role="group"
-        aria-label="Bàn cờ Caro 15 × 15"
-      >
-        {state.board.map((value, cell) => {
-          const classes = ['mn-cell', 'mn-cell--caro'];
-          if (value === 1) classes.push('mn-cell--p1');
-          if (value === 2) classes.push('mn-cell--p2');
-          if (lastMove === cell) classes.push('mn-cell--last');
-          if (winningCells.has(cell)) classes.push('mn-cell--win');
-          return (
-            <button
-              key={cell}
-              type="button"
-              className={classes.join(' ')}
-              data-testid={`caro-cell-${cell}`}
-              data-owner={value}
-              data-last={lastMove === cell ? 'true' : 'false'}
-              data-winning={winningCells.has(cell) ? 'true' : 'false'}
-              aria-label={cellLabel(cell, value)}
-              disabled={finished}
-              onClick={() => handlePlace(cell)}
-            >
-              {value === 0 ? null : <span className="mn-stone" aria-hidden="true" />}
-            </button>
-          );
-        })}
-      </div>
+      <CozyGameTable label="Bàn cờ Caro" testId="caro-table">
+        <div
+          className="mn-grid mn-grid--caro"
+          role="group"
+          aria-label="Bàn cờ Caro 15 × 15"
+        >
+          {state.board.map((value, cell) => {
+            const classes = ['mn-cell', 'mn-cell--caro'];
+            if (value === 1) classes.push('mn-cell--p1');
+            if (value === 2) classes.push('mn-cell--p2');
+            if (lastMove === cell) classes.push('mn-cell--last', 'mn-cell--pop');
+            if (winningCells.has(cell)) classes.push('mn-cell--win');
+            if (value === 0 && hoverCell === cell) classes.push('mn-cell--hover-ghost');
+            return (
+              <button
+                key={cell}
+                type="button"
+                className={classes.join(' ')}
+                data-testid={`caro-cell-${cell}`}
+                data-owner={value}
+                data-last={lastMove === cell ? 'true' : 'false'}
+                data-winning={winningCells.has(cell) ? 'true' : 'false'}
+                aria-label={cellLabel(cell, value)}
+                disabled={finished}
+                onMouseEnter={() => setHoverCell(cell)}
+                onMouseLeave={() => setHoverCell((c) => (c === cell ? null : c))}
+                onFocus={() => setHoverCell(cell)}
+                onBlur={() => setHoverCell((c) => (c === cell ? null : c))}
+                onClick={() => handlePlace(cell)}
+              >
+                {value !== 0 ? (
+                  <span className="mn-stone" aria-hidden="true" />
+                ) : hoverCell === cell ? (
+                  <span className="mn-stone mn-stone--ghost" aria-hidden="true" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      </CozyGameTable>
     </MinigameShell>
   );
 }

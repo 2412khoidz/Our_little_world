@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { memoryGame } from '../../shared/minigames';
+import { CozyGameTable } from './CozyGameTable';
+import { playMinigameChime } from './minigameAudio';
 import { MinigameShell } from './MinigameShell';
 import {
   MINIGAME_PLAYER_IDS,
@@ -9,15 +11,16 @@ import {
 } from './useMinigame';
 
 /** Eight cozy symbols; the deck only stores symbol ids. */
+/** Symbol ids 0–7 map to cozy motifs (deck stores ids only). */
 const MEMORY_SYMBOLS: readonly string[] = [
-  '🌸',
-  '🍀',
-  '🍓',
-  '☕',
-  '🐱',
-  '🌙',
-  '🎀',
-  '🕯️',
+  '🐱', // mèo
+  '🌸', // hoa anh đào
+  '🍓', // dâu
+  '🐟', // cá
+  '🧶', // len
+  '🪴', // cây nhỏ
+  '☕', // trà
+  '🏠', // ngôi nhà
 ];
 
 /**
@@ -38,11 +41,15 @@ export function MemoryGame() {
     if (next === null) return;
     if (next.matched[cell] === true) {
       setHint('Khớp rồi, đi tiếp nhé!');
+      playMinigameChime('match');
     } else if (next.revealed[cell] !== true) {
       setHint('Chưa khớp, đổi lượt nhé.');
+      playMinigameChime('miss');
     } else {
       setHint('Lật thêm một thẻ nữa.');
+      playMinigameChime('flip');
     }
+    if (memoryGame.isFinished(next)) playMinigameChime('win');
   }
 
   function handleRestart(): void {
@@ -75,11 +82,12 @@ export function MemoryGame() {
         ))}
       </div>
 
-      <div
-        className="mn-grid mn-grid--memory"
-        role="group"
-        aria-label="Bàn lật thẻ 4 × 4"
-      >
+      <CozyGameTable label="Bàn lật thẻ" testId="memory-table">
+        <div
+          className="mn-grid mn-grid--memory"
+          role="group"
+          aria-label="Bàn lật thẻ 4 × 4"
+        >
         {state.deck.map((symbol, cell) => {
           const matched = state.matched[cell] === true;
           const faceUp = matched || state.revealed[cell] === true;
@@ -103,11 +111,18 @@ export function MemoryGame() {
               disabled={finished || matched}
               onClick={() => handleFlip(cell)}
             >
-              <span aria-hidden="true">{faceUp ? glyph : '?'}</span>
+              {faceUp ? (
+                <span className="mn-card-face" aria-hidden="true">{glyph}</span>
+              ) : (
+                <span className="mn-card-back-art" aria-hidden="true">
+                  <span className="mn-card-back-paw">🐾</span>
+                </span>
+              )}
             </button>
           );
         })}
-      </div>
+        </div>
+      </CozyGameTable>
     </MinigameShell>
   );
 }

@@ -6,6 +6,8 @@ import {
   playerPrivateState,
   publicStateFor,
 } from '../../shared/minigames';
+import { CozyGameTable } from './CozyGameTable';
+import { playMinigameChime } from './minigameAudio';
 import { MinigameShell } from './MinigameShell';
 import { MINIGAME_PLAYER_IDS, playerLabel, useMinigame } from './useMinigame';
 
@@ -72,10 +74,13 @@ export function BattleshipGame() {
 
     if (newlySunk.length > 0) {
       setFeedback(`Đã hạ ${newlySunk.map((ship) => ship.name).join(', ')}!`);
+      playMinigameChime('win');
     } else if (shot === 2) {
       setFeedback('Trúng tàu!');
+      playMinigameChime('hit');
     } else {
       setFeedback('Trượt rồi.');
+      playMinigameChime('splash');
     }
 
     if (!battleshipGame.isFinished(next)) {
@@ -142,8 +147,9 @@ export function BattleshipGame() {
 
           <section className="mn-bs-panel" aria-label="Hạm đội của bạn">
             <h3 className="mn-bs-title">Hạm đội của bạn</h3>
+            <CozyGameTable label="Hạm đội" testId="battleship-own-table">
             <div
-              className="mn-grid mn-grid--battleship"
+              className="mn-grid mn-grid--battleship mn-grid--sea"
               role="group"
               aria-label="Bàn hạm đội của bạn"
             >
@@ -173,12 +179,14 @@ export function BattleshipGame() {
                 );
               })}
             </div>
+            </CozyGameTable>
           </section>
 
           <section className="mn-bs-panel" aria-label="Vùng biển đối phương">
             <h3 className="mn-bs-title">Vùng biển đối phương</h3>
+            <CozyGameTable label="Vùng bắn" testId="battleship-fire-table">
             <div
-              className="mn-grid mn-grid--battleship"
+              className="mn-grid mn-grid--battleship mn-grid--sea"
               role="group"
               aria-label="Bàn bắn đối phương"
             >
@@ -206,6 +214,7 @@ export function BattleshipGame() {
                 );
               })}
             </div>
+            </CozyGameTable>
           </section>
 
           {enemyPublicBoard.sunkShips.length > 0 ? (

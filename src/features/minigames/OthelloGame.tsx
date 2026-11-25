@@ -5,6 +5,8 @@ import {
   othelloGame,
   type OthelloDisc,
 } from '../../shared/minigames';
+import { CozyGameTable } from './CozyGameTable';
+import { playMinigameChime } from './minigameAudio';
 import { MinigameShell } from './MinigameShell';
 import { MINIGAME_PLAYER_IDS, playerLabel, useMinigame } from './useMinigame';
 
@@ -23,6 +25,7 @@ export function OthelloGame() {
   const legalCells = new Set(legal);
   const [blackCount, whiteCount] = othelloDiscCounts(state.board);
   const mustPass = !finished && legal.length === 0;
+  const lastMoveCell = state.moves.length > 0 ? state.moves[state.moves.length - 1]! : null;
 
   function cellLabel(cell: number, value: OthelloDisc): string {
     const row = Math.floor(cell / OTHELLO_SIZE) + 1;
@@ -36,7 +39,9 @@ export function OthelloGame() {
 
   function handlePlace(cell: number): void {
     if (finished) return;
-    play({ type: 'place', cell }, turnPlayerId);
+    const next = play({ type: 'place', cell }, turnPlayerId);
+    if (next) playMinigameChime('place');
+    if (next?.finished) playMinigameChime('win');
   }
 
   function handlePass(): void {
@@ -82,16 +87,18 @@ export function OthelloGame() {
         </span>
       </div>
 
-      <div
-        className="mn-grid mn-grid--othello"
-        role="group"
-        aria-label="Bàn cờ Othello 8 × 8"
-      >
+      <CozyGameTable label="Bàn cờ Othello" testId="othello-table">
+        <div
+          className="mn-grid mn-grid--othello"
+          role="group"
+          aria-label="Bàn cờ Othello 8 × 8"
+        >
         {state.board.map((value, cell) => {
           const classes = ['mn-cell', 'mn-cell--othello'];
           if (value === 1) classes.push('mn-cell--black');
           if (value === 2) classes.push('mn-cell--white');
           if (legalCells.has(cell)) classes.push('mn-cell--legal');
+          if (lastMoveCell === cell) classes.push('mn-cell--last', 'mn-cell--pop');
           return (
             <button
               key={cell}
@@ -116,7 +123,8 @@ export function OthelloGame() {
             </button>
           );
         })}
-      </div>
+        </div>
+      </CozyGameTable>
     </MinigameShell>
   );
 }
