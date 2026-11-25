@@ -29,7 +29,8 @@
     "import-donor:cabacos": "node scripts/import-donor-cabacos.mjs",
     "import-donor:cabacos-farm": "node scripts/import-donor-cabacos-farm.mjs",
     "import-donor:hollowmere-beach": "node scripts/import-donor-hollowmere-beach.mjs",
-    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-cabacos-farm.mjs && node scripts/import-donor-hollowmere-beach.mjs",
+    "import-donor:pydew-forest": "node scripts/import-donor-pydew-forest.mjs",
+    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-cabacos-farm.mjs && node scripts/import-donor-hollowmere-beach.mjs && node scripts/import-donor-pydew-forest.mjs",
     "spike:video": "node scripts/generate-spike-video.mjs",
     "test:sql": "node scripts/run-local-sql-suite.mjs"
   },

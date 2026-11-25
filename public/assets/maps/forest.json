@@ -15085,7 +15085,7 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 46
+              "value": 84
             },
             {
               "name": "spawnY",
@@ -15095,7 +15095,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Về làng"
+              "value": "Về làng Cabacos"
             }
           ]
         },
@@ -15131,6 +15131,44 @@
           ]
         }
       ]
+    },
+    {
+      "id": 12,
+      "name": "Interactables",
+      "type": "objectgroup",
+      "visible": true,
+      "opacity": 1,
+      "draworder": "topdown",
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 90,
+          "name": "pydew_forest_sign",
+          "type": "interactable",
+          "x": 160,
+          "y": 128,
+          "width": 32,
+          "height": 16,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "bench"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Khu rừng PyDew (slice — portal QA)"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 48
+            }
+          ]
+        }
+      ]
     }
   ],
   "nextlayerid": 8,
@@ -15162,6 +15200,31 @@
       "name": "mapId",
       "type": "string",
       "value": "forest"
+    },
+    {
+      "name": "mapId",
+      "type": "string",
+      "value": "forest"
+    },
+    {
+      "name": "olwDonor",
+      "type": "string",
+      "value": "pydew"
+    },
+    {
+      "name": "olwDonorSha",
+      "type": "string",
+      "value": "survey-2025-11"
+    },
+    {
+      "name": "olwDonorSlice",
+      "type": "string",
+      "value": "pydew-forest-glade"
+    },
+    {
+      "name": "olwDonorNote",
+      "type": "string",
+      "value": "Portal smoke slice — cozy art unchanged"
     }
   ]
 }

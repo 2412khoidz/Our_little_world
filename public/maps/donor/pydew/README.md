@@ -1,10 +1,25 @@
-# PyDew (clear-code-projects/PyDew) — next world donor candidate
+# PyDew (clear-code-projects/PyDew) — forest glade slice
 
-**License:** CC0 (per owner backlog survey)  
-**OLW status:** `surveyed` → queued after Cabacos farm deep port
+**License:** CC0 — see `UPSTREAM-LICENSE.txt`  
+**OLW status:** `partial_reuse` (portal smoke slice)
 
-No vendored tiles in this slice. Next agent steps:
+This folder vendors **metadata only** (no PyDew tile sprites):
 
-1. Pin upstream commit + `UPSTREAM-LICENSE.txt`.
-2. Export one outdoor JSON slice sized for `forest` or extended `farm` annex.
-3. Add `scripts/import-donor-pydew-zone.mjs` mirroring Hollowmere beach importer pattern.
+| File | Purpose |
+|------|---------|
+| `MANIFEST.json` | Upstream pin + slice id |
+| `forest-glade-slice.json` | Portal tile coords for Cabacos village ↔ forest |
+| `UPSTREAM-LICENSE.txt` | CC0 attribution |
+
+## Import
+
+```bash
+npm run import-donor:pydew-forest
+```
+
+Patches `forest.json` (`olwDonor=pydew`) and adds `village-to-forest` on Cabacos `village.json`. Forest art stays cozy procedural until a future tile transplant.
+
+## Tests
+
+- `tests/unit/pydewForestSlice.test.ts`
+- `tests/e2e/pydew-forest-portal-smoke.spec.ts`
