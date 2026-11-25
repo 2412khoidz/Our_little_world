@@ -3,6 +3,8 @@ import type { MapId } from '../../shared/types';
 import { TILE_SIZE } from '../../shared/maps';
 import extIds from '../art/worldExtendedArtIds.json';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
+import { USE_PRIVATE_ART } from '../art/atlasProfile';
+import { isPrivateAtlasReady } from './privateArtCapability';
 
 type PlaceProp = (
   frameId: string,
@@ -25,6 +27,8 @@ export function applyTiledZoneAccents(
   pushLayer: (obj: Phaser.GameObjects.GameObject) => void,
   scene: Phaser.Scene,
 ): void {
+  if (USE_PRIVATE_ART && isPrivateAtlasReady(scene)) return;
+
   if (mapId === 'village') {
     const placeAt = (propId: string, tx: number, ty: number, ox = 0.5, oy = 1) => {
       const pos = at(tx, ty, ox, oy);
