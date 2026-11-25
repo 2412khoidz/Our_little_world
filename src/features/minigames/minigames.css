@@ -591,6 +591,38 @@
 
 /* Wider screens ---------------------------------------------------------- */
 
+@media (max-width: 400px) {
+  .mn-grid--caro {
+    gap: 0;
+    padding: 4px;
+  }
+
+  .mn-cell--caro {
+    min-height: 20px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 450px) {
+  .mn-demo {
+    padding-top: 8px;
+    gap: 8px;
+  }
+
+  .mn-shell {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .mn-gate {
+    min-height: 200px;
+    padding: 12px;
+  }
+
+  .mn-grid--battleship {
+    max-width: min(72vw, 360px);
+  }
+}
+
 @media (min-width: 520px) {
   .mn-grid--caro,
   .mn-grid--othello,
@@ -624,6 +656,13 @@
   font-size: 12px;
 }
 
+.mn-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+}
+
 .mn-couple-strip {
   display: flex;
   gap: 8px;
@@ -649,8 +688,39 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-.mn-couple-emoji {
-  font-size: 15px;
+.mn-couple-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.mn-couple-icon--cloud {
+  background: radial-gradient(circle at 35% 30%, #f8fcff, #b8d4e8 70%);
+  border: 1px solid #8ab0c8;
+}
+
+.mn-couple-icon--sun {
+  background: radial-gradient(circle at 35% 30%, #ffe8a0, #e8a040 75%);
+  border: 1px solid #c07820;
+}
+
+.mn-couple-icon--heart {
+  background: radial-gradient(circle at 35% 30%, #ffc0d8, #e07098);
+  border: 1px solid #b05078;
+}
+
+.mn-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .mn-table-outer {
@@ -711,18 +781,35 @@
   box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25);
 }
 
-.mn-card-back-paw {
-  font-size: clamp(18px, 6vw, 26px);
-  filter: drop-shadow(0 1px 0 rgba(80, 30, 20, 0.35));
-}
-
 .mn-card--down {
   background: transparent;
   color: transparent;
 }
 
 .mn-card-face {
-  font-size: clamp(22px, 7vw, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.mn-memory-glyph {
+  width: min(70%, 40px);
+  height: auto;
+}
+
+.mn-card-back-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.mn-memory-back-svg {
+  width: min(75%, 48px);
+  height: auto;
 }
 
 .mn-card--up {
@@ -755,10 +842,43 @@
 }
 
 .mn-cell--ship::after {
-  content: '⛵';
-  font-size: 10px;
-  line-height: 1;
-  opacity: 0.85;
+  content: '';
+  width: 62%;
+  height: 42%;
+  border-radius: 3px 8px 2px 2px;
+  background: linear-gradient(180deg, #6b4a32 0%, #4a3020 100%);
+  box-shadow: 0 1px 0 rgba(255, 240, 218, 0.25);
+  opacity: 0.9;
+}
+
+.mn-shot-mark {
+  display: block;
+  width: 55%;
+  height: 55%;
+}
+
+.mn-shot-mark--hit {
+  background:
+    linear-gradient(
+      45deg,
+      transparent 42%,
+      #5e1510 42%,
+      #5e1510 58%,
+      transparent 58%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 42%,
+      #5e1510 42%,
+      #5e1510 58%,
+      transparent 58%
+    );
+}
+
+.mn-shot-mark--miss {
+  border-radius: 50%;
+  background: radial-gradient(circle, #7aa8bc 30%, #486b7d 75%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {

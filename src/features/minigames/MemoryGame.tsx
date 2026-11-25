@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { memoryGame } from '../../shared/minigames';
+import { MemoryCardBackArt, MemorySymbolArt } from './memoryCardArt';
 import { CozyGameTable } from './CozyGameTable';
 import { playMinigameChime } from './minigameAudio';
 import { MinigameShell } from './MinigameShell';
@@ -10,17 +11,15 @@ import {
   useMinigame,
 } from './useMinigame';
 
-/** Eight cozy symbols; the deck only stores symbol ids. */
-/** Symbol ids 0–7 map to cozy motifs (deck stores ids only). */
-const MEMORY_SYMBOLS: readonly string[] = [
-  '🐱', // mèo
-  '🌸', // hoa anh đào
-  '🍓', // dâu
-  '🐟', // cá
-  '🧶', // len
-  '🪴', // cây nhỏ
-  '☕', // trà
-  '🏠', // ngôi nhà
+const MEMORY_SYMBOL_NAMES: readonly string[] = [
+  'mèo',
+  'hoa anh đào',
+  'dâu',
+  'cá',
+  'cuộn len',
+  'cây nhỏ',
+  'tách trà',
+  'ngôi nhà',
 ];
 
 /**
@@ -91,7 +90,7 @@ export function MemoryGame() {
         {state.deck.map((symbol, cell) => {
           const matched = state.matched[cell] === true;
           const faceUp = matched || state.revealed[cell] === true;
-          const glyph = MEMORY_SYMBOLS[symbol] ?? '?';
+          const symbolName = MEMORY_SYMBOL_NAMES[symbol] ?? 'thẻ';
           const classes = ['mn-card'];
           classes.push(faceUp ? 'mn-card--up' : 'mn-card--down');
           if (matched) classes.push('mn-card--matched');
@@ -105,17 +104,19 @@ export function MemoryGame() {
               data-matched={matched ? 'true' : 'false'}
               aria-label={
                 faceUp
-                  ? `Thẻ ${cell + 1}: ${glyph}`
+                  ? `Thẻ ${cell + 1}: ${symbolName}`
                   : `Thẻ ${cell + 1} đang úp`
               }
               disabled={finished || matched}
               onClick={() => handleFlip(cell)}
             >
               {faceUp ? (
-                <span className="mn-card-face" aria-hidden="true">{glyph}</span>
+                <span className="mn-card-face" aria-hidden="true">
+                  <MemorySymbolArt symbolId={symbol} />
+                </span>
               ) : (
                 <span className="mn-card-back-art" aria-hidden="true">
-                  <span className="mn-card-back-paw">🐾</span>
+                  <MemoryCardBackArt />
                 </span>
               )}
             </button>

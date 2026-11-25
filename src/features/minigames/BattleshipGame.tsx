@@ -173,8 +173,12 @@ export function BattleshipGame() {
                         : `Vùng biển của bạn ${rowLabel(cell)}`
                     }
                   >
-                    {shot === 2 ? '✕' : null}
-                    {shot === 1 ? '•' : null}
+                    {shot === 2 ? (
+                      <span className="mn-shot-mark mn-shot-mark--hit" aria-hidden />
+                    ) : null}
+                    {shot === 1 ? (
+                      <span className="mn-shot-mark mn-shot-mark--miss" aria-hidden />
+                    ) : null}
                   </div>
                 );
               })}
@@ -208,8 +212,12 @@ export function BattleshipGame() {
                     disabled={finished || shot !== 0}
                     onClick={() => handleFire(cell)}
                   >
-                    {shot === 2 ? '✕' : null}
-                    {shot === 1 ? '•' : null}
+                    {shot === 2 ? (
+                      <span className="mn-shot-mark mn-shot-mark--hit" aria-hidden />
+                    ) : null}
+                    {shot === 1 ? (
+                      <span className="mn-shot-mark mn-shot-mark--miss" aria-hidden />
+                    ) : null}
                   </button>
                 );
               })}

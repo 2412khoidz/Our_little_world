@@ -1,3 +1,4 @@
+import { Volume2, VolumeX } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { MinigameOutcome } from '../../shared/minigames';
 import { coupleDisplayFor } from './minigameCoupleDisplay';
@@ -51,7 +52,7 @@ export function MinigameShell({
             </a>
             <button
               type="button"
-              className="mn-btn mn-btn--ghost mn-btn--compact"
+              className="mn-btn mn-btn--ghost mn-btn--compact mn-btn--icon"
               data-testid="minigame-mute"
               aria-pressed={muted}
               onClick={() => {
@@ -60,7 +61,12 @@ export function MinigameShell({
                 setMuted(next);
               }}
             >
-              {muted ? '🔇' : '🔊'}
+              {muted ? (
+                <VolumeX size={18} strokeWidth={2.2} aria-hidden />
+              ) : (
+                <Volume2 size={18} strokeWidth={2.2} aria-hidden />
+              )}
+              <span className="mn-sr-only">{muted ? 'Bật âm thanh' : 'Tắt âm thanh'}</span>
             </button>
           </div>
         </div>
@@ -76,7 +82,7 @@ export function MinigameShell({
               className={`mn-couple-pill${active ? ' mn-couple-pill--active' : ''}`}
               data-testid={`minigame-player-${id}`}
             >
-              <span className="mn-couple-emoji" aria-hidden="true">{d.emoji}</span>
+              <span className={`mn-couple-icon ${d.iconClass}`} aria-hidden="true" />
               {d.label}
             </span>
           );
