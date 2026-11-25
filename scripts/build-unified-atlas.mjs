@@ -319,7 +319,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     });
     const { SEMANTIC_ASSETS } = await import('data:text/javascript;base64,' + Buffer.from(outputText).toString('base64'));
     const paths = JSON.parse(fs.readFileSync(path.join(root, 'scripts/atlas-sources/demo-e-textures.json'), 'utf8'));
-    const result = spawnSync('python', ['-X', 'utf8', path.join(root, 'scripts/build-private-atlas.py')], {
+    const pythonCmd = process.env.OLW_PYTHON || (process.platform !== 'win32' ? 'python3' : 'python');
+    const result = spawnSync(pythonCmd, ['-X', 'utf8', path.join(root, 'scripts/build-private-atlas.py')], {
       input: JSON.stringify({
         output: path.join(root, 'public/assets/private-unified'),
         fallback: defaultOutput,

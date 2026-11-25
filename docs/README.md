@@ -15,6 +15,7 @@ Toàn bộ tài liệu kiến trúc, nghiên cứu, thiết kế và kế hoạc
 - [docs/MILESTONE_ACCEPTANCE.md](MILESTONE_ACCEPTANCE.md) — Bảng nghiệm thu `18` tiêu chí V0.1 & tiêu chí thoát các phiên bản sau.
 - [docs/DECISIONS.md](DECISIONS.md) — Toàn bộ ADR (`ADR-001..010`) và các quyết định đã chốt (`PD-01..08`).
 - [docs/AGENT_HANDOVER.md](AGENT_HANDOVER.md) — Quy trình bàn giao & review cho DeepSeek V4.1 Flash / Neon / Codex.
+- [docs/handover/](handover/) — Mission 01: Cursor Cloud environment, baseline audit, feature matrix, missing assets, roadmap.
 
 ## 3. Kiến trúc, Bảo mật, Kiểm thử & Media
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — Kiến trúc V0.1 đang chạy (`WorldBackend`, `DevLanBackend`, RLS, rủi ro Safari/PWA).
