@@ -20,6 +20,12 @@ import {
   type DonorFishingSpotId as SpotId,
 } from '../../lib/backend/donorDevLanClient';
 import { drawTidefallFishingScene } from './tidefallFishingCanvas';
+import {
+  matchTidefallCatalogByPreviewName,
+  tidefallFishForDonorSpot,
+  tidefallFishRarityLabelVi,
+  TIDEFALL_FISH_CATALOG,
+} from '../../shared/donor/tidefall-phaser/tidefallFishCatalog';
 
 interface ChillFishingModalProps {
   worldId: string;
@@ -50,10 +56,15 @@ function phaseMessageVi(phase: TidefallFishingState['phase'], observe: boolean):
   }
 }
 
+const TIDEFALL_POND_SPOTS = new Set<DonorFishingSpotId>(['meadow_pond', 'gull_bay']);
+
 export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, onInventoryRefresh }: ChillFishingModalProps) {
   const spotDef = DONOR_FISHING_SPOTS[spotId];
+  const pondSpot = TIDEFALL_POND_SPOTS.has(spotId);
+  const spotCatalog = pondSpot ? tidefallFishForDonorSpot(spotId as 'meadow_pond' | 'gull_bay') : [];
   const [fsm, setFsm] = useState<TidefallFishingState>(() => createTidefallFishingIdle());
   const [preview, setPreview] = useState<string | null>(null);
+  const activeCatalogFish = preview ? matchTidefallCatalogByPreviewName(preview) : null;
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -259,6 +270,39 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
           <div className="cozy-alert" style={{ fontSize: 13 }} role="alert">
             {error}
           </div>
+        )}
+        {showCast && pondSpot && spotCatalog.length > 0 && (
+          <div
+            data-testid="tidefall-fish-catalog"
+            style={{
+              fontSize: 11,
+              maxHeight: 88,
+              overflowY: 'auto',
+              marginBottom: 8,
+              padding: '6px 8px',
+              borderRadius: 8,
+              background: 'var(--cozy-panel-muted, rgba(0,0,0,0.06))',
+            }}
+          >
+            <p style={{ margin: '0 0 4px', fontWeight: 600 }}>Cá có thể gặp tại đây ({spotCatalog.length})</p>
+            <ul style={{ margin: 0, paddingLeft: 16, columns: 2, columnGap: 12 }}>
+              {spotCatalog.slice(0, 12).map((f) => (
+                <li key={f.id} style={{ breakInside: 'avoid' }}>
+                  {f.name} — {tidefallFishRarityLabelVi(f.rarity)}
+                </li>
+              ))}
+            </ul>
+            {TIDEFALL_FISH_CATALOG.length > spotCatalog.length && (
+              <p style={{ margin: '6px 0 0', opacity: 0.75 }}>
+                Tổng {TIDEFALL_FISH_CATALOG.length} loài trong sách câu (xem đủ ở các biome khác).
+              </p>
+            )}
+          </div>
+        )}
+        {activeCatalogFish && fsm.phase !== 'idle' && (
+          <p style={{ fontSize: 12, margin: '0 0 6px' }} data-testid="tidefall-active-fish">
+            Mục tiêu: <strong>{activeCatalogFish.name}</strong> ({tidefallFishRarityLabelVi(activeCatalogFish.rarity)})
+          </p>
         )}
         <canvas
           ref={canvasRef}

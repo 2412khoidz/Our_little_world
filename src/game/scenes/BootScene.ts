@@ -25,10 +25,17 @@ export class BootScene extends Phaser.Scene {
     this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
     this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
-    this.load.spritesheet('donor-cabacos-wheat', '/assets/donor/cabacos-plantation/crops/wheat.png', {
-      frameWidth: 13,
-      frameHeight: 16,
-    });
+    this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
+    const cropSheets: [string, string, number, number][] = [
+      ['donor-cabacos-wheat', '/assets/donor/cabacos-plantation/crops/wheat.png', 13, 16],
+      ['donor-cabacos-carrot', '/assets/donor/cabacos-plantation/crops/carrot.png', 12, 13],
+      ['donor-cabacos-sunflower', '/assets/donor/cabacos-plantation/crops/sunflower.png', 13, 19],
+      ['donor-cabacos-cabbage', '/assets/donor/cabacos-plantation/crops/cabbage.png', 16, 13],
+      ['donor-cabacos-beetroot', '/assets/donor/cabacos-plantation/crops/beetroot.png', 16, 16],
+    ];
+    for (const [key, url, fw, fh] of cropSheets) {
+      this.load.spritesheet(key, url, { frameWidth: fw, frameHeight: fh });
+    }
   }
 
   create(): void {
@@ -51,7 +58,12 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-ts_forest',
       'donor-cabacos-house-interior',
       'donor-cabacos-soil',
+      'donor-cabacos-hoe',
       'donor-cabacos-wheat',
+      'donor-cabacos-carrot',
+      'donor-cabacos-sunflower',
+      'donor-cabacos-cabbage',
+      'donor-cabacos-beetroot',
     ]) {
       this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }

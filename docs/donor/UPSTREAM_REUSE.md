@@ -31,8 +31,11 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | --- | --- |
 | `FishingSystem.js` cast/wait/bite/minigame flow + `Constants.js` `FISHING.*` | `tidefall-phaser/tidefallFishingFsm.ts`, `tidefallFishingConstants.ts` |
 | `FishingSystem.js#createMinigameUI` / `minigamePress` | `features/donor/tidefallFishingCanvas.ts` + `ChillFishingModal.tsx` (pond spots) |
+| `public/assets/data/fish.json` (44 species) | `scripts/vendor-tidefall-fish-catalog.mjs` → `tidefallFishCatalog.v1.json`, `tidefallFishCatalog.ts` |
 
 **Spot:** `meadow_pond`, `gull_bay` → tidefall bar minigame (economy still `olwDonorAuthority` meadowbrook resolve).
+
+**Wave 2 IF:** Pond modal shows biome-filtered catalog (`data-testid=tidefall-fish-catalog`) + active target line when preview name matches catalog.
 
 ## cristianjeffries/chill-fishing (MIT, main) — legacy reel
 
