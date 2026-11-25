@@ -153,7 +153,7 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     let disposed = false;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1218);
-    const camera = new THREE.OrthographicCamera(-2.2, 2.2, 2.8, -2.8, 0.1, 40);
+    const camera = new THREE.OrthographicCamera(-1.6, 1.6, 2.0, -2.0, 0.1, 40);
     camera.position.set(0, 0.2, 5);
     camera.lookAt(0, 0.15, 0);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, preserveDrawingBuffer: true });
@@ -192,8 +192,8 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
         catSprite.material = mat;
       } else {
         catSprite = new THREE.Sprite(mat);
-        catSprite.scale.set(4.5, 4.5, 1);
-        catSprite.position.set(0, 0.2, 0);
+        catSprite.scale.set(1.35, 1.35, 1);
+        catSprite.position.set(0, 0.05, 0);
         catSprite.center.set(0.5, 0.88);
         catSpriteRef.current = catSprite;
         scene.add(catSprite);
@@ -236,7 +236,7 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
       const h = Math.max(host.clientHeight || host.offsetHeight, 280);
       renderer.setSize(w, h, false);
       const aspect = w / h;
-      const halfH = 2.8;
+      const halfH = 2.0;
       const halfW = halfH * aspect;
       camera.left = -halfW;
       camera.right = halfW;
