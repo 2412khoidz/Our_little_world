@@ -13,15 +13,24 @@ import {
 import {
   buildBrainDebugTrace,
   createPetBrainState,
+  deserializePetBrain,
   evaluateLivingPetStep,
+  serializePetBrain,
   snapshotToInput,
   tickPetBrain,
   type PetBrainState,
 } from './petAutonomousController';
+import type { PetFoodOfferInput } from './petBrainContract04B';
+import {
+  confirmLabCompletion,
+  createLabSimulationExecutor,
+  logLabTransition,
+  type LabSimulationExecutorState,
+} from './petLabSimulationExecutor';
 
 export type { ActionScoreBreakdown } from './petIntelligenceConfig';
 
-export { evaluateLivingPetStep, buildBrainDebugTrace, createPetBrainState };
+export { evaluateLivingPetStep, buildBrainDebugTrace, createPetBrainState, serializePetBrain, deserializePetBrain };
 
 export interface PetLabScenarioPreset {
   id: string;
@@ -78,32 +87,40 @@ export interface SimulationStepResult {
 /** @deprecated use `evaluateLivingPetStep` from petAutonomousController */
 export type { SimulationStepResult as LegacySimulationStepResult };
 
-function applyCompletionNeeds(
-  ctx: DecisionContext,
-  actionId: string | undefined,
-): DecisionContext {
-  if (!actionId) return ctx;
-  if (actionId === 'eat_bowl') {
-    return { ...ctx, needs: { ...ctx.needs, hunger: Math.min(100, ctx.needs.hunger + 22) } };
-  }
-  if (actionId === 'drink_bowl') {
-    return { ...ctx, needs: { ...ctx.needs, thirst: Math.min(100, ctx.needs.thirst + 22) } };
-  }
-  if (actionId === 'sleep_cushion' || actionId === 'nap_on_sofa' || actionId === 'sunbathe') {
-    return { ...ctx, needs: { ...ctx.needs, energy: Math.min(100, ctx.needs.energy + 12) } };
-  }
-  if (actionId === 'play_yarn' || actionId === 'chase_ball') {
-    return { ...ctx, needs: { ...ctx.needs, fun: Math.min(100, ctx.needs.fun + 14), energy: Math.max(25, ctx.needs.energy - 6) } };
-  }
-  return ctx;
+export interface PetLabTraceResult {
+  actionsChosen: string[];
+  instanceTransitions: string[];
+  switches: number;
+  finalNeeds: DecisionContext['needs'];
+  finalEmotion: ReturnType<typeof derive9Emotion>;
+  memoryCount: number;
+  brainMemoryCount: number;
+  resources: { bowlFoodPortions: number; waterBowlVolume: number };
+  transitionCount: number;
+  completionKinds: Record<string, number>;
+  debug: ReturnType<typeof buildBrainDebugTrace>;
 }
 
-export function runPetLabVerificationTrace(params: {
+export interface PetLabRunOptions {
   presetId: string;
   traits: PetPersonalityTraits;
   steps?: number;
   stepMs?: number;
-}) {
+  foodOffer?: PetFoodOfferInput | null;
+  targetMovedAfterStep?: number;
+  targetMovedId?: string;
+}
+
+function syncCtxNeeds(ctx: DecisionContext, sim: LabSimulationExecutorState): DecisionContext {
+  return {
+    ...ctx,
+    needs: { ...sim.needs },
+    bowlFoodPortions: sim.resources.bowlFoodPortions,
+    waterBowlVolume: sim.resources.waterBowlVolume,
+  };
+}
+
+function runLabLoop(params: PetLabRunOptions): PetLabTraceResult {
   const stepMs = params.stepMs ?? 4000;
   const totalSteps = params.steps ?? 20;
   const scenario = PET_LAB_SCENARIOS.find((s) => s.id === params.presetId) ?? PET_LAB_SCENARIOS[0]!;
@@ -121,40 +138,84 @@ export function runPetLabVerificationTrace(params: {
   });
 
   let brain: PetBrainState = createPetBrainState();
+  let sim = createLabSimulationExecutor(ctx.needs, {
+    bowlFoodPortions: ctx.bowlFoodPortions,
+    waterBowlVolume: ctx.waterBowlVolume,
+  });
+
   let switches = 0;
   const actionsChosen: string[] = [];
+  const instanceTransitions: string[] = [];
+  let lastInstance: string | null = null;
   let lastAction = '';
+  const completionKinds: Record<string, number> = {};
 
   for (let i = 0; i < totalSteps; i += 1) {
     const nowMs = 1_000_000 + i * stepMs;
-    ctx = { ...ctx, nowMs, emotion: derive9Emotion(ctx.needs, ctx.traits) };
-    const affordances = buildLabAffordances(
-      params.presetId === 'target_moved' && i >= 2 ? 'pet_bed' : undefined,
-    );
+    ctx = syncCtxNeeds({ ...ctx, nowMs, emotion: derive9Emotion(ctx.needs, ctx.traits) }, sim);
+    const movedId =
+      params.targetMovedAfterStep !== undefined && i >= params.targetMovedAfterStep
+        ? params.targetMovedId ?? 'pet_bed'
+        : params.presetId === 'target_moved' && i >= 2
+          ? 'pet_bed'
+          : undefined;
+    const affordances = buildLabAffordances(movedId);
     const tick = tickPetBrain(
       brain,
-      snapshotToInput(ctx, affordances, ['partner-a', 'partner-b']),
+      snapshotToInput(ctx, affordances, ['partner-a', 'partner-b'], {
+        foodOffer: params.foodOffer ?? null,
+      }),
     );
     brain = tick.state;
+
+    const instanceId = tick.output.currentIntent?.instanceId ?? null;
+    if (instanceId && instanceId !== lastInstance) {
+      instanceTransitions.push(
+        `${nowMs}:${tick.output.phase}:${tick.output.currentIntent?.actionId ?? '?'}`,
+      );
+      lastInstance = instanceId;
+    }
+
     const intent = tick.output.currentIntent?.actionId;
     if (intent && intent !== lastAction) {
       if (lastAction) switches += 1;
       lastAction = intent;
       actionsChosen.push(intent);
     }
+
+    sim = logLabTransition(sim, {
+      atMs: nowMs,
+      phase: tick.output.phase,
+      instanceId,
+      actionId: tick.output.currentIntent?.actionId ?? null,
+      targetId: tick.output.currentIntent?.targetId ?? null,
+      detailVi: tick.output.rejectedReasonVi ?? tick.state.lastSwitchReasonVi,
+    });
+
     for (const done of tick.output.completions) {
-      ctx = applyCompletionNeeds(ctx, done.intent.actionId);
+      completionKinds[done.kind] = (completionKinds[done.kind] ?? 0) + 1;
+      const confirmed = confirmLabCompletion(sim, done, done.instanceId);
+      sim = confirmed.sim;
     }
   }
 
   return {
     actionsChosen,
+    instanceTransitions,
     switches,
-    finalNeeds: ctx.needs,
-    finalEmotion: derive9Emotion(ctx.needs, ctx.traits),
-    memoryCount: brain.memory.events.length,
+    finalNeeds: sim.needs,
+    finalEmotion: derive9Emotion(sim.needs, params.traits),
+    memoryCount: sim.memoryEvents.length,
+    brainMemoryCount: brain.memory.events.length,
+    resources: { ...sim.resources },
+    transitionCount: sim.transitionLog.length,
+    completionKinds,
     debug: buildBrainDebugTrace(brain),
   };
+}
+
+export function runPetLabVerificationTrace(params: PetLabRunOptions) {
+  return runLabLoop(params);
 }
 
 export function runPetLabSessionTrace(params: {
@@ -162,14 +223,23 @@ export function runPetLabSessionTrace(params: {
   traits: PetPersonalityTraits;
   durationMs: number;
   stepMs?: number;
+  foodOffer?: PetFoodOfferInput | null;
 }) {
-  const steps = Math.max(1, Math.floor(params.durationMs / (params.stepMs ?? 2500)));
-  return runPetLabVerificationTrace({
+  const stepMs = params.stepMs ?? 2500;
+  const steps = Math.max(1, Math.floor(params.durationMs / stepMs));
+  return runLabLoop({
     presetId: params.presetId,
     traits: params.traits,
     steps,
-    stepMs: params.stepMs ?? 2500,
+    stepMs,
+    foodOffer: params.foodOffer,
   });
 }
+
+export const PET_LAB_LONG_SESSIONS = [
+  { presetId: 'new_furniture', traitId: 'curious_bong', durationMs: 240_000 },
+  { presetId: 'hungry', traitId: 'mischievous_quyt', durationMs: 210_000 },
+  { presetId: 'target_moved', traitId: 'sleepy_mochi', durationMs: 180_000 },
+] as const;
 
 export { PET_PERSONALITY_PRESETS, PET_MEMORY_PERSIST_CAP };

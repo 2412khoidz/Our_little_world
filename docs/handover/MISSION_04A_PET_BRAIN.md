@@ -1,31 +1,43 @@
 # MISSION_04A — Living Pet Brain & Autonomous Behavior
 
 **Branch:** `cursor/mission-04a-pet-brain-36fd`  
+**PR:** #7 (correctness pass @ controller lifecycle, persistence, memory authority, lab executor)  
 **Scope:** `src/shared/petLiving/*`, Pet Lab sandbox, Vitest — **no** SQL, `App.tsx`, `WorldScene`, Inventory/Catalog production paths.
 
 ## Architecture
 
 ```
-PetBrainInputSnapshot (needs, traits, affordances, env, nowMs)
+PetBrainInputSnapshot (needs, traits, affordances, env, foodOffer?, nowMs)
         ↓
-petAutonomousController.tickPetBrain
+petAutonomousController.tickPetBrain  (decision cadence, no per-frame replan)
         ↓
 DeepSeek primitives (via petPrimitivesAdapter)
   · filterAffordances / needUrgency / scoreAction
-  · shouldInterrupt / isRepeatSuppressed / noteSelection
-  · appendMemoryEvent (cap 24)
+  · shouldInterrupt during moving/performing
+  · isRepeatSuppressed — no ranked[0] fallback when suppressed
+  · noteSelection / noteSwitch
         ↓
 Neon petIntelligenceConfig (action scoring, 7 traits, 8 needs, 9 emotions)
         ↓
-PetBrainDecisionOutput (phase, intents, completions — no inventory RPC)
+PetBrainDecisionOutput
+  · phase + PetActionIntent (instanceId, travel vs perform ms)
+  · completions: completed | failed | cancelled | interrupted (proposed deltas only)
+  · foodIntents from offer (caregiver on offer, no inventory mutation)
+  · memoryIntents: [] (brain never authoritative)
+        ↓
+petLabSimulationExecutor (dev only) — confirm completion, bowl/water accounting, memory
 ```
 
-## Fixture replacement
+## Correctness pass highlights
 
-- **`petPrimitivesAdapter.ts`:** re-exports / bridges to `src/shared/petAdvanced/primitives` (no local duplicate math).
-- **`petAutonomousController.ts`:** lifecycle phases `idle → moving → performing → completing`; commitment + anti-repeat (extra cooldown on `hide_in_box`).
-- **`petBrainContract04B.ts`:** types only for Mission 04B authoritative execution.
-- **`petFoodIntent.ts`:** sniff/accept/refuse/defer — `consumeItem` remains an **intent flag**, not executed here.
+| Area | Behavior |
+|------|-----------|
+| **Lifecycle** | `idle → moving → performing → completing`; perform clock starts after travel; interrupt evaluation on cadence while moving/performing |
+| **Target loss** | Cancel in flight; no `completed` on invalid target |
+| **Persistence** | `PetBrainPersistedState` **v2** (`lastIntent`, travel/perform timestamps, `completedInstanceIds`); safe v1 upgrade |
+| **Memory** | Fed/drank/slept only via **lab executor** after `completed`; duplicate instance IDs ignored |
+| **Anti-repeat** | Suppressed candidates skipped entirely → idle fallback message |
+| **Food** | `foodOffer` on snapshot → `PetFoodOfferIntent`; deferred offers do not set `mayConsumeItem` |
 
 ## Personalities (QA trio)
 
@@ -39,39 +51,32 @@ PetBrainDecisionOutput (phase, intents, completions — no inventory RPC)
 
 ## Pet Lab
 
-- `/?pet-lab=1` — uses real `tickPetBrain`, ~72s session trace, debug phase/intent strip.
-- Long traces: `runPetLabSessionTrace({ durationMs, stepMs })`.
+- `/?pet-lab=1` — `tickPetBrain` + debug phase/intent/travel strip.
+- `runPetLabSessionTrace` feeds completions through `petLabSimulationExecutor` and logs **per-instance** transitions.
+- Long acceptance runs (180–300s): `PET_LAB_LONG_SESSIONS` in `petLabSimulation.ts`.
 
 ## Session traces (Vitest artifact)
 
 After `npm run test -- tests/unit/petBrainAutonomous.test.ts`:
 
-- `test-results/pet-brain-traces/session-curious-explore.json`
-- `test-results/pet-brain-traces/session-sleepy-interrupt.json`
-- `test-results/pet-brain-traces/session-hungry-food.json`
-
-## Verification (local)
-
-| Check | Result |
-|--------|--------|
-| `npm run lint` / `typecheck` / **466** Vitest | Pass on branch |
-| `verify-prod-guard` | Unchanged Pet Lab DEV marker |
-| Device / private art | Not claimed |
+- `test-results/pet-brain-traces/session-new_furniture-curious_bong.json`
+- `test-results/pet-brain-traces/session-hungry-mischievous_quyt.json`
+- `test-results/pet-brain-traces/session-target_moved-sleepy_mochi.json`
 
 ## Regression tests
 
-`tests/unit/petBrainAutonomous.test.ts` — adapter, serialization, personality divergence, anti-repeat, commitment, food defer, unreachable affordance, deterministic replay.
+`tests/unit/petBrainAutonomous.test.ts` — v2 restore mid-action, interrupt vs commitment, target moved cancel, suppressed-all idle, executor exactly-once & empty bowl, resource depletion, food offer caregiver, deterministic instance transitions, 180–300s artifacts.
 
-Existing `petLivingIntelligence.test.ts` updated for brain lifecycle trace semantics.
+`tests/unit/petLivingIntelligence.test.ts` — scenarios + personality divergence (lab executor need path).
 
 ## Known limits
 
-- Lab applies **soft need deltas on completion** for demonstration only; production must use 04B server transactions.
-- No pathfinding / Phaser movement — travel is time-based in lab.
-- Mission 04B must wire `PetActionCompletionEvent` + `PetFoodOfferIntent` to RPC.
+- Lab travel remains **time-based**; Mission **04B** supplies real movement / authoritative consumption RPC.
+- Brain emits **proposed** `proposedNeedDeltas` on `completed`; production must confirm before applying needs or inventory.
+- Mission 04B must wire `PetActionCompletionEvent` + `PetFoodOfferIntent` to server transactions.
 
 ## Integration contract (04B)
 
-See `petBrainContract04B.ts`: `PetBrainInputSnapshot`, `PetActionIntent`, `PetActionCompletionEvent`, `PetFoodOfferIntent`, `PetBrainPersistedState`.
+See `petBrainContract04B.ts`: `PetBrainInputSnapshot`, `PetActionIntent`, `PetActionCompletionEvent`, `PetFoodOfferIntent`, `PetBrainPersistedState` (v2).
 
-Brain **must not** debit inventory, persist affection, or call Supabase.
+Brain **must not** debit inventory, persist affection, append authoritative memory, or call Supabase.

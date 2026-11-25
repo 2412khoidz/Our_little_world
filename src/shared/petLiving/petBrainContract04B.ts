@@ -3,6 +3,13 @@
  * Pure types only; no RPC, inventory, or affection persistence here.
  */
 
+export interface PetFoodOfferInput {
+  readonly caregiverId: string;
+  readonly sku: string;
+  readonly quality: 'normal' | 'silver' | 'gold';
+  readonly offerId: string;
+}
+
 /** Snapshot the authoritative layer should supply each tick. */
 export interface PetBrainInputSnapshot {
   readonly nowMs: number;
@@ -20,6 +27,8 @@ export interface PetBrainInputSnapshot {
     readonly partnerJustArrived: boolean;
     readonly hasNewFurnitureId: string | null;
   };
+  readonly foodOffer?: PetFoodOfferInput | null;
+  readonly decisionCadenceMs?: number;
 }
 
 export type PetBrainPhase =
@@ -31,6 +40,7 @@ export type PetBrainPhase =
 
 /** Selected action before/during execution — no consumption side effects. */
 export interface PetActionIntent {
+  readonly instanceId: string;
   readonly actionId: string;
   readonly targetId: string;
   readonly affordanceId: string;
@@ -38,19 +48,22 @@ export interface PetActionIntent {
   readonly reasonVi: string;
   readonly animationHint: string;
   readonly interruptible: boolean;
-  readonly estimatedDurationMs: number;
+  readonly estimatedPerformMs: number;
+  readonly estimatedTravelMs: number;
 }
 
 export interface PetActionCompletionEvent {
   readonly kind: 'completed' | 'failed' | 'cancelled' | 'interrupted';
+  readonly instanceId: string;
   readonly intent: PetActionIntent;
   readonly atMs: number;
-  readonly /** Server should validate then apply need deltas. */ proposedNeedDeltas?: Readonly<
-    Partial<import('./petIntelligenceConfig').Pet8Needs>
-  >;
+  /** Proposed only — authoritative layer confirms before applying. */
+  readonly proposedNeedDeltas?: Readonly<Partial<import('./petIntelligenceConfig').Pet8Needs>>;
+  readonly failureReasonVi?: string;
 }
 
 export interface PetFoodOfferIntent {
+  readonly offerId: string;
   readonly caregiverId: string;
   readonly sku: string;
   readonly quality: 'normal' | 'silver' | 'gold';
@@ -79,7 +92,7 @@ export interface PetBrainDecisionOutput {
 }
 
 /** Serializable brain blob for 04B persistence (JSON-safe). */
-export interface PetBrainPersistedState {
+export interface PetBrainPersistedStateV1 {
   readonly version: 1;
   readonly phase: PetBrainPhase;
   readonly memoryJson: string;
@@ -87,4 +100,20 @@ export interface PetBrainPersistedState {
   readonly switchHistoryJson: string;
   readonly activeJson: string | null;
   readonly travelCompleteAtMs: number | null;
+}
+
+export interface PetBrainPersistedState {
+  readonly version: 2;
+  readonly phase: PetBrainPhase;
+  readonly memoryJson: string;
+  readonly selectionLogJson: string;
+  readonly switchHistoryJson: string;
+  readonly activeJson: string | null;
+  readonly lastIntentJson: string | null;
+  readonly travelCompleteAtMs: number | null;
+  readonly performingStartedAtMs: number | null;
+  readonly moveStartedAtMs: number | null;
+  readonly instanceSeq: number;
+  readonly lastDecisionAtMs: number;
+  readonly completedInstanceIdsJson: string;
 }
