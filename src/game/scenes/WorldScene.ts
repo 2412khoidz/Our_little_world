@@ -8,6 +8,7 @@ import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
 import {
   getDonorCabacosTilesets,
   isDonorCabacosMap,
+  isDonorCabacosMapFromCache,
   renderDonorCabacosMapLayers,
   renderDonorCabacosShopInterior,
 } from '../world/renderDonorCabacosMap';
@@ -578,10 +579,24 @@ export class WorldScene extends Phaser.Scene {
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
 
-    if (isDonorCabacosMap(tilemap)) {
+    const donorCabacos =
+      isDonorCabacosMap(tilemap) || isDonorCabacosMapFromCache(this, mapKey);
+    if (donorCabacos) {
       const tilesets = getDonorCabacosTilesets(tilemap);
       if (tilesets.length > 0) {
         renderDonorCabacosMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[Cabacos] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error(
+          '[Cabacos] Donor map detected but no tilesets bound; check BootScene donor textures.',
+          tilemap.tilesets.map((t) => t.name),
+        );
       }
       return;
     }
@@ -884,7 +899,7 @@ export class WorldScene extends Phaser.Scene {
       }),
 
       gameEventBus.on('cmd:set-map', ({ mapId, spawnTile }) => {
-        if (mapId !== this.currentMapId) {
+        if (mapId !== this.currentMapId || spawnTile) {
           this.buildMap(mapId, spawnTile);
         }
       }),

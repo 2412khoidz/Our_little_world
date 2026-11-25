@@ -331,6 +331,25 @@ function MainCoupleApp() {
     }, 3600);
   }, []);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('vqg-capture') !== '1') return;
+    type VqgWindow = Window & {
+      __OLW_VQG?: { jump: (mapId: MapId, tileX: number, tileY: number) => void };
+    };
+    const w = window as VqgWindow;
+    w.__OLW_VQG = {
+      jump: (mapId, tileX, tileY) => {
+        setCurrentMapId(mapId);
+        gameEventBus.emit('cmd:set-map', { mapId, spawnTile: { tileX, tileY } });
+      },
+    };
+    return () => {
+      delete w.__OLW_VQG;
+    };
+  }, []);
+
   const refreshWorldSnapshot = useCallback(async () => {
     const res = await backend.getWorldSnapshot();
     if (!res.ok) {
