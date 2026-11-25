@@ -10,6 +10,8 @@ import {
   postDonorWorkshopQueue,
 } from '../../lib/backend/donorDevLanClient';
 import type { DonorWorkshopFocus } from '../../shared/donor/donorWorkshopFocus';
+import { NuvoraCraftDesk } from '../inventory/nuvora/NuvoraCraftDesk';
+import '../inventory/nuvora/nuvoraInventorySkin.css';
 
 interface DonorWorkshopModalProps {
   worldId: string;
@@ -61,11 +63,11 @@ export function DonorWorkshopModal({ worldId, focusSection, onClose, onInventory
   };
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" data-testid="donor-workshop-modal">
-      <div className="modal-panel">
-        <div className="modal-header">
-          <h2 className="modal-title">
-            <Factory size={18} />{' '}
+    <div className="modal-backdrop nuvora-inv-backdrop" role="dialog" aria-modal="true" data-testid="donor-workshop-modal">
+      <div className="nuvora-desk" style={{ maxWidth: 'min(98vw, 480px)' }}>
+        <div className="nuvora-desk__title-row">
+          <h2 className="nuvora-desk__title">
+            <Factory size={18} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
             {focusSection === 'bakery'
               ? 'Lò Hollow — làng'
               : focusSection === 'coop'
@@ -82,60 +84,51 @@ export function DonorWorkshopModal({ worldId, focusSection, onClose, onInventory
           </div>
         )}
         {showMill && (
-          <>
-            <p style={{ fontSize: 13, fontWeight: 600 }}>Cối xay Meadowbrook</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopQueue(worldId, 'olw_flour').then())}>
-                Xếp: 2 lúa → bột
-              </button>
-              <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopCollect(worldId).then())}>
-                Lấy từ cối xay
-              </button>
-            </div>
-            <ul style={{ fontSize: 12 }}>
+          <NuvoraCraftDesk title="Cối xay Meadowbrook" plateLabel="CỐI XAY">
+            <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopQueue(worldId, 'olw_flour').then())}>
+              Xếp: 2 lúa → bột
+            </button>
+            <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopCollect(worldId).then())}>
+              Lấy từ cối xay
+            </button>
+            <ul style={{ fontSize: 12, margin: 0, paddingLeft: 18, color: '#e8f0ff' }}>
               {(view?.mill.queue ?? []).map((job) => (
                 <li key={`m-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
               ))}
             </ul>
-          </>
+          </NuvoraCraftDesk>
         )}
 
         {showBakery && (
-          <>
-        <p style={{ fontSize: 13, fontWeight: 600, marginTop: showMill ? 12 : 0 }}>Lò Hollow (harvest-hollow)</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button type="button" className="btn btn--primary btn--sm" disabled={busy} data-testid="donor-queue-bread" onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_bread').then())}>
-            Xếp: 1 bột → bánh mì
-          </button>
-          <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_chicken_feed').then())}>
-            Xếp: 3 lúa → thức ăn gà ×6
-          </button>
-          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-collect-bakery" onClick={() => void run(() => postDonorBakeryCollect(worldId).then())}>
-            Lấy từ lò
-          </button>
-        </div>
-        <ul style={{ fontSize: 12 }}>
-          {(view?.bakery.queue ?? []).map((job) => (
-            <li key={`b-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
-          ))}
-        </ul>
-          </>
+          <NuvoraCraftDesk title="Lò Hollow" plateLabel="LÒ NƯỚNG">
+            <button type="button" className="btn btn--primary btn--sm" disabled={busy} data-testid="donor-queue-bread" onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_bread').then())}>
+              Xếp: 1 bột → bánh mì
+            </button>
+            <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_chicken_feed').then())}>
+              Xếp: 3 lúa → thức ăn gà ×6
+            </button>
+            <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-collect-bakery" onClick={() => void run(() => postDonorBakeryCollect(worldId).then())}>
+              Lấy từ lò
+            </button>
+            <ul style={{ fontSize: 12, margin: 0, paddingLeft: 18, color: '#e8f0ff' }}>
+              {(view?.bakery.queue ?? []).map((job) => (
+                <li key={`b-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
+              ))}
+            </ul>
+          </NuvoraCraftDesk>
         )}
 
         {showCoop && (
-          <>
-        <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12 }}>
-          <Egg size={14} style={{ verticalAlign: 'middle' }} /> Chuồng gà
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-feed" onClick={() => void run(() => postDonorCoopFeed(worldId).then())}>
-            Cho ăn (1 thức ăn gà)
-          </button>
-          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-collect" onClick={() => void run(() => postDonorCoopCollect(worldId).then())}>
-            Nhặt trứng
-          </button>
-        </div>
-          </>
+          <NuvoraCraftDesk title="Chuồng gà" plateLabel="CHUỒNG">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-feed" onClick={() => void run(() => postDonorCoopFeed(worldId).then())}>
+                Cho ăn (1 thức ăn gà)
+              </button>
+              <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-collect" onClick={() => void run(() => postDonorCoopCollect(worldId).then())}>
+                <Egg size={14} style={{ verticalAlign: 'middle' }} /> Nhặt trứng
+              </button>
+            </div>
+          </NuvoraCraftDesk>
         )}
       </div>
     </div>

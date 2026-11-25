@@ -36,3 +36,12 @@ export function nuvoraHotbarIndexFromHeld(slotIndex: number | null): number {
   if (slotIndex === null || slotIndex < 0) return 0;
   return slotIndex;
 }
+
+/** Map SKU → first hotbar slot from inventoryHotbarAdapter projection. */
+export function hotbarSlotIndexForSku(
+  slots: ReadonlyArray<{ readonly slotIndex: number; readonly itemSku: string | null; readonly qty: number }>,
+  sku: string,
+): number | null {
+  const found = slots.find((s) => s.itemSku === sku && s.qty > 0);
+  return found ? found.slotIndex : null;
+}

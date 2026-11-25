@@ -1,7 +1,11 @@
+import { useMemo } from 'react';
 import { requireItem } from '../../shared/economy/catalogConfig';
 import { getCropDefinition } from '../../shared/farming/crops';
 import { FARM_SHOP_SEED_SKUS, FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
+import type { NuvoraGridCell } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
+import '../inventory/nuvora/nuvoraInventorySkin.css';
 
 export interface FarmEconomyPanelProps {
   walletCoins: number;
@@ -44,16 +48,49 @@ export function FarmEconomyPanel({
 }: FarmEconomyPanelProps) {
   const title = mode === 'shop' ? 'Gian hạt Bác Hai' : 'Thùng giao hàng';
 
+  const shippingCells = useMemo((): readonly NuvoraGridCell[] => {
+    const rows: { itemSku: string; qty: number; quality: 'normal' | 'silver' | 'gold' }[] = [];
+    for (const sku of FARM_SELLABLE_CROP_SKUS) {
+      for (const quality of ['normal', 'silver', 'gold'] as const) {
+        const qty = cropQty(inventory, sku, quality);
+        if (qty > 0) {
+          rows.push({ itemSku: `${sku}:${quality}`, qty, quality });
+        }
+      }
+    }
+    return inventoryRowsToNuvoraGrid(
+      rows.map((r) => ({ itemSku: r.itemSku, qty: r.qty })),
+      (key) => {
+        const [sku, quality] = key.split(':') as [string, 'normal' | 'silver' | 'gold'];
+        const label = getCropDefinition(sku)?.nameVi ?? sku;
+        return `${label}${QUALITY_LABEL[quality] ?? ''}`;
+      },
+      27,
+    );
+  }, [inventory]);
+
+  const parseShipKey = (key: string) => {
+    const [sku, quality] = key.split(':') as [string, 'normal' | 'silver' | 'gold'];
+    return { sku, quality: quality ?? 'normal' };
+  };
+
   return (
-    <div className="olw-modal-panel" role="dialog" aria-labelledby="farm-economy-title">
-      <div className="olw-modal-head">
+    <div
+      className={mode === 'shipping' ? 'nuvora-ship-desk' : 'olw-modal-panel'}
+      role="dialog"
+      aria-labelledby="farm-economy-title"
+      data-testid={mode === 'shipping' ? 'nuvora-shipping-desk' : 'farm-economy-panel'}
+    >
+      <div className={mode === 'shipping' ? '' : 'olw-modal-head'}>
         <h2 id="farm-economy-title">{title}</h2>
-        <button type="button" className="olw-modal-close" onClick={onClose} aria-label="Đóng">
-          ×
+        <button type="button" className={mode === 'shipping' ? 'btn btn--secondary btn--sm' : 'olw-modal-close'} onClick={onClose} aria-label="Đóng">
+          {mode === 'shipping' ? 'Đóng' : '×'}
         </button>
       </div>
-      <p className="olw-modal-sub">Ví chung: {walletCoins} xu</p>
-      <div className="olw-modal-body stack gap-sm">
+      <p className={mode === 'shipping' ? '' : 'olw-modal-sub'} style={{ fontSize: 13, margin: '0 0 8px' }}>
+        Ví chung: {walletCoins} xu
+      </p>
+      <div className={mode === 'shop' ? 'olw-modal-body stack gap-sm' : ''}>
         {mode === 'shop' &&
           FARM_SHOP_SEED_SKUS.map((seedSku) => {
             let price = 0;
@@ -78,28 +115,47 @@ export function FarmEconomyPanel({
               </button>
             );
           })}
-        {mode === 'shipping' &&
-          FARM_SELLABLE_CROP_SKUS.flatMap((sku) => {
-            const label = getCropDefinition(sku)?.nameVi ?? sku;
-            return (['normal', 'silver', 'gold'] as const).map((quality) => {
-              const qty = cropQty(inventory, sku, quality);
-              if (qty < 1) return null;
-              return (
-                <button
-                  key={`${sku}-${quality}`}
-                  type="button"
-                  className="olw-btn"
-                  disabled={busy}
-                  onClick={() => onShip(sku, 1, quality)}
-                >
-                  Gửi 1 {label}
-                  {QUALITY_LABEL[quality]} (còn {qty})
-                </button>
-              );
-            });
-          })}
         {mode === 'shipping' && (
-          <p className="olw-modal-hint">Giá áp dụng bão hòa nhóm theo ngày — server tính, không gửi giá từ client.</p>
+          <>
+            <p style={{ fontSize: 12, color: '#f5e6c8', margin: 0 }}>
+              Chạm ô nông sản để gửi 1 phần qua đêm — giá do server tính theo ngày.
+            </p>
+            {shippingCells.every((c) => !c.sku) ? (
+              <div className="cozy-alert" style={{ fontSize: 13, background: '#f0e4c8', color: '#4a3320' }}>
+                Chưa có nông sản trong túi chung để gửi.
+              </div>
+            ) : (
+              <div className="nuvora-tray">
+                <div className="nuvora-g9">
+                  {shippingCells.map((cell, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="nuvora-sl"
+                      disabled={busy || !cell.sku}
+                      data-testid={cell.sku ? `nuvora-ship-${cell.sku}` : `nuvora-ship-empty-${idx}`}
+                      title={cell.labelVi}
+                      onClick={() => {
+                        if (!cell.sku) return;
+                        const { sku, quality } = parseShipKey(cell.sku);
+                        void onShip(sku, 1, quality);
+                      }}
+                    >
+                      {cell.sku ? (
+                        <>
+                          <span className="nuvora-sl__icon" style={{ fontSize: 10, textAlign: 'center', lineHeight: 1.1 }}>
+                            {cell.labelVi.slice(0, 6)}
+                          </span>
+                          {cell.qty > 1 ? <b className="nuvora-sl__qty">{cell.qty}</b> : null}
+                        </>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+                <div className="nuvora-plate">THÙNG GOM</div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

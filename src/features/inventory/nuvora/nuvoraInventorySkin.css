@@ -155,3 +155,112 @@
     0 0 0 2px #1f1008;
   transform: translateY(-3px);
 }
+
+.nuvora-g9--hot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px dashed #0006;
+}
+
+.nuvora-sl {
+  cursor: pointer;
+}
+
+.nuvora-sl:hover::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: rgba(255, 226, 160, 0.3);
+  pointer-events: none;
+}
+
+.nuvora-tip {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  background: #1d120bf2;
+  box-shadow:
+    0 0 0 2px #c9944f,
+    0 0 0 4px #1f1008;
+  color: #fff3d6;
+  padding: 4px 8px;
+  font: 12px monospace;
+  max-width: 260px;
+}
+
+.nuvora-cur {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  width: var(--nuvora-slot);
+  height: var(--nuvora-slot);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.92;
+}
+
+.nuvora-mat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px;
+  background-color: #2b4a9e;
+  background-image:
+    linear-gradient(#ffffff0f 1px, #0000 1px),
+    linear-gradient(90deg, #ffffff0f 1px, #0000 1px);
+  background-size: 4px 4px;
+  box-shadow:
+    0 0 0 3px #101c4d,
+    inset 0 0 0 3px #3f63c4;
+  border-radius: 3px;
+}
+
+.nuvora-mat::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed #a9c0ff90;
+  pointer-events: none;
+}
+
+.nuvora-mat__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.nuvora-craft-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nuvora-craft-desk__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8f0ff;
+}
+
+.nuvora-ship-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: repeating-linear-gradient(0deg, #9a6735 0 21px, #6f4623 21px 24px);
+  box-shadow:
+    0 0 0 3px #1f1008,
+    inset 0 0 0 3px #b9803f;
+  border-radius: 4px;
+}
+
+.nuvora-ship-desk h2 {
+  margin: 0;
+  font: italic bold 16px 'Trebuchet MS', serif;
+  color: #f5e6c8;
+  text-shadow: 1px 1px 0 #1f1008;
+}

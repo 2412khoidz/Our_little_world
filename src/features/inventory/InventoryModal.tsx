@@ -2,12 +2,15 @@ import { useMemo, useState } from 'react';
 import { Backpack, Gift, Sparkles, X } from 'lucide-react';
 import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
-import { NuvoraInventoryGrid } from './nuvora/NuvoraInventoryGrid';
+import type { HotbarSlot } from '../../shared/interaction/interactionTypes';
+import { NuvoraInteractiveTray } from './nuvora/NuvoraInteractiveTray';
 import './nuvora/nuvoraInventorySkin.css';
 
 interface InventoryModalProps {
   snapshot: InventorySnapshot | null;
   localUserId: string;
+  hotbarSlots: readonly HotbarSlot[];
+  heldHotbarIndex: number | null;
   loading: boolean;
   onClaimFreeKibble: () => Promise<void>;
   onRefresh: () => Promise<void>;
@@ -17,6 +20,8 @@ interface InventoryModalProps {
 export function InventoryModal({
   snapshot,
   localUserId,
+  hotbarSlots,
+  heldHotbarIndex,
   loading,
   onClaimFreeKibble,
   onRefresh,
@@ -118,7 +123,12 @@ export function InventoryModal({
               : 'Ngăn riêng tư hiện chưa có món nào. Chỉ mình bạn mới xem được ngăn này để giấu quà bất ngờ!'}
           </div>
         ) : (
-          <NuvoraInventoryGrid cells={gridCells} plateLabel={tab === 'shared' ? 'TÚI CHUNG' : 'NGĂN RIÊNG'} />
+          <NuvoraInteractiveTray
+            cells={gridCells}
+            hotbarSlots={hotbarSlots}
+            heldHotbarIndex={heldHotbarIndex}
+            plateLabel={tab === 'shared' ? 'TÚI CHUNG' : 'NGĂN RIÊNG'}
+          />
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

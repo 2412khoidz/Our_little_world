@@ -102,6 +102,8 @@ export interface GameEventMap {
   };
   'cmd:sync-mailbox-unread': { unreadCount: number };
   'cmd:sync-held-item': HeldItemState;
+  /** Inventory desk → gameplay hotbar (inventoryHotbarAdapter slots). */
+  'cmd:select-hotbar-slot': { slotIndex: number };
   'cmd:sync-farm': {
     serverNowMs: number;
     growthTimeScale?: number;

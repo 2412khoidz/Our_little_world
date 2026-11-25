@@ -188,3 +188,13 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 
 **Kept / adapted:** Presentation-only; vitals/mood authority unchanged.  
 **Excluded:** Desktop tray locomotion, multi-pet AI, Tauri shell.
+
+## Wave 2 — NUVORA inventory depth (stack `6d0e7fd`+)
+
+| Field | Value |
+|-------|--------|
+| **Upstream** | [DarTGTtfd/NUVORA](https://github.com/DarTGTtfd/NUVORA) `public/ui.js` click/desk/craft |
+| **Authority** | `inventoryHotbarAdapter.ts`, `farmShipping`, donor workshop Dev LAN RPC |
+| **OLW targets** | `nuvoraSlotInteraction.ts`, `NuvoraInteractiveTray.tsx`, `NuvoraCraftDesk.tsx`, `FarmEconomyPanel` shipping desk |
+| **Proof** | `tests/unit/nuvoraSlotInteraction.test.ts`, `nuvoraPresentationBridge.test.ts` |
+| **Excluded** | `public/hand.js` (Three.js first-person) |
