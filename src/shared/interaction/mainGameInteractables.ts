@@ -139,7 +139,7 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     targets.push({
       id: 'outdoor_market',
       kind: 'shop_npc',
-      labelVi: 'Chợ Bác Hai — chưa mở giao dịch',
+      labelVi: donorEconomyDev ? 'Chợ Bác Hai — mua hạt giống' : 'Chợ Bác Hai — chưa mở giao dịch',
       x: anchors.marketStallPx.x,
       y: anchors.marketStallPx.y,
       maxRadiusPx: 50,
@@ -154,8 +154,10 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     });
     targets.push({
       id: 'outdoor_farm',
-      kind: 'crop_plot',
-      labelVi: 'Luống rau — chưa mở farming V0.2',
+      kind: 'bench',
+      labelVi: donorEconomyDev
+        ? 'Cổng ruộng Cabacos — mở thanh bản đồ → Ruộng'
+        : 'Luống rau — chưa mở farming V0.2',
       x: anchors.farmGatePx.x,
       y: anchors.farmGatePx.y,
       maxRadiusPx: 48,

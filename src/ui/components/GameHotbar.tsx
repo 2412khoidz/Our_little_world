@@ -18,7 +18,7 @@ export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = fals
       aria-label="Thanh vật phẩm nhanh"
       data-testid="game-hotbar"
     >
-      {Array.from({ length: 6 }, (_, idx) => {
+      {Array.from({ length: 8 }, (_, idx) => {
         const slot = slots.find((s) => s.slotIndex === idx);
         const isSelected = heldItem.slotIndex === idx && heldItem.itemKind !== 'none';
         const hasItem = Boolean(slot && slot.itemSku && slot.qty > 0);

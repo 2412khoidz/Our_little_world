@@ -54,6 +54,8 @@ export const V015_CATALOG = [
   },
   { sku: 'tool_hoe', nameVi: 'Cuốc gỗ', descriptionVi: 'Cuốc đất vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'tool_watering_can', nameVi: 'Bình tưới', descriptionVi: 'Tưới cây ngoài vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'rod_basic', nameVi: 'Cần câu cơ bản', descriptionVi: 'Cầm trên tay rồi tới ao/suối — bấm J.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'bait_free_worm', nameVi: 'Mồi giun miễn phí', descriptionVi: 'Thu hoạch / câu cá donor preview.', purpose: 'ingredient', stackLimit: 999, tradeable: false },
   { sku: 'water_pitcher', nameVi: 'Bình nước', descriptionVi: 'Múc nước / đổ bát uống.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'seed_wheat', nameVi: 'Hạt lúa mì', descriptionVi: 'Gieo nhanh, vụ đầu dễ.', purpose: 'seed', stackLimit: 99, tradeable: false },
   { sku: 'wheat', nameVi: 'Lúa mì', descriptionVi: 'Thu hoạch — xay bột tại cối donor.', purpose: 'ingredient', stackLimit: 99, tradeable: false },
@@ -95,6 +97,12 @@ export function grantPetCareStarterPack(v015, worldId, nowIso) {
   adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
   adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
   adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'tool_hoe', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'tool_watering_can', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'seed_wheat', 5, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'seed_carrot', 2, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'rod_basic', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'bait_free_worm', 10, nowIso);
 }
 
 /** Idempotent — nhà đã có mèo nhưng thiếu đồ chơi/đồ ăn (world cũ trước 04C). */
@@ -118,6 +126,26 @@ export function ensurePetCareStarterPackIfMissing(v015, worldId, nowIso) {
   }
   if (qty('water_pitcher') < 1) {
     adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+    changed = true;
+  }
+  if (qty('tool_hoe') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'tool_hoe', 1, nowIso);
+    changed = true;
+  }
+  if (qty('tool_watering_can') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'tool_watering_can', 1, nowIso);
+    changed = true;
+  }
+  if (qty('seed_wheat') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'seed_wheat', 5, nowIso);
+    changed = true;
+  }
+  if (qty('rod_basic') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'rod_basic', 1, nowIso);
+    changed = true;
+  }
+  if (qty('bait_free_worm') < 3) {
+    adjustInventoryItem(v015, worldId, 'shared', 'bait_free_worm', 10, nowIso);
     changed = true;
   }
   return changed;

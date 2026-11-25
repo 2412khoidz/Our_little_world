@@ -17,6 +17,7 @@ import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
+import { FarmFishLoopTutorial } from './FarmFishLoopTutorial';
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
@@ -40,6 +41,7 @@ export interface MainGameInteractionLayerProps {
   onOpenDonorFishing?: () => void;
   onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: () => void;
+  donorLanPlayable?: boolean;
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */
   petCareOverlayActive?: boolean;
@@ -66,6 +68,7 @@ export function MainGameInteractionLayer({
   onOpenDonorFishing,
   onOpenDonorStreamFishing,
   onOpenDonorWorkshop,
+  donorLanPlayable = false,
   onNotice,
   petCareOverlayActive = false,
 }: MainGameInteractionLayerProps) {
@@ -292,12 +295,15 @@ export function MainGameInteractionLayer({
         data-testid="main-game-interaction-hud"
       >
         {!petCareHud ? (
-          <ContextualPromptBadge
-            resolution={resolution}
-            unavailableToast={noticeText}
-            onPrimary={() => void executePrimary()}
-            onSecondary={() => void executeSecondary()}
-          />
+          <>
+            <FarmFishLoopTutorial mapId={currentMapId} donorPlayable={donorLanPlayable} />
+            <ContextualPromptBadge
+              resolution={resolution}
+              unavailableToast={noticeText}
+              onPrimary={() => void executePrimary()}
+              onSecondary={() => void executeSecondary()}
+            />
+          </>
         ) : null}
         <GameHotbar
           slots={hotbarSlots}

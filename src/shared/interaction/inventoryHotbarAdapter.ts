@@ -4,6 +4,7 @@ import type { InventorySnapshot } from '../inventory/inventoryTypes';
 import { PET_FOOD_CATALOG } from '../petLiving/petFoodCatalog';
 import {
   MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST,
+  MAIN_GAME_HOTBAR_SLOT_PRIORITY,
   hotbarSkuToHeldKind,
 } from './hotbarContract';
 import { type HotbarStackKey } from './heldItemIdentity';
@@ -67,6 +68,7 @@ function hotbarVisualForSku(sku: string): Pick<HotbarSlot, 'iconId' | 'propsIcon
   const food = PET_FOOD_CATALOG.find((f) => f.sku === sku);
   if (food) return { iconId: food.iconId, propsIconId: null };
   if (sku === 'water_pitcher') return { iconId: 'water_pitcher_full', propsIconId: null };
+  if (sku === 'rod_basic') return { iconId: null, propsIconId: 'prop.water_reed_b' };
   if (sku === 'toy_yarn') return { iconId: 'yarn_ball', propsIconId: null };
   if (sku === 'toy_cardboard_box') return { iconId: 'cardboard_box', propsIconId: null };
   const propsIconId = propsIconIdForCatalogSku(sku);
@@ -101,11 +103,18 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
     stacks.set(id, { key, qty: (existing?.qty ?? 0) + row.qty });
   }
 
-  const ordered = [...stacks.values()].sort((a, b) =>
-    a.key.itemSku.localeCompare(b.key.itemSku) ||
-    a.key.ownerScope.localeCompare(b.key.ownerScope) ||
-    a.key.quality.localeCompare(b.key.quality),
+  const priorityIndex = new Map<string, number>(
+    MAIN_GAME_HOTBAR_SLOT_PRIORITY.map((sku, index) => [sku, index]),
   );
+  const ordered = [...stacks.values()].sort((a, b) => {
+    const pa = priorityIndex.get(a.key.itemSku) ?? 999;
+    const pb = priorityIndex.get(b.key.itemSku) ?? 999;
+    if (pa !== pb) return pa - pb;
+    return (
+      a.key.ownerScope.localeCompare(b.key.ownerScope) ||
+      a.key.quality.localeCompare(b.key.quality)
+    );
+  });
   for (const [slotIndex, stack] of ordered.slice(0, base.length).entries()) {
     const sku = stack.key.itemSku;
     const visual = hotbarVisualForSku(sku);

@@ -70,6 +70,7 @@ import { findTilePath, type GridPoint } from '../systems/pathfinding';
 import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
+import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
@@ -1961,7 +1962,7 @@ export class WorldScene extends Phaser.Scene {
         waterEmpty: true,
         waterFull: false,
       },
-      donorEconomyDev: import.meta.env.DEV,
+      donorEconomyDev: isDonorEconomyUiEnabled(),
     });
     for (const npc of this.tiledNpcs) {
       interactables.push({
