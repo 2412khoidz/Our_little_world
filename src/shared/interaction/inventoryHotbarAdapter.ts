@@ -1,3 +1,4 @@
+import { propsIconIdForCatalogSku } from '../art/catalogSkuPropsIcon';
 import { getCatalogItem } from '../catalog';
 import type { InventorySnapshot } from '../inventory/inventoryTypes';
 import { PET_FOOD_CATALOG } from '../petLiving/petFoodCatalog';
@@ -21,6 +22,7 @@ const EMPTY_SLOT: Omit<HotbarSlot, 'slotIndex'> = {
   itemSku: null,
   itemKind: 'none',
   iconId: null,
+  propsIconId: null,
   labelVi: 'Trống',
   qty: 0,
 };
@@ -61,13 +63,15 @@ function labelForSku(sku: string, snapshot: InventorySnapshot): string {
   return furn?.nameVi ?? sku;
 }
 
-function iconForSku(sku: string): HotbarSlot['iconId'] {
+function hotbarVisualForSku(sku: string): Pick<HotbarSlot, 'iconId' | 'propsIconId'> {
   const food = PET_FOOD_CATALOG.find((f) => f.sku === sku);
-  if (food) return food.iconId;
-  if (sku === 'water_pitcher') return 'water_pitcher_full';
-  if (sku === 'toy_yarn') return 'yarn_ball';
-  if (sku === 'toy_cardboard_box') return 'cardboard_box';
-  return 'food_kibble';
+  if (food) return { iconId: food.iconId, propsIconId: null };
+  if (sku === 'water_pitcher') return { iconId: 'water_pitcher_full', propsIconId: null };
+  if (sku === 'toy_yarn') return { iconId: 'yarn_ball', propsIconId: null };
+  if (sku === 'toy_cardboard_box') return { iconId: 'cardboard_box', propsIconId: null };
+  const propsIconId = propsIconIdForCatalogSku(sku);
+  if (propsIconId) return { iconId: null, propsIconId };
+  return { iconId: null, propsIconId: null };
 }
 
 /**
@@ -104,12 +108,14 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
   );
   for (const [slotIndex, stack] of ordered.slice(0, base.length).entries()) {
     const sku = stack.key.itemSku;
+    const visual = hotbarVisualForSku(sku);
     base[slotIndex] = {
       slotIndex,
       ownerScope: stack.key.ownerScope,
       itemSku: sku,
       itemKind: hotbarSkuToHeldKind(sku),
-      iconId: iconForSku(sku),
+      iconId: visual.iconId,
+      propsIconId: visual.propsIconId,
       labelVi: labelForSku(sku, snapshot),
       qty: stack.qty,
       quality: stack.key.quality,

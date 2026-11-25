@@ -1,4 +1,5 @@
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
+import { CatalogPropsIcon } from './CatalogPropsIcon';
 import { ItemArtSvg } from '../designSystem/GameIcons';
 
 interface GameHotbarProps {
@@ -44,7 +45,11 @@ export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = fals
             >
               {idx + 1}
             </span>
-            {hasItem && <ItemArtSvg iconId={slot!.iconId} size={24} />}
+            {hasItem && slot!.propsIconId ? (
+              <CatalogPropsIcon iconId={slot!.propsIconId} size={24} />
+            ) : hasItem && slot!.iconId ? (
+              <ItemArtSvg iconId={slot!.iconId} size={24} />
+            ) : null}
             {hasItem && slot!.itemKind !== 'water_pitcher' && (
               <span
                 style={{
