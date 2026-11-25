@@ -1,11 +1,15 @@
 import {
-  MEADOW_MAP_HEIGHT_TILES,
-  MEADOW_MAP_WIDTH_TILES,
-} from './worldContent/meadowGameplayAnchors';
+  OUTDOOR_MAP_HEIGHT_TILES,
+  OUTDOOR_MAP_WIDTH_TILES,
+} from './worldContent/outdoorGameplayAnchors';
+import { OUTDOOR_DEFAULT_SPAWN } from './world/outdoorZones';
+import { isOutdoorBlocked, isOutdoorNoPlace } from './world/outdoorCollision';
 import { isExtendedWorldDevEnabled } from './worldIntegration/extendedWorldDevFlag';
 import type { MapId } from './types';
 
 export const TILE_SIZE = 16;
+
+export const MAP_IDS = ['home', 'garden', 'outdoor'] as const;
 
 export interface MapPortal {
   id: string;
@@ -58,7 +62,6 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
       return false;
     },
     isNoPlaceZone(tileX, tileY) {
-      // Keep doorway & arrival spawn clear so nobody traps the entrance
       if (tileY >= 10 && (tileX === 7 || tileX === 8)) return true;
       if (tileY === 9 && (tileX === 7 || tileX === 8)) return true;
       return false;
@@ -86,82 +89,72 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     isStaticBlocked(tileX, tileY) {
       if (tileX < 0 || tileY < 0 || tileX >= 18 || tileY >= 14) return true;
       if (tileX === 0 || tileX === 17 || tileY === 0 || tileY === 13) return true;
-      // Cottage exterior walls (leave (8, 2) as cottage front door portal)
       if (tileY === 1 && tileX >= 7 && tileX <= 9) return true;
       if (tileY === 2 && (tileX === 7 || tileX === 9)) return true;
-      // Sakura tree trunks
       if (tileY === 3 && (tileX === 2 || tileX === 3 || tileX === 14 || tileX === 15)) {
         return true;
       }
       return false;
     },
     isNoPlaceZone(tileX, tileY) {
-      // Keep cottage front door, porch deck, and spawn clear
       if (tileY === 2 && tileX === 8) return true;
       if (tileY === 3 && tileX >= 7 && tileX <= 9) return true;
       if (tileY === 4 && tileX === 8) return true;
       return false;
     },
   },
-  meadow: {
-    id: 'meadow',
-    nameVi: 'Đồng cỏ mở rộng',
+  outdoor: {
+    id: 'outdoor',
+    nameVi: 'Thế giới mở rộng',
     tiledJsonPath: '/assets/maps/meadow.json',
-    widthTiles: MEADOW_MAP_WIDTH_TILES,
-    heightTiles: MEADOW_MAP_HEIGHT_TILES,
-    defaultSpawn: { tileX: 8, tileY: 3 },
+    widthTiles: OUTDOOR_MAP_WIDTH_TILES,
+    heightTiles: OUTDOOR_MAP_HEIGHT_TILES,
+    defaultSpawn: OUTDOOR_DEFAULT_SPAWN,
     portals: [
       {
-        id: 'meadow-to-garden',
+        id: 'outdoor-to-garden',
         labelVi: 'Về khu vườn',
-        tileX: 8,
-        tileY: 1,
+        tileX: 16,
+        tileY: 20,
         radiusTiles: 1.6,
         targetMapId: 'garden',
-        targetSpawnX: 8,
-        targetSpawnY: 11,
+        targetSpawnX: 9,
+        targetSpawnY: 12,
       },
     ],
     isStaticBlocked(tileX, tileY) {
-      if (tileX < 0 || tileY < 0 || tileX >= MEADOW_MAP_WIDTH_TILES || tileY >= MEADOW_MAP_HEIGHT_TILES) {
-        return true;
-      }
-      if (tileX === 0 || tileX === MEADOW_MAP_WIDTH_TILES - 1 || tileY === 0 || tileY === MEADOW_MAP_HEIGHT_TILES - 1) {
-        return true;
-      }
-      if (tileX >= 9 && tileX <= 13 && tileY >= 12 && tileY <= 15) return true;
-      if (tileY >= 5 && tileY <= 9 && tileX >= 14 && tileX <= 19) {
-        if (tileX === 14 || tileX === 19 || tileY === 5 || tileY === 9) return true;
-      }
-      return false;
+      return isOutdoorBlocked(tileX, tileY);
     },
     isNoPlaceZone(tileX, tileY) {
-      if (tileY <= 2 && tileX >= 7 && tileX <= 9) return true;
-      if (tileY === 3 && tileX === 8) return true;
-      return false;
+      return isOutdoorNoPlace(tileX, tileY);
     },
   },
 };
 
-const GARDEN_TO_MEADOW_PORTAL: MapPortal = {
-  id: 'garden-to-meadow',
-  labelVi: 'Ra đồng cỏ',
-  tileX: 8,
-  tileY: 12,
+const GARDEN_TO_OUTDOOR_PORTAL: MapPortal = {
+  id: 'garden-to-outdoor',
+  labelVi: 'Ra thế giới mở rộng',
+  tileX: 9,
+  tileY: 13,
   radiusTiles: 1.6,
-  targetMapId: 'meadow',
-  targetSpawnX: 8,
-  targetSpawnY: 3,
+  targetMapId: 'outdoor',
+  targetSpawnX: OUTDOOR_DEFAULT_SPAWN.tileX,
+  targetSpawnY: OUTDOOR_DEFAULT_SPAWN.tileY,
 };
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
   const base = MAP_DEFINITIONS[mapId];
   if (mapId === 'garden' && isExtendedWorldDevEnabled()) {
-    return { ...base, portals: [...base.portals, GARDEN_TO_MEADOW_PORTAL] };
+    return { ...base, portals: [...base.portals, GARDEN_TO_OUTDOOR_PORTAL] };
   }
   return base;
 }
 
-export function isMeadowMapUnlocked(): boolean {
+export function isOutdoorMapUnlocked(): boolean {
   return isExtendedWorldDevEnabled();
+}
+
+/** @deprecated Use isOutdoorMapUnlocked */
+export function isMeadowMapUnlocked(): boolean {
+  return isOutdoorMapUnlocked();
 }

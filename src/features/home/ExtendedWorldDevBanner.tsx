@@ -31,7 +31,9 @@ export function ExtendedWorldDevBanner() {
     >
       <strong>Thế giới mở rộng — bản xem trước DEV</strong>
       <div style={{ marginTop: 4, opacity: 0.92 }}>
-        Từ vườn đi cổng phía Nam, hoặc dùng thanh <em>Đồng cỏ</em>. URL: <code>?extended-world=1</code>
+        Từ vườn đi cổng phía Nam (9,13), hoặc nút <em>Ngoài trời</em>. URL: <code>?extended-world=1</code>
+        {' '}
+        · overlay va chạm: <code>?collision-debug=1</code> hoặc phím <strong>C</strong>
         <div style={{ marginTop: 6 }}>
           <button
             type="button"

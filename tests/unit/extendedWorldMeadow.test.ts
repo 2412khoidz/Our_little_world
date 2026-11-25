@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { getMapDefinition } from '../../src/shared/maps';
-import { MEADOW_MAIN_GAME_LANDMARKS } from '../../src/shared/worldContent/meadowGameplayAnchors';
+import { getMapDefinition, isOutdoorMapUnlocked } from '../../src/shared/maps';
+import { OUTDOOR_MAIN_GAME_LANDMARKS } from '../../src/shared/worldContent/outdoorGameplayAnchors';
 import { isExtendedWorldDevEnabled } from '../../src/shared/worldIntegration/extendedWorldDevFlag';
 
-describe('extended world — meadow preview', () => {
+describe('extended world — outdoor main game', () => {
   it('dev flag is off in vitest', () => {
     expect(isExtendedWorldDevEnabled()).toBe(false);
   });
 
-  it('meadow map definition exists with landmarks', () => {
-    const def = getMapDefinition('meadow');
-    expect(def.widthTiles).toBeGreaterThan(20);
-    expect(MEADOW_MAIN_GAME_LANDMARKS.length).toBeGreaterThanOrEqual(5);
+  it('outdoor map definition exists with landmarks', () => {
+    const def = getMapDefinition('outdoor');
+    expect(def.widthTiles).toBe(64);
+    expect(OUTDOOR_MAIN_GAME_LANDMARKS.length).toBe(10);
     expect(def.portals[0]?.targetMapId).toBe('garden');
+  });
+
+  it('isOutdoorMapUnlocked follows dev flag', () => {
+    expect(isOutdoorMapUnlocked()).toBe(false);
   });
 });

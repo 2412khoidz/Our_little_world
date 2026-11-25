@@ -10,6 +10,8 @@ import type {
 import { DEFAULT_AVATAR_PARTNER_A } from '../shared/avatar';
 import { getCatalogItem } from '../shared/catalog';
 import { getMapDefinition } from '../shared/maps';
+import { normalizeMapId } from '../shared/world/mapIdCompat';
+import { isExtendedWorldDevEnabled } from '../shared/worldIntegration/extendedWorldDevFlag';
 import type {
   AvatarConfig,
   Direction,
@@ -197,7 +199,14 @@ function MainCoupleApp() {
   const [authReady, setAuthReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
   const [worldSnapshot, setWorldSnapshot] = useState<WorldSnapshot | null>(null);
-  const [currentMapId, setCurrentMapId] = useState<MapId>('home');
+  const [currentMapId, setCurrentMapId] = useState<MapId>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const q = new URLSearchParams(window.location.search);
+    const deep = normalizeMapId(q.get('map'));
+    if (deep === 'outdoor' && isExtendedWorldDevEnabled()) return 'outdoor';
+    if (deep === 'garden' || deep === 'home') return deep;
+    return 'home';
+  });
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [movementConnectionVersion, setMovementConnectionVersion] = useState(0);
   const [presences, setPresences] = useState<PresencePayload[]>([]);
@@ -238,6 +247,7 @@ function MainCoupleApp() {
   useEffect(() => {
     currentMapIdRef.current = currentMapId;
   }, [currentMapId]);
+
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -876,7 +886,12 @@ function MainCoupleApp() {
     void backend
       .connectWorldRealtime(worldId, initialPresence, {
         onPresenceChange: (list) => {
-          setPresences(list);
+          setPresences(
+            list.map((p) => ({
+              ...p,
+              mapId: normalizeMapId(p.mapId) ?? p.mapId,
+            })),
+          );
         },
         onMovement: (packet) => {
           gameEventBus.emit('cmd:remote-movement', packet);
