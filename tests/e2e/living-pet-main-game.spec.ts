@@ -42,6 +42,10 @@ test.describe('Living pet — main game DEV simulation', () => {
 
     const tel = readTelemetry(page);
     await expect(tel).toHaveAttribute('data-visible', '1', { timeout: 20_000 });
+    const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+    await expect
+      .poll(async () => canvas.evaluate((c) => c.dataset.livingCatPack === 'frakassets-cat-orange'), { timeout: 15_000 })
+      .toBe(true);
 
     const samples: Array<{ x: number; y: number; anim: string; phase: string }> = [];
     for (let i = 0; i < 50; i += 1) {

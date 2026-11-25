@@ -13,6 +13,13 @@ import {
   getLivingCatAnimKey,
   getLivingCatTextureKey,
 } from '../pet/petSpriteBuilder';
+import {
+  livingCatDefaultFrameId,
+  livingCatLicensedPackReady,
+  LIVING_PET_LICENSED_WORLD_SCALE,
+  mapWorldPetStateToOlwCatAnim,
+} from '../pet/livingCatWorldSprite';
+import { WORLD_PROPS_KEY } from '../art/worldAtlas';
 import type { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
 const HOME_WAYPOINTS = [
@@ -58,7 +65,9 @@ export class PetEntity {
     this.scene = scene;
 
     ensureLivingCatSpritesheet(scene, this.variant, this.accessory);
-    const texKey = getLivingCatTextureKey(this.variant, this.accessory);
+    const licensed = livingCatLicensedPackReady(scene, this.variant);
+    const texKey = licensed ? WORLD_PROPS_KEY : getLivingCatTextureKey(this.variant, this.accessory);
+    const startFrame = licensed ? livingCatDefaultFrameId() : 0;
     const startX = this.loco.x;
     const startY = this.loco.y;
 
@@ -66,9 +75,8 @@ export class PetEntity {
       .ellipse(startX, startY - 1, 13, 5, 0x22151c, 0.34)
       .setVisible(false);
 
-    // Native 1:1 24x24 pixel sprite for razor-sharp Demo E parity without blurry scaling
     this.sprite = scene.add
-      .sprite(startX, startY, texKey, 0)
+      .sprite(startX, startY, texKey, startFrame)
       .setOrigin(0.5, 0.85)
       .setVisible(false);
 
@@ -100,7 +108,11 @@ export class PetEntity {
     this.variant = variant;
     this.accessory = accessory;
     ensureLivingCatSpritesheet(this.scene, variant, accessory);
-    this.sprite.setTexture(getLivingCatTextureKey(variant, accessory), 0);
+    const licensed = livingCatLicensedPackReady(this.scene, variant);
+    const texKey = licensed ? WORLD_PROPS_KEY : getLivingCatTextureKey(variant, accessory);
+    const frame = licensed ? livingCatDefaultFrameId() : 0;
+    this.sprite.setTexture(texKey, frame);
+    this.applySpriteScale();
     this.playAnimState(this.loco.animState);
   }
 
@@ -149,11 +161,15 @@ export class PetEntity {
   }
 
   private applySpriteScale(): void {
+    const licensed = livingCatLicensedPackReady(this.scene, this.variant);
+    const worldScale = licensed ? LIVING_PET_LICENSED_WORLD_SCALE : LIVING_PET_WORLD_SCALE;
     const scale = this.careCloseUp
       ? LIVING_PET_CARE_SCALE
       : this.livingDriver
-        ? LIVING_PET_WORLD_SCALE
-        : 1;
+        ? worldScale
+        : licensed
+          ? LIVING_PET_LICENSED_WORLD_SCALE
+          : 1;
     this.sprite.setScale(scale);
   }
 
@@ -288,6 +304,17 @@ export class PetEntity {
   }
 
   private playAnimState(state: PetAnimState): void {
+    if (livingCatLicensedPackReady(this.scene, this.variant)) {
+      const animKey = mapWorldPetStateToOlwCatAnim(state);
+      if (!this.scene.anims.exists(animKey)) return;
+      if (this.sprite.texture.key !== WORLD_PROPS_KEY) {
+        this.sprite.setTexture(WORLD_PROPS_KEY, livingCatDefaultFrameId());
+      }
+      if (this.sprite.anims.currentAnim?.key !== animKey) {
+        this.sprite.play(animKey, true);
+      }
+      return;
+    }
     const animKey = getLivingCatAnimKey(this.variant, this.accessory, state);
     if (this.scene.anims.exists(animKey) && this.sprite.anims.currentAnim?.key !== animKey) {
       this.sprite.play(animKey, true);

@@ -21,5 +21,7 @@
 | — | `src/features/petCare/PetCareJ4lpanPortrait.tsx` | React SVG over `PetCareScene` canvas |
 | — | `src/features/pets/PetPanel.tsx` | Inventory/authority only — portrait lives in care scene |
 
-Does **not** replace main-game Phaser pet sprite or `?donor-pet-three=1` Three.js route in this slice.  
+**Overworld cat (Worker B recovery):** Frakassets `cat-orange` sheet from unified `world-props.png` via `PetEntity` + `livingCatWorldSprite.ts` (ginger-tabby only; other coats fall back to CC0 procedural sheet). Dataset `livingCatPack=frakassets-cat-orange`.
+
+Does **not** replace `?donor-pet-three=1` Three.js route.  
 Does **not** port tray walking / multi-pet chase / Tauri shell.
