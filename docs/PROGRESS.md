@@ -135,3 +135,7 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ## 11. Mission 02.5 — nhánh tích hợp thử
 
 Đã review snapshot PR #4 `700d1af` và thử tích hợp riêng: 474 Vitest, Playwright 19 pass / 1 skip, PostgreSQL fixture fresh/upgrade và public/private guards pass. Đã thêm bản sửa thử cho identity/quality hotbar, concurrent input và Escape. Luồng `pet_interact('feed')` cũ vẫn vượt qua gate physical care; catalog, quality gift/transfer và server authority chưa hoàn tất. Chưa đủ điều kiện merge hoặc deploy; Supabase thật và iPhone thật chưa được kiểm. [Bàn giao Mission 04](research/MISSION_04_TECHNICAL_HANDOVER.md)
+
+## 12. Mission 04B-2 — server-authoritative living pet
+
+Đã thêm migration `20261125120000_pet_living_authority_04b2.sql`, RPC lazy authority (begin action, proposals, food offer), `WorldBackend.petLiving` (Supabase + Dev LAN), và `supabase/tests/pet_living_authority.sql`. Không sửa PR #8 movement, App.tsx hay WorldScene. **Đã chạy local:** lint/typecheck, Vitest 508, SQL fresh+upgrade, `npm run build`, Playwright 31 pass / 1 skip. **Chưa:** Supabase Cloud apply, iPhone thật, reachability movement verify (04B-3). [Bàn giao 04B-2](handover/MISSION_04B2_PET_AUTHORITY.md)

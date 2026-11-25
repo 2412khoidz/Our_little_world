@@ -1,6 +1,7 @@
 // Server-side Dev LAN parity handlers for V0.1.5 Living Home (OLW-015-01..08)
 import crypto from 'node:crypto';
 import { handleSharedLifeRoute } from './devLanSharedLifeHandlers.mjs';
+import { ensurePetLivingDb, tryHandlePetLivingRoute } from './devLanPetLiving.mjs';
 
 export const V015_CATALOG = [
   {
@@ -76,6 +77,7 @@ export function ensureV015Db(db) {
   db.v015.letters ??= {};
   db.v015.idem ??= {};
   db.v015.petBowls ??= {};
+  ensurePetLivingDb(db.v015);
   return db.v015;
 }
 
@@ -95,7 +97,7 @@ function ensurePetBowl(v015, worldId, petId) {
   return bowl;
 }
 
-function projectPetCareBowl(v015, worldId) {
+export function projectPetCareBowl(v015, worldId) {
   const pet = v015.pets[worldId] ?? null;
   const bowl = v015.petBowls[worldId];
   if (!bowl) {
@@ -196,7 +198,7 @@ function saveV015Idempotency(v015, worldId, userId, action, key, reqHash, respon
   map[key] = { actorId: userId, action, reqHash, response };
 }
 
-function catchupPetVitals(vitals, simStateAtMs, nowMs) {
+export function catchupPetVitals(vitals, simStateAtMs, nowMs) {
   const elapsedMs = Math.min(48 * 3600 * 1000, Math.max(0, nowMs - simStateAtMs));
   const clamp = (v) => Math.max(30, Math.min(100, Math.round(v)));
   const hunger = clamp(vitals.hunger - Math.floor((elapsedMs * 2) / 3600000));
@@ -206,14 +208,14 @@ function catchupPetVitals(vitals, simStateAtMs, nowMs) {
   return { hunger, energy, fun };
 }
 
-function derivePetMood(vitals) {
+export function derivePetMood(vitals) {
   if (vitals.hunger <= 42) return 'hungry';
   if (vitals.energy <= 45) return 'sleepy';
   if (vitals.fun >= 78 && vitals.hunger >= 65) return 'happy';
   return 'cozy';
 }
 
-function projectPet(pet, nowMs = Date.now()) {
+export function projectPet(pet, nowMs = Date.now()) {
   if (!pet) return null;
   const vitals = catchupPetVitals(pet.vitals, pet.simStateAtMs, nowMs);
   return {
@@ -483,6 +485,8 @@ export async function handleV015Route({
         lastPettedAtMs: null,
         simStateAtMs: nowMs,
         version: 1,
+        livingVersion: 1,
+        personality: { profileId: 'mischievous_quyt' },
         updatedAt: nowIso,
       };
       v015.pets[worldId] = pet;
@@ -1176,6 +1180,30 @@ export async function handleV015Route({
     broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
     broadcastEvent(worldId, 'world_mutated', { reason: 'study' });
     sendJson(res, 200, { ok: true, data: { restored: true } });
+    return true;
+  }
+
+  const petLivingCtx = {
+    req,
+    res,
+    route,
+    reqUrl,
+    body,
+    userId,
+    v015,
+    isWorldMember,
+    sendJson,
+    saveDb,
+    broadcastEvent,
+    checkV015Idempotency,
+    saveV015Idempotency,
+    ensurePetBowl,
+    projectPet,
+    projectPetCareBowl,
+    catchupPetVitals,
+    derivePetMood,
+  };
+  if (tryHandlePetLivingRoute(petLivingCtx)) {
     return true;
   }
 

@@ -484,6 +484,50 @@ export function createDevLanBackend(): WorldBackend {
       },
     },
 
+    petLiving: {
+      async getLivingSnapshot(worldId) {
+        return apiJson<import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot>(
+          `/pet/living?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async beginLivingAction(params) {
+        return apiJson<{
+          instanceId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/begin-action', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async submitLivingProposal(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/submit-proposal',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+      async createFoodOffer(params) {
+        return apiJson<{
+          offerId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async respondFoodOffer(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/food-offer/respond',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+    },
+
     study: {
       async getStudySnapshot(worldId) {
         return apiJson<StudySnapshot>(`/study?worldId=${encodeURIComponent(worldId)}`);
