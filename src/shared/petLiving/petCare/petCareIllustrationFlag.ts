@@ -12,4 +12,4 @@ export function petCareIllustrationAtlasEnabled(): boolean {
   return import.meta.env.DEV;
 }
 
-export const PET_CARE_ILLUSTRATION_DISPLAY_SCALE = 2.75;
+export const PET_CARE_ILLUSTRATION_DISPLAY_SCALE = 3;

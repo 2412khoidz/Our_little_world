@@ -1,3 +1,5 @@
+import type { Facing8 } from './movement/facing8';
+
 export type MapId = 'home' | 'garden' | 'outdoor' | 'village' | 'farm' | 'forest' | 'beach' | 'shop';
 
 export type Direction = 'down' | 'up' | 'left' | 'right';
@@ -120,6 +122,8 @@ export interface MovementPacket {
   x: number;
   y: number;
   facing: Direction;
+  /** Optional 8-way facing for diagonal walk clips (cardinal `facing` remains wire-compatible). */
+  facing8?: Facing8;
   anim: 'idle' | 'walk';
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FACING8_VALUES } from './movement/facing8';
 import { getMapDefinition, MAP_IDS, TILE_SIZE } from './maps';
 import type { MapId, MovementPacket, PresencePayload } from './types';
 
@@ -16,6 +17,7 @@ export const movementPacketSchema = z.object({
   x: z.number().finite().min(0).max(10000),
   y: z.number().finite().min(0).max(10000),
   facing: z.enum(['down', 'up', 'left', 'right']),
+  facing8: z.enum(FACING8_VALUES).optional(),
   anim: z.enum(['idle', 'walk']),
 });
 

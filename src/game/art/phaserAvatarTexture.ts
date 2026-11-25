@@ -9,6 +9,7 @@ import {
   AVATAR_FRAME_WIDTH,
   buildWorldAvatarCanvas,
 } from './worldAvatarCanvas';
+import { expandAtlasCanvasWithDiagonalWalkRows, registerDiagonalWalkClips } from './avatarDiagonalWalk';
 
 const LEGACY_DIRECTIONS: readonly Direction[] = ['down', 'up', 'left', 'right'];
 
@@ -20,9 +21,13 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
     ? scene.textures.get(AVATAR_ATLAS_KEY).getSourceImage()
     : null;
   const atlasCanvas = source && buildWorldAvatarCanvas(source as CanvasImageSource, config);
-  const tex = scene.textures.addCanvas(key, atlasCanvas || buildAvatarSpritesheetCanvas(config));
+  const sourceHeightBeforeDiag = atlasCanvas?.height ?? 96;
+  if (atlasCanvas) expandAtlasCanvasWithDiagonalWalkRows(atlasCanvas);
+  const procSheet = atlasCanvas ? null : buildAvatarSpritesheetCanvas(config);
+  const tex = scene.textures.addCanvas(key, atlasCanvas || procSheet!);
   if (!tex) return key;
   tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  const usingAtlasLayout = Boolean(atlasCanvas);
 
   for (const direction of LEGACY_DIRECTIONS) {
     const base = getIdleFrameIndex(direction);
@@ -77,6 +82,8 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
       });
     }
   }
+
+  registerDiagonalWalkClips(scene, key, tex, usingAtlasLayout, sourceHeightBeforeDiag);
 
   return key;
 }
