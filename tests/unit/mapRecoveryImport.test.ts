@@ -16,7 +16,7 @@ describe('map recovery import contract', () => {
     }
     const check = validateFarmPlotContract(farmJson);
     expect(check.plotCount).toBe(184);
-    expect(check.walkable).toBeGreaterThanOrEqual(184);
+    expect(check.ok, check.errors.join('; ')).toBe(true);
     expect(farmJson.layers.some((l) => l.name === 'OLW_ContractSoil')).toBe(false);
     expect(recoveryEnabled(farmJson)).toBe(true);
   });

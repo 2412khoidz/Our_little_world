@@ -14,7 +14,7 @@ describe('donor farm/beach sketch', () => {
       expect(check.ok, check.errors.join('; ')).toBe(true);
     } else {
       expect(check.plotCount).toBe(184);
-      expect(check.walkable).toBeGreaterThanOrEqual(184);
+      expect(check.ok, check.errors.join('; ')).toBe(true);
     }
     expect(check.plotCount).toBe(184);
     const donor = (farmJson as { properties?: { name: string; value: string }[] }).properties?.find(
