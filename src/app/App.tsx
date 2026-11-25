@@ -1495,6 +1495,7 @@ function MainCoupleApp() {
     if (new URLSearchParams(window.location.search).get('vqg-capture') !== '1') return;
     type VqgCaptureApi = {
       jump: (mapId: MapId, tileX: number, tileY: number) => void;
+      openFishing: (spotId?: DonorFishingSpotId) => void;
     };
     const w = window as Window & { __OLW_VQG?: VqgCaptureApi };
     w.__OLW_VQG = {
@@ -1507,6 +1508,10 @@ function MainCoupleApp() {
           mapId,
           spawnTile: { tileX, tileY },
         });
+      },
+      openFishing(spotId = 'meadow_pond') {
+        setDonorChillFishingSpot(parseDonorFishingSpot(spotId));
+        setActiveModal('donor_fishing');
       },
     };
     return () => {

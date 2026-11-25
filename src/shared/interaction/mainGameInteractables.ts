@@ -129,7 +129,7 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       targets.push({
         id: 'outdoor_stream',
         kind: 'fishing_spot',
-        labelVi: 'Suối phía Đông — câu tension',
+        labelVi: 'Suối phía Đông — câu cá',
         x: anchors.streamBankPx.x,
         y: anchors.streamBankPx.y,
         maxRadiusPx: 54,
