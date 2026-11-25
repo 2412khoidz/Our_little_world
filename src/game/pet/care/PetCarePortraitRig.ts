@@ -11,13 +11,8 @@ import type { PetCareActionKind, PetCareExpression, PetCareZone } from '../../..
 import type { PetSnapshot } from '../../../shared/pet/petTypes';
 import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood';
-import { ensurePetCarePortraitSheet, getPetCarePortraitAnimKey } from './petCarePortraitTexture';
-import {
-  getLicensedCareCatDefaultFrame,
-  getLicensedCareCatShadowFrame,
-  getLicensedCareCatTextureKey,
-  PET_CARE_CAT_ORANGE_SCALE,
-} from './petCareCatOrange';
+import { ensureLicensedCareCatReady, getLicensedCareCatTextureKey, PET_CARE_CAT_ORANGE_SCALE } from './petCareCatOrange';
+import { petCareCatShadowTextureKey } from './petCareCatIsolateTexture';
 import { createPetCareLicensedFramePlayer, type PetCareLicensedAnimPlayer } from './petCareLicensedFramePlayer';
 import { gameEventBus } from '../../eventBus';
 import { PetCareToyLayer } from './PetCareToyLayer';
@@ -33,8 +28,6 @@ export class PetCarePortraitRig {
   private readonly toys: PetCareToyLayer;
   private readonly ambient: PetCareAmbientProps;
 
-  private variant: CatCoatVariantId;
-  private accessory: CatAccessoryId;
   private traits: PetPersonalityTraits;
   private petName: string;
   private snapshot: PetSnapshot | null;
@@ -50,35 +43,35 @@ export class PetCarePortraitRig {
     scene: Phaser.Scene,
     x: number,
     y: number,
-    variant: CatCoatVariantId,
-    accessory: CatAccessoryId,
+    _variant: CatCoatVariantId,
+    _accessory: CatAccessoryId,
     petName: string,
     snapshot: PetSnapshot | null,
     traitId?: string,
   ) {
     this.scene = scene;
-    this.variant = variant;
-    this.accessory = accessory;
+    void _variant;
+    void _accessory;
     this.petName = petName;
     this.snapshot = snapshot;
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
     this.traits = preset.traits;
 
-    ensurePetCarePortraitSheet(scene, variant, accessory);
-    const texKey = getLicensedCareCatTextureKey();
-    const defaultFrame = getLicensedCareCatDefaultFrame();
-    const shadowFrame = getLicensedCareCatShadowFrame();
+    ensureLicensedCareCatReady(scene);
+    const bodyKey = getLicensedCareCatTextureKey();
+    const shadowKey = petCareCatShadowTextureKey();
+    const defaultIndex = 48;
 
     this.root = scene.add.container(x, y).setScrollFactor(0).setDepth(12_000);
 
     const floor = scene.add.ellipse(0, 44, 118, 22, 0x1a1218, 0.5);
     this.shadow = scene.add
-      .sprite(2, 42, texKey, shadowFrame)
+      .sprite(2, 42, shadowKey, defaultIndex)
       .setOrigin(0.5, 0.5)
       .setAlpha(0.45)
       .setScale(PET_CARE_CAT_ORANGE_SCALE * 0.95);
     this.body = scene.add
-      .sprite(0, 6, texKey, defaultFrame)
+      .sprite(0, 6, bodyKey, defaultIndex)
       .setOrigin(0.5, 0.88)
       .setScale(PET_CARE_CAT_ORANGE_SCALE);
     this.framePlayer = createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
@@ -260,7 +253,6 @@ export class PetCarePortraitRig {
   }
 
   private playAnim(state: PetAnimState): void {
-    void getPetCarePortraitAnimKey(this.variant, this.accessory, state);
     this.framePlayer.setState(state);
   }
 }

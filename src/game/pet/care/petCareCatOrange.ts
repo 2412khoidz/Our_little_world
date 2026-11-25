@@ -2,14 +2,20 @@
  * Pet care close-up — Frakassets `cat-orange` via unified world-props atlas (CC BY 4.0).
  */
 import type Phaser from 'phaser';
-import { WORLD_PROPS_KEY } from '../../art/worldAtlas';
+import {
+  ensurePetCareIsolatedCatSheets,
+  petCareAtlasProfileLabel,
+  petCareCatBodyTextureKey,
+} from './petCareCatIsolateTexture';
 import type { PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import {
   licensedCareCatShadowFrame,
+  licensedCatFrameSeriesForState,
   mapCareStateToOlwCatAnim,
   mapCareStateToOlwCatShadowAnim,
   PET_CARE_LICENSED_IDLE_SOUTH_FRAME,
 } from '../../../shared/petLiving/petCare/petCareLicensedCatMaps';
+import { petCareCatShadowTextureKey } from './petCareCatIsolateTexture';
 
 /** 16px cell × scale → readable phone silhouette without blurry upscale. */
 export const PET_CARE_CAT_ORANGE_SCALE = 8.25;
@@ -20,13 +26,15 @@ export const getLicensedCareCatDefaultFrame = () => PET_CARE_LICENSED_IDLE_SOUTH
 export const getLicensedCareCatShadowFrame = licensedCareCatShadowFrame;
 
 export function getLicensedCareCatTextureKey(): string {
-  return WORLD_PROPS_KEY;
+  return petCareCatBodyTextureKey();
 }
 
 export function ensureLicensedCareCatReady(scene: Phaser.Scene): boolean {
-  if (!scene.textures.exists(WORLD_PROPS_KEY)) return false;
-  const sheet = scene.textures.get(WORLD_PROPS_KEY);
-  return sheet.has(getLicensedCareCatDefaultFrame());
+  return ensurePetCareIsolatedCatSheets(scene);
+}
+
+export function getPetCareAtlasProfileLabel(): string {
+  return petCareAtlasProfileLabel();
 }
 
 export function playLicensedCareCatAnim(
@@ -34,14 +42,12 @@ export function playLicensedCareCatAnim(
   scene: Phaser.Scene,
   state: PetAnimState,
 ): void {
-  const key = mapCareStateToOlwCatAnim(state);
-  if (scene.anims.exists(key)) {
-    sprite.play(key, true);
-    return;
-  }
-  const frame = getLicensedCareCatDefaultFrame();
-  if (scene.textures.get(WORLD_PROPS_KEY).has(frame)) {
-    sprite.setFrame(frame);
+  void mapCareStateToOlwCatAnim(state);
+  ensurePetCareIsolatedCatSheets(scene);
+  const texKey = petCareCatBodyTextureKey();
+  const index = licensedCatFrameSeriesForState(state)[0] ?? 48;
+  if (scene.textures.exists(texKey)) {
+    sprite.setTexture(texKey, index);
   }
 }
 
@@ -50,8 +56,11 @@ export function playLicensedCareCatShadowAnim(
   scene: Phaser.Scene,
   state: PetAnimState,
 ): void {
-  const key = mapCareStateToOlwCatShadowAnim(state);
-  if (scene.anims.exists(key)) {
-    sprite.play(key, true);
+  void mapCareStateToOlwCatShadowAnim(state);
+  ensurePetCareIsolatedCatSheets(scene);
+  const texKey = petCareCatShadowTextureKey();
+  const index = licensedCatFrameSeriesForState(state)[0] ?? 48;
+  if (scene.textures.exists(texKey)) {
+    sprite.setTexture(texKey, index);
   }
 }

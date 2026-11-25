@@ -1,14 +1,11 @@
 import type Phaser from 'phaser';
 import type { PetAnimState } from '../../../shared/petLiving/petVisualTypes';
+import { licensedCatFrameSeriesForState } from '../../../shared/petLiving/petCare/petCareLicensedCatMaps';
 import {
-  licensedCatFrameId,
-  licensedCatFrameSeriesForState,
-} from '../../../shared/petLiving/petCare/petCareLicensedCatMaps';
-import { WORLD_PROPS_KEY } from '../../art/worldAtlas';
-import extIds from '../../art/worldExtendedArtIds.json';
-
-const CAT_SHEET = extIds.sheets.cat_orange;
-const CAT_SHADOW_SHEET = extIds.sheets.cat_orange_shadow;
+  ensurePetCareIsolatedCatSheets,
+  petCareCatBodyTextureKey,
+  petCareCatShadowTextureKey,
+} from './petCareCatIsolateTexture';
 
 export type PetCareLicensedAnimPlayer = {
   setState: (state: PetAnimState) => void;
@@ -26,12 +23,17 @@ export function createPetCareLicensedFramePlayer(
   let accum = 0;
   const frameMs = 130;
 
+  ensurePetCareIsolatedCatSheets(scene);
+
   const applyFrame = (index: number) => {
-    const bodyFrame = licensedCatFrameId(CAT_SHEET, index);
-    const shadowFrame = licensedCatFrameId(CAT_SHADOW_SHEET, index);
-    const tex = scene.textures.get(WORLD_PROPS_KEY);
-    if (tex.has(bodyFrame)) body.setFrame(bodyFrame);
-    if (tex.has(shadowFrame)) shadow.setFrame(shadowFrame);
+    const bodyKey = petCareCatBodyTextureKey();
+    const shadowKey = petCareCatShadowTextureKey();
+    if (scene.textures.exists(bodyKey)) {
+      body.setTexture(bodyKey, index);
+    }
+    if (scene.textures.exists(shadowKey)) {
+      shadow.setTexture(shadowKey, index);
+    }
   };
 
   applyFrame(indices[0] ?? 48);

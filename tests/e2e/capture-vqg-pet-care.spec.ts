@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 const OUT_DIR =
@@ -45,5 +45,17 @@ test.describe('VQG capture — pet care', () => {
     await page.getByTestId('pet-care-brush').click();
     await page.waitForTimeout(600);
     await page.screenshot({ path: `${OUT_DIR}/vqg-pet-care-hotbar-${tag}.png` });
+    writeFileSync(
+      `${OUT_DIR}/vqg-pet-care-capture-meta.json`,
+      JSON.stringify(
+        {
+          tag,
+          viteOlwPrivateArt: process.env.VITE_OLW_PRIVATE_ART || '0',
+          note: 'Set VITE_OLW_PRIVATE_ART=1 when public/assets/private-unified/* is present (owner handoff).',
+        },
+        null,
+        2,
+      ),
+    );
   });
 });

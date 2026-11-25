@@ -36,6 +36,7 @@ export default defineConfig({
     env: {
       ...process.env,
       OLW_DEV_LAN_STATE_FILE: pwStateFile,
+      VITE_OLW_PRIVATE_ART: process.env.VITE_OLW_PRIVATE_ART ?? '',
     },
     url: pwBaseUrl,
     reuseExistingServer: !process.env.CI,
