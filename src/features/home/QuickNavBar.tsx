@@ -45,12 +45,12 @@ export function QuickNavBar({
       {outdoorUnlocked && (
         <button
           type="button"
-          className={`nav-btn ${currentMapId === 'outdoor' && !decorateActive ? 'nav-btn--active' : ''}`}
+          className={`nav-btn ${(currentMapId === 'village' || currentMapId === 'farm') && !decorateActive ? 'nav-btn--active' : ''}`}
           data-testid="nav-outdoor"
-          onClick={() => onSelectMap('outdoor')}
+          onClick={() => onSelectMap('village')}
         >
           <Compass size={19} />
-          <span>Ngoài trời</span>
+          <span>Làng</span>
         </button>
       )}
 

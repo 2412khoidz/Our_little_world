@@ -39,7 +39,7 @@ function bfsReachable(
 describe('outdoor unified world contract', () => {
   it('MAP_IDS includes outdoor and legacy meadow normalizes', () => {
     expect(MAP_IDS).toContain('outdoor');
-    expect(normalizeMapId('meadow')).toBe('outdoor');
+    expect(normalizeMapId('meadow')).toBe('village');
     expect(normalizeMapId('outdoor')).toBe('outdoor');
   });
 

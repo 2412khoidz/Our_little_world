@@ -4,6 +4,8 @@ import { getCatalogItem } from '../../shared/catalog';
 import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
 import { MapDebugOverlay } from '../dev/mapDebugOverlay';
 import { renderOutdoorWorld } from '../world/outdoorRenderer';
+import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
+import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import {
   buildMovementCollisionGrid,
   findPlacementAtTile,
@@ -295,7 +297,9 @@ export class WorldScene extends Phaser.Scene {
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
-    if (mapId === 'outdoor') {
+    if (isTiledWorldMapId(mapId)) {
+      this.buildTiledWorldMap(mapId);
+    } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
       this.moteBounds = outdoor.moteBounds;
       this.motes = outdoor.motes;
@@ -344,24 +348,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Decorative framing only — no walkable-looking grass outside playable bounds (Mission 04D P0).
+   * Overscroll sky haze only — no cottages, animals, or trees outside collision bounds.
+   * Explorable landmarks live on Tiled zone maps (village/farm) or inside map accents.
    */
   private buildScenicSurround(mapId: MapId, worldW: number, worldH: number): void {
-    if (mapId === 'outdoor') return;
+    if (mapId === 'outdoor' || isTiledWorldMapId(mapId)) return;
 
-    const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
-    const placeOuterBlossom = (x: number, y: number) => {
-      if (art?.has(artIds.scenery.blossom)) {
-        this.mapLayers.push(placeSoftShadow(this, x, y - 1, 32, 10, Math.round(y) - 10, 0.48));
-        this.mapLayers.push(this.add.image(x, y, WORLD_ART_KEY, artIds.scenery.blossom).setOrigin(0.5, 1).setDepth(Math.round(y)));
-      }
-    };
+    const pad = 20;
+    const haze = this.add.graphics().setDepth(-2);
+    haze.fillStyle(0x9ec87a, 0.18);
+    haze.fillRect(-pad, -pad, worldW + pad * 2, worldH + pad * 2);
+    this.mapLayers.push(haze);
 
-    const backdrop = this.add.graphics().setDepth(-1);
-    backdrop.fillStyle(0x1a2818, 1);
-    const pad = 48;
-    backdrop.fillRect(-pad, -pad, worldW + pad * 2, worldH + pad * 2);
-    this.mapLayers.push(backdrop);
+    const sky = this.add.graphics().setDepth(-1);
+    sky.fillGradientStyle(0xd4ecf8, 0xd4ecf8, 0xb8dba0, 0xb8dba0, 0.55);
+    sky.fillRect(-pad, -48, worldW + pad * 2, 48);
+    this.mapLayers.push(sky);
 
     if (mapId === 'home') {
       const shell = this.add.graphics().setDepth(0.8);
@@ -371,52 +373,12 @@ export class WorldScene extends Phaser.Scene {
       shell.strokeRoundedRect(-2, -2, worldW + 4, worldH + 4, 3);
       this.mapLayers.push(shell);
 
-      // Front courtyard stoop + porch planters & red mailbox outside doorway
       const doorPad = this.add.graphics().setDepth(0.9);
       doorPad.fillStyle(0xdfba8a, 1);
       doorPad.fillRoundedRect(102, worldH, 52, 42, 6);
       doorPad.lineStyle(1, 0xbd996b, 0.85);
       doorPad.strokeRoundedRect(102, worldH, 52, 42, 6);
       this.mapLayers.push(doorPad);
-
-      this.placeProp(extIds.props.planter_box, 88, worldH + 10, 0.5, 1, worldH + 10);
-      this.placeProp(extIds.props.planter_box, 168, worldH + 10, 0.5, 1, worldH + 10);
-      this.placeProp(extIds.props.mailbox_red, 162, worldH + 22, 0.5, 1, worldH + 22);
-
-      placeOuterBlossom(-38, 64);
-      placeOuterBlossom(worldW + 42, 64);
-      placeOuterBlossom(-30, worldH + 34);
-      placeOuterBlossom(worldW + 34, worldH + 34);
-      this.placeProp(extIds.props.oak_tree, -48, 164);
-      this.placeProp(extIds.props.apple_tree, worldW + 48, 152);
-      this.placeProp(extIds.props.sakura_bush, 22, worldH + 18, 0.5, 1, worldH + 18);
-      this.placeProp(extIds.props.sakura_bush, worldW - 22, worldH + 20, 0.5, 1, worldH + 20);
-    } else {
-      // Garden panoramic horizon framing outside walkable 288x224
-      placeOuterBlossom(-34, 48);
-      placeOuterBlossom(worldW + 36, 48);
-      placeOuterBlossom(42, -16);
-      placeOuterBlossom(240, -16);
-      this.placeProp(extIds.props.oak_tree, 144, -20);
-      this.placeProp(extIds.props.peach_tree, -52, 210);
-      this.placeProp(extIds.props.apple_tree, worldW + 44, 216);
-      placeOuterBlossom(worldW + 52, 92);
-      this.placeProp(extIds.props.side_cottage, -58, 126);
-      this.mapLayers.push(placeWarmLight(this, -58, 104, 28, 0xffd284, 0.28, 860));
-
-      if (this.anims.exists('olw-windmill')) {
-        const wm = this.add.sprite(worldW + 64, 134, WORLD_PROPS_KEY, `${extIds.sheets.windmill}:0`).setOrigin(0.5, 0.85).setDepth(134);
-        wm.play('olw-windmill');
-        this.mapLayers.push(wm);
-      }
-      if (this.anims.exists('olw-sheep')) {
-        this.mapLayers.push(placeSoftShadow(this, -54, 173, 18, 6, 165, 0.45));
-        const sheep = this.add.sprite(-54, 174, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`).setOrigin(0.5, 0.84).setDepth(174);
-        sheep.play('olw-sheep');
-        this.mapLayers.push(sheep);
-      }
-      placeOuterBlossom(54, worldH + 42);
-      placeOuterBlossom(236, worldH + 42);
     }
   }
 
@@ -564,9 +526,24 @@ export class WorldScene extends Phaser.Scene {
       this.mapLayers.push(ch);
     }
 
-    // 5. Drifting cherry blossom petals
-    this.moteBounds = { x: -24, y: 0, w: 336, h: 240 };
+    // 5. Drifting cherry blossom petals (within walkable garden bounds)
+    const gardenDef = getMapDefinition('garden');
+    const gW = gardenDef.widthTiles * TILE_SIZE;
+    const gH = gardenDef.heightTiles * TILE_SIZE;
+    this.moteBounds = { x: 8, y: 8, w: gW - 16, h: gH - 16 };
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
+  }
+
+  private buildTiledWorldMap(mapId: MapId): void {
+    if (!isTiledWorldMapId(mapId)) return;
+    const mapKey = TILED_MAP_PHASER_KEYS[mapId];
+    const tilemap = this.make.tilemap({ key: mapKey });
+    this.tilemap = tilemap;
+
+    const tileset = tilemap.addTilesetImage('tileset-cozy', 'tileset-cozy', 16, 16, 0, 0);
+    if (tileset) {
+      renderTiledWorldMapLayers(this, tilemap, tileset, (obj) => this.mapLayers.push(obj));
+    }
   }
 
   private buildStarterMap(mapId: MapId): void {
@@ -1069,13 +1046,16 @@ export class WorldScene extends Phaser.Scene {
     } else {
       const zoom = computeGameplayZoom(width, height, worldW, worldH);
       cam.setZoom(zoom);
-      const marginX = this.currentMapId === 'outdoor' ? 8 : 48;
-      const marginY = this.currentMapId === 'outdoor' ? 8 : 40;
+      const largeWorld =
+        this.currentMapId === 'outdoor' || isTiledWorldMapId(this.currentMapId);
+      const marginX = largeWorld ? 8 : 12;
+      const marginY = largeWorld ? 8 : 12;
       const scenic = computeScenicBounds(width, height, zoom, worldW, worldH, marginX, marginY);
       cam.setBounds(scenic.x, scenic.y, scenic.width, scenic.height);
       const fitsEntireMapHorizontally = width / zoom >= worldW;
       const fitsEntireMapVertically = height / zoom >= worldH;
-      if (fitsEntireMapHorizontally && fitsEntireMapVertically) {
+      const forceFollow = largeWorld;
+      if (!forceFollow && fitsEntireMapHorizontally && fitsEntireMapVertically) {
         cam.stopFollow();
         cam.centerOn(worldW / 2, worldH / 2);
       } else {
@@ -1402,7 +1382,8 @@ export class WorldScene extends Phaser.Scene {
 
     if (now - this.lastPortalAtMs > 1200) {
       for (const portal of def.portals) {
-        if (tileX === portal.tileX && tileY === portal.tileY) {
+        const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
+        if (dist <= portal.radiusTiles) {
           this.lastPortalAtMs = now;
           gameEventBus.emit('evt:request-map-change', {
             targetMapId: portal.targetMapId,

@@ -16,6 +16,6 @@ test.describe('Extended world — outdoor DEV preview (legacy spec)', () => {
     await expect(page.getByTestId('extended-world-dev-preview')).toBeVisible();
     await expect(page.getByTestId('nav-outdoor')).toBeVisible();
     await page.getByTestId('nav-outdoor').click({ force: true });
-    await expect(page.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'outdoor');
+    await expect(page.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'village');
   });
 });

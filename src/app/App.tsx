@@ -203,7 +203,13 @@ function MainCoupleApp() {
     if (typeof window === 'undefined') return 'home';
     const q = new URLSearchParams(window.location.search);
     const deep = normalizeMapId(q.get('map'));
-    if (deep === 'outdoor' && isExtendedWorldDevEnabled()) return 'outdoor';
+    if (deep === 'outdoor' && isExtendedWorldDevEnabled()) return 'village';
+    if (
+      (deep === 'village' || deep === 'farm' || deep === 'forest' || deep === 'beach' || deep === 'shop') &&
+      isExtendedWorldDevEnabled()
+    ) {
+      return deep;
+    }
     if (deep === 'garden' || deep === 'home') return deep;
     return 'home';
   });
@@ -1322,13 +1328,15 @@ function MainCoupleApp() {
   }, [backend]);
 
   function handleSelectMap(target: MapId) {
+    const mapId =
+      import.meta.env.DEV && isExtendedWorldDevEnabled() && target === 'outdoor' ? 'village' : target;
     setDecorateActive(false);
     setActiveSku(null);
     setSelectedPlacementId(null);
-    setCurrentMapId(target);
-    const def = getMapDefinition(target);
+    setCurrentMapId(mapId);
+    const def = getMapDefinition(mapId);
     gameEventBus.emit('cmd:set-map', {
-      mapId: target,
+      mapId,
       spawnTile: def.defaultSpawn,
     });
   }
