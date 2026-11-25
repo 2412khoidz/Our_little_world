@@ -656,9 +656,17 @@ function buildHomeMap() {
     }
   }
 
-  // Welcome doormat inside front door
+  // Welcome doormat inside front door + rug / kitchen peek (interior đọc được)
   decor[idx(7, 10)] = 11;
   decor[idx(8, 10)] = 11;
+  decor[idx(5, 8)] = 28;
+  decor[idx(6, 8)] = 28;
+  decor[idx(10, 6)] = 11;
+  decor[idx(11, 6)] = 11;
+  ground[idx(3, 7)] = 2;
+  ground[idx(4, 7)] = 3;
+  ground[idx(3, 8)] = 3;
+  ground[idx(4, 8)] = 2;
 
   const map = makeTiledJson('home', w, h, [
     { id: 1, name: 'Ground', type: 'tilelayer', data: ground, height: h, width: w, opacity: 1, visible: true, x: 0, y: 0 },

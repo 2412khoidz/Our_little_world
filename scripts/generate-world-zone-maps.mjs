@@ -121,6 +121,57 @@ function paintSandGrassBlend(ground, w, y, x0, x1) {
   }
 }
 
+function carvePath(paths, w, x0, y0, x1, y1) {
+  let x = x0;
+  let y = y0;
+  while (x !== x1 || y !== y1) {
+    paths[idx(w, x, y)] = (x + y) % 2 === 0 ? T.pathA : T.pathB;
+    if (x < x1) x += 1;
+    else if (x > x1) x -= 1;
+    else if (y < y1) y += 1;
+    else if (y > y1) y -= 1;
+  }
+  paths[idx(w, x1, y1)] = T.pathC;
+}
+
+/**
+ * @param {'standard' | 'wide' | 'narrow' | 'porch'} style
+ */
+function stampVillageHouse(buildings, collision, paths, vegetation, w, hx, hy, style) {
+  const doorCol = (() => {
+    if (style === 'wide') return 2;
+    if (style === 'narrow') return 0;
+    return 1;
+  })();
+  const width = style === 'wide' ? 4 : style === 'narrow' ? 2 : 3;
+  for (let dx = 0; dx < width; dx += 1) {
+    const roof =
+      dx === 0 ? T.roofL : dx === width - 1 ? T.roofR : style === 'wide' && dx === 3 ? T.roofR : T.roofM;
+    buildings[idx(w, hx + dx, hy)] = roof;
+    const wall =
+      dx === doorCol
+        ? T.door
+        : dx === 0
+          ? T.wallL
+          : dx === width - 1
+            ? T.wallR
+            : T.wallL;
+    buildings[idx(w, hx + dx, hy + 1)] = wall;
+    collision[idx(w, hx + dx, hy)] = 1;
+    if (dx !== doorCol) collision[idx(w, hx + dx, hy + 1)] = 1;
+  }
+  if (style === 'porch') {
+    for (let dx = 0; dx < width; dx += 1) {
+      paths[idx(w, hx + dx, hy + 2)] = T.woodPlank;
+      vegetation[idx(w, hx + dx, hy + 2)] = dx === 0 || dx === width - 1 ? T.flower : 0;
+    }
+  }
+  if (style === 'wide') {
+    vegetation[idx(w, hx, hy + 2)] = T.fenceP;
+    vegetation[idx(w, hx + 3, hy + 2)] = T.fenceP;
+  }
+}
+
 function tileLayer(name, id, data, w, h) {
   return {
     id,
@@ -185,27 +236,21 @@ function buildVillageMap() {
     collision[idx(w, x, 31)] = 0;
   }
 
-  // Dãy nhà phía bắc
-  const houses = [
-    [14, 6],
-    [20, 6],
-    [26, 6],
-    [32, 6],
+  // Dãy nhà phía bắc — kiến trúc khác nhau
+  const northHouses = [
+    { x: 14, y: 6, style: 'porch' },
+    { x: 20, y: 6, style: 'narrow' },
+    { x: 27, y: 6, style: 'standard' },
+    { x: 33, y: 6, style: 'wide' },
   ];
-  for (const [hx, hy] of houses) {
-    buildings[idx(w, hx, hy)] = T.roofL;
-    buildings[idx(w, hx + 1, hy)] = T.roofM;
-    buildings[idx(w, hx + 2, hy)] = T.roofR;
-    buildings[idx(w, hx, hy + 1)] = T.wallL;
-    buildings[idx(w, hx + 1, hy + 1)] = T.door;
-    buildings[idx(w, hx + 2, hy + 1)] = T.wallR;
-    for (let dy = 0; dy < 2; dy += 1) {
-      for (let dx = 0; dx < 3; dx += 1) {
-        if (dx === 1 && dy === 1) continue;
-        collision[idx(w, hx + dx, hy + dy)] = 1;
-      }
-    }
+  for (const house of northHouses) {
+    stampVillageHouse(buildings, collision, paths, vegetation, w, house.x, house.y, house.style);
   }
+  // Nhà phía tây / đông (ngoài quảng trường)
+  stampVillageHouse(buildings, collision, paths, vegetation, w, 6, 18, 'porch');
+  stampVillageHouse(buildings, collision, paths, vegetation, w, 42, 26, 'narrow');
+  paths[idx(w, 8, 19)] = T.pathB;
+  paths[idx(w, 41, 27)] = T.pathA;
 
   // Cửa hàng Bác Hai (đông)
   const sx = 36;
@@ -345,6 +390,31 @@ function buildVillageMap() {
     ],
   };
 
+  const villageInteractables = {
+    id: 12,
+    name: 'Interactables',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: northHouses.map((house, i) => ({
+      id: 20 + i,
+      name: `village_home_${i}`,
+      type: 'interactable',
+      x: (house.x + (house.style === 'narrow' ? 0 : 1)) * 16,
+      y: (house.y + 1) * 16,
+      width: 16,
+      height: 16,
+      properties: [
+        { name: 'kind', type: 'string', value: 'door' },
+        { name: 'labelVi', type: 'string', value: 'Nhà dân — vào bên trong (V0.3)' },
+        { name: 'maxRadiusPx', type: 'int', value: 40 },
+      ],
+    })),
+  };
+
   const npcs = {
     id: 11,
     name: 'NPCSpawns',
@@ -412,7 +482,7 @@ function buildVillageMap() {
       tileLayer('Vegetation', 5, vegetation, w, h),
       tileLayer('Collision', 6, collision, w, h),
     ],
-    [portals, npcs],
+    [portals, npcs, villageInteractables],
   );
 }
 
@@ -684,6 +754,24 @@ function buildForestMap() {
     paths[idx(w, x, 26)] = T.pathA;
     paths[idx(w, x, 27)] = T.pathB;
   }
+
+  // Ngóc ngách: nhánh tới glade, góc phía bắc, điểm nhìn đông
+  carvePath(paths, w, 5, 22, 18, 14);
+  carvePath(paths, w, 18, 14, 28, 10);
+  carvePath(paths, w, 28, 10, 38, 12);
+  carvePath(paths, w, 5, 26, 22, 28);
+  carvePath(paths, w, 22, 28, 35, 34);
+  for (let y = 12; y <= 16; y += 1) {
+    for (let x = 17; x <= 21; x += 1) {
+      if ((x - 19) ** 2 + (y - 14) ** 2 <= 8) {
+        ground[idx(w, x, y)] = T.g1;
+        paths[idx(w, x, y)] = T.pathC;
+      }
+    }
+  }
+  vegetation[idx(w, 38, 11)] = T.flower;
+  vegetation[idx(w, 39, 11)] = T.flower;
+  paths[idx(w, 38, 12)] = T.woodPlank;
 
   // Secret grove (glade)
   for (let y = 30; y <= 38; y += 1) {
