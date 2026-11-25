@@ -72,6 +72,22 @@ export class BootScene extends Phaser.Scene {
     this.load.image('donor-cabacos-town-hall', '/maps/donor/cabacos/town_hall_sem_fundo.png');
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
     this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
+    this.load.image('donor-cabacos-watering-can', '/assets/donor/cabacos-plantation/tools/watering_can.png');
+    this.load.image('donor-cabacos-rod', '/assets/donor/cabacos-plantation/tools/rod.png');
+    this.load.image(
+      'donor-cabacos-need-water-indicator',
+      '/assets/donor/cabacos-plantation/indicators/crop_need_water.png',
+    );
+    this.load.image(
+      'donor-cabacos-ready-indicator',
+      '/assets/donor/cabacos-plantation/indicators/ready_to_collect.png',
+    );
+    for (let f = 0; f < 4; f += 1) {
+      this.load.image(`donor-pydew-tomato-${f}`, `/assets/donor/pydew-farming/fruit/tomato/${f}.png`);
+    }
+    for (let f = 0; f < 3; f += 1) {
+      this.load.image(`donor-pydew-soil-water-${f}`, `/assets/donor/pydew-farming/soil_water/${f}.png`);
+    }
     const cropSheets: [string, string, number, number][] = [
       ['donor-cabacos-wheat', '/assets/donor/cabacos-plantation/crops/wheat.png', 13, 16],
       ['donor-cabacos-carrot', '/assets/donor/cabacos-plantation/crops/carrot.png', 12, 13],
@@ -145,6 +161,12 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-town-hall',
       'donor-cabacos-soil',
       'donor-cabacos-hoe',
+      'donor-cabacos-watering-can',
+      'donor-cabacos-rod',
+      'donor-cabacos-need-water-indicator',
+      'donor-cabacos-ready-indicator',
+      'donor-pydew-tomato-0',
+      'donor-pydew-soil-water-0',
       'donor-cabacos-wheat',
       'donor-cabacos-carrot',
       'donor-cabacos-sunflower',

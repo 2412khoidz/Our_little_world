@@ -100,6 +100,7 @@ import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
+import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
 
 function preferDemoEHomeGarden(
   scene: Phaser.Scene,
@@ -1184,12 +1185,15 @@ export class WorldScene extends Phaser.Scene {
         this.heldItem = held;
       }),
 
-      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId }) => {
+      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId, highlightAction }) => {
         this.farmPlotsCache = plots;
         if (this.currentMapId === 'farm') {
-          this.farmPlotVisual?.sync(plots, highlightPlotId);
-          if (highlightPlotId != null) {
+          this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
+          if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+          }
+          if (highlightPlotId != null && highlightAction === 'water') {
+            playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
           }
         }
       }),

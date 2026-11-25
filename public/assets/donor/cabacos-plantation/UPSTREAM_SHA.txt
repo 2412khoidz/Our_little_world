@@ -1,0 +1,3 @@
+Cabacos Farming-Simulator @ 79e423defc12bd99327cfcc28bf7ec0085996244
+https://github.com/goncalojbsousa/Farming-Simulator-Cabacos
+MIT — see public/maps/donor/cabacos/UPSTREAM-LICENSE.txt

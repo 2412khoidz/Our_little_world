@@ -96,6 +96,19 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 
 **Proof:** `cabacosCropVisual.test.ts`, `tidefallFishCatalog.test.ts`
 
+## Full sprint Worker C — farming art transplant (2026-11-25)
+
+| Donor | OLW path | Consumer |
+|-------|----------|----------|
+| Cabacos `tools/*.png`, `farming/indicators/*` | `public/assets/donor/cabacos-plantation/` | `BootScene`, `HeldItemRenderer`, `FarmPlotVisualController` |
+| Cabacos `plantation/crops/*` | `public/assets/donor/cabacos-plantation/crops/` | `farmCropVisualResolver` |
+| PyDew `graphics/soil_water/*`, `fruit/tomato/*` | `public/assets/donor/pydew-farming/` | `FarmPlotVisualController`, `pydewCropVisualRegistry.ts` |
+| Cabacos `tools/rod.png` | `public/assets/donor/cabacos-plantation/tools/rod.png` | `rod_basic` held item (Hollowmere fishing hook) |
+
+**Excluded:** Inventory SVG/icons as map crop sprites; duplicate farming authority.
+
+**Proof:** `farmCropVisualResolver.test.ts`, `farmHeldToolPresentation.test.ts`, `scripts/build-farming-transplant-contact-sheet.mjs`
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`

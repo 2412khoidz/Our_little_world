@@ -316,18 +316,25 @@ function MainCoupleApp() {
   const [farmServerNowMs, setFarmServerNowMs] = useState(0);
   const [farmBusy, setFarmBusy] = useState(false);
 
-  const applyFarmSnapshotToUi = useCallback((snap: FarmSnapshot, highlightPlotId?: number) => {
-    const fetchedAtMs = Date.now();
-    setFarmClockAnchor({ serverNowMs: snap.serverNowMs, fetchedAtMs });
-    setFarmServerNowMs(snap.serverNowMs);
-    setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
-    gameEventBus.emit('cmd:sync-farm', {
-      plots: snap.plots,
-      serverNowMs: snap.serverNowMs,
-      growthTimeScale: snap.growthTimeScale,
-      highlightPlotId,
-    });
-  }, []);
+  const applyFarmSnapshotToUi = useCallback(
+    (
+      snap: FarmSnapshot,
+      highlight?: { plotId: number; action: 'till' | 'water' | 'plant' | 'harvest' },
+    ) => {
+      const fetchedAtMs = Date.now();
+      setFarmClockAnchor({ serverNowMs: snap.serverNowMs, fetchedAtMs });
+      setFarmServerNowMs(snap.serverNowMs);
+      setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
+      gameEventBus.emit('cmd:sync-farm', {
+        plots: snap.plots,
+        serverNowMs: snap.serverNowMs,
+        growthTimeScale: snap.growthTimeScale,
+        highlightPlotId: highlight?.plotId,
+        highlightAction: highlight?.action,
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (currentMapId !== 'farm' || !backend.farm) return;
@@ -2002,7 +2009,11 @@ function MainCoupleApp() {
             }
             setFarmWalletCoins(res.data.snapshot.walletCoins);
             farmVersionRef.current = res.data.snapshot.version;
-            applyFarmSnapshotToUi(res.data.snapshot, action === 'till' ? plotIndex : undefined);
+            if (action === 'till' || action === 'water') {
+              applyFarmSnapshotToUi(res.data.snapshot, { plotId: plotIndex, action });
+            } else {
+              applyFarmSnapshotToUi(res.data.snapshot);
+            }
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
               showToast(

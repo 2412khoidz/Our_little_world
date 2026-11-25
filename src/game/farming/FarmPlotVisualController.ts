@@ -1,18 +1,24 @@
 import Phaser from 'phaser';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
-import { cabacosCropVisual } from '../../shared/donor/cabacos-79e423d/cropVisualRegistry';
 import { cabacosGrowthStageForPermille } from '../../shared/farming/farmGrowthClock';
 import { farmPlotTileForIndex } from '../../shared/farming/farmPlotIndex';
 import { FARM_TILE_GIDS } from '../../shared/world/farmPlotContract';
+import { resolveFarmCropVisual } from '../../shared/donor/farmCropVisualResolver';
 import { TILE_SIZE } from '../../shared/maps';
 
 const SOIL_LAYER = 'OLW_ContractSoil';
 const TILLED_POP_MS = 320;
 
-type PlotVisual = { soil?: Phaser.GameObjects.Image; crop?: Phaser.GameObjects.Sprite; stage: string };
+type PlotVisual = {
+  soil?: Phaser.GameObjects.Image;
+  wetOverlay?: Phaser.GameObjects.Image;
+  crop?: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
+  indicator?: Phaser.GameObjects.Image;
+  stage: string;
+};
 
 /**
- * Cabacos `plantation/soil.png` + crop spritesheet slice on OLW farm authority.
+ * Cabacos `plantation/soil.png` + PyDew soil_water/crop frames on OLW farm authority.
  * Presentation only — soil state read from `FarmPlotView`, never a second authority.
  */
 export class FarmPlotVisualController {
@@ -29,7 +35,9 @@ export class FarmPlotVisualController {
   destroy(): void {
     for (const v of this.visuals.values()) {
       v.soil?.destroy();
+      v.wetOverlay?.destroy();
       v.crop?.destroy();
+      v.indicator?.destroy();
     }
     this.visuals.clear();
   }
@@ -43,20 +51,23 @@ export class FarmPlotVisualController {
         continue;
       }
       active.add(plot.plotId);
-      this.paintContractSoil(
-        plot.plotId,
-        plot.soil === 'tilled' || (plot.soil === 'planted' && plot.waterCount > 0)
-          ? FARM_TILE_GIDS.soilWet
-          : FARM_TILE_GIDS.soilDry,
-      );
-      const stageKey = `${plot.soil}:${plot.cropSku ?? ''}:${plot.growthStage ?? ''}:${plot.ready}`;
+      const isWet =
+        plot.soil === 'tilled' || (plot.soil === 'planted' && plot.waterCount > 0);
+      this.paintContractSoil(plot.plotId, isWet ? FARM_TILE_GIDS.soilWet : FARM_TILE_GIDS.soilDry);
+
+      const stage = plot.growthStage ?? (plot.soil === 'planted' && plot.cropSku
+        ? cabacosGrowthStageForPermille(plot.growthPermille, plot.ready, plot.cropSku)
+        : null);
+      const stageKey = `${plot.soil}:${plot.cropSku ?? ''}:${stage ?? ''}:${plot.ready}:${plot.waterCount}`;
       const existing = this.visuals.get(plot.plotId);
       if (existing?.stage === stageKey) {
         if (highlightPlotId === plot.plotId) this.playTillPop(plot.plotId);
         continue;
       }
       existing?.soil?.destroy();
+      existing?.wetOverlay?.destroy();
       existing?.crop?.destroy();
+      existing?.indicator?.destroy();
 
       const tile = farmPlotTileForIndex(plot.plotId);
       if (!tile) continue;
@@ -75,14 +86,38 @@ export class FarmPlotVisualController {
         }
       }
 
+      if (isWet) {
+        const wetKey = this.pickWetSoilTextureKey(plot);
+        if (wetKey) {
+          next.wetOverlay = this.scene.add.image(cx, cy, wetKey).setDepth(3.25).setScale(1);
+          this.pushObject(next.wetOverlay);
+        }
+      }
+
       if (plot.soil === 'planted' && plot.cropSku) {
-        const vis = cabacosCropVisual(plot.cropSku);
-        const permille = plot.growthPermille;
-        const stage = plot.growthStage ?? cabacosGrowthStageForPermille(permille, plot.ready, plot.cropSku);
-        const frame = Math.min(vis?.ripeFrame ?? 3, Math.max(0, stage));
-        if (vis && this.scene.textures.exists(vis.textureKey)) {
-          next.crop = this.scene.add.sprite(cx, cy - 2, vis.textureKey, frame).setDepth(3.4);
+        const growthStage = stage ?? 0;
+        const resolved = resolveFarmCropVisual(plot.cropSku, growthStage, plot.ready);
+        if (resolved && this.scene.textures.exists(resolved.textureKey)) {
+          if (resolved.mode === 'cabacos_spritesheet') {
+            next.crop = this.scene.add
+              .sprite(cx, cy - 2, resolved.textureKey, resolved.frame)
+              .setDepth(3.4)
+              .setScale(resolved.displayScale);
+          } else {
+            next.crop = this.scene.add
+              .image(cx, cy, resolved.textureKey)
+              .setDepth(3.4)
+              .setScale(resolved.displayScale);
+          }
           this.pushObject(next.crop);
+        }
+        const indicatorKey = this.plotIndicatorTexture(plot);
+        if (indicatorKey) {
+          next.indicator = this.scene.add
+            .image(cx, cy - 22, indicatorKey)
+            .setDepth(3.55)
+            .setScale(1);
+          this.pushObject(next.indicator);
         }
       }
 
@@ -95,10 +130,35 @@ export class FarmPlotVisualController {
     }
   }
 
+  private pickWetSoilTextureKey(plot: FarmPlotView): string | null {
+    if (this.scene.textures.exists('donor-pydew-soil-water-1')) {
+      const idx = Math.min(2, Math.max(0, plot.waterCount));
+      const key = `donor-pydew-soil-water-${idx}`;
+      return this.scene.textures.exists(key) ? key : 'donor-pydew-soil-water-1';
+    }
+    return null;
+  }
+
+  private plotIndicatorTexture(plot: FarmPlotView): string | null {
+    if (plot.ready && this.scene.textures.exists('donor-cabacos-ready-indicator')) {
+      return 'donor-cabacos-ready-indicator';
+    }
+    if (
+      !plot.ready &&
+      plot.waterCount < 1 &&
+      this.scene.textures.exists('donor-cabacos-need-water-indicator')
+    ) {
+      return 'donor-cabacos-need-water-indicator';
+    }
+    return null;
+  }
+
   private clearPlot(plotId: number): void {
     const v = this.visuals.get(plotId);
     v?.soil?.destroy();
+    v?.wetOverlay?.destroy();
     v?.crop?.destroy();
+    v?.indicator?.destroy();
     this.visuals.delete(plotId);
   }
 
