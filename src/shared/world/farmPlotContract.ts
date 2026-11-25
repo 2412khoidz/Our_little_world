@@ -134,13 +134,21 @@ export const FARM_WORLD_INTERACTABLES = {
     tileY: 11,
     labelVi: 'Ao nước — múc nước tưới',
   },
+  barn_mill: {
+    id: 'farm_barn_mill',
+    anchorId: 'farm_barn_mill',
+    kind: 'workshop_building' as const,
+    tileX: 9,
+    tileY: 9,
+    labelVi: 'Xưởng ruộng — cối Meadowbrook',
+  },
   barn_door: {
     id: 'farm_barn_door',
     anchorId: 'farm_barn_door',
     kind: 'door' as const,
-    tileX: 9,
+    tileX: 10,
     tileY: 9,
-    labelVi: 'Cửa chuồng — chưa mở',
+    labelVi: 'Vào cửa hàng Bác Hai',
   },
 } as const;
 

@@ -15,8 +15,6 @@ export const ECONOMY_SHOP_TARGET_IDS = ECONOMY_FARM_MARKET_TARGET_IDS;
 export const TILED_INTERACTABLE_SKIP_IDS = new Set([
   'cabacos_player_town_hall_door',
   'cabacos_player_house_door',
-  /** Dead “chưa mở” door — use `farm_barn_mill` workshop when economy on. */
-  'farm_barn_door',
 ]);
 
 export function isTiledWayfindingDuplicateId(id: string): boolean {

@@ -50580,6 +50580,37 @@
           ]
         },
         {
+          "id": 5,
+          "name": "farm_barn_door",
+          "type": "interactable",
+          "x": 160,
+          "y": 144,
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "door"
+            },
+            {
+              "name": "anchorId",
+              "type": "string",
+              "value": "farm_barn_door"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào cửa hàng Bác Hai"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 48
+            }
+          ]
+        },
+        {
           "id": 90,
           "name": "farm_donor_cabacos_sign",
           "type": "interactable",

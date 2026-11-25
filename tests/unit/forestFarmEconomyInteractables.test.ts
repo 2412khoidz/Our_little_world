@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTiledWorldInteractableTargets } from '../../src/shared/world/tiledWorldInteractables';
 import { resolveContextualActions, EMPTY_HELD_ITEM } from '../../src/shared/interaction/interactionResolver';
-import { TILED_INTERACTABLE_SKIP_IDS } from '../../src/shared/interaction/economyInteractablePolicy';
-
 describe('forest/farm economy interactables', () => {
   it('exposes forest canvas stream tension fishing when economy on', () => {
     const targets = buildTiledWorldInteractableTargets('forest', true);
@@ -27,14 +25,12 @@ describe('forest/farm economy interactables', () => {
     expect(targets.some((t) => t.id === 'forest_canvas_stream')).toBe(false);
   });
 
-  it('farm barn is mill workshop (no dead barn door prompt)', () => {
-    expect(TILED_INTERACTABLE_SKIP_IDS.has('farm_barn_door')).toBe(true);
+  it('farm barn: mill workshop + economy barn door to shop', () => {
     const targets = buildTiledWorldInteractableTargets('farm', true);
-    expect(targets.some((t) => t.id === 'farm_barn_door')).toBe(false);
     const mill = targets.find((t) => t.id === 'farm_barn_mill')!;
     expect(mill.workshopFocus).toBe('mill');
     expect(mill.donorPlayable).toBe(true);
-    const res = resolveContextualActions({
+    const millRes = resolveContextualActions({
       playerX: mill.x,
       playerY: mill.y,
       facing: 'down',
@@ -42,8 +38,20 @@ describe('forest/farm economy interactables', () => {
       interactables: targets,
       economyPlayable: true,
     });
-    expect(res.primary?.code).toBe('open_donor_workshop');
-    expect(res.primary?.workshopFocus).toBe('mill');
-    expect(res.primary?.available).toBe(true);
+    expect(millRes.primary?.code).toBe('open_donor_workshop');
+    expect(millRes.primary?.workshopFocus).toBe('mill');
+
+    const door = targets.find((t) => t.id === 'farm_barn_door')!;
+    expect(door.labelVi).toContain('Bác Hai');
+    const doorRes = resolveContextualActions({
+      playerX: door.x,
+      playerY: door.y,
+      facing: 'down',
+      heldItem: EMPTY_HELD_ITEM,
+      interactables: targets,
+      economyPlayable: true,
+    });
+    expect(doorRes.primary?.code).toBe('enter_barn_shop');
+    expect(doorRes.primary?.available).toBe(true);
   });
 });
