@@ -8,7 +8,7 @@ function sqlSaturationBp(unitIndex: number, threshold = 20, stepBp = 250, floorB
 }
 
 describe('economy saturation TS/SQL parity vectors', () => {
-  const indices = [0, 19, 20, 21, 40, 100];
+  const indices = [0, 19, 20, 21, 35, 40, 100, 500];
 
   it.each(indices)('unit index %i', (unitIndex) => {
     expect(saturationMultiplierBp(unitIndex, { threshold: 20, stepBp: 250, floorBp: 7000 })).toBe(
