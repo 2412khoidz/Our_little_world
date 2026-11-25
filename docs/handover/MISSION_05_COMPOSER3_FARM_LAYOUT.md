@@ -1,6 +1,8 @@
 # Mission 05 — Composer 3 farm layout contract
 
-**Owner grid (canonical):** `6 × 4` row-major plot indices (`0..23`) — `src/shared/farming/crops.ts` (`GARDEN_COLUMNS`, `GARDEN_ROWS`).
+**Owner grid (canonical):** **184** global indices — `farmPlotContract` v1.0.1 (`farm_main` 0–119 + `farm_annex` 0–63). Legacy 6×4 slice notes below are obsolete.
+
+> Economy simulator still uses **12** plots — see [MISSION_05_ECONOMY_SIM_VS_184_GRID.md](./MISSION_05_ECONOMY_SIM_VS_184_GRID.md).
 
 ## Plot anchor table (Composer 3 — farm map)
 

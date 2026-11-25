@@ -9,7 +9,10 @@
  *
  * Requires Node >= 22.18 (native TypeScript type stripping). No extra dependency.
  *
- * Flags: --seed=N --sessions=N --days=N --batch-profile=v020|v021|v022|v030 --json
+ * Flags: --seed=N --sessions=N --days=N --batch-profile=v020|v021|v022|v030 --json --smoke
+ *
+ * --smoke: 50 sessions × 7 days (quick gate; same sim plotCount as full run).
+ * Farming gameplay plot count vs sim: docs/handover/MISSION_05_ECONOMY_SIM_VS_184_GRID.md
  */
 
 import { analyzeArbitrage } from '../src/shared/economy/arbitrage.ts';
@@ -33,6 +36,7 @@ import {
   type SimReportBundle,
 } from '../src/shared/economy/sim/report.ts';
 import type { ProfileId } from '../src/shared/economy/sim/types.ts';
+import { enumerateFarmPlotAnchors } from '../src/shared/world/farmPlotContract.ts';
 
 function readArg(name: string, fallback: string): string {
   const prefix = `--${name}=`;
@@ -45,12 +49,20 @@ function parsePositiveInt(raw: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+const smoke = process.argv.includes('--smoke');
 const seed = parsePositiveInt(readArg('seed', '20261125'), 20261125);
-const sessions = parsePositiveInt(readArg('sessions', '1000'), 1000);
-const days = parsePositiveInt(readArg('days', '180'), 180);
+const sessions = smoke ? 50 : parsePositiveInt(readArg('sessions', '1000'), 1000);
+const days = smoke ? 7 : parsePositiveInt(readArg('days', '180'), 180);
 const batchProfile = readArg('batch-profile', 'v020') as ProfileId;
 const asJson = process.argv.includes('--json');
 const startedAt = Date.now();
+
+if (!asJson) {
+  console.log(
+    `Gameplay farm contract: ${enumerateFarmPlotAnchors().length} plots (sim v021+ profiles still plotCount=12 — see docs/handover/MISSION_05_ECONOMY_SIM_VS_184_GRID.md)`,
+  );
+  if (smoke) console.log(`Smoke mode: ${sessions} sessions, ${days} days`);
+}
 
 const profiles: ProfileReport[] = PROFILES.map((profile) => {
   const results = PERSONAS.map((persona) =>
