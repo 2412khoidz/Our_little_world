@@ -1,35 +1,27 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { MinigameOutcome } from '../../shared/minigames';
+import { coupleDisplayFor } from './minigameCoupleDisplay';
+import {
+  isMinigameSoundMuted,
+  setMinigameSoundMuted,
+} from './minigameAudio';
+import { MINIGAME_PLAYER_IDS } from './useMinigame';
 import { outcomeText } from './useMinigame';
 
 interface MinigameShellProps {
-  /** Game title shown at the top of the panel. */
   title: string;
-  /** Short Vietnamese subtitle explaining the mode. */
   subtitle: string;
-  /** e.g. "Lượt của Người chơi 2"; `null` hides the turn pill. */
   turnLabel: string | null;
-  /** Player id owning the turn, used only for the colored dot. */
   turnPlayerId: string | null;
-  /** Localized invalid-move message (`MinigameRuleError.messageVi`). */
   errorVi: string | null;
-  /** Result of `definition.computeScore(state)`; points are display-only. */
   outcome: MinigameOutcome;
-  /** Extra one-line context (auto-pass notice, shot feedback, ...). */
   statusHint: string | null;
   onRestart: () => void;
-  /** Game-specific controls rendered next to the restart button. */
   extraControls?: ReactNode;
   children: ReactNode;
   testId: string;
 }
 
-/**
- * Shared shell for every hot-seat mini-game:
- * title, turn indicator, localized invalid-move feedback, restart button and a
- * score line. The score line only mirrors `computeScore`; this UI never grants
- * currency, items or any economy value (friendly PvP per MINIGAME_DESIGN.md).
- */
 export function MinigameShell({
   title,
   subtitle,
@@ -43,12 +35,53 @@ export function MinigameShell({
   children,
   testId,
 }: MinigameShellProps) {
+  const [muted, setMuted] = useState(() => isMinigameSoundMuted());
+
   return (
     <section className="mn-shell" data-testid={testId} aria-label={title}>
       <header className="mn-header">
-        <h2 className="mn-title">{title}</h2>
-        <p className="mn-subtitle">{subtitle}</p>
+        <div className="mn-header-row">
+          <div>
+            <h2 className="mn-title">{title}</h2>
+            <p className="mn-subtitle">{subtitle}</p>
+          </div>
+          <div className="mn-header-tools">
+            <a className="mn-btn mn-btn--ghost mn-btn--compact" href="/" data-testid="minigame-exit">
+              Về nhà
+            </a>
+            <button
+              type="button"
+              className="mn-btn mn-btn--ghost mn-btn--compact"
+              data-testid="minigame-mute"
+              aria-pressed={muted}
+              onClick={() => {
+                const next = !muted;
+                setMinigameSoundMuted(next);
+                setMuted(next);
+              }}
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
+          </div>
+        </div>
       </header>
+
+      <div className="mn-couple-strip" data-testid="minigame-couple-strip">
+        {MINIGAME_PLAYER_IDS.map((id) => {
+          const d = coupleDisplayFor(id);
+          const active = turnPlayerId === id && turnLabel !== null;
+          return (
+            <span
+              key={id}
+              className={`mn-couple-pill${active ? ' mn-couple-pill--active' : ''}`}
+              data-testid={`minigame-player-${id}`}
+            >
+              <span className="mn-couple-emoji" aria-hidden="true">{d.emoji}</span>
+              {d.label}
+            </span>
+          );
+        })}
+      </div>
 
       {turnLabel !== null ? (
         <p
@@ -96,7 +129,10 @@ export function MinigameShell({
 
       <div className="mn-body">{children}</div>
 
-      <p className="mn-note">Chỉ để vui trong ván, không cộng thưởng.</p>
+      <p className="mn-note">
+        Chỉ để vui trong ván · {coupleDisplayFor(MINIGAME_PLAYER_IDS[0]).label} &{' '}
+        {coupleDisplayFor(MINIGAME_PLAYER_IDS[1]).label} · không cộng thưởng.
+      </p>
     </section>
   );
 }

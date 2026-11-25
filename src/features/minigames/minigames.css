@@ -602,3 +602,170 @@
     max-width: 420px;
   }
 }
+
+/* Mission 03B — Cozy table, couple strip, motion-safe polish ---------------- */
+
+.mn-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mn-header-tools {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mn-btn--compact {
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.mn-couple-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mn-couple-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid #c99e6e;
+  background: #f8edd8;
+  font-size: 12px;
+  font-weight: 800;
+  color: #523628;
+}
+
+.mn-couple-pill--active {
+  border-color: #c45b42;
+  background: linear-gradient(180deg, #ffe8d6 0%, #f5cfb0 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.mn-couple-emoji {
+  font-size: 15px;
+}
+
+.mn-table-outer {
+  position: relative;
+  padding: 8px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #6d452f 0%, #4a2e1e 100%);
+  box-shadow: 0 4px 0 #26140d, inset 0 1px 0 rgba(255, 220, 180, 0.2);
+}
+
+.mn-table-rim {
+  position: absolute;
+  inset: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 232, 198, 0.12);
+  pointer-events: none;
+}
+
+.mn-table-surface {
+  position: relative;
+  border-radius: 8px;
+}
+
+.mn-stone--ghost {
+  opacity: 0.45;
+  transform: scale(0.85);
+}
+
+.mn-cell--hover-ghost {
+  background: #f9e4bf !important;
+}
+
+.mn-cell--pop .mn-stone,
+.mn-cell--pop .mn-disc {
+  animation: mn-pop-in 220ms ease-out;
+}
+
+@keyframes mn-pop-in {
+  from {
+    transform: scale(0.2);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.mn-card-back-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  background: radial-gradient(circle at 30% 25%, #f7c4b0, #c96b52 70%);
+  border: 2px solid #8f3d2c;
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25);
+}
+
+.mn-card-back-paw {
+  font-size: clamp(18px, 6vw, 26px);
+  filter: drop-shadow(0 1px 0 rgba(80, 30, 20, 0.35));
+}
+
+.mn-card--down {
+  background: transparent;
+  color: transparent;
+}
+
+.mn-card-face {
+  font-size: clamp(22px, 7vw, 32px);
+}
+
+.mn-card--up {
+  animation: mn-card-flip 280ms ease-out;
+}
+
+@keyframes mn-card-flip {
+  from {
+    transform: rotateY(70deg);
+    opacity: 0.65;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+.mn-grid--sea {
+  animation: mn-sea-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes mn-sea-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.04);
+  }
+}
+
+.mn-cell--ship::after {
+  content: '⛵';
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-cell--pop .mn-stone,
+  .mn-cell--pop .mn-disc,
+  .mn-card--up,
+  .mn-grid--sea {
+    animation: none !important;
+  }
+}
