@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import { BookHeart, Compass, Eye, EyeOff, Palette, Sparkles, Sun } from 'lucide-react';
+import { BookHeart, Compass, DoorOpen, Eye, EyeOff, Palette, Sparkles, Sun } from 'lucide-react';
 import '../../ui/designSystem/gameUiTokens.css';
 import { playPetFeedbackChime } from '../pets/petAudio';
 import {
@@ -66,6 +66,7 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
   const [catVariant, setCatVariant] = useState<CatCoatVariantId>('ginger-tabby');
   const [catAccessory, setCatAccessory] = useState<CatAccessoryId>('ribbon_rose');
   const [petFollow, setPetFollow] = useState(true);
+  const [interiorMode, setInteriorMode] = useState<'outdoor' | 'indoor'>('outdoor');
   const [hudHidden, setHudHidden] = useState(false);
   const [showCompass, setShowCompass] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth > 768 : true,
@@ -229,6 +230,18 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
       return;
     }
 
+    if (act.code === 'enter_home') {
+      sceneRef.current?.toggleInterior(true);
+      showQuickNotice('Đã bước vào ngôi nhà nhỏ ấm áp!');
+      return;
+    }
+
+    if (act.code === 'exit_home') {
+      sceneRef.current?.toggleInterior(false);
+      showQuickNotice('Đã bước ra hiên vườn!');
+      return;
+    }
+
     if (act.code === 'roll_toy') {
       const toyKind = heldItem.itemSku === 'toy_cardboard_box' ? 'cardboard_box' : 'yarn_ball';
       sceneRef.current?.spawnToyOnGround(toyKind);
@@ -268,6 +281,7 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
         foodBowlPortions: 0,
         waterBowlVolume: 60,
         onTelemetry: setTelemetry,
+        onInteriorChange: setInteriorMode,
         onContextResolution: (r) =>
           setResolution((cur) =>
             cur.targetId === r.targetId && cur.primary?.code === r.primary?.code && cur.primary?.available === r.primary?.available && cur.secondary?.code === r.secondary?.code
@@ -320,6 +334,7 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
       foodBowlPortions: care.foodBowl.portions,
       waterBowlVolume: care.waterBowl.volume,
       onTelemetry: setTelemetry,
+      onInteriorChange: setInteriorMode,
       onContextResolution: (r) =>
         setResolution((cur) =>
           cur.targetId === r.targetId && cur.primary?.code === r.primary?.code && cur.primary?.available === r.primary?.available && cur.secondary?.code === r.secondary?.code
@@ -405,8 +420,16 @@ export function CombinedExperienceDemo({ onExit }: { onExit?: () => void }) {
         >
           <div className="olw-game-window" style={{ pointerEvents: 'auto', padding: '6px 10px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', fontSize: 12 }}>
             <Compass size={15} />
-            <strong>{telemetry?.nearestLandmark.nameVi ?? 'Ngôi nhà chung'}</strong>
-            <span style={{ opacity: 0.72 }}>[Sandbox Fixture]</span>
+            <strong>{interiorMode === 'indoor' ? 'Trong Ngôi Nhà Nhỏ' : telemetry?.nearestLandmark.nameVi ?? 'Ngôi nhà chung'}</strong>
+            <button
+              type="button"
+              className="olw-bookmark-tab olw-bookmark-tab--active"
+              style={{ minHeight: 28, fontSize: 11, padding: '2px 8px' }}
+              data-testid="btn-toggle-interior"
+              onClick={() => sceneRef.current?.toggleInterior()}
+            >
+              <DoorOpen size={12} /> {interiorMode === 'indoor' ? 'Ra hiên vườn' : 'Vào trong nhà'}
+            </button>
             <button
               type="button"
               className="olw-bookmark-tab"

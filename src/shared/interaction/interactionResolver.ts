@@ -167,6 +167,14 @@ function actionForTarget(
       return { code: 'lie_bed', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'bench':
       return { code: 'sit_bench', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
+    case 'door':
+      return {
+        code: target.id === 'cottage_exit' ? 'exit_home' : 'enter_home',
+        keyHint: 'J',
+        labelVi: target.labelVi,
+        targetId: target.id,
+        available: true,
+      };
     case 'portal':
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     default:

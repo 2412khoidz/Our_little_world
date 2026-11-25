@@ -4,9 +4,11 @@ import { execSync } from 'node:child_process';
 import { expect, test, type Page } from '@playwright/test';
 
 const SHOWCASE_DIR = process.env.OLW_SHOWCASE_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'grand-showcase');
+const ART_AFTER_DIR = path.join(process.cwd(), 'test-results', 'art-pass', 'after');
 
 function ensureShowcaseDir() {
   fs.mkdirSync(SHOWCASE_DIR, { recursive: true });
+  fs.mkdirSync(ART_AFTER_DIR, { recursive: true });
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -81,13 +83,23 @@ test.describe('Grand Pre-Integration Experience & Sandboxes QA', () => {
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(SHOWCASE_DIR, `05-pet-lab-${tag}.png`) });
 
-    // 5. Combined Experience Demo — physical feeding [1] + [J], notebook check
+    // 5. Combined Experience Demo — physical feeding [1] + [J], interior toggle, notebook check
     await page.goto('/?experience-demo=1');
     await expect(page.getByTestId('combined-experience-demo')).toBeVisible();
     await expect(page.getByTestId('combined-experience-demo').locator('canvas')).toBeVisible();
     await page.waitForTimeout(800);
     await assertNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(SHOWCASE_DIR, `06-combined-experience-${tag}.png`) });
+    await page.screenshot({ path: path.join(ART_AFTER_DIR, `after-combined-outdoor-${tag}.png`) });
+
+    if (tag === 'desktop') {
+      await page.getByTestId('btn-toggle-interior').click();
+      await page.waitForTimeout(550);
+      await expect(page.getByTestId('btn-toggle-interior')).toContainText('Ra hiên vườn');
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-combined-indoor-desktop.png') });
+      await page.getByTestId('btn-toggle-interior').click();
+      await page.waitForTimeout(450);
+    }
 
     // Select hotbar slot 1 (kibble) & interact via [J] or context button
     await page.getByTestId('hotbar-slot-1').click();
@@ -210,6 +222,37 @@ test.describe('Grand Pre-Integration Experience & Sandboxes QA', () => {
 
       expect(fs.existsSync(path.join(SHOWCASE_DIR, 'pet-locomotion-and-wake.gif'))).toBe(true);
       expect(fs.existsSync(path.join(SHOWCASE_DIR, 'pet-physical-feeding-and-play.gif'))).toBe(true);
+
+      // Copy & capture final Art Pass visual proof (Pet Art + Quadruped GIF + 4 Tabletop Mini-games)
+      await page.goto('/?pet-art=1');
+      await expect(page.getByTestId('pet-art-sandbox')).toBeVisible();
+      await page.getByRole('button', { name: 'Đi bộ (Đông)', exact: true }).click();
+      await page.waitForTimeout(250);
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-pet-art-desktop.png') });
+      fs.copyFileSync(
+        path.join(SHOWCASE_DIR, 'pet-locomotion-and-wake.gif'),
+        path.join(ART_AFTER_DIR, 'after-pet-quadruped.gif'),
+      );
+
+      await page.goto('/minigames.html');
+      await expect(page.getByTestId('caro-shell')).toBeVisible();
+      await page.getByTestId('caro-cell-112').click();
+      await page.getByTestId('caro-cell-113').click();
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-minigame-caro-desktop.png') });
+
+      await page.setViewportSize({ width: 430, height: 932 });
+      await page.getByTestId('minigame-tab-othello').click();
+      await expect(page.getByTestId('othello-shell')).toBeVisible();
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-minigame-othello-mobile.png') });
+
+      await page.getByTestId('minigame-tab-memory').click();
+      await expect(page.getByTestId('memory-shell')).toBeVisible();
+      await page.getByTestId('memory-card-0').click();
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-minigame-memory-mobile.png') });
+
+      await page.getByTestId('minigame-tab-battleship').click();
+      await expect(page.getByTestId('battleship-shell')).toBeVisible();
+      await page.screenshot({ path: path.join(ART_AFTER_DIR, 'after-minigame-battleship-mobile.png') });
     } finally {
       fs.rmSync(tmpFramesA, { recursive: true, force: true });
       fs.rmSync(tmpFramesB, { recursive: true, force: true });

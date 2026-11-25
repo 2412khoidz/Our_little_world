@@ -40,6 +40,7 @@ export type InteractableDomainKind =
   | 'sofa'
   | 'bed'
   | 'bench'
+  | 'door'
   | 'portal'
   | 'crop_plot'
   | 'fishing_spot'
@@ -74,6 +75,8 @@ export type InteractionActionCode =
   | 'sit_sofa'
   | 'lie_bed'
   | 'sit_bench'
+  | 'enter_home'
+  | 'exit_home'
   | 'use_portal'
   | 'inspect_prop'
   | 'put_away_held';
