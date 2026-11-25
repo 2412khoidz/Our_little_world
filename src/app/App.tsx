@@ -23,6 +23,7 @@ import { CoupleActionBar } from '../features/couple/CoupleActionBar';
 import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
+import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -45,6 +46,7 @@ import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 import type { MailboxGiftSourceScope, MailboxSnapshot } from '../shared/mailbox/mailboxTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
+import { getPetActionCooldownRemainingMs } from '../shared/pet/petNeeds';
 import { deriveStudySessionAt, formatDurationMmSs } from '../shared/study/pomodoro';
 import type { StudyControlAction, StudyMode, StudySnapshot } from '../shared/study/studyTypes';
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
@@ -1284,6 +1286,11 @@ function MainCoupleApp() {
   }
 
   const isAnyModalOpen = activeModal !== null || previewNotice !== null;
+  const kibbleCount = getSharedKibbleQty(inventorySnapshot?.items ?? []);
+  const petFeedCooldownMs = petSnapshot
+    ? getPetActionCooldownRemainingMs('feed', petSnapshot.lastFedAtMs, coupleClockNowMs)
+    : 0;
+  const petCanFeed = Boolean(petSnapshot) && kibbleCount > 0 && petFeedCooldownMs <= 0;
   const activeFloatingStudy = studySnapshot?.sharedSession ?? studySnapshot?.soloSession ?? null;
   const derivedFloatingStudy = activeFloatingStudy
     ? deriveStudySessionAt(
@@ -1345,7 +1352,35 @@ function MainCoupleApp() {
         showJoystick={showJoystick}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
+        contextualInteractionHud
         toast={toast}
+      />
+
+      <MainGameInteractionLayer
+        key={currentMapId}
+        enabled={Boolean(backend.inventory)}
+        currentMapId={currentMapId}
+        inventorySnapshot={inventorySnapshot}
+        petSnapshot={petSnapshot}
+        decorateActive={decorateActive}
+        modalOpen={isAnyModalOpen}
+        showJoystick={showJoystick}
+        petCanFeed={petCanFeed}
+        onOpenInventory={() => {
+          setActiveModal('inventory');
+          void refreshInventorySnapshot();
+        }}
+        onCloseTopModal={() => {
+          if (activeModal) setActiveModal(null);
+          else if (previewNotice) setPreviewNotice(null);
+        }}
+        onFeedPetAuthoritative={async () => {
+          await handleInteractPet('feed');
+        }}
+        onPetPetAuthoritative={async () => {
+          await handleInteractPet('pet');
+        }}
+        onNotice={(message, isError) => showToast(message, isError)}
       />
 
       {!decorateActive && !isAnyModalOpen && (
