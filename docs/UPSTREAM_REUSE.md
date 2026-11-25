@@ -14,7 +14,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **C2-pet-multi** | memu-cat + Petivolution utility + nadagotchi/hackipups eval · branch `cursor/donor-pet-multi-expand-36fd` | Autonomy sleep/chase/eat/refuse on `PhysicalCarePetState`; licensed multi-frame rig; two caregiver toggle | `src/donors/memu-cat/UPSTREAM_REUSE.md` · `src/donors/petivolution-utility/UPSTREAM_REUSE.md` · store `media/donor-multi-care-session-5min.png` |
 | **C3-world** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · PR **#21** @ `ad156cc` | Cabacos overworld + Casa_player → `village.json` / `shop.json` | § Cabacos below · store `media/donor-cabacos-olw-village-after.png` |
 | **C3-beach** | Hollowmere `gull_bay` · PR **#23** @ `b1aa9e4` | Authored beach → `beach.json` + village edge portals | § Hollowmere below · `donor-hollowmere-beach-olw.png` |
-| **C1-economy** | webfarmville `c420bc2` + harvest-hollow `9b23e1a` + chill-fishing MIT · PR **#22** @ `db7e290` | Dev LAN mill queue + pond reel → shared inventory | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
+| **C1-economy** | webfarmville + harvest-hollow + chill-fishing + canvas-games · PR **#22** + **#25** @ `769c54f` | Mill + Hollow bakery/coop + pond + **east_stream** tension reel | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
 | **OLWH-27** | Demo E props manifest · PR **#19** @ `80e118d` | Inventory + hotbar `CatalogPropsIcon` (CSS atlas slices) | `scripts/vqg-inventory-modal-capture.mjs` · unit: `catalogSkuPropsIcon.test.ts` |
 
 ## Pending (composer / open PR)

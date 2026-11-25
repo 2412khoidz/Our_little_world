@@ -38,6 +38,7 @@ export interface MainGameInteractionLayerProps {
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: () => void;
+  onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */
@@ -63,6 +64,7 @@ export function MainGameInteractionLayer({
   onOpenFarmMarket,
   onOpenFarmShipping,
   onOpenDonorFishing,
+  onOpenDonorStreamFishing,
   onOpenDonorWorkshop,
   onNotice,
   petCareOverlayActive = false,
@@ -120,6 +122,7 @@ export function MainGameInteractionLayer({
       onOpenFarmMarket,
       onOpenFarmShipping,
       onOpenDonorFishing,
+      onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
@@ -142,6 +145,7 @@ export function MainGameInteractionLayer({
       onOpenFarmMarket,
       onOpenFarmShipping,
       onOpenDonorFishing,
+      onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
       onNotice,
     ],

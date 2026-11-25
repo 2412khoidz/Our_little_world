@@ -36,6 +36,7 @@ import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
+import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
@@ -266,6 +267,7 @@ function MainCoupleApp() {
     | 'farm_shipping'
     | 'donor_workshop'
     | 'donor_fishing'
+    | 'donor_stream_fishing'
     | 'dev_console'
     | 'v03_proto'
   >(null);
@@ -1633,6 +1635,11 @@ function MainCoupleApp() {
             ? () => setActiveModal('donor_fishing')
             : undefined
         }
+        onOpenDonorStreamFishing={
+          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+            ? () => setActiveModal('donor_stream_fishing')
+            : undefined
+        }
         onOpenDonorWorkshop={
           import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
             ? () => setActiveModal('donor_workshop')
@@ -1869,6 +1876,16 @@ function MainCoupleApp() {
       {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_fishing' && worldId && (
         <ChillFishingModal
           worldId={worldId}
+          onClose={() => setActiveModal(null)}
+          onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
+        />
+      )}
+
+      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_stream_fishing' && worldId && (
+        <TensionFishingModal
+          worldId={worldId}
+          spotId="east_stream"
+          titleVi="Suối phía Đông"
           onClose={() => setActiveModal(null)}
           onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
         />

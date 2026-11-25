@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Factory, X } from 'lucide-react';
+import { Egg, Factory, X } from 'lucide-react';
 import {
   fetchDonorWorkshop,
+  postDonorBakeryCollect,
+  postDonorBakeryQueue,
+  postDonorCoopCollect,
+  postDonorCoopFeed,
   postDonorWorkshopCollect,
   postDonorWorkshopQueue,
 } from '../../lib/backend/donorDevLanClient';
@@ -37,29 +41,15 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
     };
   }, [worldId]);
 
-  const queueRecipe = async (recipeId: string) => {
+  const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError(null);
     try {
-      await postDonorWorkshopQueue(worldId, recipeId);
+      await fn();
       await refresh();
       await onInventoryRefresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Xếp hàng thất bại');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const collect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await postDonorWorkshopCollect(worldId);
-      await refresh();
-      await onInventoryRefresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Thu hoạch thất bại');
+      setError(e instanceof Error ? e.message : 'Thao tác thất bại');
     } finally {
       setBusy(false);
     }
@@ -70,43 +60,61 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
       <div className="modal-panel">
         <div className="modal-header">
           <h2 className="modal-title">
-            <Factory size={18} /> Cối xay (Meadowbrook)
+            <Factory size={18} /> Donor chế biến (C1+)
           </h2>
           <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
             <X size={16} />
           </button>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--ink-muted)' }}>
-          Hàng đợi chế biến vendored từ webfarmville@c420bc2 — trừ nguyên liệu túi chung, không sổ cái riêng.
-        </p>
         {error && (
           <div className="cozy-alert" style={{ fontSize: 13 }}>
             {error}
           </div>
         )}
+        <p style={{ fontSize: 13, fontWeight: 600 }}>Cối xay Meadowbrook</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void queueRecipe('olw_flour')}>
-            Xếp: 2 lúa mì → 1 bột (45s)
+          <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopQueue(worldId, 'olw_flour').then())}>
+            Xếp: 2 lúa → bột
           </button>
-          <button
-            type="button"
-            className="btn btn--primary btn--sm"
-            disabled={busy}
-            onClick={() => void queueRecipe('olw_strawberry_jam')}
-          >
-            Xếp: mứt dâu (45s)
-          </button>
-          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void collect()}>
-            Lấy món đã xong
+          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopCollect(worldId).then())}>
+            Lấy từ cối xay
           </button>
         </div>
-        <ul style={{ fontSize: 12, marginTop: 12 }}>
-          {(view?.queue ?? []).map((job) => (
-            <li key={`${job.recipeId}-${job.endMs}`}>
-              {job.recipeId} — xong lúc {new Date(job.endMs).toLocaleTimeString('vi-VN')}
-            </li>
+        <ul style={{ fontSize: 12 }}>
+          {(view?.mill.queue ?? []).map((job) => (
+            <li key={`m-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
           ))}
         </ul>
+
+        <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12 }}>Lò Hollow (harvest-hollow)</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button type="button" className="btn btn--primary btn--sm" disabled={busy} data-testid="donor-queue-bread" onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_bread').then())}>
+            Xếp: 1 bột → bánh mì
+          </button>
+          <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_chicken_feed').then())}>
+            Xếp: 3 lúa → thức ăn gà ×6
+          </button>
+          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-collect-bakery" onClick={() => void run(() => postDonorBakeryCollect(worldId).then())}>
+            Lấy từ lò
+          </button>
+        </div>
+        <ul style={{ fontSize: 12 }}>
+          {(view?.bakery.queue ?? []).map((job) => (
+            <li key={`b-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
+          ))}
+        </ul>
+
+        <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12 }}>
+          <Egg size={14} style={{ verticalAlign: 'middle' }} /> Chuồng gà
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-feed" onClick={() => void run(() => postDonorCoopFeed(worldId).then())}>
+            Cho ăn (1 thức ăn gà)
+          </button>
+          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} data-testid="donor-coop-collect" onClick={() => void run(() => postDonorCoopCollect(worldId).then())}>
+            Nhặt trứng
+          </button>
+        </div>
       </div>
     </div>
   );

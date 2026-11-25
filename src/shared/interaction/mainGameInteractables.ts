@@ -119,12 +119,23 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     targets.push({
       id: 'outdoor_fishing',
       kind: 'fishing_spot',
-      labelVi: donorEconomyDev ? 'Cầu câu ao (donor preview)' : 'Cầu câu — chưa mở fishing V0.2',
+      labelVi: donorEconomyDev ? 'Cầu câu ao Meadowbrook (chill)' : 'Cầu câu — chưa mở fishing V0.2',
       x: anchors.pondDockPx.x,
       y: anchors.pondDockPx.y,
       maxRadiusPx: 52,
       donorPlayable: donorEconomyDev === true,
     });
+    if (donorEconomyDev) {
+      targets.push({
+        id: 'outdoor_stream',
+        kind: 'fishing_spot',
+        labelVi: 'Suối phía Đông (tension — canvas-games)',
+        x: anchors.streamBankPx.x,
+        y: anchors.streamBankPx.y,
+        maxRadiusPx: 54,
+        donorPlayable: true,
+      });
+    }
     targets.push({
       id: 'outdoor_market',
       kind: 'shop_npc',
@@ -186,7 +197,7 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       targets.push({
         id: 'farm_barn_mill',
         kind: 'workshop_building',
-        labelVi: 'Cối xay chuồng (Meadowbrook)',
+        labelVi: 'Xưởng donor: cối + lò Hollow + chuồng',
         x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
         y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
         maxRadiusPx: 48,

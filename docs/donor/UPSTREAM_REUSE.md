@@ -1,49 +1,63 @@
-# Donor upstream reuse (Mission C1)
+# Donor upstream reuse (Mission C1 / multi-donor expansion)
 
-Copied source files only — no “inspired-by” rewrites. Authority for inventory mutations is `src/shared/donor/adapter/olwDonorAuthority.ts` → existing Dev LAN shared inventory (no second ledger).
+Copied source files only. Single inventory authority: `src/shared/donor/adapter/olwDonorAuthority.ts` (no second ledger, no daily caps / offline punishment).
 
-## Shiz0id/webfarmville @ `c420bc253f5de9dbaec636a729f4b4b2866248c4` (Meadowbrook)
+## Shiz0id/webfarmville @ `c420bc253f5de9dbaec636a729f4b4b2866248c4`
 
-| Upstream (donor path) | OLW path | Notes |
-| --- | --- | --- |
-| `shared/src/content/workshops.ts` | `src/shared/donor/webfarmville-c420bc2/content/workshops.ts` | `craftMs`, `workshopSlots` |
-| `shared/src/content/buildings.ts` (types + mill shape) | `content/buildingsTypes.ts`, `olwMeadowbrookMill.ts` | OLW catalog SKUs |
-| `shared/src/features/nature.ts` (L1–146) | `content/meadowbrookNatureCritters.ts` | Daily caps stripped in catch layer |
-| `shared/src/logic/reducer.ts` (craft queue) | `meadowbrookWorkshopQueue.ts` | `enqueueCraft` / `collectFinishedCrafts` |
-| `shared/src/features/nature.ts` (catch roll) | `meadowbrookNatureCatch.ts` | Used by fishing resolve |
+| Upstream | OLW path |
+| --- | --- |
+| `shared/src/content/workshops.ts` | `webfarmville-c420bc2/content/workshops.ts` |
+| `shared/src/logic/reducer.ts` (craft queue) | `meadowbrookWorkshopQueue.ts` |
+| `shared/src/features/nature.ts` | `meadowbrookNatureCatch.ts`, `content/meadowbrookNatureCritters.ts` |
+| Mill recipes | `olwMeadowbrookMill.ts` |
 
-**Adapter:** `olwDonorAuthority.ts`  
-**Dev LAN routes:** `src/server/devLanDonorRoute.ts` → `scripts/devLanV015Handlers.mjs`
+**Spot:** `meadow_pond` → chill reel minigame.
 
 ## KrasimirKralev/harvest-hollow @ `9b23e1a1fe2b19e117a3005efce21417052ded97`
 
-| Upstream | OLW path | Notes |
-| --- | --- | --- |
-| `src/economy.js` (`mulBp`, `cutMs`) | `src/shared/donor/harvest-hollow-9b23e1a/economyMulBp.ts` | Ready for price slicing |
-| `src/crafting.js` (queue end time) | `craftQueueSchedule.ts` | Scheduling helper |
+| Upstream | OLW path |
+| --- | --- |
+| `shared/rules/economy.js` (`mulBp`, `cutMs`) | `economyMulBp.ts` |
+| `shared/rules/actions/crafting.js` (`enqueue` timing) | `craftQueueSchedule.ts` |
+| `shared/content/recipes.js` (bread, chicken_feed rows) | `content/hollowRecipeExcerpt.ts` |
+| `shared/rules/actions/animals.js` (cycle shape) | `hollowCoopCycle.ts` (caps stripped) |
+| Bakery / feed recipes | `olwHollowBakery.ts` |
 
-Not yet wired into mill UI; Meadowbrook `craftMs` drives the playable Dev chain.
+**Playable:** bakery queue (`donor_bread`, `chicken_feed`), coop feed/collect (`donor_egg`).
 
 ## cristianjeffries/chill-fishing (MIT, main)
 
-| Upstream | OLW path | Notes |
-| --- | --- | --- |
-| `game.js` (`updateReel` / `startReel`) | `src/shared/donor/chill-fishing/reelMinigame.ts` | Pure TS; React overlay in `ChillFishingModal.tsx` |
+| Upstream | OLW path |
+| --- | --- |
+| `game.js` (`updateReel` / `startReel`) | `chill-fishing/reelMinigame.ts` |
 
-Catch species / weights: Meadowbrook `meadowbrookNatureCatch.ts` + Dev LAN resolve.
+## forinda/canvas-games @ `main` (`tutorials/48-fishing`)
+
+| Upstream | OLW path |
+| --- | --- |
+| `src/games/fishing/systems/FishingSystem.ts#updateReeling` | `canvas-games-fishing/tensionReelSim.ts` |
+| `src/games/fishing/data/fish.ts` (trout/salmon/bass excerpt) | `canvas-games-fishing/streamFishSpecies.ts` |
+
+**Spot:** `east_stream` → tension reel (not meadowbrook table).
+
+## Dropped weaker duplicate
+
+- **`greens@3f32fd8` FSM:** not vendored — OLW production fishing stays `src/shared/fishing/fishingMachine.ts`; donor dev uses **chill** (pond) + **canvas-games tension** (stream) only.
+- **Harvest-hollow daily/coop caps:** stripped in adapter; no `rules/daily.js` port.
+
+## Dev LAN API
+
+| Route | Purpose |
+| --- | --- |
+| `GET/POST /donor/workshop/*` | Meadowbrook mill |
+| `POST /donor/bakery/*` | Hollow bakery + feed mill |
+| `POST /donor/coop/*` | Chicken feed/collect |
+| `POST /donor/fishing/*` | `spotId`: `meadow_pond` \| `east_stream` |
 
 ## Tests
 
-| Module | Vitest |
+| Vitest | E2E |
 | --- | --- |
-| Workshop queue | `tests/unit/donorMeadowbrookWorkshop.test.ts` |
-| Reel minigame | `tests/unit/donorReelMinigame.test.ts` |
-| Pond catch | `tests/unit/donorMeadowbrookCatch.test.ts` |
+| `donorMeadowbrookWorkshop.test.ts`, `donorHollowBakery.test.ts`, `donorHollowCoop.test.ts`, `donorTensionFishing.test.ts`, `donorReelMinigame.test.ts`, `donorMeadowbrookCatch.test.ts` | `tests/e2e/donor-economy-two-client.spec.ts` |
 
-## Playable Dev path
-
-1. Dev LAN session, shared inventory with ≥2 `wheat`.
-2. Farm map → **Cối xay chuồng** (J) or menu **Cối xay donor (C1)** → queue `olw_flour` → wait 45s → **Lấy món đã xong**.
-3. Outdoor pond → **Cầu câu** (J) or menu **Cầu câu donor (C1)** → reel → fish credited to shared inventory (`carp_pond` etc.).
-
-Branch: `cursor/donor-economy-webfarmville-c420bc2-d77e`.
+Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview`.

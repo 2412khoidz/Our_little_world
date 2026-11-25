@@ -8,24 +8,26 @@ const NANG_ID = '22222222-2222-4222-8222-222222222222';
 const mayHeaders = { 'x-dev-user-id': MAY_ID, 'Content-Type': 'application/json' };
 const nangHeaders = { 'x-dev-user-id': NANG_ID, 'Content-Type': 'application/json' };
 
-test.describe('Donor C1 — mill + pond (two-client Dev LAN)', () => {
+test.describe('Donor C1 — mill + pond + hollow + stream (two-client Dev LAN)', () => {
   test.beforeEach(async ({ request }) => {
     await request.post(`${DEV_LAN}/reset`, { data: {} });
     await request.post(`${DEV_LAN}/seed-couple`, { data: {} });
   });
 
-  test('shared workshop queue + fishing credit visible to both partners', async ({ browser, request }) => {
+  test('shared workshop queue + fishing + bakery bread + stream trout visible to both partners', async ({
+    browser,
+    request,
+  }) => {
     const worldRes = await request.get(`${DEV_LAN}/world/snapshot`, { headers: mayHeaders });
     expect(worldRes.ok()).toBeTruthy();
     const worldId = ((await worldRes.json()) as { data?: { world?: { id?: string } } }).data?.world?.id;
     expect(worldId).toBeTruthy();
     const w = worldId!;
 
-    const spawn = await request.post(`${DEV_LAN}/dev-console/spawn-item`, {
+    await request.post(`${DEV_LAN}/dev-console/spawn-item`, {
       headers: mayHeaders,
       data: { worldId: w, scope: 'shared', itemSku: 'wheat', qty: 4 },
     });
-    expect(spawn.ok()).toBeTruthy();
 
     const queueA = await request.post(`${DEV_LAN}/donor/workshop/queue?worldId=${w}`, {
       headers: mayHeaders,
@@ -35,22 +37,49 @@ test.describe('Donor C1 — mill + pond (two-client Dev LAN)', () => {
 
     const workshopB = await request.get(`${DEV_LAN}/donor/workshop?worldId=${w}`, { headers: nangHeaders });
     expect(workshopB.ok()).toBeTruthy();
-    const queueB = ((await workshopB.json()) as { data?: { queue?: unknown[] } }).data?.queue ?? [];
-    expect(queueB.length).toBeGreaterThanOrEqual(1);
+    const wJson = (await workshopB.json()) as { data?: { mill?: { queue?: unknown[] }; bakery?: { queue?: unknown[] } } };
+    expect((wJson.data?.mill?.queue ?? []).length).toBeGreaterThanOrEqual(1);
+
+    await request.post(`${DEV_LAN}/dev-console/spawn-item`, {
+      headers: nangHeaders,
+      data: { worldId: w, scope: 'shared', itemSku: 'flour', qty: 2 },
+    });
+    const breadQ = await request.post(`${DEV_LAN}/donor/bakery/queue?worldId=${w}`, {
+      headers: nangHeaders,
+      data: { worldId: w, recipeId: 'olw_bread' },
+    });
+    expect(breadQ.ok()).toBeTruthy();
+    const bakeryAfter = await request.get(`${DEV_LAN}/donor/workshop?worldId=${w}`, { headers: mayHeaders });
+    const bakeryQueue = ((await bakeryAfter.json()) as { data?: { bakery?: { queue?: unknown[] } } }).data?.bakery
+      ?.queue ?? [];
+    expect(bakeryQueue.length).toBeGreaterThanOrEqual(1);
 
     const fishStart = await request.post(`${DEV_LAN}/donor/fishing/start?worldId=${w}`, {
-      headers: nangHeaders,
-      data: { worldId: w },
+      headers: mayHeaders,
+      data: { worldId: w, spotId: 'meadow_pond' },
     });
     expect(fishStart.ok()).toBeTruthy();
 
     const fishResolve = await request.post(`${DEV_LAN}/donor/fishing/resolve?worldId=${w}`, {
-      headers: nangHeaders,
+      headers: mayHeaders,
       data: { worldId: w, reelProgressPermille: 850 },
     });
     expect(fishResolve.ok()).toBeTruthy();
-    const fishJson = (await fishResolve.json()) as { data?: { itemSku?: string | null } };
-    expect(fishJson.data?.itemSku).toBeTruthy();
+    expect(((await fishResolve.json()) as { data?: { itemSku?: string | null } }).data?.itemSku).toBeTruthy();
+
+    const streamStart = await request.post(`${DEV_LAN}/donor/fishing/start?worldId=${w}`, {
+      headers: nangHeaders,
+      data: { worldId: w, spotId: 'east_stream' },
+    });
+    expect(streamStart.ok()).toBeTruthy();
+
+    const streamResolve = await request.post(`${DEV_LAN}/donor/fishing/resolve?worldId=${w}`, {
+      headers: nangHeaders,
+      data: { worldId: w, reelProgressPermille: 920 },
+    });
+    expect(streamResolve.ok()).toBeTruthy();
+    const streamSku = ((await streamResolve.json()) as { data?: { itemSku?: string | null } }).data?.itemSku;
+    expect(streamSku === 'donor_trout_stream' || streamSku === 'carp_pond').toBeTruthy();
 
     const ctxA = await browser.newContext();
     const ctxB = await browser.newContext();
@@ -66,7 +95,7 @@ test.describe('Donor C1 — mill + pond (two-client Dev LAN)', () => {
     await pageA.getByTestId('nav-menu').click();
     await expect(pageA.getByTestId('menu-donor-workshop')).toBeVisible();
     await pageA.getByTestId('menu-donor-workshop').click();
-    await expect(pageA.getByRole('dialog')).toBeVisible();
+    await expect(pageA.getByTestId('donor-queue-bread')).toBeVisible();
     await pageA.getByRole('button', { name: 'Đóng' }).first().click();
 
     await ctxA.close();

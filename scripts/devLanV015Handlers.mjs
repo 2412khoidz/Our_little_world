@@ -59,6 +59,10 @@ export const V015_CATALOG = [
   { sku: 'wheat', nameVi: 'Lúa mì', descriptionVi: 'Thu hoạch — xay bột tại cối donor.', purpose: 'ingredient', stackLimit: 99, tradeable: false },
   { sku: 'flour', nameVi: 'Bột mì', descriptionVi: 'Xay từ lúa tại cối xay donor (C1).', purpose: 'ingredient', stackLimit: 99, tradeable: false },
   { sku: 'carp_pond', nameVi: 'Cá chép ao', descriptionVi: 'Câu được tại ao donor preview.', purpose: 'ingredient', stackLimit: 20, tradeable: false },
+  { sku: 'donor_trout_stream', nameVi: 'Cá hồi suối (donor)', descriptionVi: 'Câu suối canvas-games.', purpose: 'ingredient', stackLimit: 20, tradeable: false },
+  { sku: 'donor_bread', nameVi: 'Bánh mì donor', descriptionVi: 'Nướng từ lò Hollow preview.', purpose: 'ingredient', stackLimit: 30, tradeable: false },
+  { sku: 'chicken_feed', nameVi: 'Thức ăn gà', descriptionVi: 'Xay tại lò donor — cho gà ăn.', purpose: 'ingredient', stackLimit: 99, tradeable: false },
+  { sku: 'donor_egg', nameVi: 'Trứng gà donor', descriptionVi: 'Thu từ chuồng Hollow preview.', purpose: 'ingredient', stackLimit: 30, tradeable: false },
   {
     sku: 'fish_salmon_bite',
     nameVi: 'Cá hồi mềm',
