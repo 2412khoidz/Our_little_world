@@ -132,7 +132,7 @@ export type FarmingResult<T extends object> = ({ readonly ok: true } & T) | Farm
 
 /** Short Vietnamese messages, safe to show directly in the cozy UI. */
 export const FARMING_ERROR_MESSAGES: Readonly<Record<FarmingErrorCode, string>> = Object.freeze({
-  INVALID_PLOT: 'Ô đất không hợp lệ.',
+  INVALID_PLOT: 'Ô đất không hợp lệ — chỉ ruộng 0–183 (ruộng chính + phụ).',
   INVALID_TIME: 'Thời gian không hợp lệ.',
   UNKNOWN_CROP: 'Cây trồng không hợp lệ.',
   PLOT_OCCUPIED: 'Ô đất đã có cây.',

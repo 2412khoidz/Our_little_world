@@ -150,7 +150,11 @@ export async function tryHandleFarmDevLan(ctx: {
     }
     const plotIndex = Number(body.plotIndex);
     if (!isValidFarmPlotIndex(plotIndex) || !isFarmPlotIndexOnContractSoil(plotIndex)) {
-      sendJson(res, 409, { ok: false, code: 'INVALID_PLOT', message: 'Ô đất không hợp lệ.' });
+      sendJson(res, 409, {
+        ok: false,
+        code: 'INVALID_PLOT',
+        message: 'Ô đất không hợp lệ — chỉ ruộng 0–183 (ruộng chính + phụ).',
+      });
       return true;
     }
     const action = String(body.action ?? '') as FarmApplyParams['action'];
