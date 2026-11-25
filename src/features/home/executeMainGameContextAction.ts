@@ -21,7 +21,7 @@ export interface MainGameActionContext {
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
-  onOpenDonorFishing?: () => void;
+  onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
@@ -243,7 +243,7 @@ export async function executeMainGameContextAction(
     return;
   }
   if (code === 'open_donor_fishing' && ctx.onOpenDonorFishing) {
-    ctx.onOpenDonorFishing();
+    ctx.onOpenDonorFishing(action.donorFishingSpotId);
     return;
   }
   if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorStreamFishing) {

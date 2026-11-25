@@ -43,6 +43,8 @@ import { ChillFishingModal } from '../features/donor/ChillFishingModal';
 import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { isDonorLanPlayableMode, setDevLanDonorUiActive } from '../shared/donor/donorEconomyUiFlag';
+import type { DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
+import { parseDonorFishingSpot } from '../shared/donor/donorFishingSpots';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
@@ -286,6 +288,7 @@ function MainCoupleApp() {
   const [farmWalletCoins, setFarmWalletCoins] = useState(0);
   const farmVersionRef = useRef(0);
   const [farmBusy, setFarmBusy] = useState(false);
+  const [donorChillFishingSpot, setDonorChillFishingSpot] = useState<DonorFishingSpotId>('meadow_pond');
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
@@ -1740,7 +1743,12 @@ function MainCoupleApp() {
           setActiveModal('farm_shipping');
         } : undefined}
         onOpenDonorFishing={
-          donorLanPlayable && worldId ? () => setActiveModal('donor_fishing') : undefined
+          donorLanPlayable && worldId
+            ? (spotId) => {
+                setDonorChillFishingSpot(parseDonorFishingSpot(spotId));
+                setActiveModal('donor_fishing');
+              }
+            : undefined
         }
         onOpenDonorStreamFishing={
           donorLanPlayable && worldId ? () => setActiveModal('donor_stream_fishing') : undefined
@@ -1980,6 +1988,7 @@ function MainCoupleApp() {
       {donorLanPlayable && activeModal === 'donor_fishing' && worldId && (
         <ChillFishingModal
           worldId={worldId}
+          spotId={donorChillFishingSpot}
           onClose={() => setActiveModal(null)}
           onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
         />

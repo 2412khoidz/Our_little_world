@@ -39,7 +39,7 @@ export interface MainGameInteractionLayerProps {
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
-  onOpenDonorFishing?: () => void;
+  onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: () => void;
   donorLanPlayable?: boolean;

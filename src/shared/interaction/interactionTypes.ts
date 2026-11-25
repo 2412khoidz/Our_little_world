@@ -69,6 +69,8 @@ export interface InteractableTarget {
   full?: boolean;
   /** Dev LAN donor economy preview (Mission C1). */
   donorPlayable?: boolean;
+  /** Meadowbrook / Hollowmere / canvas-games spot id for fishing modals. */
+  fishingSpotId?: string;
 }
 
 export type InteractionActionCode =
@@ -111,6 +113,7 @@ export interface ContextualAction {
   targetId: string;
   available: boolean;
   reasonVi?: string;
+  donorFishingSpotId?: string;
 }
 
 export interface ContextualResolution {

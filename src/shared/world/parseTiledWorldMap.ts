@@ -72,6 +72,8 @@ export interface ParsedTiledWorldMap {
     labelVi: string;
     anchorId?: string;
     maxRadiusPx?: number;
+    fishingSpotId?: string;
+    donorPlayableFromJson?: boolean;
   }[];
 }
 
@@ -149,6 +151,8 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
           labelVi: String(props.labelVi ?? obj.name),
           anchorId: props.anchorId ? String(props.anchorId) : undefined,
           maxRadiusPx: props.maxRadiusPx !== undefined ? Number(props.maxRadiusPx) : undefined,
+          fishingSpotId: props.fishingSpotId ? String(props.fishingSpotId) : undefined,
+          donorPlayableFromJson: props.donorPlayable === true ? true : undefined,
         });
       }
     }

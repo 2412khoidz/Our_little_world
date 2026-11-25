@@ -1,5 +1,5 @@
 /** Donor fishing locations — distinct biome tables + minigame engines (no duplicate weak rules). */
-export type DonorFishingSpotId = 'meadow_pond' | 'east_stream';
+export type DonorFishingSpotId = 'meadow_pond' | 'east_stream' | 'gull_bay';
 
 export type DonorFishingMinigame = 'chill_reel' | 'tension_reel';
 
@@ -23,10 +23,16 @@ export const DONOR_FISHING_SPOTS: Record<DonorFishingSpotId, DonorFishingSpotDef
     minigame: 'tension_reel',
     biome: 'stream',
   },
+  gull_bay: {
+    id: 'gull_bay',
+    labelVi: 'Gull Bay — Hollowmere pier (chill reel)',
+    minigame: 'chill_reel',
+    biome: 'pond',
+  },
 };
 
 export function parseDonorFishingSpot(raw: unknown): DonorFishingSpotId {
   const id = String(raw ?? 'meadow_pond');
-  if (id === 'east_stream' || id === 'meadow_pond') return id;
+  if (id === 'east_stream' || id === 'meadow_pond' || id === 'gull_bay') return id;
   return 'meadow_pond';
 }

@@ -9981,6 +9981,11 @@
               "name": "donorPlayable",
               "type": "bool",
               "value": true
+            },
+            {
+              "name": "fishingSpotId",
+              "type": "string",
+              "value": "gull_bay"
             }
           ]
         }

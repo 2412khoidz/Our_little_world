@@ -1,3 +1,7 @@
+import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
+
+export type { DonorFishingSpotId };
+
 async function donorDevLanJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/dev-lan${path}`, {
     ...init,
@@ -58,8 +62,6 @@ export function postDonorWorkshopCollect(worldId: string) {
     body: JSON.stringify({ worldId }),
   });
 }
-
-export type DonorFishingSpotId = 'meadow_pond' | 'east_stream';
 
 export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId) {
   return donorDevLanJson<{ preview: { name: string }; spotId: DonorFishingSpotId }>(
