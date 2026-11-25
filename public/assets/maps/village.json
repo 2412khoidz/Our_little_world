@@ -91501,6 +91501,37 @@
               "value": 14
             }
           ]
+        },
+        {
+          "id": 9105,
+          "name": "village-to-beach",
+          "type": "portal",
+          "x": 1344,
+          "y": 416,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "beach"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Ra Gull Bay"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 1
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
         }
       ]
     },

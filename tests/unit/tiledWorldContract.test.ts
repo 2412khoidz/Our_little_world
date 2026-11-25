@@ -93,8 +93,11 @@ describe('Tiled village & farm contract', () => {
   it('forest glade and beach link back to village graph', () => {
     if (isDonorCabacosVillage()) {
       const village = getMapDefinition('village');
+      const beach = getMapDefinition('beach');
       expect(village.portals.some((p) => p.targetMapId === 'shop')).toBe(true);
       expect(village.portals.some((p) => p.targetMapId === 'garden')).toBe(true);
+      expect(village.portals.some((p) => p.targetMapId === 'beach')).toBe(true);
+      expect(beach.portals.some((p) => p.targetMapId === 'village')).toBe(true);
       return;
     }
     const forest = getMapDefinition('forest');

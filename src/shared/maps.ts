@@ -139,7 +139,7 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
   ),
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', { tileX: 55, tileY: 20 }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 8, tileY: 26 }),
-  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 28, tileY: 22 }),
+  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 1, tileY: 16 }),
   shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 12, tileY: 14 }),
 };
 

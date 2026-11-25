@@ -1,0 +1,6 @@
+MIT License — Hollowmere (robintrepte/hollowmere.tretu.de)
+
+Copyright (c) 2026 Robin Trepte
+
+Vendored map data: game/data/maps/gull_bay.json (authored layout ops/warps only).
+OLW renders layout with tileset-cozy (Demo E compatible ground/path/water gids).

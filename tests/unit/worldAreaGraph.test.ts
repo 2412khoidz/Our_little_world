@@ -4,7 +4,7 @@ import { WORLD_AREA_WARPS_LIVE, plannedAreas } from '../../src/shared/world/worl
 describe('worldAreaGraph', () => {
   it('lists planned Stardew-scale regions without breaking live maps', () => {
     const planned = plannedAreas();
-    expect(planned.map((a) => a.id)).toEqual(['village', 'forest', 'lake', 'beach']);
+    expect(planned.map((a) => a.id)).toEqual(['village', 'forest', 'lake']);
     expect(planned.every((a) => a.phase === 'planned')).toBe(true);
   });
 
