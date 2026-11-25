@@ -37,6 +37,8 @@ export interface MainGameInteractionLayerProps {
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
+  onOpenDonorFishing?: () => void;
+  onOpenDonorWorkshop?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */
   petCareOverlayActive?: boolean;
@@ -60,6 +62,8 @@ export function MainGameInteractionLayer({
   onFarmApply,
   onOpenFarmMarket,
   onOpenFarmShipping,
+  onOpenDonorFishing,
+  onOpenDonorWorkshop,
   onNotice,
   petCareOverlayActive = false,
 }: MainGameInteractionLayerProps) {
@@ -115,6 +119,8 @@ export function MainGameInteractionLayer({
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorWorkshop,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
         else {
@@ -135,6 +141,8 @@ export function MainGameInteractionLayer({
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorWorkshop,
       onNotice,
     ],
   );

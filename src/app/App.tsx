@@ -35,6 +35,8 @@ import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import { ChillFishingModal } from '../features/donor/ChillFishingModal';
+import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
@@ -237,7 +239,23 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'farm_shipping' | 'dev_console' | 'v03_proto'
+    | null
+    | 'invite'
+    | 'avatar'
+    | 'menu'
+    | 'pwa'
+    | 'spike'
+    | 'inventory'
+    | 'pet'
+    | 'study'
+    | 'photo'
+    | 'mailbox'
+    | 'farm_market'
+    | 'farm_shipping'
+    | 'donor_workshop'
+    | 'donor_fishing'
+    | 'dev_console'
+    | 'v03_proto'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -1598,6 +1616,16 @@ function MainCoupleApp() {
           void refreshFarmWallet();
           setActiveModal('farm_shipping');
         } : undefined}
+        onOpenDonorFishing={
+          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+            ? () => setActiveModal('donor_fishing')
+            : undefined
+        }
+        onOpenDonorWorkshop={
+          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+            ? () => setActiveModal('donor_workshop')
+            : undefined
+        }
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
@@ -1739,6 +1767,16 @@ function MainCoupleApp() {
               ? () => void handleResetDevWorld()
               : undefined
           }
+          onOpenDonorWorkshop={
+            import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+              ? () => setActiveModal('donor_workshop')
+              : undefined
+          }
+          onOpenDonorFishing={
+            import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+              ? () => setActiveModal('donor_fishing')
+              : undefined
+          }
           onSignOut={() => {
             setActiveModal(null);
             void backend.signOut();
@@ -1805,6 +1843,22 @@ function MainCoupleApp() {
           selectedPresetId={selectedPhotoPresetId}
           onSelectPreset={setSelectedPhotoPresetId}
           onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_workshop' && worldId && (
+        <DonorWorkshopModal
+          worldId={worldId}
+          onClose={() => setActiveModal(null)}
+          onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
+        />
+      )}
+
+      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_fishing' && worldId && (
+        <ChillFishingModal
+          worldId={worldId}
+          onClose={() => setActiveModal(null)}
+          onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
         />
       )}
 

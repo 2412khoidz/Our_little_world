@@ -230,6 +230,24 @@ function actionForTarget(
       return { code: 'open_farm_market', keyHint: 'J', labelVi: 'Cửa hàng hạt giống', targetId: target.id, available: true };
     case 'shipping_bin':
       return { code: 'open_shipping_bin', keyHint: 'J', labelVi: 'Gửi nông sản', targetId: target.id, available: true };
+    case 'fishing_spot':
+      return {
+        code: 'open_donor_fishing',
+        keyHint: 'J',
+        labelVi: target.labelVi,
+        targetId: target.id,
+        available: target.donorPlayable === true,
+        reasonVi: target.donorPlayable ? undefined : 'Cầu câu donor chỉ mở trong Dev LAN preview.',
+      };
+    case 'workshop_building':
+      return {
+        code: 'open_donor_workshop',
+        keyHint: 'J',
+        labelVi: target.labelVi,
+        targetId: target.id,
+        available: target.donorPlayable === true,
+        reasonVi: target.donorPlayable ? undefined : 'Xưởng chế biến donor chỉ mở trong Dev LAN preview.',
+      };
     default:
       return { code: 'inspect_prop', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
   }
