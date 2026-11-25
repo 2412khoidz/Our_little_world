@@ -123,6 +123,10 @@ export class PetCareScene extends Phaser.Scene {
       const cue = this.autonomy.tick(now, quiet);
       if (cue.kind === 'proactive') {
         this.rig.performAction(cue.action);
+        gameEventBus.emit('evt:pet-care-autonomy-cue', {
+          action: cue.action,
+          bubbleVi: cue.bubbleVi,
+        });
         if (this.sessionGoals.record('autonomy')) this.emitSessionGoals();
         if (this.sessionGoals.recordAction(cue.action)) this.emitSessionGoals();
       }

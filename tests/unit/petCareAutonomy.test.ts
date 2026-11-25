@@ -27,4 +27,21 @@ describe('PetCareAutonomy', () => {
     }
     vi.restoreAllMocks();
   });
+
+  it('nudges with observe then call after long quiet', () => {
+    const playful: PetCareMoodState = { ...mood, proactiveChance: 0.05 };
+    const a = new PetCareAutonomy(playful);
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const cue = a.tick(60_000, 50_000);
+    expect(cue.kind).toBe('proactive');
+    if (cue.kind === 'proactive') {
+      expect(cue.action).toBe('observe');
+    }
+    const late = a.tick(120_000, 80_000);
+    expect(late.kind).toBe('proactive');
+    if (late.kind === 'proactive') {
+      expect(late.action).toBe('call');
+    }
+    vi.restoreAllMocks();
+  });
 });

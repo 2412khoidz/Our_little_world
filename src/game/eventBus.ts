@@ -115,6 +115,8 @@ export interface GameEventMap {
   'evt:pet-care-session-goals': { count: number; total: number; labelsVi: string[] };
   'evt:pet-care-stroke-done': { zone: 'head' | 'chin' | 'back' | 'belly' };
   'evt:pet-care-refuse': { squeak: 'refuse' | 'purr' | 'mrow' | 'chirp' };
+  /** Scene autonomy tick — soak / acceptance diversity (no PII). */
+  'evt:pet-care-autonomy-cue': { action: string; bubbleVi: string };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };

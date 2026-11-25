@@ -213,6 +213,16 @@
   pointer-events: auto;
 }
 
+.main-game-interaction-stack--pet-care {
+  z-index: 29;
+  bottom: calc(96px + var(--safe-bottom));
+}
+
+.main-game-touch-actions--pet-care {
+  z-index: 29;
+  bottom: calc(168px + var(--safe-bottom));
+}
+
 .main-game-touch-actions {
   position: fixed;
   right: calc(12px + var(--safe-right));
@@ -286,12 +296,15 @@
 }
 
 .pet-care-overlay__actions {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(184px + var(--safe-bottom));
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
-  margin-top: 8px;
-  z-index: 2;
+  z-index: 30;
   pointer-events: auto;
   max-width: min(96vw, 420px);
 }

@@ -47,6 +47,9 @@ export class PetCarePortraitRig {
   private expression: PetCareExpression | null = null;
   private eyeTargetX = 0;
   private eyeTargetY = -8;
+  private swayPhase = 0;
+  private targetTiltDeg = 0;
+  private currentTiltDeg = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -91,7 +94,7 @@ export class PetCarePortraitRig {
       .setResolution(2);
 
     this.hitPad = scene.add
-      .rectangle(0, -8, 148, 152, 0xffffff, 0.001)
+      .rectangle(0, -8, 172, 168, 0xffffff, 0.001)
       .setInteractive({ useHandCursor: true, draggable: true });
 
     this.toys = new PetCareToyLayer(scene, this.root, (kind) => this.onToyBounce(kind));
@@ -187,8 +190,14 @@ export class PetCarePortraitRig {
   update(deltaMs: number, nowMs: number): void {
     const mood = derivePetCareMood(this.snapshot, this.traits);
     this.breathPhase += deltaMs * 0.0025;
+    this.swayPhase += deltaMs * 0.0011;
     const breath = 1 + Math.sin(this.breathPhase) * mood.breathAmplitude;
     this.body.setScale(BODY_SCALE * breath, BODY_SCALE * (breath - 0.004));
+
+    const lerp = Math.min(1, deltaMs * 0.0045);
+    this.currentTiltDeg += (this.targetTiltDeg - this.currentTiltDeg) * lerp;
+    const sway = Math.sin(this.swayPhase) * 1.4;
+    this.root.setAngle(this.currentTiltDeg * 0.35 + sway);
 
     const tailMode = this.expression?.tail ?? 'idle';
     const wag =
@@ -254,8 +263,34 @@ export class PetCarePortraitRig {
 
   private applyExpression(expr: PetCareExpression): void {
     this.expression = expr;
+    this.targetTiltDeg = expr.earTilt ?? 0;
     if (expr.refuse) {
       gameEventBus.emit('evt:pet-care-refuse', { squeak: expr.squeak ?? 'refuse' });
+      this.scene.tweens.add({
+        targets: this.root,
+        y: `+=${4}`,
+        duration: 90,
+        yoyo: true,
+        ease: 'Sine.easeOut',
+      });
+    }
+    if (expr.bubbleVi && expr.bubbleVi !== this.bubble.text) {
+      this.bubble.setAlpha(0.55);
+      this.scene.tweens.add({
+        targets: this.bubble,
+        alpha: 1,
+        duration: 220,
+        ease: 'Quad.easeOut',
+      });
+    }
+    if (expr.anim === 'play_pounce' || expr.anim === 'eat') {
+      this.scene.tweens.add({
+        targets: this.body,
+        y: '+=3',
+        duration: 120,
+        yoyo: true,
+        ease: 'Back.easeOut',
+      });
     }
     const tailMode = expr.tail ?? 'idle';
     if (tailMode === 'wag_fast') this.tail.setFillStyle(0xe8a56e, 0.95);

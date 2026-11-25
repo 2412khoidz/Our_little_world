@@ -1474,6 +1474,7 @@ function MainCoupleApp() {
       <MainGameInteractionLayer
         localUserId={currentUser.userId}
         key={currentMapId}
+        petCareOverlayActive={petCareMode}
         enabled={Boolean(backend.inventory)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}

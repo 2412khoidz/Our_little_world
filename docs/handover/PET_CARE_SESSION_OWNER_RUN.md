@@ -14,7 +14,10 @@
 npm run build
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run preview &
 npm run test:e2e:pet-care-long
+# hoặc soak 5 phút: OLW_ACCEPTANCE_LONG=1 OLW_SOAK_MINUTES=5 npm run test:e2e -- tests/e2e/pet-care-session-acceptance.spec.ts
 ```
+
+Diversity telemetry (DEV `?living-pet=1`): `window.__OLW_PET_CARE_SOAK` + `evt:pet-care-autonomy-cue` — e2e ghi `pet-care-soak-summary.json` (artifacts + worker `media/`).
 
 Artifacts:
 
