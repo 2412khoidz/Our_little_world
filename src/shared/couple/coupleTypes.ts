@@ -81,6 +81,17 @@ export interface CouplePosturePayload {
   facing: Direction;
 }
 
+export interface CoupleHomeBowlPayload {
+  type: 'COUPLE_HOME_BOWL';
+  worldId: string;
+  userId: string;
+  foodEmpty: boolean;
+  foodFull: boolean;
+  waterEmpty: boolean;
+  waterFull: boolean;
+  atMs: number;
+}
+
 export interface CoupleEnvTransitionPayload {
   type: 'COUPLE_ENV_TRANSITION';
   worldId: string;
@@ -99,7 +110,8 @@ export type CoupleEventPacket =
   | CoupleEndPayload
   | CoupleEmotePayload
   | CouplePosturePayload
-  | CoupleEnvTransitionPayload;
+  | CoupleEnvTransitionPayload
+  | CoupleHomeBowlPayload;
 
 export interface PhotoFramePreset {
   id: string;

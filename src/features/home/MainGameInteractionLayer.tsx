@@ -128,6 +128,7 @@ export function MainGameInteractionLayer({
       onOpenDonorFishing,
       onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
+      donorLanPlayable,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
         else {
@@ -151,6 +152,7 @@ export function MainGameInteractionLayer({
       onOpenDonorFishing,
       onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
+      donorLanPlayable,
       onNotice,
     ],
   );

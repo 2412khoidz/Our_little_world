@@ -42,13 +42,16 @@ export function buildTiledWorldInteractableTargets(
       spawn.kind === 'workshop_building' ||
       spawn.kind === 'shop_npc';
     const playable = economyPlayable && economyKind;
+    const labelVi =
+      spawn.id === 'farm_barn_door' && economyPlayable
+        ? 'Vào cửa hàng Bác Hai'
+        : spawn.kind === 'shipping_bin' && economyPlayable
+          ? 'Thùng gom hàng — bán qua đêm'
+          : spawn.labelVi;
     fromJson.push({
       id: spawn.id,
       kind: spawn.kind,
-      labelVi:
-        spawn.kind === 'shipping_bin' && economyPlayable
-          ? 'Thùng gom hàng — bán qua đêm'
-          : spawn.labelVi,
+      labelVi,
       x: center.x,
       y: center.y,
       maxRadiusPx: spawn.maxRadiusPx ?? 48,
@@ -62,7 +65,6 @@ export function buildTiledWorldInteractableTargets(
   if (mapId === 'farm') {
     return Object.values(FARM_WORLD_INTERACTABLES)
       .filter((def) => {
-        if (economyPlayable && def.id === 'farm_barn_door') return false;
         if (!economyPlayable && (def.kind === 'shipping_bin' || def.id === 'farm_barn_door')) {
           return false;
         }

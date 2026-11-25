@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { gameEventBus } from '../../game/eventBus';
 import { EMPTY_HELD_ITEM, selectHotbarSlot } from '../../shared/interaction/interactionResolver';
 import { reconcileHeldItemWithHotbar } from '../../shared/interaction/heldItemIdentity';
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
@@ -21,6 +22,14 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
       setHeldAnchor(EMPTY_HELD_ITEM);
     }
   }, [heldAnchor.itemSku, heldItem.itemKind]);
+
+  useEffect(() => {
+    return gameEventBus.on('evt:held-water-adjust', ({ level, iconId }) => {
+      setHeldAnchor((cur) =>
+        cur.itemKind === 'water_pitcher' ? { ...cur, waterFillLevel: level, iconId } : cur,
+      );
+    });
+  }, []);
 
   const selectSlot = (index: number) => {
     setHeldAnchor((cur) => selectHotbarSlot(slots, cur, index));
