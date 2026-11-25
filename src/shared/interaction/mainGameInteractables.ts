@@ -1,6 +1,12 @@
 import { getCatalogItem } from '../catalog';
 import { getMapDefinition, TILE_SIZE } from '../maps';
 import type { FurniturePlacement, MapId } from '../types';
+import {
+  buildFarmSlicePlotInteractables,
+  FARM_SLICE_SEED_SHOP_TILE,
+  PRIMARY_FARM_MAP_ID,
+} from '../farming/farmPlayableBridge';
+import { FARM_ZONE_MAP_ID } from '../world/farmPlotContract';
 import { MAIN_GAME_WORLD_ANCHORS, portalCenterPx } from './mainGameWorldAnchors';
 import type { InteractableTarget } from './interactionTypes';
 
@@ -100,6 +106,18 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       x: anchors.mailboxPx.x,
       y: anchors.mailboxPx.y,
       maxRadiusPx: 40,
+    });
+  }
+
+  if (mapId === PRIMARY_FARM_MAP_ID || mapId === FARM_ZONE_MAP_ID) {
+    targets.push(...buildFarmSlicePlotInteractables());
+    targets.push({
+      id: 'farm_seed_shop',
+      kind: 'shop_npc',
+      labelVi: 'Gian hạt Bác Hai',
+      x: FARM_SLICE_SEED_SHOP_TILE.tileX * TILE_SIZE + TILE_SIZE / 2,
+      y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
+      maxRadiusPx: 44,
     });
   }
 

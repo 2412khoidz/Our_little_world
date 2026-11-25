@@ -10,6 +10,7 @@ import {
   harvest,
   isReady,
   plant,
+  till,
   water,
 } from '../../src/shared/farming';
 import type {
@@ -54,8 +55,15 @@ function cropAt(farm: Farm, plotIndex: number): PlantedCrop {
   return crop;
 }
 
+function tillOk(farm: Farm, plotIndex: number): Farm {
+  const result = till(farm, { plotIndex });
+  if (!result.ok) throw new Error(`till failed: ${result.code}`);
+  return result.farm;
+}
+
 function plantOk(farm: Farm, plotIndex: number, cropSku: string, nowMs = 0): Farm {
-  const result = plant(farm, { plotIndex, cropSku, nowMs });
+  const tilled = tillOk(farm, plotIndex);
+  const result = plant(tilled, { plotIndex, cropSku, nowMs });
   if (!result.ok) {
     throw new Error(`plant failed: ${result.code}`);
   }
@@ -128,7 +136,7 @@ describe('createFarm', () => {
 
 describe('plant', () => {
   it('plants on an empty plot and leaves the previous farm untouched', () => {
-    const farm = createFarm(7);
+    const farm = tillOk(createFarm(7), 3);
     const result = plant(farm, { plotIndex: 3, cropSku: 'wheat', nowMs: 500 });
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -142,15 +150,17 @@ describe('plant', () => {
       isRegrowCycle: false,
     });
     expect(plotAt(result.farm, 3).soil).toBe('planted');
-    expect(plotAt(farm, 3).soil).toBe('empty');
+    expect(plotAt(farm, 3).soil).toBe('tilled');
   });
 
   it('rejects occupied plots, unknown crops, hybrids and invalid indices', () => {
     const farm = plantOk(createFarm(7), 1, 'wheat', 0);
     expectFailure(plant(farm, { plotIndex: 1, cropSku: 'carrot', nowMs: 0 }), 'PLOT_OCCUPIED');
-    expectFailure(plant(createFarm(7), { plotIndex: 2, cropSku: 'banana', nowMs: 0 }), 'UNKNOWN_CROP');
+    expectFailure(plant(createFarm(7), { plotIndex: 2, cropSku: 'wheat', nowMs: 0 }), 'SOIL_NOT_TILLED');
+    const tilled2 = tillOk(createFarm(7), 2);
+    expectFailure(plant(tilled2, { plotIndex: 2, cropSku: 'banana', nowMs: 0 }), 'UNKNOWN_CROP');
     expectFailure(
-      plant(createFarm(7), { plotIndex: 2, cropSku: 'rose_sakura', nowMs: 0 }),
+      plant(tilled2, { plotIndex: 2, cropSku: 'rose_sakura', nowMs: 0 }),
       'NOT_PLANTABLE',
     );
     expectFailure(plant(createFarm(7), { plotIndex: -1, cropSku: 'wheat', nowMs: 0 }), 'INVALID_PLOT');

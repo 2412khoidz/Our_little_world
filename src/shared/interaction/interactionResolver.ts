@@ -178,6 +178,46 @@ function actionForTarget(
       };
     case 'portal':
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
+    case 'crop_plot': {
+      if (held.itemSku === 'tool_hoe') {
+        return {
+          code: 'till_plot',
+          keyHint: 'J',
+          labelVi: 'Cuốc đất',
+          targetId: target.id,
+          available: true,
+        };
+      }
+      if (held.itemSku?.startsWith('seed_')) {
+        return {
+          code: 'plant_crop',
+          keyHint: 'J',
+          labelVi: `Gieo ${held.labelVi}`,
+          targetId: target.id,
+          available: true,
+        };
+      }
+      if (held.itemSku === 'tool_watering_can' || held.itemSku === 'water_pitcher') {
+        return {
+          code: 'water_crop',
+          keyHint: 'J',
+          labelVi: 'Tưới cây',
+          targetId: target.id,
+          available: true,
+        };
+      }
+      return {
+        code: 'harvest_crop',
+        keyHint: 'J',
+        labelVi: 'Thu hoạch',
+        targetId: target.id,
+        available: true,
+      };
+    }
+    case 'shop_npc':
+      return { code: 'open_farm_market', keyHint: 'J', labelVi: 'Cửa hàng hạt giống', targetId: target.id, available: true };
+    case 'shipping_bin':
+      return { code: 'open_shipping_bin', keyHint: 'J', labelVi: 'Gửi nông sản', targetId: target.id, available: true };
     default:
       return { code: 'inspect_prop', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
   }
