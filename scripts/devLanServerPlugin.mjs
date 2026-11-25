@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ensureV015Db, handleV015Route } from './devLanV015Handlers.mjs';
+import { ensureV015Db, grantPetCareStarterPack, handleV015Route } from './devLanV015Handlers.mjs';
 
 const DEV_IDENTITIES = [
   {
@@ -414,6 +414,8 @@ export function createDevLanHandler({
           { userId: haAnh.userId, role: 'partner', joinedAt: nowIso },
         ];
         db.placements[worldId] = buildStarterPlacements(worldId, may.userId, nowIso);
+        const v015 = ensureV015Db(db);
+        grantPetCareStarterPack(v015, worldId, nowIso);
         saveDb();
         sendJson(res, 200, { ok: true, data: buildSnapshot(worldId) });
         return;
