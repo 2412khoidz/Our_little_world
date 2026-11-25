@@ -12,6 +12,7 @@ export const MAIN_GAME_WORLD_ANCHORS = {
   garden: {
     pondWaterPx: { x: 8 * TILE_SIZE, y: 10 * TILE_SIZE },
     mailboxPx: { x: 184, y: 52 },
+    shippingBinPx: { x: 2 * TILE_SIZE, y: 11 * TILE_SIZE },
   },
   outdoor: {
     porchMailboxPx: { x: 16 * TILE_SIZE + 120, y: 8 * TILE_SIZE + 52 },

@@ -85,6 +85,12 @@ export type InteractionActionCode =
   | 'exit_home'
   | 'use_portal'
   | 'talk_npc'
+  | 'till_plot'
+  | 'plant_crop'
+  | 'water_crop'
+  | 'harvest_crop'
+  | 'open_farm_market'
+  | 'open_shipping_bin'
   | 'inspect_prop'
   | 'put_away_held';
 

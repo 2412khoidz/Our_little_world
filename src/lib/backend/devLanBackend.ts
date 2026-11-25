@@ -583,6 +583,26 @@ export function createDevLanBackend(): WorldBackend {
       },
     },
 
+    farm: {
+      async getFarmSnapshot(worldId) {
+        return apiJson<import('../../shared/farming/farmSnapshotTypes').FarmSnapshot>(
+          `/farm?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyFarm(params) {
+        return apiJson(`/farm/apply`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async sellCrop(params) {
+        return apiJson(`/farm/sell`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async buySeed(params) {
+        return apiJson(`/farm/buy-seed`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async shipToBin(params) {
+        return apiJson(`/farm/ship`, { method: 'POST', body: JSON.stringify(params) });
+      },
+    },
+
     devConsole: {
       async spawnItem(params) {
         return apiJson<InventorySnapshot>('/dev-console/spawn-item', {

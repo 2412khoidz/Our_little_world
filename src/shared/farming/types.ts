@@ -24,7 +24,8 @@ export type CropSku =
 /** Crops that can participate in 8-neighbour flower cross-breeding. */
 export type FlowerSku = 'rose_pink' | 'sunflower' | 'rose_sakura';
 
-export type SoilState = 'empty' | 'planted';
+/** `empty` = untilled fallow; `tilled` = hoed; `planted` = crop growing. */
+export type SoilState = 'empty' | 'tilled' | 'planted';
 
 /**
  * Living state of a crop inside one garden plot.
@@ -112,6 +113,8 @@ export type FarmingErrorCode =
   | 'INVALID_TIME'
   | 'UNKNOWN_CROP'
   | 'PLOT_OCCUPIED'
+  | 'SOIL_NOT_TILLED'
+  | 'ALREADY_TILLED'
   | 'NO_CROP'
   | 'NOT_PLANTABLE'
   | 'NOT_WATERABLE'
@@ -133,6 +136,8 @@ export const FARMING_ERROR_MESSAGES: Readonly<Record<FarmingErrorCode, string>> 
   INVALID_TIME: 'Thời gian không hợp lệ.',
   UNKNOWN_CROP: 'Cây trồng không hợp lệ.',
   PLOT_OCCUPIED: 'Ô đất đã có cây.',
+  SOIL_NOT_TILLED: 'Hãy cuốc đất trước khi gieo hạt.',
+  ALREADY_TILLED: 'Ô đất đã được cuốc rồi.',
   NO_CROP: 'Ô đất đang trống.',
   NOT_PLANTABLE: 'Hạt giống này không thể trồng.',
   NOT_WATERABLE: 'Cây này không cần tưới.',
