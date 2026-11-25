@@ -31,6 +31,13 @@ const FORBIDDEN_PROD_MARKERS = [
   'ui-variant-sandbox',
   'world-expansion-sandbox',
   'combined-experience-demo',
+  'living-pet-local-sim',
+  'living-pet=1',
+  'living-pet-telemetry',
+  'olw-dev-living-pet-food-offer',
+  'olw-dev-enter-pet-care',
+  'olw-dev-pet-care-fast-autonomy',
+  'olw-dev-pet-care-stroke',
 ];
 
 const jsFiles = fs.readdirSync(distAssets).filter((f) => f.endsWith('.js'));

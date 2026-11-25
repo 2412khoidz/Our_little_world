@@ -154,4 +154,40 @@ describe('V0.1.5 Pet MVP Contract & Feed Race (OLW-015-03)', () => {
     const outsider = await callApi(handler, 'GET', `/pet?worldId=${worldId}`, OUTSIDER_ID);
     expect(outsider.status).toBe(403);
   });
+
+  it('consume hand food debits inventory and bumps pet vitals', async () => {
+    await callApi(handler, 'POST', '/pet/adopt-or-rename', MAY_ID, {
+      worldId,
+      name: 'Mochi',
+      idempotencyKey: 'adopt-hand-food',
+    });
+    await callApi(handler, 'POST', '/dev-console/set-pet', MAY_ID, {
+      worldId,
+      hunger: 40,
+      energy: 70,
+      fun: 70,
+    });
+    const petFresh = await callApi(handler, 'GET', `/pet?worldId=${worldId}`, MAY_ID);
+    const petSnap = petFresh.json.data;
+    const beforeInv = await callApi(handler, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+    const fishQty =
+      beforeInv.json.data.items.find((i: { itemSku: string }) => i.itemSku === 'fish_salmon_bite')?.qty ?? 0;
+
+    const eat = await callApi(handler, 'POST', '/pet/consume-hand-food', MAY_ID, {
+      worldId,
+      petId: petSnap.id,
+      expectedVersion: petSnap.version,
+      ownerScope: 'shared',
+      itemSku: 'fish_salmon_bite',
+      quality: 'silver',
+      idempotencyKey: 'eat-fish-1',
+    });
+    expect(eat.status).toBe(200);
+    expect(eat.json.data.pet.vitals.hunger).toBeGreaterThan(petSnap.vitals.hunger);
+
+    const afterInv = await callApi(handler, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+    const fishAfter =
+      afterInv.json.data.items.find((i: { itemSku: string }) => i.itemSku === 'fish_salmon_bite')?.qty ?? 0;
+    expect(fishAfter).toBe(fishQty - 1);
+  });
 });

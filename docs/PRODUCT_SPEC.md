@@ -1,6 +1,8 @@
 # Our Little World — Product Specification
 
-Tài liệu gốc được đồng bộ từ `Our_Little_World_Agent_Plan.md` làm chuẩn đặc tả cho toàn bộ dự án.
+> **Bản điều hành hiện hành:** [V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md) (v2.0, 25/11/2026). File này giữ tóm tắt V0.1 và nguyên tắc bất biến; chi tiết V0.2 P0 xem v2 plan + [V02_ROADMAP.md](V02_ROADMAP.md).
+
+Tài liệu gốc V0.1 được đồng bộ từ `Our_Little_World_Agent_Plan.md`; không tạo bản brief mới ngoài repo.
 
 > **North star:** Người dùng muốn mở app vì căn nhà là nơi của hai người, không phải vì có daily quests. Nếu một tính năng không làm trải nghiệm chung dễ chịu hơn, hãy hoãn nó.
 

@@ -53,6 +53,10 @@ import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
+import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
+import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
+import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
+import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -109,6 +113,10 @@ export class WorldScene extends Phaser.Scene {
   private furnitureSprites = new Map<string, Phaser.GameObjects.Image>();
   private petEntity: PetEntity | null = null;
   private petSnapshot: PetSnapshot | null = null;
+  private livingPetDriver: PetLivingMainGameDriver | null = null;
+  private petCareMode = false;
+  private livingPetSimulationActive = false;
+  private studyPetMode = false;
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
@@ -134,6 +142,7 @@ export class WorldScene extends Phaser.Scene {
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
+  private lastLivingPetTelemetryAtMs = 0;
   private lastInteractionFrameAtMs = 0;
   private contextLost = false;
   private paused = false;
@@ -171,6 +180,11 @@ export class WorldScene extends Phaser.Scene {
     this.petEntity = new PetEntity(this, () => {
       gameEventBus.emit('evt:open-pet-panel');
     });
+    this.livingPetSimulationActive = isLivingPetLocalSimulationEnabled();
+    if (this.livingPetSimulationActive) {
+      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * TILE_SIZE, 10.2 * TILE_SIZE);
+      this.petEntity.setLivingDriver(this.livingPetDriver);
+    }
     this.buildMap(this.currentMapId);
     this.setupPointerInput();
     this.bindEventBus();
@@ -930,8 +944,19 @@ export class WorldScene extends Phaser.Scene {
       }),
 
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
+        this.studyPetMode = active;
         this.petEntity?.setStudyMode(active);
       }),
+
+      gameEventBus.on('cmd:pet-local-food-offer', (offer) => {
+        this.livingPetDriver?.setFoodOffer(offer);
+        this.petEntity?.triggerReaction('feed');
+      }),
+
+      gameEventBus.on('cmd:pet-care-mode', ({ active }) => {
+        this.setPetCareMode(active);
+      }),
+
 
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
         if (!seat || this.currentMapId !== 'home') {
@@ -1011,6 +1036,36 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
+  private setPetCareMode(active: boolean): void {
+    if (this.petCareMode === active) return;
+    this.petCareMode = active;
+    setPetCareModeActive(active);
+
+    if (active && this.petEntity && this.petSnapshot) {
+      this.pathQueue = [];
+      this.cameras.main.stopFollow();
+      this.petEntity.setCareCloseUp(false);
+      this.petEntity.setVisible(false);
+      this.scene.pause();
+      const visual = this.petEntity.getVisualIdentity();
+      enterPetCareRuntime(this.game, {
+        variant: visual.variant,
+        accessory: visual.accessory,
+        petName: visual.name,
+        traitId: this.livingPetDriver?.getTraitPresetId(),
+        petSnapshot: this.petSnapshot,
+      });
+    } else {
+      exitPetCareRuntime(this.game);
+      this.scene.resume();
+      if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+        this.petEntity.setCareCloseUp(false);
+        this.petEntity.setVisible(true);
+      }
+      this.handleResize(true);
+    }
+  }
+
   private bindContextEvents(): void {
     const canvas = this.game.canvas;
     const onLost = (e: Event) => {
@@ -1036,6 +1091,7 @@ export class WorldScene extends Phaser.Scene {
   private handleResize(snapFollow = false): void {
     const cam = this.cameras.main;
     if (!cam) return;
+    if (this.petCareMode) return;
     const def = getMapDefinition(this.currentMapId);
     const width = this.scale.width || 400;
     const height = this.scale.height || 600;
@@ -1096,7 +1152,45 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    this.petEntity?.update(dtSec);
+    if (
+      !this.petCareMode &&
+      this.livingPetDriver &&
+      this.petEntity &&
+      this.petSnapshot &&
+      this.currentMapId === 'home'
+    ) {
+      const memberIds = this.members.map((m) => m.userId);
+      const caregiverPair: [string, string] = [
+        memberIds[0] ?? 'partner-a',
+        memberIds[1] ?? 'partner-b',
+      ];
+      const out = this.livingPetDriver.update({
+        mapId: this.currentMapId,
+        placements: this.placements,
+        nowMs: now,
+        dtMs: deltaMs,
+        isStudying: this.studyPetMode,
+        partnersSittingSofa: this.localPosture === 'sit_sofa',
+        localPlayerX: this.localSprite?.x ?? null,
+        localPlayerY: this.localSprite?.y ?? null,
+        caregiverIds: caregiverPair,
+        foodOffer: null,
+      });
+      this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
+      if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
+        this.lastLivingPetTelemetryAtMs = now;
+        gameEventBus.emit(
+          'evt:living-pet-dev-telemetry',
+          this.livingPetDriver.getDevTelemetry(
+            this.currentMapId,
+            this.petEntity.isOnMapVisible(),
+            now,
+          ),
+        );
+      }
+    } else {
+      this.petEntity?.update(dtSec);
+    }
     this.updateRemoteEntities(deltaMs);
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
@@ -1819,3 +1913,4 @@ export class WorldScene extends Phaser.Scene {
     this.scale.off('resize', this.handleResize, this);
   }
 }
+
