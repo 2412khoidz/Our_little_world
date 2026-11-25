@@ -1,6 +1,8 @@
 import type Phaser from 'phaser';
-import type { PetAnimState } from '../../../shared/petLiving/petVisualTypes';
+import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import { licensedCatFrameSeriesForState } from '../../../shared/petLiving/petCare/petCareLicensedCatMaps';
+import { carePortraitFrameIndex, carePortraitFramesForAnim } from './petCarePortraitPainter';
+import { ensurePetCareIllustrationSheet, petCareIllustrationTextureKey } from './petCarePortraitTexture';
 import {
   ensurePetCareIsolatedCatSheets,
   petCareCatBodyTextureKey,
@@ -54,6 +56,48 @@ export function createPetCareLicensedFramePlayer(
       accum = 0;
       cursor = (cursor + 1) % indices.length;
       applyFrame(indices[cursor] ?? 48);
+    },
+  };
+}
+
+export function createPetCareIllustrationFramePlayer(
+  body: Phaser.GameObjects.Sprite,
+  scene: Phaser.Scene,
+  variant: CatCoatVariantId,
+  accessory: CatAccessoryId,
+): PetCareLicensedAnimPlayer {
+  ensurePetCareIllustrationSheet(scene, variant, accessory);
+  const texKey = petCareIllustrationTextureKey(variant, accessory);
+  let state: PetAnimState = 'sit_south';
+  let subFrame = 0;
+  let accum = 0;
+  const frameMs = 140;
+
+  const apply = () => {
+    const index = carePortraitFrameIndex(state, subFrame);
+    if (scene.textures.exists(texKey)) {
+      body.setTexture(texKey, index);
+    }
+  };
+
+  apply();
+
+  return {
+    setState(next) {
+      if (next === state) return;
+      state = next;
+      subFrame = 0;
+      accum = 0;
+      apply();
+    },
+    tick(deltaMs) {
+      const frames = carePortraitFramesForAnim(state);
+      if (frames <= 1) return;
+      accum += deltaMs;
+      if (accum < frameMs) return;
+      accum = 0;
+      subFrame = (subFrame + 1) % frames;
+      apply();
     },
   };
 }

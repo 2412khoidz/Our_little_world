@@ -3,37 +3,21 @@ import {
   isExtendedWorldDevEnabled,
   setExtendedWorldDevPersistent,
 } from '../../shared/worldIntegration/extendedWorldDevFlag';
+import { CollapsibleDevBanner } from './CollapsibleDevBanner';
 
 export function ExtendedWorldDevBanner() {
   if (!import.meta.env.DEV || !isExtendedWorldDevEnabled()) return null;
 
   return (
-    <div
-      data-testid={EXTENDED_WORLD_DEV_DATA_MARKER}
-      data-dev-marker={EXTENDED_WORLD_DEV_DATA_MARKER}
-      style={{
-        position: 'fixed',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        top: 8,
-        zIndex: 39,
-        maxWidth: 'min(440px, calc(100vw - 24px))',
-        padding: '8px 12px',
-        borderRadius: 12,
-        background: 'rgba(32, 48, 38, 0.92)',
-        border: '1px solid #8fbf7a',
-        color: '#f2fff0',
-        fontSize: 12,
-        lineHeight: 1.45,
-        textAlign: 'center',
-        pointerEvents: 'auto',
-      }}
+    <CollapsibleDevBanner
+      testId={EXTENDED_WORLD_DEV_DATA_MARKER}
+      dataMarker={EXTENDED_WORLD_DEV_DATA_MARKER}
+      summary="Thế giới mở rộng · DEV"
+      className="olw-dev-banner--extended-world"
     >
-      <strong>Thế giới mở rộng — bản xem trước DEV</strong>
-      <div style={{ marginTop: 4, opacity: 0.92 }}>
-        Từ vườn đi cổng phía Nam (9,13), hoặc nút <em>Ngoài trời</em>. URL: <code>?extended-world=1</code>
-        {' '}
-        · overlay va chạm: <code>?collision-debug=1</code> hoặc phím <strong>C</strong>
+      <div style={{ fontSize: 12, lineHeight: 1.45, textAlign: 'left' }}>
+        Từ vườn đi cổng phía Nam (9,13), hoặc nút <em>Ngoài trời</em>. URL: <code>?extended-world=1</code> ·{' '}
+        <code>?collision-debug=1</code> / <strong>C</strong>
         <div style={{ marginTop: 6 }}>
           <button
             type="button"
@@ -56,6 +40,6 @@ export function ExtendedWorldDevBanner() {
           </button>
         </div>
       </div>
-    </div>
+    </CollapsibleDevBanner>
   );
 }

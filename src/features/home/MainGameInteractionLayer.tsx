@@ -12,6 +12,7 @@ import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type { MapId } from '../../shared/types';
 import { ContextualPromptBadge } from '../../ui/components/ContextualPromptBadge';
 import { GameHotbar } from '../../ui/components/GameHotbar';
+import { HeldItemChip } from '../../ui/components/HeldItemChip';
 import { executeMainGameContextAction } from './executeMainGameContextAction';
 import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
@@ -299,6 +300,7 @@ export function MainGameInteractionLayer({
             onSecondary={() => void executeSecondary()}
           />
         ) : null}
+        <HeldItemChip heldItem={heldItem} onClear={clearHeld} />
         <GameHotbar
           slots={hotbarSlots}
           heldItem={heldItem}

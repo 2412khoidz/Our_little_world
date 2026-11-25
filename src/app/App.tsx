@@ -21,7 +21,7 @@ import type {
   WorldSnapshot,
 } from '../shared/types';
 import { AvatarModal } from '../features/avatar/AvatarModal';
-import { CoupleActionBar } from '../features/couple/CoupleActionBar';
+import { CoupleEmoteDock } from '../features/couple/CoupleEmoteDock';
 import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
@@ -1668,7 +1668,7 @@ function MainCoupleApp() {
       />
 
       {!decorateActive && !isAnyModalOpen && !petCareMode && (
-        <CoupleActionBar
+        <CoupleEmoteDock
           partnerOnlineSameRoom={presences.some(
             (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
           )}
