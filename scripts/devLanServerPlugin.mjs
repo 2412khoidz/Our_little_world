@@ -448,7 +448,8 @@ export function createDevLanHandler({
       }
 
       if (req.method === 'POST' && route === '/pet-care/session/patch') {
-        const { worldId, patch } = body;
+        const patchBody = await readJsonBody(req);
+        const { worldId, patch } = patchBody;
         if (!worldId || !patch || !isWorldMember(worldId, userId)) {
           sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Không thể cập nhật phiên chăm mèo.' });
           return;
