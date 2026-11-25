@@ -1,6 +1,8 @@
 import type { HeldItemState, InteractableTarget } from '../shared/interaction/interactionTypes';
 import type { CoupleEmoteId, CouplePostureKind } from '../shared/couple/coupleTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
+import type { PetFoodOfferInput } from '../shared/petLiving/petBrainContract04B';
+import type { LivingPetDevTelemetry } from '../shared/petLiving/mainGame/livingPetDevTelemetry';
 import type {
   Direction,
   FurniturePlacement,
@@ -93,6 +95,8 @@ export interface GameEventMap {
   };
   'cmd:sync-mailbox-unread': { unreadCount: number };
   'cmd:sync-held-item': HeldItemState;
+  /** DEV living-pet local simulation — presentation only, no consumption. */
+  'cmd:pet-local-food-offer': PetFoodOfferInput;
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -122,6 +126,8 @@ export interface GameEventMap {
   'evt:nearby-interactable': NearbyInteractable | null;
   'evt:interaction-frame': InteractionFramePayload;
   'evt:diagnostics': GameDiagnosticsSnapshot;
+  /** DEV living-pet acceptance — sampled ~2 Hz from WorldScene. */
+  'evt:living-pet-dev-telemetry': LivingPetDevTelemetry;
 }
 
 type Listener<T> = (payload: T) => void;

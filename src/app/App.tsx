@@ -24,6 +24,8 @@ import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
+import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
+import { registerLivingPetDevAcceptanceHooks } from '../shared/petLiving/mainGame/livingPetDevAcceptance';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -595,6 +597,8 @@ function MainCoupleApp() {
   }, [studySnapshot]);
 
   useEffect(() => () => stopStudyAmbient(), []);
+
+  useEffect(() => registerLivingPetDevAcceptanceHooks(), []);
 
   useEffect(() => {
     if (!incomingHugInvite && !outgoingInviteExpiresAtMs) return;
@@ -1391,6 +1395,8 @@ function MainCoupleApp() {
           </span>
         </button>
       )}
+
+      <LivingPetDevBanner />
 
       <GameViewport
         worldId={worldSnapshot.world.id}
