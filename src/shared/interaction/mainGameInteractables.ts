@@ -188,22 +188,30 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     targets.push({
       id: 'farm_seed_shop',
       kind: 'shop_npc',
-      labelVi: 'Gian hạt Bác Hai',
+      labelVi: 'Gian hạt Bác Hai — mua hạt (C1)',
       x: FARM_SLICE_SEED_SHOP_TILE.tileX * TILE_SIZE + TILE_SIZE / 2,
       y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
       maxRadiusPx: 44,
+      donorPlayable: donorEconomyDev === true,
     });
-    if (donorEconomyDev) {
-      targets.push({
-        id: 'farm_barn_mill',
-        kind: 'workshop_building',
-        labelVi: 'Xưởng donor: cối + lò Hollow + chuồng',
-        x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
-        y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
-        maxRadiusPx: 48,
-        donorPlayable: true,
-      });
-    }
+    targets.push({
+      id: 'farm_pond_fishing',
+      kind: 'fishing_spot',
+      labelVi: donorEconomyDev ? 'Ao cá — câu chill (donor)' : 'Ao cá — câu (V0.2)',
+      x: 52 * TILE_SIZE + TILE_SIZE / 2,
+      y: 11 * TILE_SIZE + TILE_SIZE / 2,
+      maxRadiusPx: 54,
+      donorPlayable: donorEconomyDev === true,
+    });
+    targets.push({
+      id: 'farm_barn_mill',
+      kind: 'workshop_building',
+      labelVi: donorEconomyDev ? 'Xưởng — cối + lò + chế biến' : 'Xưởng — chưa mở',
+      x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
+      y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
+      maxRadiusPx: 48,
+      donorPlayable: donorEconomyDev === true,
+    });
   }
 
   for (const p of placements) {

@@ -1,4 +1,4 @@
-import { Armchair, Compass, Home, Menu, Shirt, Trees } from 'lucide-react';
+import { Armchair, Compass, Home, Menu, Shirt, Sprout, Trees } from 'lucide-react';
 import { isOutdoorMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
@@ -37,18 +37,28 @@ export function QuickNavBar({
 
       <button
         type="button"
-        className={`nav-btn ${(currentMapId === 'farm' || currentMapId === 'garden') && !decorateActive ? 'nav-btn--active' : ''}`}
+        className={`nav-btn ${currentMapId === 'garden' && !decorateActive ? 'nav-btn--active' : ''}`}
+        data-testid="nav-garden"
+        onClick={() => onSelectMap('garden')}
+      >
+        <Sprout size={19} />
+        <span>Vườn nhà</span>
+      </button>
+
+      <button
+        type="button"
+        className={`nav-btn ${currentMapId === 'farm' && !decorateActive ? 'nav-btn--active' : ''}`}
         data-testid="nav-farm"
         onClick={() => onSelectMap('farm')}
       >
         <Trees size={19} />
-        <span>Ruộng</span>
+        <span>Trang trại</span>
       </button>
 
       {outdoorUnlocked && (
         <button
           type="button"
-          className={`nav-btn ${(currentMapId === 'village' || currentMapId === 'farm') && !decorateActive ? 'nav-btn--active' : ''}`}
+          className={`nav-btn ${(currentMapId === 'village' || currentMapId === 'beach') && !decorateActive ? 'nav-btn--active' : ''}`}
           data-testid="nav-outdoor"
           onClick={() => onSelectMap('village')}
         >

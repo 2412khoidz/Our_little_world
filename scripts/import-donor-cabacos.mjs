@@ -125,7 +125,7 @@ function exportVillage() {
         height: 14,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'shop' },
-          { name: 'labelVi', type: 'string', value: 'Vào nhà' },
+          { name: 'labelVi', type: 'string', value: 'Cửa nhà — vào bên trong (E)' },
           { name: 'spawnX', type: 'int', value: 12 },
           { name: 'spawnY', type: 'int', value: 14 },
         ],
@@ -148,6 +148,83 @@ function exportVillage() {
     ],
   };
 
+  const donorDoorLabels = {
+    player_house_door: 'Cửa nhà — vào bên trong (E)',
+    player_crop_market_door: 'Chợ nông sản Cabacos',
+    player_seed_shop_door: 'Hạt giống & dụng cụ',
+    player_town_hall_door: 'Tòa thị chính — chưa mở',
+  };
+
+  const interactionLayer = src.layers.find((l) => l.name === 'Interactions' && l.type === 'objectgroup');
+  const cabacosInteractables = [];
+  let nextId = 9201;
+  for (const obj of interactionLayer?.objects ?? []) {
+    const label = donorDoorLabels[obj.name];
+    if (!label) continue;
+    cabacosInteractables.push({
+      id: nextId,
+      name: `cabacos_${obj.name}`,
+      type: 'interactable',
+      x: obj.x,
+      y: obj.y,
+      width: obj.width ?? TW,
+      height: obj.height ?? TW,
+      properties: [
+        { name: 'kind', type: 'string', value: obj.name === 'player_house_door' ? 'door' : 'shop_npc' },
+        { name: 'labelVi', type: 'string', value: label },
+        { name: 'maxRadiusPx', type: 'int', value: 56 },
+        { name: 'anchorId', type: 'string', value: obj.name },
+      ],
+    });
+    nextId += 1;
+  }
+
+  cabacosInteractables.push(
+    {
+      id: nextId,
+      name: 'cabacos_sign_farm_gate',
+      type: 'interactable',
+      x: 80 * TW,
+      y: 24 * TW,
+      width: TW * 2,
+      height: TW * 2,
+      properties: [
+        { name: 'kind', type: 'string', value: 'crop_plot' },
+        { name: 'labelVi', type: 'string', value: '→ Trang trại chính (184 luống)' },
+        { name: 'maxRadiusPx', type: 'int', value: 64 },
+      ],
+    },
+    {
+      id: nextId + 1,
+      name: 'cabacos_sign_beach',
+      type: 'interactable',
+      x: 84 * TW,
+      y: 26 * TW,
+      width: TW * 2,
+      height: TW * 2,
+      properties: [
+        { name: 'kind', type: 'string', value: 'fishing_spot' },
+        { name: 'labelVi', type: 'string', value: '→ Gull Bay (bãi biển donor)' },
+        { name: 'maxRadiusPx', type: 'int', value: 64 },
+        { name: 'donorPlayable', type: 'bool', value: true },
+      ],
+    },
+    {
+      id: nextId + 2,
+      name: 'cabacos_plaza_well',
+      type: 'interactable',
+      x: 480,
+      y: 488,
+      width: 16,
+      height: 16,
+      properties: [
+        { name: 'kind', type: 'string', value: 'bench' },
+        { name: 'labelVi', type: 'string', value: 'Giếng nước' },
+        { name: 'maxRadiusPx', type: 'int', value: 48 },
+      ],
+    },
+  );
+
   const interactables = {
     id: 9002,
     name: 'Interactables',
@@ -157,22 +234,7 @@ function exportVillage() {
     draworder: 'topdown',
     x: 0,
     y: 0,
-    objects: [
-      {
-        id: 9201,
-        name: 'cabacos_plaza_well',
-        type: 'interactable',
-        x: 480,
-        y: 488,
-        width: 16,
-        height: 16,
-        properties: [
-          { name: 'kind', type: 'string', value: 'bench' },
-          { name: 'labelVi', type: 'string', value: 'Giếng nước' },
-          { name: 'maxRadiusPx', type: 'int', value: 48 },
-        ],
-      },
-    ],
+    objects: cabacosInteractables,
   };
 
   src.layers = src.layers.filter((l) => l.name !== 'Portals' && l.name !== 'Interactables');
