@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
 import { cardinalFromFacing8, type Facing8 } from '../../shared/movement/facing8';
-import { avatarWalkAnimKey } from '../art/avatarDiagonalWalk';
+import { avatarWalkAnimKey } from '../art/avatarAtlasLayout';
 import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 
 const DEFAULT_ORIGIN_Y = 0.88;
@@ -26,9 +26,11 @@ export function playAvatarPostureAnim(
     if (sprite.anims.isPlaying && sprite.anims.currentAnim?.key === walkKey) return;
     if (scene.anims.exists(walkKey)) {
       sprite.play(walkKey, true);
-    } else {
-      sprite.stop();
-      sprite.setFrame(getIdleFrameIndex(cardinal));
+      return;
+    }
+    const cardinalWalk = avatarWalkAnimKey(textureKey, cardinal);
+    if (scene.anims.exists(cardinalWalk)) {
+      sprite.play(cardinalWalk, true);
     }
     return;
   }
@@ -46,9 +48,6 @@ export function playAvatarPostureAnim(
     const sitKey = `${textureKey}:sit-${hugFacing}`;
     if (scene.anims.exists(sitKey)) {
       sprite.play(sitKey, true);
-    } else {
-      sprite.stop();
-      sprite.setFrame(getIdleFrameIndex(hugFacing));
     }
     return;
   }
@@ -60,15 +59,7 @@ export function playAvatarPostureAnim(
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== lieKey) {
         sprite.play(lieKey, true);
       }
-      return;
     }
-    const sitKey = `${textureKey}:sit-${cardinal}`;
-    if (scene.anims.exists(sitKey)) {
-      sprite.play(sitKey, true);
-      return;
-    }
-    sprite.stop();
-    sprite.setFrame(getIdleFrameIndex('down'));
     return;
   }
 
@@ -80,9 +71,6 @@ export function playAvatarPostureAnim(
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== sitKey) {
         sprite.play(sitKey, true);
       }
-      return;
     }
-    sprite.stop();
-    sprite.setFrame(getIdleFrameIndex(sitFacing));
   }
 }

@@ -66,7 +66,7 @@ describe('extended world preview profile', () => {
     expect(maps.isOutdoorMapUnlocked()).toBe(true);
   });
 
-  it('respects explicit opt-out on private preview', async () => {
+  it('respects explicit opt-out only in DEV lab on private preview', async () => {
     vi.stubEnv('VITE_OLW_EXTENDED_WORLD', 'true');
     vi.stubGlobal('window', {
       location: { search: '' },
@@ -77,5 +77,19 @@ describe('extended world preview profile', () => {
     mod.setExtendedWorldDevPersistent(false);
     expect(mod.isExtendedWorldDevEnabled()).toBe(false);
     expect(maps.isOutdoorMapUnlocked()).toBe(false);
+  });
+
+  it('ignores stale localStorage opt-out on preview gameplay (non-DEV)', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('VITE_OLW_EXTENDED_WORLD', 'true');
+    vi.stubGlobal('window', {
+      location: { search: '' },
+      localStorage: localStorage as Storage,
+    });
+    const mod = await import('../../src/shared/worldIntegration/extendedWorldDevFlag');
+    const maps = await import('../../src/shared/maps');
+    mod.setExtendedWorldDevPersistent(false);
+    expect(mod.isExtendedWorldDevEnabled()).toBe(true);
+    expect(maps.isOutdoorMapUnlocked()).toBe(true);
   });
 });

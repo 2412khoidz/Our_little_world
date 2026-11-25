@@ -191,73 +191,160 @@ const avatarColors = {
 };
 
 export const rigLayout = { frameWidth: 16, frameHeight: 32, frameCount: 6, directions: ['right', 'up', 'left', 'down'] };
+export const AVATAR_ATLAS_ROW_COUNT = 8;
 export { avatarColors };
 
-export function makeRig(hairStyle) {
-  const c = new PixelCanvas(384, 96);
+const DIAGONAL_PRIMARY = {
+  'down-right': 'down',
+  'down-left': 'down',
+  'up-right': 'up',
+  'up-left': 'up',
+};
+const DIAGONAL_ORDER = ['down-right', 'down-left', 'up-right', 'up-left'];
+const DIAGONAL_SECONDARY = {
+  'down-right': 'right',
+  'down-left': 'left',
+  'up-right': 'right',
+  'up-left': 'left',
+};
+
+function paintAvatarFrame(c, ox, oy, hairStyle, direction, rowKind, frame, legBias = 0) {
   const p = avatarColors;
+  const isSit = rowKind === 2;
+  const isWalk = rowKind === 1;
+  const step = isWalk ? [0, 1, 1, 0, -1, -1][frame] + legBias : legBias;
+  const bob = (isWalk && frame % 3 !== 0 ? -1 : 0) + (isSit ? 2 : 0);
+  const r = (dx, dy, w, h, color) => c.rect(ox + dx, oy + dy, w, h, color);
+  const side = direction === 'left' || direction === 'right';
+  const right = direction === 'right';
+  const back = direction === 'up';
+  if (isSit) {
+    r(4, 27, 4, 3, p.outline);
+    r(8, 27, 4, 3, p.outline);
+    r(5, 28, 2, 2, '#786679');
+    r(9, 28, 2, 2, '#6b596a');
+  } else if (side) {
+    r(5 + step, 26, 3, 5, '#6b596a');
+    r(8 - step, 26, 3, 6, p.outline);
+  } else {
+    r(5, 26, 3, 6 - Math.max(step, 0), p.outline);
+    r(9, 26, 3, 6 + Math.min(step, 0), p.outline);
+    r(6, 28, 2, 2, '#786679');
+    r(9, 28, 2, 2, '#6b596a');
+  }
+  r(4, 20 + bob, 8, 8, p.outline);
+  r(5, 21 + bob, 6, 6, p.shirt);
+  r(5, 25 + bob, 6, 2, p.shirtShadow);
+  r(6, 21 + bob, 4, 1, p.shirtLight);
+  if (!side) {
+    r(3, 21 + bob + Math.max(step, 0), 2, 4, p.shirtShadow);
+    r(11, 21 + bob + Math.max(-step, 0), 2, 4, p.shirtShadow);
+    r(3, 24 + bob + Math.max(step, 0), 2, 2, p.skin);
+    r(11, 24 + bob + Math.max(-step, 0), 2, 2, p.skinShadow);
+  } else {
+    r(7 + step, 22 + bob, 2, 4, p.shirtShadow);
+    r(7 + step, 25 + bob, 2, 1, p.skin);
+  }
+  r(5, 9 + bob, 6, 1, p.edge);
+  r(3, 11 + bob, 10, 8, p.outline);
+  r(4, 10 + bob, 8, 10, p.hair);
+  r(5, 10 + bob, 5, 1, p.hairLight);
+  const faceX = side ? (right ? 8 : 4) : 4;
+  if (!back) {
+    r(faceX, 14 + bob, side ? 4 : 8, 5, p.skin);
+    r(faceX, 18 + bob, side ? 4 : 8, 1, p.skinShadow);
+    r(faceX + 1, 15 + bob, side ? 2 : 6, 1, p.skinLight);
+    r(side ? (right ? 10 : 5) : 5, 16 + bob, 1, 1, p.outline);
+    if (!side) r(10, 16 + bob, 1, 1, p.outline);
+    r(6, 19 + bob, 4, 1, p.skinShadow);
+  } else {
+    r(5, 13 + bob, 6, 7, p.hairShadow);
+    r(6, 13 + bob, 2, 4, p.hair);
+  }
+  r(4, 12 + bob, 8, hairStyle === 'short' ? 2 : 3, p.hair);
+  if (hairStyle !== 'short') {
+    const h = hairStyle === 'long' ? 10 : 6;
+    if (!side || right) r(3, 14 + bob, 2, h, p.hairShadow);
+    if (!side || !right) r(11, 14 + bob, 2, h, p.hairShadow);
+  }
+}
+
+function paintLieFrame(c, ox, oy, hairStyle, direction, frame) {
+  const p = avatarColors;
+  const breathe = frame % 3 === 1 ? 1 : 0;
+  const r = (dx, dy, w, h, color) => c.rect(ox + dx, oy + dy, w, h, color);
+  r(1, 27 + breathe, 14, 3, p.outline);
+  r(2, 28 + breathe, 12, 1, '#786679');
+  if (direction === 'down' || direction === 'up') {
+    r(3, 22 + breathe, 10, 6, p.shirt);
+    r(3, 26 + breathe, 10, 2, p.shirtShadow);
+    r(5, 20 + breathe, 6, 4, p.skin);
+    r(4, 19 + breathe, 8, 8, p.hair);
+    r(6, 22 + breathe, 4, 1, p.outline);
+    r(5, 23 + breathe, 2, 1, p.skinLight);
+    r(9, 23 + breathe, 2, 1, p.skinLight);
+  } else {
+    const flip = direction === 'right';
+    const hx = flip ? 9 : 2;
+    r(hx, 22 + breathe, 5, 5, p.skin);
+    r(hx - 1, 21 + breathe, 7, 6, p.hair);
+    r(4, 24 + breathe, 8, 4, p.shirt);
+    r(2, 25 + breathe, 12, 3, p.shirtShadow);
+    r(flip ? 2 : 10, 24 + breathe, 2, 2, p.skin);
+  }
+  if (hairStyle !== 'short') {
+    r(4, 18 + breathe, 8, hairStyle === 'long' ? 3 : 2, p.hairShadow);
+  }
+}
+
+export function makeRig(hairStyle) {
+  const c = new PixelCanvas(384, rigLayout.frameHeight * AVATAR_ATLAS_ROW_COUNT);
   for (let row = 0; row < 3; row += 1) {
-    const isSit = row === 2;
     for (const [index, direction] of rigLayout.directions.entries()) {
-      for (let frame = 0; frame < 6; frame += 1) {
-        const x = (index * 6 + frame) * 16;
-        const y = row * 32;
-        const step = row === 1 ? [0, 1, 1, 0, -1, -1][frame] : 0;
-        const bob = (row === 1 && frame % 3 !== 0 ? -1 : 0) + (isSit ? 2 : 0);
-        const r = (dx, dy, w, h, color) => c.rect(x + dx, y + dy, w, h, color);
-        const side = direction === 'left' || direction === 'right';
-        const right = direction === 'right';
-        const back = direction === 'up';
-        if (isSit) {
-          r(4, 27, 4, 3, p.outline);
-          r(8, 27, 4, 3, p.outline);
-          r(5, 28, 2, 2, '#786679');
-          r(9, 28, 2, 2, '#6b596a');
-        } else if (side) {
-          r(5 + step, 26, 3, 5, '#6b596a');
-          r(8 - step, 26, 3, 6, p.outline);
-        } else {
-          r(5, 26, 3, 6 - Math.max(step, 0), p.outline);
-          r(9, 26, 3, 6 + Math.min(step, 0), p.outline);
-          r(6, 28, 2, 2, '#786679');
-          r(9, 28, 2, 2, '#6b596a');
-        }
-        r(4, 20 + bob, 8, 8, p.outline);
-        r(5, 21 + bob, 6, 6, p.shirt);
-        r(5, 25 + bob, 6, 2, p.shirtShadow);
-        r(6, 21 + bob, 4, 1, p.shirtLight);
-        if (!side) {
-          r(3, 21 + bob + Math.max(step, 0), 2, 4, p.shirtShadow);
-          r(11, 21 + bob + Math.max(-step, 0), 2, 4, p.shirtShadow);
-          r(3, 24 + bob + Math.max(step, 0), 2, 2, p.skin);
-          r(11, 24 + bob + Math.max(-step, 0), 2, 2, p.skinShadow);
-        } else {
-          r(7 + step, 22 + bob, 2, 4, p.shirtShadow);
-          r(7 + step, 25 + bob, 2, 1, p.skin);
-        }
-        r(5, 9 + bob, 6, 1, p.edge);
-        r(3, 11 + bob, 10, 8, p.outline);
-        r(4, 10 + bob, 8, 10, p.hair);
-        r(5, 10 + bob, 5, 1, p.hairLight);
-        const faceX = side ? (right ? 8 : 4) : 4;
-        if (!back) {
-          r(faceX, 14 + bob, side ? 4 : 8, 5, p.skin);
-          r(faceX, 18 + bob, side ? 4 : 8, 1, p.skinShadow);
-          r(faceX + 1, 15 + bob, side ? 2 : 6, 1, p.skinLight);
-          r(side ? (right ? 10 : 5) : 5, 16 + bob, 1, 1, p.outline);
-          if (!side) r(10, 16 + bob, 1, 1, p.outline);
-          r(6, 19 + bob, 4, 1, p.skinShadow);
-        } else {
-          r(5, 13 + bob, 6, 7, p.hairShadow);
-          r(6, 13 + bob, 2, 4, p.hair);
-        }
-        r(4, 12 + bob, 8, hairStyle === 'short' ? 2 : 3, p.hair);
-        if (hairStyle !== 'short') {
-          const h = hairStyle === 'long' ? 10 : 6;
-          if (!side || right) r(3, 14 + bob, 2, h, p.hairShadow);
-          if (!side || !right) r(11, 14 + bob, 2, h, p.hair);
-        }
+      for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
+        paintAvatarFrame(
+          c,
+          (index * rigLayout.frameCount + frame) * rigLayout.frameWidth,
+          row * rigLayout.frameHeight,
+          hairStyle,
+          direction,
+          row,
+          frame,
+        );
       }
+    }
+  }
+  for (const [dIndex, diag] of DIAGONAL_ORDER.entries()) {
+    const direction = DIAGONAL_PRIMARY[diag];
+    const bias = DIAGONAL_SECONDARY[diag] === 'right' ? 1 : -1;
+    const row = 3 + dIndex;
+    for (const [index, dirKey] of rigLayout.directions.entries()) {
+      if (dirKey !== direction) continue;
+      for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
+        const legNudge = frame === 1 ? bias : frame === 2 ? -bias : 0;
+        paintAvatarFrame(
+          c,
+          (index * rigLayout.frameCount + frame) * rigLayout.frameWidth,
+          row * rigLayout.frameHeight,
+          hairStyle,
+          direction,
+          1,
+          frame,
+          legNudge,
+        );
+      }
+    }
+  }
+  for (const [index, direction] of rigLayout.directions.entries()) {
+    for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
+      paintLieFrame(
+        c,
+        (index * rigLayout.frameCount + frame) * rigLayout.frameWidth,
+        7 * rigLayout.frameHeight,
+        hairStyle,
+        direction,
+        frame,
+      );
     }
   }
   return c;

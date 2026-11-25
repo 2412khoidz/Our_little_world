@@ -25,6 +25,22 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
 | **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
 
+## P0 avatar rig — 8-dir walk / sit / lie (2026-11-25)
+
+| Field | Value |
+|-------|--------|
+| **Donor audit (human sheet)** | Cabacos @ `79e423d`: `characters/player/walk/base_walk_strip8.png` — 96×64 flip-X, **not** 8-dir. Farm Rai Larn Na @ `2bbb65c`: `farmer.webp` 144×144 @ 48px — farm overworld only, no sit/lie/tool-on-body. |
+| **OLW decision** | Baked **CC0 unified** `avatars.png` rows 0–7 (idle / walk / sit / 4× diagonal walk / lie); removed runtime `avatarDiagonalWalk.ts` alpha composite. |
+| **Tool carry** | No donor body tool-use sheet @ 16×32; `HeldItemRenderer` keeps props/world-props icons + walk bob; harvest tools from Cabacos stay hotbar icons only. |
+| **Preview nav** | `extendedWorldDevFlag.ts` — preview build ignores stale `localStorage` opt-out (DEV lab banner still opts out). |
+
+### Proof
+
+- `scripts/vendor-wave1-farm-donors.mjs` (fresh clone in `vendor/*-upstream/`)
+- `node scripts/build-unified-atlas.mjs` → `public/assets/unified/avatars.png` 384×768
+- E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts` (Chromium desktop)
+- Captures: `test-results/vqg-phase-ii-diagonal-walk.png`, `vqg-phase-ii-furniture-sit.png`, `vqg-phase-ii-furniture-bed.png`
+
 ## Wave 1 C1 — farm presentation + donor clone area (2026-11-25)
 
 | Field | Value |

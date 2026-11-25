@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avatarWalkAnimKey } from '../../src/game/art/avatarDiagonalWalk';
+import { avatarWalkAnimKey } from '../../src/game/art/avatarAtlasLayout';
 import { movementPacketSchema } from '../../src/shared/realtime';
 
 describe('avatar diagonal walk', () => {

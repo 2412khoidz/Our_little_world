@@ -8,6 +8,7 @@ import { inflateSync } from 'node:zlib';
 import ids from '../src/game/art/worldArtIds.json' with { type: 'json' };
 import extIds from '../src/game/art/worldExtendedArtIds.json' with { type: 'json' };
 import rig from '../src/game/art/avatarRig.json' with { type: 'json' };
+import { AVATAR_ATLAS_ROW_COUNT } from './unified-atlas-art.mjs';
 import pets from './atlas-sources/free-pets-preview.json' with { type: 'json' };
 import catSheetData from './atlas-sources/free-pets-cat-sheet.json' with { type: 'json' };
 import { PixelCanvas, encodePng } from './pixel-canvas.mjs';
@@ -131,7 +132,7 @@ export function validateAtlas(manifest, expectedIds) {
 
 const credits = `# Credits — Our Little World V0.1 / V0.1.5
 
-- **Our Little World** — sàn, nhà/vườn, nội thất/môi trường procedural và ba rig tóc ngắn/bob/dài (gồm tư thế ngồi). [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **Our Little World** — sàn, nhà/vườn, nội thất/môi trường procedural và ba rig tóc ngắn/bob/dài (idle / walk / sit / 8 hướng chéo / nằm). [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 - **Frakassets** — [Free Pets Pack](https://frakassets.itch.io/free-pets-pack), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Sheet 16×16 top-down của \`cat-orange\` (outline lit & shadow, 128 frames) và frame preview \`puppy-shiba\`. Đóng atlas lại, giữ nguyên pixel gốc.
 
 ## Tham chiếu Demo E
@@ -145,7 +146,10 @@ export function buildUnifiedAtlas({ output = defaultOutput, packRoot = path.join
   }
   const starter = readPngRgba(fs.readFileSync(path.join(root, 'public/assets/starter/furniture-cozy.png')));
   const world = new PixelCanvas(544, 304);
-  const avatars = new PixelCanvas(rig.frameWidth * rig.frameCount * rig.directions.length, rig.frameHeight * 3 * rig.hairStyles.length);
+  const avatars = new PixelCanvas(
+    rig.frameWidth * rig.frameCount * rig.directions.length,
+    rig.frameHeight * AVATAR_ATLAS_ROW_COUNT * rig.hairStyles.length,
+  );
   const textures = {
     world: { file: 'world.png', width: world.width, height: world.height },
     avatars: { file: 'avatars.png', width: avatars.width, height: avatars.height },
@@ -172,7 +176,7 @@ export function buildUnifiedAtlas({ output = defaultOutput, packRoot = path.join
     place(id, pixels, 'world', 104 + index * 16, 256, bottomCenter, source);
   }
   for (const [index, style] of rig.hairStyles.entries()) {
-    place(ids.rigs[style], makeRig(style), 'avatars', 0, index * rig.frameHeight * 3, bottomCenter);
+    place(ids.rigs[style], makeRig(style), 'avatars', 0, index * rig.frameHeight * AVATAR_ATLAS_ROW_COUNT, bottomCenter);
   }
   const manifest = { version: 1, tilePx: 16, textures, entries };
   validateAtlas(manifest, Object.values(ids).flatMap(Object.values));

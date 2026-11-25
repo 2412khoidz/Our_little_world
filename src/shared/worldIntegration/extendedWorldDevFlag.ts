@@ -30,8 +30,8 @@ function bootstrapExtendedWorldFromUrl(): void {
 
 /**
  * Extended / tiled donor world (village, farm, beach…).
- * DEV: URL `?extended-world=1` or localStorage opt-in.
- * Private preview build: default ON unless user opted out (localStorage `0`).
+ * DEV lab: URL `?extended-world=1` or localStorage opt-in/out.
+ * Private preview build: always ON (stale localStorage opt-out ignored on gameplay).
  */
 export function isExtendedWorldDevEnabled(): boolean {
   if (typeof window === 'undefined') {
@@ -43,11 +43,17 @@ export function isExtendedWorldDevEnabled(): boolean {
     bootstrapExtendedWorldFromUrl();
   }
 
+  if (isExtendedWorldBuildDefault()) {
+    if (import.meta.env.DEV) {
+      const pref = readStoragePreference();
+      if (pref === 'off') return false;
+    }
+    return true;
+  }
+
   const pref = readStoragePreference();
   if (pref === 'off') return false;
   if (pref === 'on') return true;
-
-  if (isExtendedWorldBuildDefault()) return true;
 
   if (!import.meta.env.DEV) return false;
 

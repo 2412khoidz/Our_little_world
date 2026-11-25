@@ -66,7 +66,11 @@ export class HeldItemRenderer {
     this.image.setScale(toolHeld ? 0.55 : 0.75);
 
     const walkBob = moving ? Math.sin(timeMs / 90) * 1.1 : 0;
-    const actionBob = held.temporaryActionState !== 'none' ? -2 : 0;
+    const toolSwing =
+      toolHeld && held.temporaryActionState === 'none' && moving
+        ? Math.sin(timeMs / 120) * 1.4
+        : 0;
+    const actionBob = held.temporaryActionState !== 'none' ? -2 : toolSwing;
 
     let ox: number;
     let oy: number;
