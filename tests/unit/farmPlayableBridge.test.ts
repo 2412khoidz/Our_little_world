@@ -6,7 +6,7 @@ import {
   PRIMARY_FARM_MAP_ID,
 } from '../../src/shared/farming/farmPlayableBridge';
 import { FARM_ZONE_MAP_ID, farmPlotTileFromAnchor, FARM_PLOT_REGIONS } from '../../src/shared/world/farmPlotContract';
-import { GARDEN_PLOT_COUNT } from '../../src/shared/farming/crops';
+import { FARM_PLOT_COUNT } from '../../src/shared/farming/farmPlotIndex';
 
 describe('farmPlayableBridge', () => {
   it('uses Composer 3 farm map id', () => {
@@ -20,9 +20,9 @@ describe('farmPlayableBridge', () => {
     expect(plotIndexFromFarmAnchorId('garden-plot-3')).toBe(3);
   });
 
-  it('places 24 crop interactables on contract tiles', () => {
+  it('places 184 crop interactables on contract tiles', () => {
     const plots = buildFarmSlicePlotInteractables();
-    expect(plots).toHaveLength(GARDEN_PLOT_COUNT);
+    expect(plots).toHaveLength(FARM_PLOT_COUNT);
     const region = FARM_PLOT_REGIONS.find((r) => r.id === 'farm_main')!;
     const tile0 = farmPlotTileFromAnchor(region, 0)!;
     expect(plots[0]?.id).toBe('farm_main_0');

@@ -14,8 +14,8 @@ BEGIN
   PERFORM public.redeem_world_invite(invite, 'Partner', '{}');
   PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
   snap := public.farm_get_snapshot(w);
-  ASSERT snap->>'contractVersion' = '1.0.0';
-  ASSERT snap->>'plotBinding' = 'farm_main:0-23';
+  ASSERT snap->>'contractVersion' = '1.0.1';
+  ASSERT snap->>'plotBinding' = 'farm_main:0-119,farm_annex:0-63';
   ASSERT (snap->>'walletCoins')::integer = 50;
   res := public.farm_apply(w, 0, 'till', NULL, (snap->>'version')::integer, 'till-1');
   ASSERT res->'snapshot'->'farm'->'plots'->0->>'soil' = 'tilled';

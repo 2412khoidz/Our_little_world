@@ -2,10 +2,13 @@ import { expect, test } from '@playwright/test';
 
 const pwPort = process.env.PLAYWRIGHT_PORT || '4173';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
+const DEV_LAN = `${BASE}/api/dev-lan`;
+const MAY_ID = '11111111-1111-4111-8111-111111111111';
+const devHeaders = { 'x-dev-user-id': MAY_ID };
 
 test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
   test.beforeEach(async ({ request }) => {
-    const res = await request.post(`${BASE}/api/dev-lan/reset`, { data: {} });
+    const res = await request.post(`${DEV_LAN}/reset`, { data: {} });
     expect(res.ok()).toBeTruthy();
   });
 
@@ -23,18 +26,19 @@ test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
     await pageB.goto('/');
     await pageB.getByTestId('preset-partner-b').click();
 
-    const worldRes = await request.get(`${BASE}/api/dev-lan/world`);
+    const worldRes = await request.get(`${DEV_LAN}/world/snapshot`, { headers: devHeaders });
     expect(worldRes.ok()).toBeTruthy();
     const worldJson = (await worldRes.json()) as { data?: { world?: { id?: string } } };
     const worldId = worldJson.data?.world?.id;
     expect(worldId).toBeTruthy();
 
-    const farmA = await request.get(`${BASE}/farm?worldId=${worldId}`);
+    const farmA = await request.get(`${DEV_LAN}/farm?worldId=${worldId}`, { headers: devHeaders });
     expect(farmA.ok()).toBeTruthy();
-  const snapA = (await farmA.json()) as { data: { version: number } };
+    const snapA = (await farmA.json()) as { data: { version: number } };
     const v0 = snapA.data.version;
 
-    const till = await request.post(`${BASE}/farm/apply`, {
+    const till = await request.post(`${DEV_LAN}/farm/apply`, {
+      headers: devHeaders,
       data: {
         worldId,
         plotIndex: 0,
@@ -45,11 +49,12 @@ test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
     });
     expect(till.ok()).toBeTruthy();
 
-    const farmB = await request.get(`${BASE}/farm?worldId=${worldId}`);
+    const farmB = await request.get(`${DEV_LAN}/farm?worldId=${worldId}`, { headers: devHeaders });
     const v1 = ((await farmB.json()) as { data: { version: number } }).data.version;
     expect(v1).toBeGreaterThan(v0);
 
-    const stale = await request.post(`${BASE}/farm/apply`, {
+    const stale = await request.post(`${DEV_LAN}/farm/apply`, {
+      headers: devHeaders,
       data: {
         worldId,
         plotIndex: 1,
@@ -60,7 +65,8 @@ test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
     });
     expect(stale.status()).toBe(409);
 
-    const tillB = await request.post(`${BASE}/farm/apply`, {
+    const tillB = await request.post(`${DEV_LAN}/farm/apply`, {
+      headers: devHeaders,
       data: {
         worldId,
         plotIndex: 1,
@@ -70,6 +76,38 @@ test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
       },
     });
     expect(tillB.ok()).toBeTruthy();
+
+    const farmMid = await request.get(`${DEV_LAN}/farm?worldId=${worldId}`, { headers: devHeaders });
+    const v2 = ((await farmMid.json()) as { data: { version: number } }).data.version;
+
+    const annexTill = await request.post(`${DEV_LAN}/farm/apply`, {
+      headers: devHeaders,
+      data: {
+        worldId,
+        plotIndex: 120,
+        action: 'till',
+        farmVersion: v2,
+        idempotencyKey: 'e2e-annex-till',
+      },
+    });
+    expect(annexTill.ok()).toBeTruthy();
+
+    const farmAfterAnnex = await request.get(`${DEV_LAN}/farm?worldId=${worldId}`, { headers: devHeaders });
+    const v3 = ((await farmAfterAnnex.json()) as { data: { version: number } }).data.version;
+
+    const invalid = await request.post(`${DEV_LAN}/farm/apply`, {
+      headers: devHeaders,
+      data: {
+        worldId,
+        plotIndex: 999,
+        action: 'till',
+        farmVersion: v3,
+        idempotencyKey: 'e2e-invalid',
+      },
+    });
+    expect(invalid.status()).toBe(409);
+    const invalidBody = (await invalid.json()) as { code?: string };
+    expect(invalidBody.code).toBe('INVALID_PLOT');
 
     await pageA.getByTestId('nav-farm').click();
     await pageB.getByTestId('nav-farm').click();

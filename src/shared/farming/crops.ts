@@ -21,12 +21,16 @@ import type {
 } from './types';
 import { farmingError } from './types';
 
+import { FARM_PLOT_COUNT, isValidFarmPlotIndex, isFarmPlotIndexOnContractSoil } from './farmPlotIndex';
+
 export const MINUTE_MS = 60_000;
 
-/** Fixed garden grid: 6 columns x 4 rows = 24 plots (row-major indices). */
+/** Legacy slice dimensions (V0.2.0 garden tab) — domain grid is now full farm contract. */
 export const GARDEN_COLUMNS = 6;
 export const GARDEN_ROWS = 4;
-export const GARDEN_PLOT_COUNT = GARDEN_COLUMNS * GARDEN_ROWS;
+/** @deprecated Use {@link FARM_PLOT_COUNT} (184 plots, farmPlotContract v1.0.0). */
+export const GARDEN_PLOT_COUNT = FARM_PLOT_COUNT;
+export { FARM_PLOT_COUNT };
 
 /**
  * A watered plot grows up to 25% faster. The reduction is capped per growth
@@ -186,7 +190,7 @@ export function isFlowerCrop(cropSku: string): cropSku is FlowerSku {
 }
 
 export function isValidPlotIndex(plotIndex: number): boolean {
-  return Number.isInteger(plotIndex) && plotIndex >= 0 && plotIndex < GARDEN_PLOT_COUNT;
+  return isValidFarmPlotIndex(plotIndex) && isFarmPlotIndexOnContractSoil(plotIndex);
 }
 
 function getPlantedCrop(plot: PlotState): PlantedCrop | undefined {
@@ -247,7 +251,7 @@ export function isReady(crop: PlantedCrop, nowMs: number): boolean {
 export function createFarm(seed: number): Farm {
   const normalizedSeed = normalizeSeed(seed);
   const plots: PlotState[] = [];
-  for (let plotIndex = 0; plotIndex < GARDEN_PLOT_COUNT; plotIndex += 1) {
+  for (let plotIndex = 0; plotIndex < FARM_PLOT_COUNT; plotIndex += 1) {
     plots.push({ plotId: plotIndex, soil: 'empty' });
   }
   return { seed: normalizedSeed, plots };
