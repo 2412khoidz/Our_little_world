@@ -15,6 +15,7 @@ export interface InventoryEntry {
   worldId: string;
   ownerScope: InventoryOwnerScope;
   itemSku: string;
+  quality?: 'normal' | 'silver' | 'gold';
   qty: number;
   updatedAt: string;
 }
