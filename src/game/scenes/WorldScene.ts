@@ -80,6 +80,7 @@ import type { InteractableTarget } from '../../shared/interaction/interactionTyp
 import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
+import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
@@ -1064,6 +1065,9 @@ export class WorldScene extends Phaser.Scene {
         this.farmPlotsCache = plots;
         if (this.currentMapId === 'farm') {
           this.farmPlotVisual?.sync(plots, highlightPlotId);
+          if (highlightPlotId != null) {
+            playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+          }
         }
       }),
 

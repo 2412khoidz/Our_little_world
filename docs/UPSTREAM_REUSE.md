@@ -53,6 +53,25 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 - `tests/unit/farmPlotInspect.test.ts` — inspect ETA copy.
 - Dev LAN: workshop modal + farm plot inspect on `farm` map.
 
+## Wave 2 IF — crop variety, hoe FX, Tidefall catalog in FSM UI
+
+| Field | Value |
+|-------|--------|
+| **Base** | `integration/donor-reuse-preview` @ `6d0e7fd` |
+| **Cabacos SHA** | `79e423defc12bd99327cfcc28bf7ec0085996244` |
+| **Tidefall SHA** | `6a77169d198757413ccd92d310bf655d2f177506` |
+
+| Upstream | OLW path |
+|----------|----------|
+| `plantation/crops/*.png` (5 SKUs) | `public/assets/donor/cabacos-plantation/crops/` |
+| `tools/hoe.png` | `public/assets/donor/cabacos-plantation/tools/hoe.png` |
+| SKU registry | `src/shared/donor/cabacos-79e423d/cropVisualRegistry.ts` |
+| Till swing | `FarmTillToolFx.ts`, `HeldItemRenderer.ts` |
+| `fish.json` | `scripts/vendor-tidefall-fish-catalog.mjs`, `tidefallFishCatalog.v1.json` |
+| FSM UI list | `ChillFishingModal.tsx` (`tidefall-fish-catalog`, `tidefall-active-fish`) |
+
+**Proof:** `cabacosCropVisual.test.ts`, `tidefallFishCatalog.test.ts`
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`

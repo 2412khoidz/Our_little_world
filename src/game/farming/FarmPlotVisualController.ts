@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
+import { cabacosCropVisual } from '../../shared/donor/cabacos-79e423d/cropVisualRegistry';
 import { cabacosGrowthStageForPermille } from '../../shared/farming/farmGrowthClock';
 import { farmPlotTileForIndex } from '../../shared/farming/farmPlotIndex';
 import { FARM_TILE_GIDS } from '../../shared/world/farmPlotContract';
@@ -73,14 +74,13 @@ export class FarmPlotVisualController {
         }
       }
 
-      if (plot.soil === 'planted' && plot.cropSku && this.scene.textures.exists('donor-cabacos-wheat')) {
+      if (plot.soil === 'planted' && plot.cropSku) {
+        const vis = cabacosCropVisual(plot.cropSku);
         const permille = plot.growthPermille;
         const stage = plot.growthStage ?? cabacosGrowthStageForPermille(permille, plot.ready, plot.cropSku);
-        const useWheat = plot.cropSku === 'wheat';
-        if (useWheat) {
-          next.crop = this.scene.add
-            .sprite(cx, cy - 2, 'donor-cabacos-wheat', Math.min(3, Math.max(0, stage)))
-            .setDepth(3.4);
+        const frame = Math.min(vis?.ripeFrame ?? 3, Math.max(0, stage));
+        if (vis && this.scene.textures.exists(vis.textureKey)) {
+          next.crop = this.scene.add.sprite(cx, cy - 2, vis.textureKey, frame).setDepth(3.4);
           this.pushObject(next.crop);
         }
       }

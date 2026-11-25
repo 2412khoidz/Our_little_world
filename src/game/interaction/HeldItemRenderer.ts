@@ -19,8 +19,16 @@ export class HeldItemRenderer {
   }
 
   private applyHeldVisual(held: HeldItemState): boolean {
-    const propsFrame = held.propsIconId?.trim();
     const scene = this.image.scene;
+    if (held.itemSku === 'tool_hoe' && scene.textures.exists('donor-cabacos-hoe')) {
+      if (this.boundTextureKey !== 'donor-cabacos-hoe' || this.boundFrameKey !== '') {
+        this.image.setTexture('donor-cabacos-hoe');
+        this.boundTextureKey = 'donor-cabacos-hoe';
+        this.boundFrameKey = '';
+      }
+      return true;
+    }
+    const propsFrame = held.propsIconId?.trim();
     if (propsFrame && scene.textures.exists(WORLD_PROPS_KEY) && scene.textures.get(WORLD_PROPS_KEY).has(propsFrame)) {
       if (this.boundTextureKey !== WORLD_PROPS_KEY || this.boundFrameKey !== propsFrame) {
         this.image.setTexture(WORLD_PROPS_KEY, propsFrame);
