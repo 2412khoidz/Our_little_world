@@ -1,12 +1,16 @@
 /**
  * Private-art build guard — scans dist-private/ after `npm run build:private`.
- * Khác verify-prod-guard.mjs (chỉ dist/ public): bản private PHẢI có atlas private-unified,
- * vẫn KHÔNG được chứa dev sandbox leaks trong JS bundle.
+ * Khác verify-prod-guard.mjs (chỉ dist/ public).
+ *
+ * Thiết kế VitePWA: assets/private-unified/** nằm trong dist-private/ nhưng
+ * bị globIgnores — KHÔNG được precache (runtime load only).
  */
 import fs from 'node:fs';
 import path from 'node:path';
 
-const distRoot = path.join(process.cwd(), 'dist-private');
+const distRoot = process.env.OLW_PRIVATE_DIST_ROOT
+  ? path.resolve(process.env.OLW_PRIVATE_DIST_ROOT)
+  : path.join(process.cwd(), 'dist-private');
 const distAssets = path.join(distRoot, 'assets');
 
 if (!fs.existsSync(distRoot)) {
@@ -64,29 +68,27 @@ for (const file of jsFiles) {
 
 for (const rel of REQUIRED_PRIVATE_FILES) {
   if (!fs.existsSync(path.join(distRoot, rel))) {
-    leaks.push('Thiếu atlas private trong dist-private: ' + rel);
+    leaks.push('Thiếu atlas private trên disk dist-private/: ' + rel);
   }
 }
 
 const swPath = path.join(distRoot, 'sw.js');
 if (fs.existsSync(swPath)) {
   const precache = fs.readFileSync(swPath, 'utf8');
-  if (!precache.includes('assets/private-unified/world.png')) {
-    leaks.push('Precache dist-private không chứa assets/private-unified/world.png');
+  if (/assets\/private-unified|private-unified\//i.test(precache)) {
+    leaks.push(
+      'Precache dist-private không được chứa assets/private-unified (VitePWA globIgnores — atlas chỉ runtime).',
+    );
   }
   if (/asset-candidates|local-licensed|\.dev-lan-state/i.test(precache)) {
     leaks.push('Precache dist-private chứa đường dẫn local nhạy cảm.');
   }
 }
 
-// Public dist must never bundle private-unified (complementary check message only)
 const publicDist = path.join(process.cwd(), 'dist');
 if (fs.existsSync(publicDist)) {
-  const pubPrivate = path.join(publicDist, 'assets/private-unified');
-  if (fs.existsSync(pubPrivate)) {
-    console.warn(
-      'WARNING: dist/ contains assets/private-unified — public build must not include Demo E atlas. Re-run verify-prod-guard.mjs.',
-    );
+  if (fs.existsSync(path.join(publicDist, 'assets/private-unified'))) {
+    leaks.push('dist/ (public) không được chứa assets/private-unified/ — chạy lại verify-prod-guard.mjs.');
   }
 }
 
@@ -96,5 +98,5 @@ if (leaks.length > 0) {
 }
 
 console.log(
-  `Private build guard PASSED: ${jsFiles.length} JS bundle(s) in dist-private/assets/, Demo E atlas present, zero dev sandbox leaks.`,
+  `Private build guard PASSED: ${jsFiles.length} JS bundle(s), Demo E atlas on disk, absent from SW precache, zero dev sandbox leaks.`,
 );

@@ -18,7 +18,7 @@ Sau khi giải nén tarball vào repo root (`asset-candidates/extracted/...`):
 ```bash
 npm run assets:atlas:private
 npm run build:private
-node scripts/verify-private-build.mjs    # dist-private/ — KHÁC verify-prod-guard (dist/ public)
+node scripts/verify-private-build.mjs    # dist-private/: atlas trên disk; SW precache KHÔNG chứa private-unified
 ```
 
 ### Attribution atlas public (đang commit)

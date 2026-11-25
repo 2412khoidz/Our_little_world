@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { pythonArgv } from './resolve-python.mjs';
+import { assertPillowAvailable, pythonArgv } from './resolve-python.mjs';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -312,6 +312,7 @@ export function buildPropsAtlas({ output = defaultOutput, packRoot = path.join(r
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--private')) {
+    assertPillowAvailable();
     const ts = (await import('typescript')).default;
     const registryFile = path.join(root, 'src/game/artDemos/semanticAssetRegistry.ts');
     const registrySource = fs.readFileSync(registryFile, 'utf8');

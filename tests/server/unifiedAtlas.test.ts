@@ -4,7 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { buildUnifiedAtlas, starterBounds, validateAtlas } from '../../scripts/build-unified-atlas.mjs';
-import demoTextures from '../../scripts/atlas-sources/demo-e-textures.json' with { type: 'json' };
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { requiredPrivateAtlasSources } = require('../../scripts/demo-e-source-manifest.mjs') as {
+  requiredPrivateAtlasSources: () => string[];
+};
 import artIds from '../../src/game/art/worldArtIds.json';
 import { STARTER_FURNITURE_CATALOG } from '../../src/shared/catalog';
 
@@ -54,12 +59,7 @@ it('rejects a duplicate ID, an out-of-bounds frame and an unapproved license', (
 });
 
 it('lists exactly 40 demo-e sources required for the private atlas pipeline', () => {
-  const rigs = ['Adam', 'Alex', 'Amelia'] as const;
-  const actions = ['idle_anim', 'run', 'sit'] as const;
-  const avatarPaths = rigs.flatMap((rig) =>
-    actions.map((a) => `modern-interiors-free/Characters_free/${rig}_${a}_16x16.png`),
-  );
-  const list = [...Object.values(demoTextures), ...avatarPaths];
+  const list = requiredPrivateAtlasSources();
   expect(list).toHaveLength(40);
   expect(list.every((p: string) => !p.includes('..'))).toBe(true);
   expect(new Set(list).size).toBe(40);

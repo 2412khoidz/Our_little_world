@@ -1,7 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 import { expect, test, type Page } from '@playwright/test';
+
+const require = createRequire(import.meta.url);
+const { assertPillowAvailable, pythonArgv } = require('../../scripts/resolve-python.mjs') as {
+  assertPillowAvailable: () => void;
+  pythonArgv: (scriptPath: string, trailingArgs?: string[]) => { cmd: string; args: string[] };
+};
 
 const SHOWCASE_DIR = process.env.OLW_SHOWCASE_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'grand-showcase');
 const ART_AFTER_DIR = path.join(process.cwd(), 'test-results', 'art-pass', 'after');
@@ -9,28 +16,6 @@ const ART_AFTER_DIR = path.join(process.cwd(), 'test-results', 'art-pass', 'afte
 function ensureShowcaseDir() {
   fs.mkdirSync(SHOWCASE_DIR, { recursive: true });
   fs.mkdirSync(ART_AFTER_DIR, { recursive: true });
-}
-
-/** Mirrors scripts/resolve-python.mjs for GIF tooling (Windows + Linux). */
-function resolvePythonCommand(): string {
-  const candidates: string[] = [];
-  if (process.env.OLW_PYTHON) candidates.push(process.env.OLW_PYTHON);
-  if (process.platform === 'win32') candidates.push('python', 'py');
-  else candidates.push('python3', 'python');
-  for (const cmd of candidates) {
-    const probe = spawnSync(cmd, ['--version'], { encoding: 'utf8', stdio: 'pipe' });
-    if (probe.status === 0) return cmd;
-  }
-  throw new Error('Không tìm thấy Python 3. Đặt OLW_PYTHON hoặc cài Python 3 + Pillow.');
-}
-
-function pythonArgv(scriptPath: string, trailingArgs: string[] = []) {
-  const cmd = resolvePythonCommand();
-  const args =
-    process.platform === 'win32'
-      ? [scriptPath, ...trailingArgs]
-      : ['-X', 'utf8', scriptPath, ...trailingArgs];
-  return { cmd, args };
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -52,8 +37,9 @@ function buildGifFromFrames(frameDir: string, outGifPath: string, durationMs = 2
     'print("GIF OK", len(imgs))',
   ];
   fs.writeFileSync(pyScript, lines.join('\n'), 'utf8');
+  assertPillowAvailable();
   const { cmd, args } = pythonArgv(pyScript);
-  execFileSync(cmd, args, { stdio: 'inherit' });
+  execFileSync(cmd, args, { stdio: 'inherit', env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' } });
 }
 
 test.describe('Grand Pre-Integration Experience & Sandboxes QA', () => {

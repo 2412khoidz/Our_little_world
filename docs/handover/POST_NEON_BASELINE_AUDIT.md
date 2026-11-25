@@ -29,7 +29,7 @@ npm test              → 46 files, 453/453 pass
 npm run build         → exit 0
 node scripts/verify-prod-guard.mjs → PASSED (chỉ dist/ public; không quét dist-private)
 npm run build:private → exit 1 (thiếu private-unified atlas)
-npm run verify:private → chưa chạy (cần build:private thành công trước)
+npm run verify:private → chưa chạy (local only; cần build:private + 40 nguồn Demo E)
 npm run assets:check-demo-e → exit 1 (0/40 nguồn trên cloud)
 PLAYWRIGHT_PORT=4176 npx playwright test → 15 passed, 1 skipped (~2.1 min)
 ```

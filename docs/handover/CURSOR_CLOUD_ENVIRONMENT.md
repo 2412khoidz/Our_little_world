@@ -66,12 +66,14 @@ npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 | `npm run assets:atlas:private` | **Fail** — thiếu `asset-candidates/extracted/...` | Cần nguồn local; xem [MISSING_ASSETS_MANIFEST.md](./MISSING_ASSETS_MANIFEST.md) |
 | `npm run build:private` | **Fail** cùng lý do | Vite: `Thiếu atlas riêng. Chạy npm run assets:atlas:private trước.` |
 | `node scripts/verify-prod-guard.mjs` | Sau **`npm run build` only** | Quét **`dist/`** — không được có `private-unified` |
-| `npm run verify:private` | Sau **`npm run build:private` only** | Quét **`dist-private/`** — phải có atlas private |
+| `npm run verify:private` | Sau **`npm run build:private` (local)** | Atlas trên disk; **không** trong SW precache |
 | `npm run assets:check-demo-e` | Exit 1 trên cloud | 40 file bắt buộc — xem manifest |
 
 ### Biến môi trường tùy chọn
 
-- `OLW_PYTHON=python3` — nếu máy không có lệnh `python` (script đã ưu tiên `python3` trên Unix).
+- `OLW_PYTHON` — **chỉ tên/path executable** (`python3`, `C:\...\python.exe`). Launcher Windows: `OLW_PYTHON=py` + `OLW_PYTHON_ARGS=-3` (không gộp `py -3` vào một biến).
+- `OLW_PYTHON_ARGS` — argv thêm trước script (ví dụ `-3` cho Python Launcher).
+- UTF-8: `-X utf8` + `PYTHONUTF8=1` trong tooling; cần **Pillow** (`pip install Pillow`).
 - `OLW_DEV_LAN_STATE_FILE` — tách state Dev LAN khi chạy nhiều cổng song song.
 - `PLAYWRIGHT_PORT` / `PLAYWRIGHT_BASE_URL` — cấu hình E2E.
 
