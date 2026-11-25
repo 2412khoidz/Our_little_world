@@ -65,6 +65,7 @@ export function ensureV015Db(db) {
       studySessions: {},
       letters: {},
       idem: {},
+      petBowls: {},
     };
   }
   db.v015.inventory ??= {};
@@ -74,7 +75,49 @@ export function ensureV015Db(db) {
   db.v015.studySessions ??= {};
   db.v015.letters ??= {};
   db.v015.idem ??= {};
+  db.v015.petBowls ??= {};
   return db.v015;
+}
+
+function ensurePetBowl(v015, worldId, petId) {
+  const existing = v015.petBowls[worldId];
+  if (existing) return existing;
+  const bowl = {
+    worldId,
+    petId,
+    version: 1,
+    foodPortions: 0,
+    waterVolume: 60,
+    foodSku: null,
+    foodQuality: null,
+  };
+  v015.petBowls[worldId] = bowl;
+  return bowl;
+}
+
+function projectPetCareBowl(v015, worldId) {
+  const pet = v015.pets[worldId] ?? null;
+  const bowl = v015.petBowls[worldId];
+  if (!bowl) {
+    return {
+      worldId,
+      petId: pet?.id ?? null,
+      version: 1,
+      foodPortions: 0,
+      waterVolume: 60,
+      foodSku: null,
+      foodQuality: null,
+    };
+  }
+  return {
+    worldId,
+    petId: bowl.petId,
+    version: bowl.version,
+    foodPortions: bowl.foodPortions,
+    waterVolume: bowl.waterVolume,
+    foodSku: bowl.foodSku,
+    foodQuality: bowl.foodQuality,
+  };
 }
 
 export function getWorldInventoryList(v015, worldId) {
@@ -438,52 +481,28 @@ export async function handleV015Route({
 
     const nowMs = Date.now();
     const nowIso = new Date(nowMs).toISOString();
-    if (action === 'feed' && existing.lastFedAtMs !== null && nowMs < existing.lastFedAtMs + 60000) {
-      sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bé mèo vừa ăn no mất rồi, đợi 1 phút nữa nhé!' });
+    if (action === 'feed' || action === 'water') {
+      sendJson(res, 403, { ok: false, code: 'SERVER_AUTHORITY_REQUIRED', message: 'Thao tác này cần máy chủ xác nhận — hãy cho vào bát qua luồng chăm sóc mới.' });
       return true;
     }
+
     if (action === 'pet' && existing.lastPettedAtMs !== null && nowMs < existing.lastPettedAtMs + 15000) {
       sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bé mèo đang lim dim hưởng thụ, đợi chút nữa nhé.' });
       return true;
     }
-    if (action === 'water' && existing.lastWateredAtMs !== null && nowMs < existing.lastWateredAtMs + 20000) {
-      sendJson(res, 409, { ok: false, code: 'COOLDOWN_ACTIVE', message: 'Bát nước vẫn đang đầy ắp nhé.' });
-      return true;
-    }
 
-    let vitals = catchupPetVitals(existing.vitals, existing.simStateAtMs, nowMs);
-    if (action === 'feed') {
-      const adj = adjustInventoryItem(v015, worldId, 'shared', 'pet_kibble_basic', -1, nowIso);
-      if (!adj.ok) {
-        sendJson(res, 400, { ok: false, code: adj.code, message: 'Hết hạt mèo rồi — hãy nhận thêm hạt 0₫ trong túi đồ nhé!' });
-        return true;
-      }
-      vitals = {
-        hunger: Math.min(100, vitals.hunger + 30),
-        energy: Math.min(100, vitals.energy + 3),
-        fun: Math.min(100, vitals.fun + 5),
-      };
-    } else if (action === 'pet') {
-      vitals = {
-        hunger: vitals.hunger,
-        energy: Math.min(100, vitals.energy + 2),
-        fun: Math.min(100, vitals.fun + 12),
-      };
-    } else {
-      vitals = {
-        hunger: vitals.hunger,
-        energy: Math.min(100, vitals.energy + 2),
-        fun: Math.min(100, vitals.fun + 6),
-      };
-    }
+    const vitals = catchupPetVitals(existing.vitals, existing.simStateAtMs, nowMs);
+    const nextVitals = {
+      hunger: vitals.hunger,
+      energy: Math.min(100, vitals.energy + 2),
+      fun: Math.min(100, vitals.fun + 12),
+    };
 
     const updated = {
       ...existing,
-      vitals,
-      emotion: derivePetMood(vitals),
-      lastFedAtMs: action === 'feed' ? nowMs : existing.lastFedAtMs,
-      lastPettedAtMs: action === 'pet' ? nowMs : existing.lastPettedAtMs,
-      lastWateredAtMs: action === 'water' ? nowMs : existing.lastWateredAtMs,
+      vitals: nextVitals,
+      emotion: derivePetMood(nextVitals),
+      lastPettedAtMs: nowMs,
       simStateAtMs: nowMs,
       version: existing.version + 1,
       updatedAt: nowIso,
@@ -497,7 +516,108 @@ export async function handleV015Route({
     saveV015Idempotency(v015, worldId, userId, 'pet_interact', key, reqHash, resPayload);
     saveDb();
     broadcastEvent(worldId, 'world_mutated', { reason: action === 'feed' ? 'inventory' : 'pet' });
-    if (action === 'feed') broadcastEvent(worldId, 'world_mutated', { reason: 'pet' });
+    sendJson(res, 200, { ok: true, data: resPayload });
+    return true;
+  }
+
+  if (req.method === 'GET' && route === '/pet/care') {
+    const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();
+    if (!worldId || !isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    sendJson(res, 200, { ok: true, data: projectPetCareBowl(v015, worldId) });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/pet/care/apply') {
+    const worldId = String(body.worldId ?? '').trim();
+    const petId = String(body.petId ?? '').trim();
+    const action = String(body.action ?? '').trim();
+    const expectedVersion = Number(body.expectedBowlVersion);
+    const scope = String(body.ownerScope ?? 'shared').trim();
+    const sku = String(body.itemSku ?? '').trim();
+    const quality = String(body.quality ?? 'normal').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (
+      !worldId ||
+      !petId ||
+      !key ||
+      !['fill_food', 'fill_water'].includes(action) ||
+      !Number.isInteger(expectedVersion)
+    ) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thao tác chăm sóc chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = JSON.stringify([petId, action, expectedVersion, scope, sku, quality]);
+    const prior = checkV015Idempotency(v015, worldId, userId, 'pet_care_apply', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+    const existing = v015.pets[worldId] ?? null;
+    if (!existing || existing.id !== petId) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo nào trong nhà.' });
+      return true;
+    }
+    const bowl = ensurePetBowl(v015, worldId, petId);
+    if (bowl.version !== expectedVersion) {
+      sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Bát vừa được người kia cập nhật.' });
+      return true;
+    }
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (action === 'fill_food') {
+      if (scope !== 'shared' && scope !== `user:${userId}`) {
+        sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Phạm vi kho không hợp lệ.' });
+        return true;
+      }
+      if (sku !== 'pet_kibble_basic' || quality !== 'normal') {
+        sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thức ăn chưa được hỗ trợ.' });
+        return true;
+      }
+      if (bowl.foodPortions >= 2) {
+        sendJson(res, 409, { ok: false, code: 'BOWL_FULL', message: 'Bát thức ăn đã đầy.' });
+        return true;
+      }
+      const adj = adjustInventoryItem(v015, worldId, scope, 'pet_kibble_basic', -1, nowIso);
+      if (!adj.ok) {
+        sendJson(res, 400, { ok: false, code: adj.code, message: 'Hết hạt mèo rồi — hãy nhận thêm hạt 0₫ trong túi đồ nhé!' });
+        return true;
+      }
+      bowl.foodPortions += 1;
+      bowl.foodSku = 'pet_kibble_basic';
+      bowl.foodQuality = 'normal';
+      bowl.version += 1;
+    } else {
+      if (bowl.waterVolume >= 100) {
+        sendJson(res, 409, { ok: false, code: 'BOWL_FULL', message: 'Bát nước đã đầy.' });
+        return true;
+      }
+      bowl.waterVolume = 100;
+      bowl.version += 1;
+    }
+    const resPayload = {
+      bowl: {
+        version: bowl.version,
+        food_portions: bowl.foodPortions,
+        water_volume: bowl.waterVolume,
+        food_sku: bowl.foodSku,
+        food_quality: bowl.foodQuality,
+      },
+      pet: projectPet(existing, nowMs),
+    };
+    saveV015Idempotency(v015, worldId, userId, 'pet_care_apply', key, reqHash, resPayload);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: action === 'fill_food' ? 'inventory' : 'pet' });
     sendJson(res, 200, { ok: true, data: resPayload });
     return true;
   }

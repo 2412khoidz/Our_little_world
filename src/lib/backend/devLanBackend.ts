@@ -465,6 +465,17 @@ export function createDevLanBackend(): WorldBackend {
           body: JSON.stringify(params),
         });
       },
+      async getPetCareSnapshot(worldId) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareBowlSnapshot>(
+          `/pet/care?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyPetCare(params) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareApplyResult>('/pet/care/apply', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
     },
 
     study: {

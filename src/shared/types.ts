@@ -154,6 +154,9 @@ export type MutationErrorCode =
   | 'INSUFFICIENT_ITEMS'
   | 'IDEMPOTENCY_CONFLICT'
   | 'VALIDATION_ERROR'
+  | 'SERVER_AUTHORITY_REQUIRED'
+  | 'BOWL_FULL'
+  | 'BOWL_EMPTY'
   | 'NETWORK_ERROR';
 
 export type MutationResult<T> =
