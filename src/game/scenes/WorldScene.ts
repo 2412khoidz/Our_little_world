@@ -53,6 +53,8 @@ import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
+import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
+import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -109,6 +111,9 @@ export class WorldScene extends Phaser.Scene {
   private furnitureSprites = new Map<string, Phaser.GameObjects.Image>();
   private petEntity: PetEntity | null = null;
   private petSnapshot: PetSnapshot | null = null;
+  private livingPetDriver: PetLivingMainGameDriver | null = null;
+  private livingPetSimulationActive = false;
+  private studyPetMode = false;
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
@@ -171,6 +176,11 @@ export class WorldScene extends Phaser.Scene {
     this.petEntity = new PetEntity(this, () => {
       gameEventBus.emit('evt:open-pet-panel');
     });
+    this.livingPetSimulationActive = isLivingPetLocalSimulationEnabled();
+    if (this.livingPetSimulationActive) {
+      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * TILE_SIZE, 10.2 * TILE_SIZE);
+      this.petEntity.setLivingDriver(this.livingPetDriver);
+    }
     this.buildMap(this.currentMapId);
     this.setupPointerInput();
     this.bindEventBus();
@@ -930,7 +940,13 @@ export class WorldScene extends Phaser.Scene {
       }),
 
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
+        this.studyPetMode = active;
         this.petEntity?.setStudyMode(active);
+      }),
+
+      gameEventBus.on('cmd:pet-local-food-offer', (offer) => {
+        this.livingPetDriver?.setFoodOffer(offer);
+        this.petEntity?.triggerReaction('feed');
       }),
 
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
@@ -1096,7 +1112,28 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    this.petEntity?.update(dtSec);
+    if (this.livingPetDriver && this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+      const memberIds = this.members.map((m) => m.userId);
+      const caregiverPair: [string, string] = [
+        memberIds[0] ?? 'partner-a',
+        memberIds[1] ?? 'partner-b',
+      ];
+      const out = this.livingPetDriver.update({
+        mapId: this.currentMapId,
+        placements: this.placements,
+        nowMs: now,
+        dtMs: deltaMs,
+        isStudying: this.studyPetMode,
+        partnersSittingSofa: this.localPosture === 'sit_sofa',
+        localPlayerX: this.localSprite?.x ?? null,
+        localPlayerY: this.localSprite?.y ?? null,
+        caregiverIds: caregiverPair,
+        foodOffer: null,
+      });
+      this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
+    } else {
+      this.petEntity?.update(dtSec);
+    }
     this.updateRemoteEntities(deltaMs);
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
