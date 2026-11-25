@@ -34,7 +34,8 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **Private profile** | `build-private-atlas.py` copies same sheets → `private-unified/donor-cc0-puny-8d/` + `manifest.avatarGameplay` (32×32 × 24 cols — matches `punyCharacter8dSheet.ts`) |
 | **Wardrobe atlas** | `avatars.png` **384×288** (Demo E idle/run/sit) — public unified + private unified **aligned**; not used for in-world 8-dir walk when Puny loads |
 | **Posture policy** | Sit/lie = **idle row same rig** (no hurt/death shape-shift); tool = slash row; diagonal = native 8-dir walk |
-| **Rejected** | Baked 768 procedural atlas (#53); Cabacos / Farm Rai farmer for human rig |
+| **Rejected** | Baked 768 procedural atlas (#53); `avatarDiagonalWalk` alpha composite; Cabacos / Farm Rai farmer for **8-dir gameplay** |
+| **Reference vend** | Cabacos `characters/player/*` → `public/assets/donor/cabacos-characters/` (`npm run vendor-donor:cabacos-characters`) — Sunnyside lineage contact sheet only |
 
 ### QA (private art)
 
@@ -48,6 +49,32 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 
 - E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts`
 - Unit: `donorPunyAvatarSheet.test.ts`, `privateArtAvatarPipeline.test.ts`
+
+## Asset transplant Worker A — characters @ `8fce8af` (2026-11-25)
+
+| Field | Value |
+|-------|--------|
+| **Gameplay 8-dir** | Shade [Puny Characters](https://opengameart.org/content/puny-characters) **CC0** · `src/shared/donor/punyCharacter8dSheet.ts` |
+| **Cabacos reference** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · `public/assets/donor/cabacos-characters/` |
+| **Registry** | `src/shared/assets/olwAssetRegistry.ts` · `public/assets/donor/manifest.v1.json` |
+| **Mây / Nắng** | `soldier-blue` / `soldier-red` Puny sheets (`donorPunyTextureForConfig`) |
+| **Purple Cat** | Not vendored — Cabacos audit = flipX 4-way; Puny chosen for true diagonals |
+| **Banned** | Procedural diagonal composite rows in `buildAvatarSpritesheetCanvas` / `phaserAvatarTexture` fallback |
+
+### Commands
+
+```bash
+node scripts/vendor-wave1-farm-donors.mjs
+npm run vendor-donor:cabacos-characters
+node scripts/vendor-donor-puny-avatar.mjs
+python3 scripts/build-asset-transplant-a-contact-sheets.py
+```
+
+### Proof
+
+- Store: `media/asset-transplant-a-donor-cabacos-characters.png`, `media/asset-transplant-a-olw-puny-8dir.png`, `media/asset-transplant-a-diagonal-walk.gif`
+- Unit: `donorCabacosCharacterSheet.test.ts`, `avatarGameplayPolicy.test.ts`, `mayNangAvatarIdentity.test.ts`
+- E2E: `phase-ii-diagonal-walk.spec.ts` (unchanged — Puny native diagonals)
 
 ## Wave 1 C1 — farm presentation + donor clone area (2026-11-25)
 

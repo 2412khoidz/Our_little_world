@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import type { AvatarConfig } from '../../shared/types';
-import { DIAGONAL_FACINGS } from '../../shared/movement/facing8';
+import { AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED } from '../../shared/assets/avatarGameplayPolicy';
 import { AVATAR_ATLAS_KEY } from './atlasProfile';
 import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } from './avatarSpriteBuilder';
 import { donorPunyTextureForConfig, registerDonorPunyAvatarAnims } from './donorPunyAvatarTexture';
 
 export { avatarIdleFrame, avatarIdleFrameForFacing8, isDonorPunyAvatarTexture, playDonorToolUseAnim } from './donorPunyAvatarTexture';
-import { AVATAR_ATLAS_ROW_LIE, AVATAR_ATLAS_ROW_SIT, AVATAR_ATLAS_ROW_WALK, avatarWalkAnimKey } from './avatarAtlasLayout';
+import { AVATAR_ATLAS_ROW_LIE, AVATAR_ATLAS_ROW_SIT, AVATAR_ATLAS_ROW_WALK } from './avatarAtlasLayout';
 import {
   AVATAR_DIRECTIONS,
   AVATAR_FRAME_COUNT,
@@ -130,29 +130,8 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
     }
   }
 
-  if (procSheet && !usingAtlasLayout) {
-    const frameH = 24;
-    const frameW = 16;
-    const frameCount = 3;
-    const diags: typeof DIAGONAL_FACINGS = [...DIAGONAL_FACINGS];
-    diags.forEach((diag, d) => {
-      const row = 4 + d;
-      const frames: string[] = [];
-      for (let i = 0; i < frameCount; i += 1) {
-        const frameName = `${diag}-walk-${i}`;
-        tex.add(frameName, 0, i * frameW, row * frameH, frameW, frameH);
-        frames.push(frameName);
-      }
-      const animKey = avatarWalkAnimKey(key, diag);
-      if (!scene.anims.exists(animKey)) {
-        scene.anims.create({
-          key: animKey,
-          frames: frames.map((frame) => ({ key, frame })),
-          frameRate: 8,
-          repeat: -1,
-        });
-      }
-    });
+  if (procSheet && !usingAtlasLayout && !AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED) {
+    // Diagonal procedural rows removed — gameplay diagonals require donor Puny 8-dir sheets.
   }
 
   return key;
