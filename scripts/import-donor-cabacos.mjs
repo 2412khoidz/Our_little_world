@@ -130,6 +130,21 @@ function exportVillage() {
           { name: 'spawnY', type: 'int', value: 14 },
         ],
       },
+      {
+        id: 9105,
+        name: 'village-to-beach',
+        type: 'portal',
+        x: 84 * TW,
+        y: 26 * TW,
+        width: TW * 2,
+        height: TW * 2,
+        properties: [
+          { name: 'targetMapId', type: 'string', value: 'beach' },
+          { name: 'labelVi', type: 'string', value: 'Ra Gull Bay' },
+          { name: 'spawnX', type: 'int', value: 1 },
+          { name: 'spawnY', type: 'int', value: 16 },
+        ],
+      },
     ],
   };
 

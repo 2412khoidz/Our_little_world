@@ -42,7 +42,15 @@ export const WORLD_AREA_NODES: readonly WorldAreaNode[] = [
   { id: 'village', nameVi: 'Làng', phase: 'planned', widthTiles: 80, heightTiles: 60, interiorIds: ['general_store', 'inn'] },
   { id: 'forest', nameVi: 'Rừng', phase: 'planned', widthTiles: 72, heightTiles: 72, interiorIds: ['forest_shrine'] },
   { id: 'lake', nameVi: 'Hồ & cầu câu', phase: 'planned', widthTiles: 48, heightTiles: 40, interiorIds: [] },
-  { id: 'beach', nameVi: 'Bãi biển', phase: 'planned', widthTiles: 56, heightTiles: 32, interiorIds: ['beach_cabana'] },
+  {
+    id: 'beach',
+    nameVi: 'Bãi biển (Gull Bay)',
+    phase: 'tiled_wip',
+    mapId: 'beach',
+    widthTiles: 48,
+    heightTiles: 34,
+    interiorIds: [],
+  },
 ];
 
 /** Warps that exist today in `MAP_DEFINITIONS` (outdoor overhaul adds more). */

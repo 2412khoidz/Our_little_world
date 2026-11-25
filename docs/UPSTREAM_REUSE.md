@@ -12,6 +12,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 |----|------------|---------|-------|
 | **C2-pet** | [SawyerHood/nintendogs-threejs](https://github.com/SawyerHood/nintendogs-threejs) @ `43d231c` · PR **#20** @ `e0a8741` | Phaser pet atlas stride fix + DEV `?donor-pet-three=1` Three.js care slice (cat-orange billboard) | `src/donors/nintendogs-threejs-43d231c/UPSTREAM_REUSE.md` · store `media/vqg-pet-care-c2.png` |
 | **C3-world** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · PR **#21** @ `ad156cc` | Cabacos overworld + Casa_player → `village.json` / `shop.json` | § Cabacos below · store `media/donor-cabacos-olw-village-after.png` |
+| **C3-beach** | [Hollowmere](https://github.com/robintrepte/hollowmere.tretu.de) `gull_bay` | Authored beach → `beach.json` + Cabacos edge portals | § Hollowmere below · `donor-hollowmere-beach-olw.png` |
 | **C1-economy** | webfarmville `c420bc2` + harvest-hollow `9b23e1a` + chill-fishing MIT · PR **#22** @ `db7e290` | Dev LAN mill queue + pond reel → shared inventory | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
 | **OLWH-27** | Demo E props manifest · PR **#19** @ `80e118d` | Inventory + hotbar `CatalogPropsIcon` (CSS atlas slices) | `scripts/vqg-inventory-modal-capture.mjs` · unit: `catalogSkuPropsIcon.test.ts` |
 
@@ -66,4 +67,39 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 | Repo | Commit | Verdict |
 |------|--------|---------|
 | [clear-code-projects/PyDew](https://github.com/clear-code-projects/PyDew) | `HEAD` | CC0 pygame Tiled 48px — wrong engine/scale for OLW Phaser 16px |
-| [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) | `HEAD` | MIT JSON `ops`/`warps` — data reference only, no Tiled vendor |
+| [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) | `HEAD` | **Transplanted:** `gull_bay` → `beach.json` (§ Hollowmere below) |
+| [Intelisgod/harvest-duo](https://github.com/Intelisgod/harvest-duo) | `HEAD` | Pygame `build_beach()` — layout reference; pygame scale mismatch |
+| [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | — | GPL — pattern only, no asset vendoring |
+| Kaetram | — | Not cloned this slice — reserved for forest candidate |
+
+---
+
+## Hollowmere Gull Bay beach (Mission C3 step 2)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) |
+| **Map** | `game/data/maps/gull_bay.json` → vendored `public/maps/donor/hollowmere/gull_bay.json` |
+| **License** | MIT (`public/maps/donor/hollowmere/UPSTREAM-LICENSE.txt`) |
+| **Why chosen** | Authored 48×34 beach with pier/water/ops — clearer gameplay than procedural `beach.json`; pairs with Cabacos village via west warp ↔ `village-to-beach` / `beach-to-village`. |
+
+### Source → destination
+
+| Upstream | OLW path |
+|----------|----------|
+| `gull_bay.json` | `public/maps/donor/hollowmere/gull_bay.json` |
+| (import script) | `public/assets/maps/beach.json` (tileset-cozy / Demo E–compatible gids) |
+| Cabacos village patch | `village.json` portal `village-to-beach` → spawn beach `(1,16)` |
+
+### Kept vs adapted
+
+- **Kept:** `ops` rect/pier/scatter/clearpath, building footprint, west `open` warp to town analogue.
+- **Adapted:** Godot tile names → cozy atlas gids; ferry/sign objects not wired (OLW interactables later); target map `village` (Cabacos) not Hollowmere `town`.
+
+### Reproduce
+
+```bash
+npm run import-donor:world-zones
+VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
+# Village east exit → Gull Bay; west shore → về làng Cabacos
+```
