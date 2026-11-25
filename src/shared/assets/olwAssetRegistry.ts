@@ -26,13 +26,13 @@ export const OLW_ASSET_REGISTRY: readonly OlwAssetRegistryRow[] = [
     sha: 'cc0-opengameart-puny-characters',
     paths: [
       '/assets/donor/cc0-puny-8d/character-base.png',
-      '/assets/donor/cc0-puny-8d/soldier-blue.png',
-      '/assets/donor/cc0-puny-8d/soldier-red.png',
+      '/assets/donor/cc0-puny-8d/mage-cyan.png',
+      '/assets/donor/cc0-puny-8d/mage-red.png',
     ],
     frames: {
       width: PUNY_DONOR_GAMEPLAY_MANIFEST.frameWidth,
       height: PUNY_DONOR_GAMEPLAY_MANIFEST.frameHeight,
-      notes: '8-dir walk native; sit/lie = idle row; tool = slash row',
+      notes: '8-dir walk; sit=hurt lie=death hoe=stave water=bow; slash excluded',
     },
     pivot: { x: 0.5, y: 0.88 },
     scale: 1,

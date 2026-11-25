@@ -14,8 +14,8 @@ const URL = 'https://opengameart.org/sites/default/files/puny-characters.zip';
 
 const FILES = [
   ['Puny-Characters/Character-Base.png', 'character-base.png'],
-  ['Puny-Characters/Soldier-Blue.png', 'soldier-blue.png'],
-  ['Puny-Characters/Soldier-Red.png', 'soldier-red.png'],
+  ['Puny-Characters/Mage-Cyan.png', 'mage-cyan.png'],
+  ['Puny-Characters/Mage-Red.png', 'mage-red.png'],
 ];
 
 fs.mkdirSync(path.dirname(ZIP), { recursive: true });

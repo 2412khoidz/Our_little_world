@@ -10,8 +10,8 @@ describe('private vs public avatar pipeline sync', () => {
   it('wardrobe atlas uses 3 rows; gameplay uses Puny 32px grid', () => {
     expect(AVATAR_ATLAS_ROW_COUNT).toBe(3);
     expect(PUNY_SHEET.frameWidth).toBe(PUNY_DONOR_GAMEPLAY_MANIFEST.frameWidth);
-    expect(PUNY_DONOR_GAMEPLAY_MANIFEST.postureSameRig.sit).toBe('idle');
-    expect(PUNY_DONOR_GAMEPLAY_MANIFEST.postureSameRig.lie).toBe('idle');
+    expect(PUNY_DONOR_GAMEPLAY_MANIFEST.cozyActionRows.sit).toBe(PUNY_SHEET.rows.hurt);
+    expect(PUNY_DONOR_GAMEPLAY_MANIFEST.cozyActionRows.lie).toBe(PUNY_SHEET.rows.death);
   });
 
   it('private profile loads Puny from private-unified mirror path', () => {

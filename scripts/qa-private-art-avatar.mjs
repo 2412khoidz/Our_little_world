@@ -34,7 +34,7 @@ if (gameplay.frameWidth !== 32 || gameplay.frameHeight !== 32 || gameplay.colsPe
 }
 
 const punyPrivate = path.join(privateDir, 'donor-cc0-puny-8d');
-for (const file of ['character-base.png', 'soldier-blue.png', 'soldier-red.png']) {
+for (const file of ['character-base.png', 'mage-cyan.png', 'mage-red.png']) {
   if (!fs.existsSync(path.join(punyPrivate, file))) {
     fail(`Thiếu private-unified/donor-cc0-puny-8d/${file}`);
   }

@@ -51,8 +51,8 @@ def puny_contact() -> Image.Image:
     root = REPO / "public/assets/donor/cc0-puny-8d"
     paths = [
         (root / "character-base.png", "Puny base (CC0 gameplay)"),
-        (root / "soldier-blue.png", "Mây rig — soldier-blue"),
-        (root / "soldier-red.png", "Nắng rig — soldier-red"),
+        (root / "mage-cyan.png", "Nắng rig — mage-cyan"),
+        (root / "mage-red.png", "Alt rig — mage-red"),
     ]
     return sheet_panel(paths, "OLW imported — Puny 8-dir gameplay (32×32)", 32, 32, scale=3)
 
@@ -66,7 +66,7 @@ def cabacos_contact() -> Image.Image:
 
 
 def walk_gif() -> Path:
-    puny = Image.open(REPO / "public/assets/donor/cc0-puny-8d/soldier-blue.png").convert("RGBA")
+    puny = Image.open(REPO / "public/assets/donor/cc0-puny-8d/mage-cyan.png").convert("RGBA")
     fw, fh = 32, 32
     # walk row = 1, down-right dir index 7 in puny layout, 3 frames
     row = 1

@@ -8,10 +8,10 @@ import {
 } from '../../src/game/art/donorPunyAvatarTexture';
 
 describe('Mây & Nắng gameplay rig identity', () => {
-  it('pins default couple configs to distinct Puny sheets', () => {
+  it('pins default couple configs to cozy Puny sheets (no soldier combat walk)', () => {
     expect(donorPunyTextureForConfig(DEFAULT_AVATAR_PARTNER_A)).toBe(MAY_GAMEPLAY_PUNY_TEXTURE);
     expect(donorPunyTextureForConfig(DEFAULT_AVATAR_PARTNER_B)).toBe(NANG_GAMEPLAY_PUNY_TEXTURE);
-    expect(MAY_GAMEPLAY_PUNY_TEXTURE).toBe(DONOR_PUNY_TEXTURE_IDS.soldierBlue);
-    expect(NANG_GAMEPLAY_PUNY_TEXTURE).toBe(DONOR_PUNY_TEXTURE_IDS.soldierRed);
+    expect(MAY_GAMEPLAY_PUNY_TEXTURE).toBe(DONOR_PUNY_TEXTURE_IDS.base);
+    expect(NANG_GAMEPLAY_PUNY_TEXTURE).toBe(DONOR_PUNY_TEXTURE_IDS.mageCyan);
   });
 });

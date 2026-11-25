@@ -466,7 +466,7 @@ def main() -> None:
     puny_dst = output / "donor-cc0-puny-8d"
     puny_dst.mkdir(parents=True, exist_ok=True)
     gameplay_files: dict[str, str] = {}
-    for name in ("character-base.png", "soldier-blue.png", "soldier-red.png", "CREDITS.md"):
+    for name in ("character-base.png", "mage-cyan.png", "mage-red.png", "CREDITS.md"):
         src = puny_src / name
         if not src.is_file():
             raise FileNotFoundError(f"Thiếu donor gameplay avatar (Puny CC0): {src}")

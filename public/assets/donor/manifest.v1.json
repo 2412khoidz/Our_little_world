@@ -10,12 +10,16 @@
       "provider": "shade-puny-characters-cc0",
       "files": [
         "cc0-puny-8d/character-base.png",
-        "cc0-puny-8d/soldier-blue.png",
-        "cc0-puny-8d/soldier-red.png"
+        "cc0-puny-8d/mage-cyan.png",
+        "cc0-puny-8d/mage-red.png"
       ],
       "frameWidth": 32,
       "frameHeight": 32,
-      "consumers": ["donor-puny-character-base", "donor-puny-soldier-blue", "donor-puny-soldier-red"]
+      "consumers": [
+        "donor-puny-character-base",
+        "donor-cozy-puny-mage-cyan",
+        "donor-cozy-puny-mage-red"
+      ]
     },
     {
       "id": "avatar.reference.cabacos-sunnyside",

@@ -1241,9 +1241,20 @@ export class WorldScene extends Phaser.Scene {
           this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
           if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'hoe');
+            }
           }
           if (highlightPlotId != null && highlightAction === 'water') {
             playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'water');
+            }
+          }
+          if (highlightPlotId != null && highlightAction === 'harvest') {
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'harvest');
+            }
           }
         }
       }),
