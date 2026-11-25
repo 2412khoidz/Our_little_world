@@ -25,6 +25,12 @@ export class PetCareAmbientProps {
     this.syncWaterVisual();
   }
 
+  /** De-emphasize bowls for close-up hero (Frakassets cat focal). */
+  softenCloseUpPresentation(): void {
+    this.layer.setAlpha(0.28);
+    this.layer.setY(10);
+  }
+
   destroy(): void {
     this.pourTween?.stop();
     this.brushTween?.stop();

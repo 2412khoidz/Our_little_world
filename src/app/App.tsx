@@ -1446,7 +1446,7 @@ function MainCoupleApp() {
         </button>
       )}
 
-      <LivingPetDevBanner />
+      {!petCareMode && <LivingPetDevBanner />}
 
       <PetCareTouchOverlay
         active={petCareMode}
@@ -1501,7 +1501,7 @@ function MainCoupleApp() {
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
-      {!decorateActive && !isAnyModalOpen && (
+      {!decorateActive && !isAnyModalOpen && !petCareMode && (
         <CoupleActionBar
           partnerOnlineSameRoom={presences.some(
             (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
@@ -1543,6 +1543,7 @@ function MainCoupleApp() {
         />
       ) : (
         <QuickNavBar
+          hidden={petCareMode}
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}

@@ -92,7 +92,7 @@ export function MainGameInteractionLayer({
 
   const petCareHud = petCareOverlayActive || isPetCareModeActive();
   const showHud = enabled && !decorateActive && !modalOpen;
-  const touchActions = showJoystick || petCareHud;
+  const touchActions = showJoystick && !petCareHud;
 
   const livingPetSim = isLivingPetLocalSimulationEnabled();
 

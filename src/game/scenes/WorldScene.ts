@@ -1046,6 +1046,7 @@ export class WorldScene extends Phaser.Scene {
       this.cameras.main.stopFollow();
       this.petEntity.setCareCloseUp(false);
       this.petEntity.setVisible(false);
+      this.scene.setVisible(false);
       this.scene.pause();
       const visual = this.petEntity.getVisualIdentity();
       enterPetCareRuntime(this.game, {
@@ -1057,6 +1058,7 @@ export class WorldScene extends Phaser.Scene {
       });
     } else {
       exitPetCareRuntime(this.game);
+      this.scene.setVisible(true);
       this.scene.resume();
       if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
         this.petEntity.setCareCloseUp(false);

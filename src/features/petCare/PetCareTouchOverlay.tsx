@@ -6,15 +6,15 @@ interface PetCareTouchOverlayProps {
   onExit: () => void;
 }
 
-/** Thin HUD — strokes happen on the Phaser close-up rig; hotbar + J for toys/food. */
+/** Cozy care chrome — minimal copy, Nintendogs-like focal layout. */
 export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps) {
-  const [hint, setHint] = useState('Vuốt trên thân mèo — đầu, cằm, lưng');
+  const [hint, setHint] = useState('');
   const [goalsLabel, setGoalsLabel] = useState('');
 
   useEffect(() => {
     if (!active) return;
     return gameEventBus.on('evt:pet-care-session-goals', ({ count, total }) => {
-      setGoalsLabel(count > 0 ? `Phiên: ${count}/${total} hoạt động` : '');
+      setGoalsLabel(count > 0 ? `${count}/${total}` : '');
     });
   }, [active]);
 
@@ -30,24 +30,10 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
     return () => window.removeEventListener('keydown', onKey);
   }, [active, onExit]);
 
-  const callPet = () => {
-    gameEventBus.emit('cmd:pet-care-action', { kind: 'call' });
-    setHint('Gọi tên bé…');
-  };
-
-  const observe = () => {
-    gameEventBus.emit('cmd:pet-care-action', { kind: 'observe' });
-    setHint('Quan sát — để bé tự làm việc của mình');
-  };
-
-  const brush = () => {
-    gameEventBus.emit('cmd:pet-care-action', { kind: 'brush' });
-    setHint('Chải lông — bát ăn/nước hai bên chỉ là giao diện gần');
-  };
-
-  const pourWater = () => {
-    gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
-    setHint('Rót nước — mô phỏng gần, không trừ bình hay sync bát');
+  const withHint = (msg: string, action: () => void) => () => {
+    action();
+    setHint(msg);
+    window.setTimeout(() => setHint(''), 2200);
   };
 
   if (!active) return null;
@@ -56,33 +42,59 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
     <div
       className="pet-care-overlay"
       data-testid="pet-care-overlay"
-      aria-label="Chế độ chăm sóc mèo cận cảnh"
+      aria-label="Chế độ chăm sóc mèo"
     >
       <div className="pet-care-overlay__vignette" />
       <p className="pet-care-overlay__title">
-        Chăm sóc gần — vuốt lên mèo, dùng thanh đồ (1–8) + J
+        Chăm sóc bé
         {goalsLabel ? ` · ${goalsLabel}` : ''}
       </p>
-      <p className="pet-care-overlay__hint" data-testid="pet-care-stroke-hint">
-        {hint}
-      </p>
+      {hint ? (
+        <p className="pet-care-overlay__hint" data-testid="pet-care-stroke-hint">
+          {hint}
+        </p>
+      ) : (
+        <p className="pet-care-overlay__hint pet-care-overlay__hint--ghost" data-testid="pet-care-stroke-hint">
+          Vuốt lên mèo · thanh đồ + J
+        </p>
+      )}
       <div className="pet-care-overlay__actions">
-        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-call" onClick={callPet}>
-          Gọi mèo
+        <button
+          type="button"
+          className="pet-care-overlay__chip"
+          data-testid="pet-care-call"
+          onClick={withHint('Gọi tên…', () => gameEventBus.emit('cmd:pet-care-action', { kind: 'call' }))}
+        >
+          Gọi
         </button>
-        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-observe" onClick={observe}>
+        <button
+          type="button"
+          className="pet-care-overlay__chip"
+          data-testid="pet-care-observe"
+          onClick={withHint('Quan sát…', () => gameEventBus.emit('cmd:pet-care-action', { kind: 'observe' }))}
+        >
           Quan sát
         </button>
-        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-brush" onClick={brush}>
-          Chải lông
+        <button
+          type="button"
+          className="pet-care-overlay__chip"
+          data-testid="pet-care-brush"
+          onClick={withHint('Chải lông…', () => gameEventBus.emit('cmd:pet-care-action', { kind: 'brush' }))}
+        >
+          Chải
         </button>
-        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-water" onClick={pourWater}>
-          Rót nước
-        </button>
-        <button type="button" className="pet-care-overlay__exit" data-testid="pet-care-exit" onClick={onExit}>
-          Thoát (ESC)
+        <button
+          type="button"
+          className="pet-care-overlay__chip"
+          data-testid="pet-care-water"
+          onClick={withHint('Rót nước…', () => gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' }))}
+        >
+          Nước
         </button>
       </div>
+      <button type="button" className="pet-care-overlay__exit" data-testid="pet-care-exit" onClick={onExit}>
+        Thoát
+      </button>
     </div>
   );
 }

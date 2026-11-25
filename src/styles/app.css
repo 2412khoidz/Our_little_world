@@ -260,15 +260,17 @@
 .pet-care-overlay__vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center 58%, transparent 24%, rgba(28, 20, 26, 0.55) 72%);
+  background:
+    radial-gradient(ellipse at center 52%, transparent 18%, rgba(12, 10, 14, 0.72) 68%),
+    rgba(10, 8, 12, 0.35);
   pointer-events: none;
 }
 
 .pet-care-overlay__title {
   position: absolute;
-  top: calc(56px + var(--safe-top));
+  top: calc(52px + var(--safe-top));
   color: #fff5ea;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   z-index: 2;
@@ -276,12 +278,20 @@
 
 .pet-care-overlay__hint {
   position: absolute;
-  top: 42%;
+  top: 38%;
   color: #ffe0c0;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 700;
   z-index: 3;
   animation: pet-care-pop 0.35s ease-out;
+  text-align: center;
+  max-width: 88vw;
+}
+
+.pet-care-overlay__hint--ghost {
+  opacity: 0.55;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 @keyframes pet-care-pop {
@@ -300,13 +310,13 @@
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(184px + var(--safe-bottom));
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(108px, 1fr));
+  gap: 10px;
   justify-content: center;
   z-index: 30;
   pointer-events: auto;
-  max-width: min(96vw, 420px);
+  width: min(92vw, 280px);
 }
 
 .pet-care-overlay__chip {
