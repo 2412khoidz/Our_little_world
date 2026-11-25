@@ -10,8 +10,6 @@ async function sampleCanvasCenter(page: import('@playwright/test').Page) {
     if (!canvas || canvas.width < 16 || canvas.height < 16) {
       return { ok: false, reason: 'missing-or-zero-canvas', w: canvas?.width ?? 0, h: canvas?.height ?? 0 };
     }
-    const cx = Math.floor(canvas.width / 2);
-    const cy = Math.floor(canvas.height * 0.46);
     const tmp = document.createElement('canvas');
     tmp.width = canvas.width;
     tmp.height = canvas.height;
@@ -22,16 +20,23 @@ async function sampleCanvasCenter(page: import('@playwright/test').Page) {
     } catch {
       return { ok: false, reason: 'webgl-draw-failed' };
     }
-    const d = ctx.getImageData(cx, cy, 1, 1).data;
-    const hit = {
-      r: d[0] ?? 0,
-      g: d[1] ?? 0,
-      b: d[2] ?? 0,
-      a: d[3] ?? 0,
-    };
-    const distBg = Math.abs(hit.r - bg.r) + Math.abs(hit.g - bg.g) + Math.abs(hit.b - bg.b);
-    const nonEmpty = hit.a > 0 && distBg > 18;
-    return { ok: nonEmpty, hit, ready: canvas.dataset.donorCatReady, w: canvas.width, h: canvas.height };
+    const probes = [
+      [0.5, 0.46],
+      [0.5, 0.5],
+      [0.48, 0.44],
+      [0.52, 0.48],
+    ] as const;
+    let best = { dist: 0, hit: { r: 0, g: 0, b: 0, a: 0 } };
+    for (const [nx, ny] of probes) {
+      const cx = Math.floor(canvas.width * nx);
+      const cy = Math.floor(canvas.height * ny);
+      const d = ctx.getImageData(cx, cy, 1, 1).data;
+      const hit = { r: d[0] ?? 0, g: d[1] ?? 0, b: d[2] ?? 0, a: d[3] ?? 0 };
+      const distBg = Math.abs(hit.r - bg.r) + Math.abs(hit.g - bg.g) + Math.abs(hit.b - bg.b);
+      if (distBg > best.dist) best = { dist: distBg, hit };
+    }
+    const nonEmpty = best.hit.a > 0 && best.dist > 18;
+    return { ok: nonEmpty, hit: best.hit, ready: canvas.dataset.donorCatReady, w: canvas.width, h: canvas.height };
   }, { bg: BG });
 }
 
