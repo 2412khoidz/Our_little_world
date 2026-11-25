@@ -35,6 +35,10 @@ Tham chiếu thiết kế: [WORLD_EXPANSION_DESIGN.md](../world/WORLD_EXPANSION_
 - Portal economy/minigame khi V0.2 backend sẵn sàng
 - Tích hợp farming anchors với `src/shared/farming/` (domain only)
 
-## Tests
+## Tests (đã chạy trên Cloud agent)
 
+- `npm run lint` / `typecheck` / `test` (525 Vitest) / `build` / `verify-prod-guard` — pass
 - `tests/unit/extendedWorldMeadow.test.ts`
+- `tests/e2e/extended-world-meadow.spec.ts` (2 Chromium projects)
+
+**Lưu ý merge:** Nhánh này xuất phát từ HEAD Mission 04B-3A; nên merge **PR #11** trước, sau đó rebase PR #12 lên `integration/night-merge` nếu cần diff gọn.
