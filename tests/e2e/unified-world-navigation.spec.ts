@@ -15,6 +15,7 @@ test.describe('Unified world navigation (DEV)', () => {
     await page.getByTestId('preset-partner-a').click();
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
     await expect(canvas).toBeVisible();
+    await expect(page.getByTestId('nav-garden')).toBeVisible();
 
     await page.getByTestId('nav-garden').click({ force: true });
     await expect(canvas).toHaveAttribute('data-map-id', 'garden', { timeout: 15_000 });
@@ -36,9 +37,11 @@ test.describe('Unified world navigation (DEV)', () => {
     await page.waitForTimeout(600);
     await page.keyboard.up('w');
     await page.keyboard.down('a');
-    await page.waitForTimeout(5500);
+    await page.waitForTimeout(6500);
     await page.keyboard.up('a');
-    await expect(canvas).toHaveAttribute('data-map-id', 'farm', { timeout: 20_000 });
+    await expect
+      .poll(async () => canvas.getAttribute('data-map-id'), { timeout: 20_000 })
+      .toBe('farm');
   });
 
   test('tap-to-move changes tile on village', async ({ page }) => {
