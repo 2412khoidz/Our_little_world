@@ -6,6 +6,12 @@ import { MapDebugOverlay } from '../dev/mapDebugOverlay';
 import { renderOutdoorWorld } from '../world/outdoorRenderer';
 import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
 import {
+  getDonorCabacosTilesets,
+  isDonorCabacosMap,
+  renderDonorCabacosMapLayers,
+  renderDonorCabacosShopInterior,
+} from '../world/renderDonorCabacosMap';
+import {
   nearestTiledNpc,
   spawnTiledWorldNpcs,
   tickTiledWorldNpcs,
@@ -317,7 +323,11 @@ export class WorldScene extends Phaser.Scene {
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
-      this.buildTiledWorldMap(mapId);
+      if (mapId === 'shop' && this.isDonorCabacosShop()) {
+        renderDonorCabacosShopInterior(this, (obj) => this.mapLayers.push(obj));
+      } else {
+        this.buildTiledWorldMap(mapId);
+      }
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
@@ -555,12 +565,26 @@ export class WorldScene extends Phaser.Scene {
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
   }
 
+  private isDonorCabacosShop(): boolean {
+    const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
+    const donor = raw?.properties?.find((p) => p.name === 'olwDonor')?.value;
+    return donor === 'cabacos';
+  }
+
   private buildTiledWorldMap(mapId: MapId): void {
     if (!isTiledWorldMapId(mapId)) return;
     const mapKey = TILED_MAP_PHASER_KEYS[mapId];
     if (!this.cache.tilemap.exists(mapKey)) return;
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
+
+    if (isDonorCabacosMap(tilemap)) {
+      const tilesets = getDonorCabacosTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorCabacosMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+      }
+      return;
+    }
 
     const tileset = tilemap.addTilesetImage('tileset-cozy', 'tileset-cozy', 16, 16, 0, 0);
     if (tileset) {
