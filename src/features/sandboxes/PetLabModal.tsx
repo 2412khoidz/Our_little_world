@@ -21,6 +21,7 @@ import {
 } from '../../shared/petLiving/petAutonomousController';
 import { renderLivingCatPreviewToCanvas } from '../../game/pet/petSpriteBuilder';
 import { useEffect, useRef } from 'react';
+import { PetLabMovementStrip } from './PetLabMovementStrip';
 
 export function PetLabModal({ onClose }: { onClose?: () => void }) {
   const [presetIdx, setPresetIdx] = useState(0);
@@ -234,6 +235,8 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
             Trace: {trace.actionsChosen.slice(0, 10).join(' → ')}
           </div>
         </section>
+
+        <PetLabMovementStrip ctx={baseCtx} scenarioId={scenarioId} step={simStep} />
       </div>
     </main>
   );
