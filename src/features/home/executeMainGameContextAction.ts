@@ -16,6 +16,7 @@ export interface MainGameActionContext {
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
   onNotice: (message: string, isError?: boolean) => void;
+  livingPetLocalSimulation?: boolean;
 }
 
 function emitDiegeticOpen(code: InteractionActionCode): boolean {
@@ -75,6 +76,16 @@ export async function executeMainGameContextAction(
       ctx.onNotice(MISSION02_PENDING_VI, true);
       return;
     }
+    if (ctx.livingPetLocalSimulation) {
+      gameEventBus.emit('cmd:pet-local-food-offer', {
+        offerId: `local-offer-${Date.now()}`,
+        caregiverId: 'local-player',
+        sku: ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU,
+        quality: ctx.heldItem.quality ?? 'normal',
+      });
+      ctx.onNotice('Bé đánh hơi món — chỉ mô phỏng cục bộ (chưa trừ kho).');
+      return;
+    }
     if (!ctx.petCanFeed) {
       ctx.onNotice('Bé chưa sẵn sàng ăn hoặc đang hồi thời gian.', true);
       return;
@@ -100,6 +111,11 @@ export async function executeMainGameContextAction(
     code === 'place_cardboard_box'
   ) {
     ctx.onNotice(MISSION02_PENDING_VI, true);
+    return;
+  }
+
+  if (code === 'talk_npc') {
+    gameEventBus.emit('cmd:trigger-interact');
     return;
   }
 
