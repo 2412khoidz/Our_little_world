@@ -3,7 +3,10 @@ import type { MapId } from '../types';
 /**
  * Composer 1 — world anchors only (no farming simulation).
  * Keep object tile positions in sync with `scripts/generate-world-zone-maps.mjs` Interactables layer.
+ * Bump `FARM_PLOT_CONTRACT_VERSION` + regenerate `farmPlotContract.v1.json` when anchors change.
  */
+export const FARM_PLOT_CONTRACT_VERSION = '1.0.0';
+
 export const FARM_ZONE_MAP_ID: MapId = 'farm';
 
 /** Tiled tile layer ids on `public/assets/maps/farm.json` (match generator). */
@@ -151,3 +154,37 @@ export const VILLAGE_SHOP_PORTAL = {
   doorTileY: 14,
   labelVi: 'Vào cửa hàng Bác Hai',
 } as const;
+
+export interface FarmPlotContractExport {
+  contractVersion: string;
+  mapId: MapId;
+  mapSizeTiles: { width: number; height: number };
+  defaultSpawnTile: { tileX: number; tileY: number };
+  tiledJsonPath: string;
+  tileGids: typeof FARM_TILE_GIDS;
+  tileLayerIds: typeof FARM_TILED_LAYER_IDS;
+  objectLayerIds: typeof FARM_TILED_OBJECT_LAYER_IDS;
+  plotRegions: typeof FARM_PLOT_REGIONS;
+  plotMinWalkableTiles: number;
+  plotAnchors: ReturnType<typeof enumerateFarmPlotAnchors>;
+  worldInteractables: typeof FARM_WORLD_INTERACTABLES;
+  villageShopPortal: typeof VILLAGE_SHOP_PORTAL;
+}
+
+export function buildFarmPlotContractExport(): FarmPlotContractExport {
+  return {
+    contractVersion: FARM_PLOT_CONTRACT_VERSION,
+    mapId: FARM_ZONE_MAP_ID,
+    mapSizeTiles: { width: 64, height: 56 },
+    defaultSpawnTile: { tileX: 55, tileY: 20 },
+    tiledJsonPath: '/assets/maps/farm.json',
+    tileGids: FARM_TILE_GIDS,
+    tileLayerIds: FARM_TILED_LAYER_IDS,
+    objectLayerIds: FARM_TILED_OBJECT_LAYER_IDS,
+    plotRegions: FARM_PLOT_REGIONS,
+    plotMinWalkableTiles: FARM_PLOT_MIN_WALKABLE_TILES,
+    plotAnchors: [...enumerateFarmPlotAnchors()],
+    worldInteractables: FARM_WORLD_INTERACTABLES,
+    villageShopPortal: VILLAGE_SHOP_PORTAL,
+  };
+}
