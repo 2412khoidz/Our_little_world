@@ -1,6 +1,6 @@
 export type InventoryOwnerScope = 'shared' | `user:${string}`;
 
-export type ItemPurpose = 'pet_food' | 'gift' | 'stationery' | 'keepsake';
+export type ItemPurpose = 'pet_food' | 'gift' | 'stationery' | 'keepsake' | 'seed' | 'crop' | 'fish' | 'dish' | 'ingredient';
 
 export interface InventoryCatalogItem {
   sku: string;
