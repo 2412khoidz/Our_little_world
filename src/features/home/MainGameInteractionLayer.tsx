@@ -184,14 +184,14 @@ export function MainGameInteractionLayer({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      if (isEditableInputTarget(e.target)) return;
-
       if (e.code === 'Escape') {
-        onCloseTopModal();
-        clearHeld();
+        if (modalOpen || !isEditableInputTarget(e.target)) {
+          onCloseTopModal();
+          clearHeld();
+        }
         return;
       }
-      if (!showHud) return;
+      if (!showHud || isEditableInputTarget(e.target)) return;
       if (e.code === 'KeyI') {
         e.preventDefault();
         onOpenInventory();
@@ -216,7 +216,7 @@ export function MainGameInteractionLayer({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showHud, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld]);
+  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld]);
 
   if (!showHud) return null;
 
