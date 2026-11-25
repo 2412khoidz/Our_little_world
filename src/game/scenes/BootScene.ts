@@ -21,6 +21,9 @@ export class BootScene extends Phaser.Scene {
     this.load.tilemapTiledJSON('map-forest', '/assets/maps/forest.json');
     this.load.tilemapTiledJSON('map-beach', '/assets/maps/beach.json');
     this.load.tilemapTiledJSON('map-shop', '/assets/maps/shop.json');
+    this.load.image('donor-cabacos-ts_map', '/maps/donor/cabacos/ts_map.png');
+    this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
+    this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
   }
 
   create(): void {
@@ -38,6 +41,9 @@ export class BootScene extends Phaser.Scene {
     }
 
     registerWorldAtlas(this);
+    for (const key of ['donor-cabacos-ts_map', 'donor-cabacos-ts_forest', 'donor-cabacos-house-interior']) {
+      this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
     this.scene.start('WorldScene');
   }
 }

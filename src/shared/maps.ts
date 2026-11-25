@@ -135,12 +135,12 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     'village',
     'Làng',
     '/assets/maps/village.json',
-    { tileX: 24, tileY: 22 },
+    { tileX: 42, tileY: 31 },
   ),
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', { tileX: 55, tileY: 20 }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 8, tileY: 26 }),
   beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 28, tileY: 22 }),
-  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 5, tileY: 5 }),
+  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 12, tileY: 14 }),
 };
 
 function portalBlocksDecorate(portals: readonly ParsedTiledPortal[], tileX: number, tileY: number): boolean {
@@ -187,8 +187,8 @@ const GARDEN_TO_VILLAGE_PORTAL: MapPortal = {
   tileY: 13,
   radiusTiles: 1.6,
   targetMapId: 'village',
-  targetSpawnX: 24,
-  targetSpawnY: 38,
+  targetSpawnX: 42,
+  targetSpawnY: 31,
 };
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
