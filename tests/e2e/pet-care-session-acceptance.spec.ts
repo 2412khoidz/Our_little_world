@@ -121,8 +121,14 @@ test.describe('Pet care — owner session', () => {
       expect(autonomyUnique.size).toBeGreaterThanOrEqual(2);
     }
     mkdirSync('/opt/cursor/artifacts', { recursive: true });
-    const storeMedia = '/cursor/stores/bc-4d4a276e-e320-4dcc-8c3c-e46cfb7036fd/media';
-    mkdirSync(storeMedia, { recursive: true });
+    const storeMedia =
+      process.env.OLW_PROJECT_STORE_MEDIA ||
+      '/cursor/stores/bc-2e22f11f-fecd-46d0-800e-ec62bb2a932f/media';
+    try {
+      mkdirSync(storeMedia, { recursive: true });
+    } catch {
+      // optional project-store write when path not mounted
+    }
     const summary = {
       elapsedMs,
       soakMinutes,
@@ -134,7 +140,11 @@ test.describe('Pet care — owner session', () => {
       head: process.env.GITHUB_SHA ?? 'local',
     };
     writeFileSync('/opt/cursor/artifacts/pet-care-session-summary.json', JSON.stringify(summary, null, 2));
-    writeFileSync(`${storeMedia}/pet-care-soak-summary.json`, JSON.stringify(summary, null, 2));
+    try {
+      writeFileSync(`${storeMedia}/pet-care-soak-summary.json`, JSON.stringify(summary, null, 2));
+    } catch {
+      // ignore
+    }
     await page.screenshot({ path: '/opt/cursor/artifacts/pet-care-session-final.png' });
     await test.info().attach('pet-care-session-summary', {
       body: JSON.stringify(summary),

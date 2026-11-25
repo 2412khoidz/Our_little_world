@@ -2,7 +2,7 @@ import { petCareJ4lpanPortraitEnabled } from './petCareJ4lpanPortraitFlag';
 
 /**
  * Phase II — 48px care illustration atlas (not 16px overworld blow-up).
- * Retired as default when j4lpan portrait is on (recovery @ 8e4454d).
+ * Default on when j4lpan SVG portrait is off (`?pet-care-illustration=0` → Frakassets 16px scale).
  */
 export function petCareIllustrationAtlasEnabled(): boolean {
   if (petCareJ4lpanPortraitEnabled()) return false;
@@ -11,8 +11,9 @@ export function petCareIllustrationAtlasEnabled(): boolean {
     if (url.searchParams.get('pet-care-illustration') === '0') return false;
     if (url.searchParams.get('pet-care-illustration') === '1') return true;
   }
+  if (import.meta.env.VITE_OLW_PET_CARE_ILLUSTRATION === '0') return false;
   if (import.meta.env.VITE_OLW_PET_CARE_ILLUSTRATION === '1') return true;
-  return import.meta.env.DEV;
+  return true;
 }
 
 export const PET_CARE_ILLUSTRATION_DISPLAY_SCALE = 3;

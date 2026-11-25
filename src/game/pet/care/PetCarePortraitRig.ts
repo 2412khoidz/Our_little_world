@@ -8,6 +8,7 @@ import {
   reactToCareStroke,
 } from '../../../shared/petLiving/petCare/petCareReactions';
 import type { PetCareActionKind, PetCareExpression, PetCareZone } from '../../../shared/petLiving/petCare/petCareTypes';
+import { shouldShowCareBubble } from '../../../shared/petLiving/petCare/petCareTypes';
 import type { PetSnapshot } from '../../../shared/pet/petTypes';
 import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood';
@@ -54,6 +55,8 @@ export class PetCarePortraitRig {
   private currentTiltDeg = 0;
   private swayPhase = 0;
   private readonly framePlayer: PetCareLicensedAnimPlayer | null;
+  private idleRoamAt = 0;
+  private idleRoamPhase: 'sit' | 'walk' | 'lie' = 'sit';
 
   constructor(
     scene: Phaser.Scene,
@@ -122,7 +125,8 @@ export class PetCarePortraitRig {
         padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5, 1)
-      .setResolution(2);
+      .setResolution(2)
+      .setAlpha(0);
 
     this.hitPad = scene.add
       .rectangle(0, -4, 128, 120, 0xffffff, 0.001)
@@ -265,6 +269,7 @@ export class PetCarePortraitRig {
       this.syncJ4lpanPortrait(this.bubble.text);
     }
     this.toys.update(deltaMs, 0, -12);
+    this.tickIdleRoam(_nowMs, mood.label);
     if (this.toys.isChaseActive()) {
       this.applyExpression({
         anim: 'play_pounce',
@@ -310,7 +315,8 @@ export class PetCarePortraitRig {
         ease: 'Sine.easeOut',
       });
     }
-    if (expr.bubbleVi && expr.bubbleVi !== this.bubble.text) {
+    const showBubble = shouldShowCareBubble(expr);
+    if (showBubble && expr.bubbleVi && expr.bubbleVi !== this.bubble.text) {
       this.bubble.setAlpha(0.55);
       this.scene.tweens.add({
         targets: this.bubble,
@@ -318,6 +324,8 @@ export class PetCarePortraitRig {
         duration: 220,
         ease: 'Quad.easeOut',
       });
+    } else if (!showBubble) {
+      this.bubble.setAlpha(0);
     }
     if (this.j4lpanMode) this.j4lpanFlash = j4lpanFlashFromExpression(expr, Date.now());
     if (this.body && (expr.anim === 'play_pounce' || expr.anim === 'eat')) {
@@ -330,7 +338,8 @@ export class PetCarePortraitRig {
       });
     }
     this.playAnim(expr.anim);
-    if (expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
+    if (showBubble && expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
+    else if (!showBubble) this.bubble.setText('');
     if (this.j4lpanMode) this.syncJ4lpanPortrait(expr.bubbleVi ?? this.bubble.text);
   }
 
@@ -363,5 +372,36 @@ export class PetCarePortraitRig {
 
   private playAnim(state: PetAnimState): void {
     this.framePlayer?.setState(state);
+  }
+
+  /** Gentle sit → walk → lie loop when the player is quiet (body language, no HUD spam). */
+  private tickIdleRoam(nowMs: number, moodLabel: string): void {
+    if (this.j4lpanMode || !this.body) return;
+    if (nowMs - this.getLastInteractionMs() < 9_000) return;
+    if (nowMs < this.idleRoamAt) return;
+    this.idleRoamAt = nowMs + (moodLabel === 'sleepy' ? 7_500 : 5_200) + Math.random() * 2_800;
+
+    if (moodLabel === 'sleepy' || moodLabel === 'cozy') {
+      this.idleRoamPhase = this.idleRoamPhase === 'lie' ? 'sit' : 'lie';
+      this.playAnim(this.idleRoamPhase === 'lie' ? 'lie_down' : 'sit_south');
+      return;
+    }
+    if (this.idleRoamPhase === 'sit') {
+      this.idleRoamPhase = 'walk';
+      this.playAnim('walk_south');
+      this.scene.tweens.add({
+        targets: this.root,
+        x: `+=${Phaser.Math.Between(-22, 22)}`,
+        duration: 880,
+        ease: 'Sine.inOut',
+        onComplete: () => {
+          this.idleRoamPhase = 'sit';
+          this.playAnim('sit_south');
+        },
+      });
+      return;
+    }
+    this.idleRoamPhase = 'sit';
+    this.playAnim('sit_south');
   }
 }

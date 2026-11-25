@@ -5,6 +5,8 @@ import type { PetCareJ4lpanPortraitPayload } from '../../shared/petLiving/petCar
 import { petCareJ4lpanPortraitEnabled } from '../../shared/petLiving/petCare/petCareJ4lpanPortraitFlag';
 import type { PetSnapshot } from '../../shared/pet/petTypes';
 import { getPetMoodLabelVi } from '../../shared/pet/petNeeds';
+import { shouldShowCareBubble } from '../../shared/petLiving/petCare/petCareTypes';
+import type { PetCareExpression } from '../../shared/petLiving/petCare/petCareTypes';
 
 interface PetCareJ4lpanPortraitProps {
   active: boolean;
@@ -20,9 +22,21 @@ const EMPTY_PAYLOAD: PetCareJ4lpanPortraitPayload = {
   serverNowMs: 0,
 };
 
+function bubbleFromPayload(bubbleVi: string): PetCareExpression {
+  return {
+    bubbleVi,
+    refuse: bubbleVi.includes('không') || bubbleVi.includes('Hừm'),
+    squeak: bubbleVi.startsWith('…') ? 'refuse' : undefined,
+    anim: 'sit_south',
+    earTilt: 0,
+    tail: 'idle',
+    eyeMood: 'open',
+  };
+}
+
 export function PetCareJ4lpanPortrait({ active, fallbackSnapshot }: PetCareJ4lpanPortraitProps) {
   const [payload, setPayload] = useState<PetCareJ4lpanPortraitPayload>(EMPTY_PAYLOAD);
-  const [tick, setTick] = useState(0);
+  const [nowMs, setNowMs] = useState(0);
 
   useEffect(() => {
     if (!active || !petCareJ4lpanPortraitEnabled()) return;
@@ -30,9 +44,14 @@ export function PetCareJ4lpanPortrait({ active, fallbackSnapshot }: PetCareJ4lpa
   }, [active]);
 
   useEffect(() => {
-    if (!active) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), 500);
-    return () => clearInterval(id);
+    if (!active || !petCareJ4lpanPortraitEnabled()) return;
+    let raf = 0;
+    const loop = () => {
+      setNowMs(Date.now());
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
   }, [active]);
 
   if (!active || !petCareJ4lpanPortraitEnabled()) return null;
@@ -40,12 +59,12 @@ export function PetCareJ4lpanPortrait({ active, fallbackSnapshot }: PetCareJ4lpa
   const snapshot = payload.snapshot ?? fallbackSnapshot;
   if (!snapshot) return null;
 
-  const nowMs = (payload.serverNowMs || snapshot.serverNowMs || 0) + tick * 500;
   const moodLabel = getPetMoodLabelVi(snapshot.emotion);
+  const showBubble = shouldShowCareBubble(bubbleFromPayload(payload.bubbleVi));
 
   return (
     <div className="pet-care-overlay__portrait" data-testid="pet-care-j4lpan-portrait">
-      {payload.bubbleVi ? (
+      {showBubble && payload.bubbleVi ? (
         <p className="pet-care-overlay__bubble" data-testid="pet-care-j4lpan-bubble">
           {payload.bubbleVi}
         </p>
