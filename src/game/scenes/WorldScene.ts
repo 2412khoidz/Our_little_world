@@ -12,6 +12,7 @@ import {
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
+import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
   buildMovementCollisionGrid,
   findPlacementAtTile,
@@ -1866,6 +1867,7 @@ export class WorldScene extends Phaser.Scene {
         maxRadiusPx: 44,
       });
     }
+    interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId));
 
     gameEventBus.emit('evt:interaction-frame', {
       mapId: this.currentMapId,

@@ -1,4 +1,5 @@
 import type { MapId } from '../types';
+import type { InteractableDomainKind } from '../interaction/interactionTypes';
 
 export interface TiledObjectProperty {
   name: string;
@@ -63,6 +64,15 @@ export interface ParsedTiledWorldMap {
     labelVi: string;
     dialogueVi: string;
   }[];
+  interactableSpawns: {
+    id: string;
+    kind: InteractableDomainKind;
+    tileX: number;
+    tileY: number;
+    labelVi: string;
+    anchorId?: string;
+    maxRadiusPx?: number;
+  }[];
 }
 
 function propMap(obj: TiledMapObject): Record<string, string | number | boolean> {
@@ -93,6 +103,7 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
 
   const portals: ParsedTiledPortal[] = [];
   const npcSpawns: ParsedTiledWorldMap['npcSpawns'] = [];
+  const interactableSpawns: ParsedTiledWorldMap['interactableSpawns'] = [];
 
   for (const layer of json.layers) {
     if (layer.type !== 'objectgroup' || !layer.objects) continue;
@@ -127,6 +138,19 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
           dialogueVi: String(props.dialogueVi ?? 'Xin chào!'),
         });
       }
+      if (lname === 'interactables' || obj.type === 'interactable') {
+        const props = propMap(obj);
+        const kind = String(props.kind ?? 'bench') as InteractableDomainKind;
+        interactableSpawns.push({
+          id: obj.name,
+          kind,
+          tileX,
+          tileY,
+          labelVi: String(props.labelVi ?? obj.name),
+          anchorId: props.anchorId ? String(props.anchorId) : undefined,
+          maxRadiusPx: props.maxRadiusPx !== undefined ? Number(props.maxRadiusPx) : undefined,
+        });
+      }
     }
   }
 
@@ -138,6 +162,7 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
     blockedTiles: blocked,
     portals,
     npcSpawns,
+    interactableSpawns,
   };
 }
 

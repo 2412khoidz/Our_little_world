@@ -508,6 +508,22 @@ function buildFarmMap() {
     collision[idx(w, x, 2)] = 1;
   }
 
+  // Khu chăn nuôi (tây nam) — hàng rào + cổng
+  for (let y = 38; y <= 48; y += 1) {
+    for (let x = 6; x <= 18; x += 1) {
+      const edge = y === 38 || y === 48 || x === 6 || x === 18;
+      if (!edge) continue;
+      if (x === 12 && y === 48) continue;
+      vegetation[idx(w, x, y)] = y === 38 || y === 48 ? T.fenceH : T.fenceV;
+      collision[idx(w, x, y)] = 1;
+    }
+  }
+  for (let x = 8; x <= 14; x += 2) {
+    ground[idx(w, x, 42)] = T.soil;
+  }
+  paths[idx(w, 7, 7)] = T.pathB;
+  paths[idx(w, 8, 7)] = T.pathA;
+
   // Đường đến làng (đông)
   for (let x = 50; x < w - 1; x += 1) {
     paths[idx(w, x, 20)] = T.pathA;
@@ -546,6 +562,64 @@ function buildFarmMap() {
     ],
   };
 
+  const interactables = {
+    id: 11,
+    name: 'Interactables',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: [
+      {
+        id: 2,
+        name: 'farm_shipping_bin',
+        type: 'interactable',
+        x: 7 * 16,
+        y: 7 * 16,
+        width: 16,
+        height: 16,
+        properties: [
+          { name: 'kind', type: 'string', value: 'shipping_bin' },
+          { name: 'anchorId', type: 'string', value: 'farm_shipping_bin' },
+          { name: 'labelVi', type: 'string', value: 'Thùng gom hàng — bán qua đêm (V0.2)' },
+          { name: 'maxRadiusPx', type: 'int', value: 46 },
+        ],
+      },
+      {
+        id: 3,
+        name: 'farm_pond_water',
+        type: 'interactable',
+        x: 52 * 16,
+        y: 11 * 16,
+        width: 16,
+        height: 16,
+        properties: [
+          { name: 'kind', type: 'string', value: 'water_source' },
+          { name: 'anchorId', type: 'string', value: 'farm_pond_water' },
+          { name: 'labelVi', type: 'string', value: 'Ao nước — múc nước tưới' },
+          { name: 'maxRadiusPx', type: 'int', value: 54 },
+        ],
+      },
+      {
+        id: 4,
+        name: 'farm_barn_door',
+        type: 'interactable',
+        x: 9 * 16,
+        y: 9 * 16,
+        width: 16,
+        height: 16,
+        properties: [
+          { name: 'kind', type: 'string', value: 'door' },
+          { name: 'anchorId', type: 'string', value: 'farm_barn_door' },
+          { name: 'labelVi', type: 'string', value: 'Cửa chuồng — chưa mở' },
+          { name: 'maxRadiusPx', type: 'int', value: 40 },
+        ],
+      },
+    ],
+  };
+
   return makeTiledMap(
     'farm',
     w,
@@ -558,7 +632,7 @@ function buildFarmMap() {
       tileLayer('Vegetation', 5, vegetation, w, h),
       tileLayer('Collision', 6, collision, w, h),
     ],
-    [portals],
+    [portals, interactables],
   );
 }
 
