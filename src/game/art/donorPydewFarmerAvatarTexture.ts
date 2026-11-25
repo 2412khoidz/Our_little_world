@@ -143,18 +143,16 @@ export function registerDonorPydewFarmerAnims(scene: Phaser.Scene, textureKey: s
   }
 
   for (const facing of FACING8_VALUES) {
-    const cardinal = cardinalFromFacing8(facing);
     const walkKey = avatarWalkAnimKey(textureKey, facing);
-    const cardinalKey = `${textureKey}:walk-${cardinal}`;
-    if (scene.anims.exists(cardinalKey) && !scene.anims.exists(walkKey)) {
-      const src = scene.anims.get(cardinalKey);
-      scene.anims.create({
-        key: walkKey,
-        frames: src.frames,
-        frameRate: src.frameRate,
-        repeat: src.repeat,
-      });
-    }
+    if (scene.anims.exists(walkKey)) continue;
+    const cardinal = cardinalFromFacing8(facing);
+    const dir = PYDEW_CARDINAL_DIR[cardinal];
+    scene.anims.create({
+      key: walkKey,
+      frames: frameSequence(textureKey, rows.walk, dir, 4),
+      frameRate: 9,
+      repeat: -1,
+    });
   }
 }
 
