@@ -38,7 +38,7 @@ async function main() {
     await waitServer();
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 430, height: 932 } });
-    await page.goto(`${BASE}/?extended-world=1`);
+    await page.goto(`${BASE}/?extended-world=1&vqg-capture=1`);
     await fetch(`${BASE}/api/dev-lan/reset`, { method: 'POST', body: '{}' });
     await page.getByTestId('btn-dev-seed-couple').click();
     await page.getByTestId('preset-partner-a').click();
@@ -52,6 +52,17 @@ async function main() {
     await page.getByTestId('nav-farm').click({ force: true });
     await page.waitForTimeout(2500);
     await page.screenshot({ path: path.join(ART, 'farm-fish-p0-farm-map.png') });
+    await page.evaluate(() => {
+      window.__OLW_VQG?.jump('farm', 7, 7);
+    });
+    await page.waitForTimeout(2000);
+    const prompt = page.getByTestId('contextual-prompt-badge');
+    await prompt.waitFor({ state: 'visible', timeout: 12_000 });
+    await page.screenshot({ path: path.join(ART, 'farm-fish-p0-shipping-prompt.png') });
+    await page.getByTestId('btn-context-primary').click();
+    await page.getByRole('heading', { name: 'Thùng giao hàng' }).waitFor({ state: 'visible', timeout: 10_000 });
+    await page.screenshot({ path: path.join(ART, 'farm-fish-p0-shipping-modal.png') });
+    await page.getByRole('button', { name: 'Đóng' }).click();
     await page.getByTestId('nav-outdoor').click({ force: true });
     await page.waitForTimeout(2500);
     await page.screenshot({ path: path.join(ART, 'farm-fish-p0-outdoor-fishing.png') });
