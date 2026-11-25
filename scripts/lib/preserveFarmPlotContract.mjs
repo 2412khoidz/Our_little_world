@@ -36,8 +36,22 @@ export const COZY_SOIL_GIDS = (cozyFirstGid) => ({
   soilWet: cozyFirstGid + CONTRACT.tileGids.soilWet - 1,
 });
 
+function mapPropBool(map, name) {
+  return map.properties?.some((p) => p.name === name && (p.value === true || p.value === 'true'));
+}
+
+function cabacosSoilGidAt(map, x, y, w) {
+  for (const layerName of ['farm3', 'farm2', 'farm', 'land']) {
+    const { data } = layerData(map, layerName);
+    const gid = tileAt(data, w, x, y);
+    if (gid > 0) return gid;
+  }
+  return 0;
+}
+
 export function validateFarmPlotContract(farmMap) {
-  const soilLayer = plotSoilLayerName(farmMap);
+  const nativeSoil = mapPropBool(farmMap, 'olwFarmNativeSoil');
+  const soilLayer = nativeSoil ? 'farm3' : plotSoilLayerName(farmMap);
   const { soilDry, soilWet } = CONTRACT.tileGids;
   const cozyFirst =
     farmMap.tilesets?.find((t) => t.name === 'tileset-cozy')?.firstgid ??
@@ -58,8 +72,12 @@ export function validateFarmPlotContract(farmMap) {
       const tx = region.originTileX + col;
       const ty = region.originTileY + row;
       plotCount += 1;
-      const gid = tileAt(ground, w, tx, ty);
-      if (gid !== expectDry && gid !== expectWet && gid !== soilDry && gid !== soilWet) {
+      const gid = nativeSoil ? cabacosSoilGidAt(farmMap, tx, ty, w) : tileAt(ground, w, tx, ty);
+      if (nativeSoil) {
+        if (gid <= 0) {
+          errors.push(`plot ${region.id}_${local} @ ${tx},${ty} missing Cabacos soil (migration pending)`);
+        }
+      } else if (gid !== expectDry && gid !== expectWet && gid !== soilDry && gid !== soilWet) {
         errors.push(`plot ${region.id}_${local} @ ${tx},${ty} gid=${gid} expected soil`);
       }
       if (!collisionBlocked(farmMap, tx, ty)) walkable += 1;

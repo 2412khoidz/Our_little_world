@@ -363,7 +363,7 @@ export class WorldScene extends Phaser.Scene {
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
-      if (mapId === 'shop' && this.isDonorCabacosShop()) {
+      if (mapId === 'shop' && this.isDonorCabacosShop() && !this.isDonorCabacosShopTiled()) {
         renderDonorCabacosShopInterior(this, (obj) => this.mapLayers.push(obj));
       } else {
         this.buildTiledWorldMap(mapId);
@@ -621,6 +621,12 @@ export class WorldScene extends Phaser.Scene {
     const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
     const donor = raw?.properties?.find((p) => p.name === 'olwDonor')?.value;
     return donor === 'cabacos';
+  }
+
+  private isDonorCabacosShopTiled(): boolean {
+    const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
+    const mode = raw?.properties?.find((p) => p.name === 'olwShopRender')?.value;
+    return mode === 'tiled';
   }
 
   private buildTiledWorldMap(mapId: MapId): void {

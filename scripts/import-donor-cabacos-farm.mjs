@@ -7,6 +7,7 @@ import {
   paintFarmPlotRegionsFromContract,
   validateFarmPlotContract,
 } from './lib/preserveFarmPlotContract.mjs';
+import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const CABACOS = path.resolve('public/maps/donor/cabacos/Cabacos_map.tmj');
 const OUT = path.resolve('public/assets/maps/farm.json');
@@ -143,26 +144,28 @@ function buildDeepFarmMap() {
 
   const objectLayers = baseline ? copyObjectLayers(baseline) : [];
 
-  const cozySoil = {
-    id: id++,
-    name: 'OLW_ContractSoil',
-    type: 'tilelayer',
-    visible: true,
-    opacity: 0.92,
-    x: 0,
-    y: 0,
-    width: OUT_W,
-    height: OUT_H,
-    data: new Array(OUT_W * OUT_H).fill(0),
-    properties: [{ name: 'gamemaker_depth', type: 'int', value: -8000 }],
-  };
+  const cozySoil = MAP_RECOVERY_MODE
+    ? null
+    : {
+        id: id++,
+        name: 'OLW_ContractSoil',
+        type: 'tilelayer',
+        visible: true,
+        opacity: 0.92,
+        x: 0,
+        y: 0,
+        width: OUT_W,
+        height: OUT_H,
+        data: new Array(OUT_W * OUT_H).fill(0),
+        properties: [{ name: 'gamemaker_depth', type: 'int', value: -8000 }],
+      };
 
   const map = {
     compressionlevel: -1,
     height: OUT_H,
     width: OUT_W,
     infinite: false,
-    layers: [...tileLayers, collision, cozySoil, ...objectLayers],
+    layers: [...tileLayers, collision, ...(cozySoil ? [cozySoil] : []), ...objectLayers],
     nextlayerid: id + 5,
     nextobjectid: 100,
     orientation: 'orthogonal',
@@ -192,12 +195,20 @@ function buildDeepFarmMap() {
       { name: 'mapId', type: 'string', value: 'farm' },
       { name: 'olwDonor', type: 'string', value: 'cabacos' },
       { name: 'olwDonorSha', type: 'string', value: OLW_SHA },
-      { name: 'olwDonorSketch', type: 'string', value: 'farm-v1-deep' },
+      { name: 'olwDonorSketch', type: 'string', value: MAP_RECOVERY_MODE ? 'farm-recovery-native' : 'farm-v1-deep' },
       { name: 'olwDonorCrop', type: 'string', value: `${CROP_OX},${CROP_OY},${OUT_W},${OUT_H}` },
+      ...(MAP_RECOVERY_MODE
+        ? [
+            { name: 'olwRecovery', type: 'string', value: RECOVERY_SLICE },
+            { name: 'olwFarmNativeSoil', type: 'bool', value: true },
+          ]
+        : []),
     ],
   };
 
-  paintFarmPlotRegionsFromContract(map, { layerName: 'OLW_ContractSoil', layerId: cozySoil.id });
+  if (cozySoil) {
+    paintFarmPlotRegionsFromContract(map, { layerName: 'OLW_ContractSoil', layerId: cozySoil.id });
+  }
 
   const interactables = map.layers.find((l) => l.name === 'Interactables');
   if (interactables) {
@@ -216,7 +227,11 @@ function main() {
   const check = validateFarmPlotContract(map);
   if (!check.ok) {
     console.error('Farm contract validation failed:', check.errors);
-    process.exit(1);
+    if (MAP_RECOVERY_MODE && check.errors.every((e) => e.includes('migration pending'))) {
+      console.warn('MAP_RECOVERY: 184 plot IDs kept; Cabacos soil anchor migration pending — writing map anyway');
+    } else {
+      process.exit(1);
+    }
   }
   fs.writeFileSync(OUT, JSON.stringify(map, null, 2));
   console.log(

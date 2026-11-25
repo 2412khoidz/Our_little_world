@@ -9,7 +9,7 @@ const SKIP_LAYERS = new Set([
   'Portals',
   'Interactables',
   'NPCSpawns',
-  // Not in SKIP: OLW_ContractSoil (cozy plot overlay), Cabacos visual layers
+  'OLW_ContractSoil',
 ]);
 
 /** Cabacos / GameMaker export layer draw order (depth from `gamemaker_depth` when present). */
