@@ -23,7 +23,13 @@
 
 Không fork `PetSnapshot` / memory / personality.
 
-## Slice 4 (branch hiện tại)
+## Slice 5 (branch hiện tại)
+
+- `petCareHandFeedAuthority.ts` — Supabase/Dev LAN `consumeHandFood` + optional `petLiving.getLivingSnapshot`; DEV fallback isolated
+- `PetLivingBackend` on WorldBackend (types aligned #10)
+- Session goals tracker + mobile overlay touch targets
+
+## Slice 4
 
 - **Dedicated care atlas** `petCarePortraitPainter.ts` (48px procedural, không copy upscaled 24px)
 - **`pet_consume_hand_food`** migration + Supabase `consumeHandFood` (prod path); DEV fallback presentation chỉ khi `?living-pet=1` + `SERVER_AUTHORITY_REQUIRED`

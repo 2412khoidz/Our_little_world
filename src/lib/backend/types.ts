@@ -120,6 +120,67 @@ export interface PetBackend {
   }): Promise<MutationResult<{ pet: PetSnapshot; sku: string; quality: string }>>;
 }
 
+/** Mission 04B-2 — server-authoritative living pet (PR #10). Optional until migrations land. */
+export interface PetLivingBackend {
+  getLivingSnapshot(
+    worldId: string,
+  ): Promise<MutationResult<import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot>>;
+  beginLivingAction(params: {
+    worldId: string;
+    petId: string;
+    actionId: 'eat_bowl' | 'drink_water';
+    targetAffordanceId: string;
+    expectedLivingVersion: number;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      instanceId: string;
+      snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+    }>
+  >;
+  submitLivingProposal(params: {
+    worldId: string;
+    instanceId: string;
+    proposal: 'movement_ready' | 'animation_finished';
+    idempotencyKey: string;
+    proof?: { standTileX: number; standTileY: number } | null;
+  }): Promise<
+    MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>
+  >;
+  createFoodOffer(params: {
+    worldId: string;
+    petId: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    ttlSeconds: number;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      offerId: string;
+      snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+    }>
+  >;
+  respondFoodOffer(params: {
+    worldId: string;
+    offerId: string;
+    response: 'cancel';
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>
+  >;
+  evaluateFoodOffer(params: {
+    worldId: string;
+    petId: string;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      outcome?: string;
+      offerId?: string;
+      snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+    }>
+  >;
+}
+
 export interface SpikeCinemaPacket {
   kind: 'state' | 'command' | 'ready' | 'ping' | 'pong';
   senderId: string;
@@ -261,6 +322,7 @@ export interface WorldBackend {
 
   readonly inventory?: InventoryBackend;
   readonly pet?: PetBackend;
+  readonly petLiving?: PetLivingBackend;
   readonly study?: StudyBackend;
   readonly mailbox?: MailboxBackend;
   readonly devConsole?: DevConsoleBackend;

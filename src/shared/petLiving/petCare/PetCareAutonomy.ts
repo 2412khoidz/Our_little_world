@@ -31,6 +31,9 @@ export class PetCareAutonomy {
     if (this.mood.label === 'sleepy' && roll < 0.55) {
       return { kind: 'proactive', action: 'observe', bubbleVi: 'Zzz… tự ngủ một chút' };
     }
+    if (this.mood.label === 'affectionate' && roll < 0.32) {
+      return { kind: 'proactive', action: 'pour_water', bubbleVi: 'Khát nước quá~' };
+    }
     if (this.mood.label === 'hungry' && roll < 0.4) {
       return { kind: 'proactive', action: 'call', bubbleVi: 'Meo meo… có món không?' };
     }

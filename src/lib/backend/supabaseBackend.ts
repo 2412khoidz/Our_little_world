@@ -8,6 +8,7 @@ import type {
   PetInteractionResult,
   PetSnapshot,
 } from '../../shared/pet/petTypes';
+import type { PetLivingAuthoritySnapshot } from '../../shared/petLiving/petAuthorityTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,
@@ -569,6 +570,83 @@ export function createSupabaseBackend(): WorldBackend {
         }
         const raw = data as { pet: PetSnapshot; sku: string; quality: string };
         return { ok: true, data: raw };
+      },
+    },
+
+    petLiving: {
+      async getLivingSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('pet_living_get_snapshot', { p_world_id: worldId });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetLivingAuthoritySnapshot };
+      },
+      async beginLivingAction(params) {
+        const { data, error } = await supabase.rpc('pet_living_begin_action', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_action_id: params.actionId,
+          p_target_affordance_id: params.targetAffordanceId,
+          p_expected_living_version: params.expectedLivingVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { instanceId: string; snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async submitLivingProposal(params) {
+        const { data, error } = await supabase.rpc('pet_living_submit_proposal', {
+          p_world_id: params.worldId,
+          p_instance_id: params.instanceId,
+          p_proposal: params.proposal,
+          p_idempotency_key: params.idempotencyKey,
+          p_proof: params.proof ?? null,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async createFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_create', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_item_sku: params.itemSku,
+          p_quality: params.quality,
+          p_ttl_seconds: params.ttlSeconds,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { offerId: string; snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async respondFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_respond', {
+          p_world_id: params.worldId,
+          p_offer_id: params.offerId,
+          p_response: params.response,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async evaluateFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_evaluate', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { outcome?: string; offerId?: string; snapshot: PetLivingAuthoritySnapshot },
+        };
       },
     },
 
