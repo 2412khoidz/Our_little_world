@@ -139,6 +139,7 @@ export class WorldScene extends Phaser.Scene {
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
+  private lastLivingPetTelemetryAtMs = 0;
   private lastInteractionFrameAtMs = 0;
   private contextLost = false;
   private paused = false;
@@ -1131,6 +1132,17 @@ export class WorldScene extends Phaser.Scene {
         foodOffer: null,
       });
       this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
+      if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
+        this.lastLivingPetTelemetryAtMs = now;
+        gameEventBus.emit(
+          'evt:living-pet-dev-telemetry',
+          this.livingPetDriver.getDevTelemetry(
+            this.currentMapId,
+            this.petEntity.isOnMapVisible(),
+            now,
+          ),
+        );
+      }
     } else {
       this.petEntity?.update(dtSec);
     }
