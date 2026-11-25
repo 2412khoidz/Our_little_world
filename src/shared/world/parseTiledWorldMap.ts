@@ -55,7 +55,14 @@ export interface ParsedTiledWorldMap {
   /** Single source for movement blocking (Collision layer + fallback blocking layers). */
   blockedTiles: Set<string>;
   portals: ParsedTiledPortal[];
-  npcSpawns: { id: string; tileX: number; tileY: number; role: string }[];
+  npcSpawns: {
+    id: string;
+    tileX: number;
+    tileY: number;
+    role: string;
+    labelVi: string;
+    dialogueVi: string;
+  }[];
 }
 
 function propMap(obj: TiledMapObject): Record<string, string | number | boolean> {
@@ -116,6 +123,8 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
           tileX,
           tileY,
           role: String(props.role ?? 'idle'),
+          labelVi: String(props.labelVi ?? obj.name),
+          dialogueVi: String(props.dialogueVi ?? 'Xin chào!'),
         });
       }
     }

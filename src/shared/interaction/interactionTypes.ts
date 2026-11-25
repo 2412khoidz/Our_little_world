@@ -83,6 +83,7 @@ export type InteractionActionCode =
   | 'enter_home'
   | 'exit_home'
   | 'use_portal'
+  | 'talk_npc'
   | 'inspect_prop'
   | 'put_away_held';
 

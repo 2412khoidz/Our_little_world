@@ -178,6 +178,8 @@ function actionForTarget(
       };
     case 'portal':
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
+    case 'shop_npc':
+      return { code: 'talk_npc', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     default:
       return { code: 'inspect_prop', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
   }

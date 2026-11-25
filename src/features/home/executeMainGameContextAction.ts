@@ -114,6 +114,11 @@ export async function executeMainGameContextAction(
     return;
   }
 
+  if (code === 'talk_npc') {
+    gameEventBus.emit('cmd:trigger-interact');
+    return;
+  }
+
   if (code === 'use_portal') {
     const def = getMapDefinition(ctx.mapId);
     const portal = def.portals.find((p) => p.id === action.targetId) ?? def.portals[0];

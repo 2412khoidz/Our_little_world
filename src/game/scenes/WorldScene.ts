@@ -5,6 +5,12 @@ import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
 import { MapDebugOverlay } from '../dev/mapDebugOverlay';
 import { renderOutdoorWorld } from '../world/outdoorRenderer';
 import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
+import {
+  nearestTiledNpc,
+  spawnTiledWorldNpcs,
+  tickTiledWorldNpcs,
+  type TiledWorldNpcEntity,
+} from '../world/tiledWorldNpcs';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import {
   buildMovementCollisionGrid,
@@ -141,6 +147,7 @@ export class WorldScene extends Phaser.Scene {
 
   private lastPortalAtMs = 0;
   private buildingMap = false;
+  private tiledNpcs: TiledWorldNpcEntity[] = [];
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
@@ -288,6 +295,11 @@ export class WorldScene extends Phaser.Scene {
       mote.sprite.destroy();
     }
     this.motes = [];
+    for (const npc of this.tiledNpcs) {
+      npc.body.destroy();
+      npc.label.destroy();
+    }
+    this.tiledNpcs = [];
     this.tilemap?.destroy();
     this.tilemap = null;
 
@@ -301,6 +313,7 @@ export class WorldScene extends Phaser.Scene {
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
       this.buildTiledWorldMap(mapId);
+      this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
       this.moteBounds = outdoor.moteBounds;
@@ -1123,6 +1136,7 @@ export class WorldScene extends Phaser.Scene {
       this.petEntity?.update(dtSec);
     }
     this.updateRemoteEntities(deltaMs);
+    tickTiledWorldNpcs(this.tiledNpcs, time);
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);
@@ -1314,11 +1328,18 @@ export class WorldScene extends Phaser.Scene {
     const tileY = (this.localSprite.y - 8) / TILE_SIZE;
     const def = getMapDefinition(this.currentMapId);
 
-    for (const portal of def.portals) {
+    const tileXi = Math.floor(tileX);
+    const tileYi = Math.floor(tileY);
+  for (const portal of def.portals) {
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
       if (dist <= portal.radiusTiles) {
         return { kind: 'portal', labelVi: portal.labelVi };
       }
+    }
+
+    const npc = nearestTiledNpc(this.tiledNpcs, tileXi, tileYi);
+    if (npc) {
+      return { kind: 'npc_talk', labelVi: `Trò chuyện · ${npc.labelVi}` };
     }
 
     if (this.currentMapId === 'home' && this.petEntity?.isNearbyTile(tileX, tileY)) {
@@ -1384,12 +1405,12 @@ export class WorldScene extends Phaser.Scene {
     const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
     const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
 
-    if (this.buildingMap || now - this.lastPortalAtMs < 1800) return;
+    if (this.buildingMap || now - this.lastPortalAtMs < 2200) return;
 
     for (const portal of def.portals) {
       if (portal.targetMapId === this.currentMapId) continue;
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-      if (dist <= portal.radiusTiles) {
+      if (dist <= 0.85) {
         this.lastPortalAtMs = now;
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
@@ -1432,6 +1453,17 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.emit('evt:open-photo-frame');
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
+    } else if (near.kind === 'npc_talk') {
+      const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
+      const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
+      const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
+      if (npc) {
+        gameEventBus.emit('evt:preview-notice', {
+          title: npc.labelVi,
+          version: 'Làng · V0.2 preview',
+          body: npc.dialogueVi,
+        });
+      }
     } else if (
       near.kind === 'sofa_sit' ||
       near.kind === 'bench_sit' ||
@@ -1824,6 +1856,16 @@ export class WorldScene extends Phaser.Scene {
         waterFull: false,
       },
     });
+    for (const npc of this.tiledNpcs) {
+      interactables.push({
+        id: `npc:${npc.id}`,
+        kind: 'shop_npc',
+        labelVi: `Trò chuyện · ${npc.labelVi}`,
+        x: npc.body.x,
+        y: npc.body.y,
+        maxRadiusPx: 44,
+      });
+    }
 
     gameEventBus.emit('evt:interaction-frame', {
       mapId: this.currentMapId,

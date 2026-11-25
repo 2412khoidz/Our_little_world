@@ -36,7 +36,8 @@ export interface NearbyInteractable {
     | 'bench_sit'
     | 'bed_lie'
     | 'photo_frame'
-    | 'mailbox';
+    | 'mailbox'
+    | 'npc_talk';
   labelVi: string;
 }
 

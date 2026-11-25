@@ -347,6 +347,59 @@ function buildTileset() {
     c.circle(lx + 12, ly + 2, 3, PAL.sakuraLight);
   }
 
+  // Row 3: world-zone terrain (sand, water, farm soil, forest floor)
+  for (let variant = 0; variant < 2; variant += 1) {
+    const [x, y] = tile(0 + variant, 3);
+    c.rect(x, y, 16, 16, PAL.stoneLight);
+    for (let i = 0; i < 6; i += 1) {
+      c.px(x + 2 + (i * 2 + variant) % 12, y + 3 + (i % 3) * 4, variant ? PAL.stoneMid : PAL.cream);
+    }
+    c.px(x + 4, y + 12, PAL.sageLight);
+    c.px(x + 10, y + 8, PAL.stoneDark);
+  }
+  {
+    const [x, y] = tile(2, 3);
+    c.rect(x, y, 16, 16, PAL.teal);
+    c.rect(x + 1, y + 1, 14, 12, PAL.skyMid);
+    c.px(x + 3, y + 4, PAL.cream);
+    c.px(x + 11, y + 7, PAL.skyLight);
+    c.px(x + 7, y + 10, PAL.cream);
+  }
+  {
+    const [x, y] = tile(3, 3);
+    drawGrassTile(c, x, y, 2);
+    c.rect(x, y + 10, 16, 6, PAL.stoneLight);
+    c.rect(x + 2, y + 11, 12, 4, PAL.stoneMid);
+  }
+  {
+    const [x, y] = tile(4, 3);
+    c.rect(x, y, 16, 16, '#a67c52');
+    for (let row = 0; row < 4; row += 1) {
+      c.rect(x, y + row * 4, 16, 1, row % 2 ? '#8b6544' : '#966b48');
+    }
+  }
+  {
+    const [x, y] = tile(5, 3);
+    c.rect(x, y, 16, 16, '#7a5a3c');
+    c.rect(x + 2, y + 4, 12, 8, '#6b4e34');
+    c.px(x + 5, y + 7, PAL.sageDark);
+    c.px(x + 10, y + 9, PAL.sageMid);
+  }
+  {
+    const [x, y] = tile(6, 3);
+    drawGrassTile(c, x, y, 1);
+    c.rect(x + 1, y + 1, 4, 4, PAL.sageDark);
+    c.px(x + 11, y + 12, PAL.sageLight);
+  }
+  {
+    const [x, y] = tile(7, 3);
+    c.rect(x, y, 16, 16, PAL.stoneMid);
+    for (let col = 0; col < 4; col += 1) {
+      c.rect(x + col * 4, y, 3, 15, PAL.stoneLight);
+      c.rect(x + col * 4 + 3, y, 1, 16, PAL.stoneDark);
+    }
+  }
+
   c.save(path.join(OUT_STARTER, 'tileset-cozy.png'));
 }
 
