@@ -45,7 +45,7 @@ Phân loại theo mission: **(1)** tích hợp game chính · **(2)** sandbox/de
 | Economy ledger / shop / shipping | `src/shared/economy/`, `shippingBin`, `shop` | Không RPC V0.2, không xu UI |
 | Order board / NPC market | `orderBoard`, docs OLW-020 | Simulator only |
 | Mini-game PvP sessions | `src/shared/minigames/` + components | Chưa `WorldBackend.minigames` |
-| Physical interaction resolver | `src/shared/interaction/` | **Chỉ** Expansion/Combined scenes |
+| Physical interaction resolver | `src/shared/interaction/` | **Game chính** (Mission 03) + sandbox Combined |
 | Shared Life V0.3 (notebook sync) | `sharedLifeTypes`, Dev LAN stubs | UI notebook trong sandbox; chưa shell chính |
 | DeepSeek pet primitives | `src/shared/petAdvanced/primitives/` | Adapter fixture thay thế trong lab |
 | Game UI kit (hotbar, dialogue) | `src/ui/designSystem/` | Chưa gắn `App.tsx` production |

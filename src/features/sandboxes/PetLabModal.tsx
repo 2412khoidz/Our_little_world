@@ -11,8 +11,14 @@ import {
   PET_LAB_SCENARIOS,
   buildLabAffordances,
   evaluateLivingPetStep,
-  runPetLabVerificationTrace,
+  runPetLabSessionTrace,
 } from '../../shared/petLiving/petLabSimulation';
+import {
+  buildBrainDebugTrace,
+  createPetBrainState,
+  snapshotToInput,
+  tickPetBrain,
+} from '../../shared/petLiving/petAutonomousController';
 import { renderLivingCatPreviewToCanvas } from '../../game/pet/petSpriteBuilder';
 import { useEffect, useRef } from 'react';
 
@@ -49,9 +55,16 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
   }, [baseCtx, scenarioId]);
 
   const trace = useMemo(
-    () => runPetLabVerificationTrace({ presetId: scenarioId, traits, steps: 18 }),
+    () => runPetLabSessionTrace({ presetId: scenarioId, traits, durationMs: 72_000, stepMs: 2500 }),
     [scenarioId, traits],
   );
+
+  const liveBrain = useMemo(() => {
+    const affordances = buildLabAffordances(scenarioId === 'target_moved' ? 'pet_bed' : undefined);
+    const state = createPetBrainState();
+    const out = tickPetBrain(state, snapshotToInput(baseCtx, affordances));
+    return buildBrainDebugTrace(out.state);
+  }, [baseCtx, scenarioId]);
 
   const previewRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
@@ -94,7 +107,7 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
             <Activity size={18} /> Pet Intelligence Lab (Dev-Only — Không hiển thị cho người chơi)
           </h1>
           <div style={{ fontSize: 12, opacity: 0.85 }}>
-            18 Scenario Presets · 7 Personality Traits · 8 Needs · 9 Emotions · 24-Event Memory Adapter · Utility Breakdown
+            Utility AI (DeepSeek primitives) · Autonomous controller · Commitment/cooldown · 24-event memory
           </div>
         </div>
         {onClose && (
@@ -205,9 +218,15 @@ export function PetLabModal({ onClose }: { onClose?: () => void }) {
         </section>
 
         <section style={{ padding: 12, borderRadius: 12, background: '#35262a', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <strong>Kiểm chứng 72s Trace ({trace.actionsChosen.length} bước)</strong>
+          <strong>Kiểm chứng ~72s Trace ({trace.actionsChosen.length} bước)</strong>
           <div style={{ fontSize: 12.5 }}>Số lần chuyển hành động: <strong>{trace.switches}</strong> (chống rung lắc)</div>
           <div style={{ fontSize: 12.5 }}>Bộ nhớ giới hạn (max 24): <strong>{trace.memoryCount}/24</strong></div>
+          <div style={{ fontSize: 11.5 }}>
+            Phase: <strong>{liveBrain.phase}</strong> · {liveBrain.switchReasonVi}
+          </div>
+          <div style={{ fontSize: 11.5, wordBreak: 'break-word' }}>
+            Intent: {liveBrain.currentIntent?.actionId ?? '—'} → {liveBrain.currentIntent?.targetId ?? '—'}
+          </div>
           <div style={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>
             7 Traits: {Object.entries(traits).map(([k, v]) => `${k}: ${v}`).join(' · ')}
           </div>

@@ -34,3 +34,26 @@ export interface PetInteractionResult {
   action: PetActionType;
   kibbleRemaining: number;
 }
+
+export interface PetCareBowlSnapshot {
+  worldId: string;
+  petId: string | null;
+  version: number;
+  foodPortions: number;
+  waterVolume: number;
+  foodSku: string | null;
+  foodQuality: 'normal' | 'silver' | 'gold' | null;
+}
+
+export interface PetCareApplyResult {
+  bowl: {
+    version: number;
+    food_portions?: number;
+    water_volume?: number;
+    food_sku?: string | null;
+    food_quality?: string | null;
+  };
+  pet: PetSnapshot;
+}
+
+export type PetCareAction = 'fill_food' | 'fill_water';

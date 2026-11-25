@@ -5,6 +5,8 @@ export const MAILBOX_MAX_GIFT_QTY = 10;
 export type MailboxItemKind = 'letter' | 'gift';
 export type MailboxGiftSourceScope = 'shared' | 'personal';
 
+export type MailboxGiftQuality = 'normal' | 'silver' | 'gold';
+
 export interface MailboxItem {
   id: string;
   worldId: string;
@@ -15,6 +17,7 @@ export interface MailboxItem {
   body: string | null;
   giftItemSku: string | null;
   giftQty: number;
+  giftQuality: MailboxGiftQuality;
   isSurprise: boolean;
   openedAt: string | null;
   createdAt: string;
@@ -36,6 +39,7 @@ export interface SendMailboxParams {
   body: string;
   giftItemSku: string | null;
   giftQty: number;
+  giftQuality: MailboxGiftQuality;
   sourceScope: MailboxGiftSourceScope;
   isSurprise: boolean;
   idempotencyKey: string;

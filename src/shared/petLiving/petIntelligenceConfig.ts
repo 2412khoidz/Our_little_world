@@ -64,7 +64,16 @@ export const PET_PERSONALITY_PRESETS: readonly PersonalityPreset[] = [
     traits: { glutton: 0.5, playful: 0.52, clingy: 0.92, curious: 0.45, shy: 0.55, lazy: 0.48, independent: 0.15 },
     descriptionVi: 'Thích nằm giữa hai bạn trên sofa và đi theo nhẹ nhàng khi hai bạn ở vườn.',
   },
+  {
+    id: 'shy_timid',
+    labelVi: 'Nhút nhát & Thận trọng',
+    traits: { glutton: 0.4, playful: 0.28, clingy: 0.38, curious: 0.48, shy: 0.88, lazy: 0.52, independent: 0.62 },
+    descriptionVi: 'Ưu tiên góc an toàn, ngửi kỹ rồi mới tiến lại; tránh ồn ào và đồ chơi quá gần.',
+  },
 ] as const;
+
+/** Three QA profiles for Mission 04A acceptance. */
+export const PET_BRAIN_QA_PROFILE_IDS = ['curious_bong', 'shy_timid', 'sleepy_mochi'] as const;
 
 export const LIVING_PET_NEED_FLOOR = 25;
 export const LIVING_PET_SAFETY_FLOOR = 30;

@@ -149,7 +149,7 @@
   left: 50%;
   bottom: calc(70px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 22;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -192,6 +192,47 @@
 
 .nearby-action-btn:active {
   transform: scale(0.97);
+}
+
+.main-game-interaction-stack {
+  position: fixed;
+  left: 50%;
+  bottom: calc(128px + var(--safe-bottom));
+  transform: translateX(-50%);
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 20px);
+  pointer-events: none;
+}
+
+.main-game-interaction-stack .olw-hotbar-tray,
+.main-game-interaction-stack button {
+  pointer-events: auto;
+}
+
+.main-game-touch-actions {
+  position: fixed;
+  right: calc(12px + var(--safe-right));
+  bottom: calc(124px + var(--safe-bottom));
+  z-index: 24;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.main-game-touch-btn {
+  min-width: 44px;
+  min-height: 44px;
+  font-weight: 800;
+}
+
+@media (min-width: 769px) {
+  .main-game-touch-actions {
+    display: none;
+  }
 }
 
 /* Virtual Joystick */

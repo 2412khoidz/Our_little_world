@@ -112,6 +112,26 @@ async function run() {
     const final = await admin.query('SELECT layout_version FROM public.worlds WHERE id = $1', [world]);
     assert.equal(final.rows[0].layout_version, 2);
     console.log('Parallel idempotent retries mutate layout once');
+
+
+    await ownerSession.query("SELECT public.inventory_claim_free_kibble($1, 'bowl-kibble')", [world]);
+    const adoption = await ownerSession.query(
+      "SELECT public.pet_adopt_or_rename($1, 'Cat', NULL, 'bowl-adopt') AS pet", [world],
+    );
+    const petId = adoption.rows[0].pet.id;
+    const fill = (session, key) => session.query(
+      "SELECT public.pet_care_apply($1, $2, 'fill_food', 1, 'shared', 'pet_kibble_basic', 'normal', $3) AS result",
+      [world, petId, key],
+    );
+    const fills = await Promise.allSettled([fill(ownerSession, 'bowl-fill-owner'), fill(partnerSession, 'bowl-fill-partner')]);
+    assert.equal(fills.filter((result) => result.status === 'fulfilled').length, 1);
+    assert.equal(fills.find((result) => result.status === 'rejected').reason.message, 'VERSION_CONFLICT');
+    const bowlState = await admin.query(
+      "SELECT b.food_portions, i.qty FROM public.pet_care_bowls b JOIN public.inventory_items i ON i.world_id=b.world_id WHERE b.world_id=$1 AND i.item_sku='pet_kibble_basic' AND i.owner_scope='shared' AND i.quality='normal'",
+      [world],
+    );
+    assert.deepEqual(bowlState.rows[0], { food_portions: 1, qty: 2 });
+    console.log('Concurrent physical bowl fills consume one item for one version');
   } finally {
     await Promise.all(clients.filter((client) => client !== admin).map((client) => client.end()));
     if (admin) {

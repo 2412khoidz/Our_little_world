@@ -2,7 +2,12 @@ import { parseAvatarConfig } from '../../shared/avatar';
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
-import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type {
+  PetCareApplyResult,
+  PetCareBowlSnapshot,
+  PetInteractionResult,
+  PetSnapshot,
+} from '../../shared/pet/petTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,
@@ -51,6 +56,13 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'Yêu cầu bị trùng khóa nhưng khác nội dung.'],
     ['NOT_FOUND', 'NOT_FOUND', 'Không tìm thấy dữ liệu được yêu cầu.'],
     ['VALIDATION_ERROR', 'VALIDATION_ERROR', 'Dữ liệu nhập chưa hợp lệ.'],
+    [
+      'SERVER_AUTHORITY_REQUIRED',
+      'SERVER_AUTHORITY_REQUIRED',
+      'Thao tác này cần máy chủ xác nhận — bé mèo sẽ tự quyết định khi đến bát.',
+    ],
+    ['BOWL_FULL', 'BOWL_FULL', 'Bát đã đầy rồi nhé.'],
+    ['BOWL_EMPTY', 'BOWL_EMPTY', 'Bát đang trống.'],
   ];
 
   for (const [token, code, message] of map) {
@@ -434,6 +446,27 @@ export function createSupabaseBackend(): WorldBackend {
         }
         return { ok: true, data: data as InventorySnapshot };
       },
+      async transferInventoryQuality(params) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const uid = sessionData.session?.user.id;
+        if (!uid) {
+          return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn cần đăng nhập lại.' };
+        }
+        const toDbScope = (scope: 'shared' | 'personal') => (scope === 'personal' ? `user:${uid}` : 'shared');
+        const { data, error } = await supabase.rpc('inventory_transfer_quality', {
+          p_world_id: params.worldId,
+          p_from_scope: toDbScope(params.fromScope),
+          p_to_scope: toDbScope(params.toScope),
+          p_item_sku: params.itemSku,
+          p_quality: params.quality,
+          p_qty: params.qty,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as InventorySnapshot };
+      },
     },
 
     pet: {
@@ -470,6 +503,56 @@ export function createSupabaseBackend(): WorldBackend {
           return { ok: false, ...mapSupabaseError(error) };
         }
         return { ok: true, data: data as PetInteractionResult };
+      },
+      async getPetCareSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('pet_care_get_snapshot', {
+          p_world_id: worldId,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as Record<string, unknown>;
+        return {
+          ok: true,
+          data: {
+            worldId: String(raw.worldId ?? worldId),
+            petId: (raw.petId as string | null) ?? null,
+            version: Number(raw.version ?? 1),
+            foodPortions: Number(raw.foodPortions ?? 0),
+            waterVolume: Number(raw.waterVolume ?? 60),
+            foodSku: (raw.foodSku as string | null) ?? null,
+            foodQuality: (raw.foodQuality as PetCareBowlSnapshot['foodQuality']) ?? null,
+          },
+        };
+      },
+      async applyPetCare(params) {
+        const { data, error } = await supabase.rpc('pet_care_apply', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_action: params.action,
+          p_expected_version: params.expectedBowlVersion,
+          p_scope: params.ownerScope,
+          p_sku: params.itemSku,
+          p_quality: params.quality,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as { bowl: Record<string, unknown>; pet: PetSnapshot };
+        return {
+          ok: true,
+          data: {
+            bowl: {
+              version: Number(raw.bowl.version ?? params.expectedBowlVersion),
+              food_portions: raw.bowl.food_portions as number | undefined,
+              water_volume: raw.bowl.water_volume as number | undefined,
+              food_sku: (raw.bowl.food_sku as string | null) ?? null,
+              food_quality: (raw.bowl.food_quality as string | null) ?? null,
+            },
+            pet: raw.pet,
+          } as PetCareApplyResult,
+        };
       },
     },
 
@@ -532,6 +615,7 @@ export function createSupabaseBackend(): WorldBackend {
           p_source_scope: params.sourceScope,
           p_is_surprise: params.isSurprise,
           p_idempotency_key: params.idempotencyKey,
+          p_gift_quality: params.giftQuality,
         });
         if (error || !data) {
           return { ok: false, ...mapSupabaseError(error) };
