@@ -1054,8 +1054,8 @@ function buildShopInteriorMap() {
         height: 16,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'village' },
-          { name: 'spawnX', type: 'int', value: 38 },
-          { name: 'spawnY', type: 'int', value: 13 },
+          { name: 'spawnX', type: 'int', value: 37 },
+          { name: 'spawnY', type: 'int', value: 15 },
           { name: 'labelVi', type: 'string', value: 'Ra ngoài' },
         ],
       },

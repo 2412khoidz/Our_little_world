@@ -757,12 +757,12 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 38
+              "value": 37
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 13
+              "value": 15
             },
             {
               "name": "labelVi",

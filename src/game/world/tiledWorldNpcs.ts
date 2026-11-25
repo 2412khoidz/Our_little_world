@@ -73,7 +73,7 @@ export function nearestTiledNpc(
   npcs: readonly TiledWorldNpcEntity[],
   tileX: number,
   tileY: number,
-  radiusTiles = 1.8,
+  radiusTiles = 2.4,
 ): TiledWorldNpcEntity | null {
   let best: TiledWorldNpcEntity | null = null;
   let bestD = radiusTiles;
