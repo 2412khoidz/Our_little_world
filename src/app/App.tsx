@@ -27,7 +27,7 @@ import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLa
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
-import { FarmMarketPanel } from '../features/farming/FarmMarketPanel';
+import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
@@ -211,11 +211,12 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'dev_console' | 'v03_proto'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'farm_shipping' | 'dev_console' | 'v03_proto'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [farmWalletCoins, setFarmWalletCoins] = useState(0);
+  const farmVersionRef = useRef(0);
   const [farmBusy, setFarmBusy] = useState(false);
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
@@ -301,6 +302,7 @@ function MainCoupleApp() {
     const res = await backend.farm.getFarmSnapshot(targetWorldId);
     if (res.ok && res.data) {
       setFarmWalletCoins(res.data.walletCoins);
+      farmVersionRef.current = res.data.version;
       if (backend.inventory) await refreshInventorySnapshot(targetWorldId);
     }
   }, [backend.farm, backend.inventory, refreshInventorySnapshot]);
@@ -908,6 +910,9 @@ function MainCoupleApp() {
             void refreshStudySnapshot(worldId);
           } else if (reason === 'mailbox') {
             void refreshMailboxSnapshot(worldId);
+          } else if (reason === 'farm') {
+            void refreshFarmWallet();
+            void refreshInventorySnapshot(worldId);
           } else {
             void refreshWorldSnapshot();
           }
@@ -1466,13 +1471,16 @@ function MainCoupleApp() {
               plotIndex,
               action,
               seedSku,
-              idempotencyKey: `farm-${action}-${plotIndex}-${Date.now()}`,
+              farmVersion: farmVersionRef.current,
+              idempotencyKey: makeIdempotencyKey(`farm-${action}-${plotIndex}`),
             });
             if (!res.ok) {
               showToast(res.message ?? 'Không thực hiện được.', true);
+              if (res.code === 'VERSION_CONFLICT') await refreshFarmWallet();
               return;
             }
             setFarmWalletCoins(res.data.snapshot.walletCoins);
+            farmVersionRef.current = res.data.snapshot.version;
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
               showToast(
@@ -1483,6 +1491,7 @@ function MainCoupleApp() {
             } else {
               showToast(action === 'till' ? 'Đã cuốc xong.' : action === 'plant' ? 'Đã gieo hạt.' : action === 'water' ? 'Đã tưới.' : 'Xong.');
             }
+            realtimeRef.current?.notifyWorldMutated('farm');
             realtimeRef.current?.notifyWorldMutated('inventory');
           } finally {
             setFarmBusy(false);
@@ -1491,6 +1500,10 @@ function MainCoupleApp() {
         onOpenFarmMarket={backend.farm ? () => {
           void refreshFarmWallet();
           setActiveModal('farm_market');
+        } : undefined}
+        onOpenFarmShipping={backend.farm ? () => {
+          void refreshFarmWallet();
+          setActiveModal('farm_shipping');
         } : undefined}
         onNotice={(message, isError) => showToast(message, isError)}
       />
@@ -1701,25 +1714,24 @@ function MainCoupleApp() {
         />
       )}
 
-      {activeModal === 'farm_market' && backend.farm && (
+      {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
         <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
           <div onClick={(e) => e.stopPropagation()}>
-            <FarmMarketPanel
+            <FarmEconomyPanel
+              mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}
               walletCoins={farmWalletCoins}
               inventory={inventorySnapshot}
               busy={farmBusy}
               onClose={() => setActiveModal(null)}
-              onSell={async (sku, qty, quality) => {
+              onShip={async (sku, qty, quality) => {
                 const targetWorldId = snapshotRef.current?.world.id;
                 if (!targetWorldId) return;
                 setFarmBusy(true);
                 try {
-                  const res = await backend.farm!.sellCrop({
+                  const res = await backend.farm!.shipToBin({
                     worldId: targetWorldId,
-                    sku,
-                    qty,
-                    quality,
-                    idempotencyKey: makeIdempotencyKey('farm-sell'),
+                    lines: [{ sku, qty, quality }],
+                    idempotencyKey: makeIdempotencyKey('farm-ship'),
                   });
                   if (!res.ok) {
                     showToast(res.message, true);
@@ -1727,7 +1739,8 @@ function MainCoupleApp() {
                   }
                   setFarmWalletCoins(res.data.walletCoins);
                   await refreshInventorySnapshot(targetWorldId);
-                  showToast('Đã bán nông sản.');
+                  showToast(`Đã gửi nông sản (+${res.data.totalCoins} xu).`);
+                  realtimeRef.current?.notifyWorldMutated('farm');
                 } finally {
                   setFarmBusy(false);
                 }
@@ -1750,6 +1763,7 @@ function MainCoupleApp() {
                   setFarmWalletCoins(res.data.walletCoins);
                   await refreshInventorySnapshot(targetWorldId);
                   showToast('Đã mua hạt giống.');
+                  realtimeRef.current?.notifyWorldMutated('inventory');
                 } finally {
                   setFarmBusy(false);
                 }

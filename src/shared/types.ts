@@ -128,6 +128,7 @@ export type WorldMutationReason =
   | 'profile'
   | 'member'
   | 'inventory'
+  | 'farm'
   | 'pet'
   | 'study'
   | 'mailbox';

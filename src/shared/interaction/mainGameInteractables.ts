@@ -120,6 +120,14 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       y: anchors.mailboxPx.y + 48,
       maxRadiusPx: 44,
     });
+    targets.push({
+      id: 'garden_shipping_bin',
+      kind: 'shipping_bin',
+      labelVi: 'Thùng giao hàng',
+      x: anchors.shippingBinPx.x,
+      y: anchors.shippingBinPx.y,
+      maxRadiusPx: 40,
+    });
   }
 
   for (const p of placements) {

@@ -13,7 +13,9 @@
 6. Chọn **hạt lúa mì** → **J** gieo.
 7. Chọn **bình tưới** → **J** tưới (Dev LAN tăng tốc sinh trưởng ×120 để vòng lặp <1 phút).
 8. **J** thu hoạch (tay không hoặc không giữ dụng cụ).
-9. Ghé **Gian hạt Bác Hai** (gần hộp thư) → **J** mở cửa hàng → bán lúa (mọi cấp chất lượng), mua hạt.
+9. **Gian hạt Bác Hai** (gần hộp thư) → **J** mua hạt (lúa/cà rốt/cà chua/dâu).
+10. **Thùng giao hàng** (góc dưới vườn) → **J** gửi nông sản (giá server + bão hòa ngày, kiểu Harvest Hollow ledger).
+11. Lặp lại cho đến khi đủ xu mua hạt vụ mới — wallet + farm lưu trong `.dev-lan-state.json` (thoát game vẫn giữ).
 
 ## Composer 2 (hotbar / held item)
 

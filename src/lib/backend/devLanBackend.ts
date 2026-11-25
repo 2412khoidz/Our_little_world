@@ -538,6 +538,9 @@ export function createDevLanBackend(): WorldBackend {
       async buySeed(params) {
         return apiJson(`/farm/buy-seed`, { method: 'POST', body: JSON.stringify(params) });
       },
+      async shipToBin(params) {
+        return apiJson(`/farm/ship`, { method: 'POST', body: JSON.stringify(params) });
+      },
     },
 
     devConsole: {

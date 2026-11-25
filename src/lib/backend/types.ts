@@ -161,6 +161,7 @@ export interface FarmBackend {
     plotIndex: number;
     action: 'till' | 'plant' | 'water' | 'harvest';
     seedSku?: string | null;
+    farmVersion?: number;
     idempotencyKey: string;
   }): Promise<
     MutationResult<{
@@ -181,6 +182,11 @@ export interface FarmBackend {
     qty: number;
     idempotencyKey: string;
   }): Promise<MutationResult<{ walletCoins: number }>>;
+  shipToBin(params: {
+    worldId: string;
+    lines: { sku: string; qty: number; quality?: 'normal' | 'silver' | 'gold' }[];
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number; totalCoins: number }>>;
 }
 
 export interface DevConsoleBackend {

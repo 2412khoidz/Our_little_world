@@ -25,6 +25,8 @@ export interface FarmApplyParams {
   action: 'till' | 'plant' | 'water' | 'harvest';
   seedSku?: string | null;
   idempotencyKey: string;
+  /** Optimistic concurrency — must match server farm row version. */
+  farmVersion?: number;
 }
 
 export interface FarmApplyResult {

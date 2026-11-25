@@ -1,3 +1,8 @@
+import { vietnamDayIndex } from '../shared/economy/shippingBin';
+import {
+  applyFarmShippingBinSale,
+  type FarmShippingMeta,
+} from '../shared/farming/farmShipping';
 import {
   applyFarmAction,
   buildFarmSnapshot,
@@ -14,6 +19,8 @@ import type { InventoryOwnerScope, InventorySnapshot } from '../shared/inventory
 export interface DevLanFarmDb {
   farms: Record<string, { seed: number; version: number; farm: ReturnType<typeof emptyFarm> }>;
   wallets: Record<string, { coins: number }>;
+  shippingBin?: Record<string, FarmShippingMeta>;
+  farmShipKeys?: Record<string, string[]>;
 }
 
 export function ensureFarmDb(v015: DevLanFarmDb): DevLanFarmDb {
@@ -28,12 +35,21 @@ export function seedStarterFarmPack(
   inventoryAdjust: (scope: string, sku: string, delta: number, quality?: string) => void,
 ): void {
   ensureFarmDb(v015);
+  v015.shippingBin ??= {};
   if (v015.farms[worldId]) return;
   const seed = Math.floor(Math.random() * 0xffff_ffff);
   v015.farms[worldId] = { seed, version: 1, farm: emptyFarm(seed) };
   v015.wallets[worldId] = { coins: FARM_STARTER_COINS };
   for (const sku of FARM_STARTER_TOOLS) inventoryAdjust('shared', sku, 1, 'normal');
   inventoryAdjust('shared', 'seed_wheat', FARM_STARTER_SEED_QTY, 'normal');
+  inventoryAdjust('shared', 'seed_carrot', 2, 'normal');
+}
+
+function shippingMeta(v015: DevLanFarmDb, worldId: string, nowMs: number): FarmShippingMeta {
+  v015.shippingBin ??= {};
+  const row = v015.shippingBin[worldId] ?? { soldByGroup: {}, dayIndex: vietnamDayIndex(nowMs) };
+  v015.shippingBin[worldId] = row;
+  return row;
 }
 
 function farmRow(v015: DevLanFarmDb, worldId: string) {
@@ -121,6 +137,16 @@ export async function tryHandleFarmDevLan(ctx: {
 
   if (req.method === 'POST' && route === '/farm/apply') {
     const row = farmRow(v015, worldId);
+    const expectedVersion = body.farmVersion !== undefined ? Number(body.farmVersion) : row.version;
+    if (expectedVersion !== row.version) {
+      sendJson(res, 409, {
+        ok: false,
+        code: 'VERSION_CONFLICT',
+        message: 'Nông trại vừa đổi (đồng bộ lại).',
+        data: buildFarmSnapshot(worldId, row.version, row.farm, v015.wallets[worldId]?.coins ?? 0, nowMs),
+      });
+      return true;
+    }
     const plotIndex = Number(body.plotIndex);
     const action = String(body.action ?? '') as FarmApplyParams['action'];
     const seedSku = body.seedSku ? String(body.seedSku) : null;
@@ -170,6 +196,43 @@ export async function tryHandleFarmDevLan(ctx: {
     v015.wallets[worldId] = { coins: sold.walletCoins };
     saveDb();
     sendJson(res, 200, { ok: true, data: { walletCoins: sold.walletCoins } });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/farm/ship') {
+    const lines = Array.isArray(body.lines) ? body.lines : [];
+    const items = getInventoryList(worldId);
+    const coins = v015.wallets[worldId]?.coins ?? 0;
+    const idempotencyKey = String(body.idempotencyKey ?? '');
+    v015.farmShipKeys ??= {};
+    const priorKeys = v015.farmShipKeys[worldId] ?? [];
+    if (idempotencyKey && priorKeys.includes(idempotencyKey)) {
+      sendJson(res, 409, { ok: false, code: 'DUPLICATE_IDEMPOTENCY_KEY', message: 'Giao dịch đã xử lý.' });
+      return true;
+    }
+    const meta = shippingMeta(v015, worldId, nowMs);
+    const shipped = applyFarmShippingBinSale(coins, items, meta, {
+      lines: lines.map((line: { sku?: string; qty?: number; quality?: string }) => ({
+        sku: String(line.sku ?? ''),
+        qty: Number(line.qty ?? 0),
+        quality: (line.quality ?? 'normal') as 'normal' | 'silver' | 'gold',
+      })),
+      nowMs,
+      idempotencyKey,
+      actorId: userId,
+    });
+    if (!shipped.ok) {
+      sendJson(res, 409, { ok: false, code: shipped.code, message: shipped.messageVi });
+      return true;
+    }
+    setInventoryList(worldId, shipped.items);
+    v015.wallets[worldId] = { coins: shipped.walletCoins };
+    v015.shippingBin![worldId] = shipped.meta;
+    if (idempotencyKey) {
+      v015.farmShipKeys[worldId] = [...priorKeys, idempotencyKey];
+    }
+    saveDb();
+    sendJson(res, 200, { ok: true, data: { walletCoins: shipped.walletCoins, totalCoins: shipped.totalCoins } });
     return true;
   }
 
