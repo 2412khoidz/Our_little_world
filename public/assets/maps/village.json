@@ -91550,17 +91550,17 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 2
+              "value": 3
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 22
+              "value": 32
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Vào rừng (PyDew slice)"
+              "value": "Vào rừng Route 1"
             }
           ]
         }
