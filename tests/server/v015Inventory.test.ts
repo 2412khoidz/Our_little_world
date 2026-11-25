@@ -119,6 +119,43 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
     expect(outsiderRes.status).toBe(403);
   });
 
+  it('backfills pet care starter rows on inventory GET when pet exists but toys missing', async () => {
+    const db = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    db.v015.inventory[worldId] = [];
+    db.v015.pets[worldId] = {
+      id: 'pet-legacy',
+      worldId,
+      species: 'cat-orange',
+      name: 'Mochi',
+      vitals: { hunger: 80, energy: 70, fun: 75 },
+      emotion: 'happy',
+      mapId: 'home',
+      anchorTileX: 13,
+      anchorTileY: 10,
+      lastFedAtMs: null,
+      lastWateredAtMs: null,
+      lastPettedAtMs: null,
+      simStateAtMs: Date.now(),
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      serverNowMs: Date.now(),
+    };
+    fs.writeFileSync(stateFile, JSON.stringify(db), 'utf8');
+
+    const h2 = createDevLanHandler({ stateFilePath: stateFile });
+    try {
+      const inv = await callApi(h2, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+      expect(inv.json.data.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ itemSku: 'toy_yarn', qty: 1 }),
+          expect.objectContaining({ itemSku: 'fish_salmon_bite', qty: 2 }),
+        ]),
+      );
+    } finally {
+      h2.closeAll();
+    }
+  });
+
   it('isolates personal user:<uuid> pockets so Nắng cannot see Mây private items', async () => {
     const db = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
     db.v015.inventory[worldId] = [

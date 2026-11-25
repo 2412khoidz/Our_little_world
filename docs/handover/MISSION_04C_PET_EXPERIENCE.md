@@ -19,23 +19,21 @@
 | Mode | Mô tả | Code |
 |------|--------|------|
 | **World** | Autonomous trong nhà (04A/04B-1) — mèo lớn hơn (~1.45×) | `PetLivingMainGameDriver` + `PetEntity` |
-| **Pet Care** | Camera zoom + sprite ~2.8×; vuốt/đồ chơi/đồ ăn | `cmd:pet-care-mode`, `PetCareTouchOverlay` |
+| **Pet Care** | Rig Phaser cận cảnh (layer tai/đuôi/bubble); HUD React mỏng | `PetCareCloseUpRig`, `cmd:pet-care-action` |
 
 Không fork `PetSnapshot` / memory / personality.
 
-## Slice 1 (branch hiện tại)
+## Slice 2 (branch hiện tại)
 
-- Dev LAN **starter pack** thật (kibble + cá + len + bình nước) → hotbar hiện icon/qty
-- Mèo **world scale** 1.45×
-- **Pet Care** vào bằng prompt J khi gần mèo; thoát ESC
-- Vuốt/stroke → bubble + intent `pet_purr` / `groom` presentation
+- **PetCareCloseUpRig** (~5.75× sprite + tai/đuôi procedural) thay zoom 2.85×
+- Vuốt trực tiếp trên canvas; `petCareReactions` theo personality (refuse bụng, sniff ăn)
+- Hotbar toys/food + J: `roll_toy`, `offer_food`, chải (`brush`), gọi/quan sát trên HUD
+- **`ensurePetCareStarterPackIfMissing`** trên GET `/inventory` — world cũ cũng có đồ
 
 ## Tiếp theo
 
-- Đồ chơi (cần câu, len), grooming brush, sniff accept/refuse presentation
-- Renderer cận cảnh: sheet HD hoặc layered ears/tail (không chỉ scale)
-- Personality modifiers cho refuse/shy
-- Nối PR #10 authority cho consumption
+- HD sheet / biểu cảm mắt riêng; authority PR #10 cho trừ kho
+- Mini-session scripted (ngủ → liếm → chơi len) telemetry cho owner trial
 
 ## Owner trial
 

@@ -27,7 +27,8 @@ const FOOD_BOWL_SPOT = { x: 12.4 * TILE_SIZE, y: 10.1 * TILE_SIZE };
 
 /** Mission 04C — readable in world without blurry upscale. */
 const LIVING_PET_WORLD_SCALE = 1.45;
-const LIVING_PET_CARE_SCALE = 2.85;
+/** Legacy zoom-scale — Mission 04C close-up rig replaces this in care mode. */
+const LIVING_PET_CARE_SCALE = 1.45;
 
 export class PetEntity {
   private readonly scene: Phaser.Scene;
@@ -118,6 +119,14 @@ export class PetEntity {
     this.livingDriver = driver;
     driver?.seedFromSnapshot(this.petSnapshot);
     if (driver) this.applySpriteScale();
+  }
+
+  getVisualIdentity(): { variant: CatCoatVariantId; accessory: CatAccessoryId; name: string } {
+    return {
+      variant: this.variant,
+      accessory: this.accessory,
+      name: this.petSnapshot?.name ?? 'Bé mèo',
+    };
   }
 
   setCareCloseUp(active: boolean): void {

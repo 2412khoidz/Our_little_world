@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { gameEventBus } from '../../game/eventBus';
 
 interface PetCareTouchOverlayProps {
@@ -6,19 +6,9 @@ interface PetCareTouchOverlayProps {
   onExit: () => void;
 }
 
-/** Full-screen care gestures — strokes map to pet reactions (presentation, Mission 04C). */
+/** Thin HUD — strokes happen on the Phaser close-up rig; hotbar + J for toys/food. */
 export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps) {
-  const [hint, setHint] = useState<string | null>(null);
-  const strokeCount = useRef(0);
-
-  const emitStroke = useCallback((zone: 'head' | 'back' | 'chin') => {
-    strokeCount.current += 1;
-    gameEventBus.emit('cmd:pet-care-stroke', { zone, strokeIndex: strokeCount.current });
-    const vi =
-      zone === 'head' ? 'Purrr~' : zone === 'chin' ? 'Chính…' : 'Thích lắm!';
-    setHint(vi);
-    window.setTimeout(() => setHint((h) => (h === vi ? null : h)), 1200);
-  }, []);
+  const [hint, setHint] = useState('Vuốt trên thân mèo — đầu, cằm, lưng');
 
   useEffect(() => {
     if (!active) return;
@@ -32,6 +22,16 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
     return () => window.removeEventListener('keydown', onKey);
   }, [active, onExit]);
 
+  const callPet = () => {
+    gameEventBus.emit('cmd:pet-care-action', { kind: 'call' });
+    setHint('Gọi tên bé…');
+  };
+
+  const observe = () => {
+    gameEventBus.emit('cmd:pet-care-action', { kind: 'observe' });
+    setHint('Quan sát — để bé tự làm việc của mình');
+  };
+
   if (!active) return null;
 
   return (
@@ -41,34 +41,20 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
       aria-label="Chế độ chăm sóc mèo cận cảnh"
     >
       <div className="pet-care-overlay__vignette" />
-      <p className="pet-care-overlay__title">Chăm sóc gần — vuốt lên vùng mèo</p>
-      {hint && (
-        <p className="pet-care-overlay__hint" data-testid="pet-care-stroke-hint">
-          {hint}
-        </p>
-      )}
-      <button type="button" className="pet-care-overlay__exit" data-testid="pet-care-exit" onClick={onExit}>
-        Thoát (ESC)
-      </button>
-      <div className="pet-care-zones">
-        <button
-          type="button"
-          className="pet-care-zone pet-care-zone--head"
-          aria-label="Vuốt đầu"
-          onPointerDown={() => emitStroke('head')}
-        />
-        <button
-          type="button"
-          className="pet-care-zone pet-care-zone--chin"
-          aria-label="Gãi cằm"
-          onPointerDown={() => emitStroke('chin')}
-        />
-        <button
-          type="button"
-          className="pet-care-zone pet-care-zone--back"
-          aria-label="Vuốt lưng"
-          onPointerDown={() => emitStroke('back')}
-        />
+      <p className="pet-care-overlay__title">Chăm sóc gần — vuốt lên mèo, dùng thanh đồ (1–8) + J</p>
+      <p className="pet-care-overlay__hint" data-testid="pet-care-stroke-hint">
+        {hint}
+      </p>
+      <div className="pet-care-overlay__actions">
+        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-call" onClick={callPet}>
+          Gọi mèo
+        </button>
+        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-observe" onClick={observe}>
+          Quan sát
+        </button>
+        <button type="button" className="pet-care-overlay__exit" data-testid="pet-care-exit" onClick={onExit}>
+          Thoát (ESC)
+        </button>
       </div>
     </div>
   );

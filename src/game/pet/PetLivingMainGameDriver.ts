@@ -60,6 +60,7 @@ export class PetLivingMainGameDriver {
   private movement: PetMovementExecutorState;
   private readonly authority: PetAuthorityPort = createMainGamePetAuthorityPort();
   private readonly traits: PetPersonalityTraits;
+  private readonly traitPresetId: string;
   private simNeeds: Pet8Needs = createDefault8Needs();
   private bowlFood = 1;
   private waterVol = 80;
@@ -70,6 +71,7 @@ export class PetLivingMainGameDriver {
 
   constructor(startX: number, startY: number, traitId: string = 'curious_bong') {
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
+    this.traitPresetId = preset.id;
     this.traits = preset.traits;
     this.movement = createPetMovementExecutorState(startX, startY);
   }
@@ -191,6 +193,10 @@ export class PetLivingMainGameDriver {
       ambientBubble,
       authority: this.authority,
     };
+  }
+
+  getTraitPresetId(): string {
+    return this.traitPresetId;
   }
 
   getDevTelemetry(mapId: MapId, spriteVisible: boolean, nowMs: number): LivingPetDevTelemetry {

@@ -93,6 +93,32 @@ export function grantPetCareStarterPack(v015, worldId, nowIso) {
   adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
 }
 
+/** Idempotent — nhà đã có mèo nhưng thiếu đồ chơi/đồ ăn (world cũ trước 04C). */
+export function ensurePetCareStarterPackIfMissing(v015, worldId, nowIso) {
+  const pet = v015.pets[worldId];
+  if (!pet) return false;
+  const list = getWorldInventoryList(v015, worldId);
+  const qty = (sku) => list.find((i) => i.ownerScope === 'shared' && i.itemSku === sku)?.qty ?? 0;
+  let changed = false;
+  if (qty('fish_salmon_bite') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+    changed = true;
+  }
+  if (qty('toy_yarn') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+    changed = true;
+  }
+  if (qty('toy_cardboard_box') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+    changed = true;
+  }
+  if (qty('water_pitcher') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+    changed = true;
+  }
+  return changed;
+}
+
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
 
 export function ensureV015Db(db) {
@@ -202,6 +228,7 @@ export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, n
 }
 
 export function buildInventorySnapshot(v015, worldId, userId, nowMs = Date.now()) {
+  ensurePetCareStarterPackIfMissing(v015, worldId, new Date(nowMs).toISOString());
   const list = getWorldInventoryList(v015, worldId);
   const utcDate = new Date(nowMs).toISOString().slice(0, 10);
   const kibbleRow = list.find((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic');

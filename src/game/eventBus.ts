@@ -99,6 +99,10 @@ export interface GameEventMap {
   'cmd:pet-local-food-offer': PetFoodOfferInput;
   'cmd:pet-care-mode': { active: boolean };
   'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
+  'cmd:pet-care-action': {
+    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'call' | 'observe';
+    sku?: string;
+  };
   'evt:pet-care-mode': { active: boolean };
 
   // Phaser -> React

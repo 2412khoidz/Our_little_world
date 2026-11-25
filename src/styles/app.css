@@ -284,6 +284,25 @@
   }
 }
 
+.pet-care-overlay__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+  z-index: 2;
+}
+
+.pet-care-overlay__chip {
+  border: 1px solid rgba(255, 232, 199, 0.35);
+  background: rgba(40, 30, 36, 0.75);
+  color: #ffe8c7;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
 .pet-care-overlay__exit {
   position: absolute;
   top: calc(52px + var(--safe-top));
