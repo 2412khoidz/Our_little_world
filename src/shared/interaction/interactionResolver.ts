@@ -298,9 +298,8 @@ function actionForTarget(
       };
     case 'fishing_spot': {
       const spotId = parseDonorFishingSpot(resolveDonorFishingSpotId(target));
-      const stream = spotId === 'east_stream';
       return {
-        code: stream ? 'open_donor_stream_fishing' : 'open_donor_fishing',
+        code: 'open_donor_fishing',
         keyHint: 'J',
         labelVi: target.labelVi,
         targetId: target.id,

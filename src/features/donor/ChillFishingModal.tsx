@@ -19,6 +19,7 @@ import {
   postDonorFishingSync,
   type DonorFishingSpotId as SpotId,
 } from '../../lib/backend/donorDevLanClient';
+import { loadTidefallFishingArt, type TidefallFishingArtBundle } from '../../shared/donor/tidefall-phaser/tidefallFishingArt';
 import { drawTidefallFishingScene } from './tidefallFishingCanvas';
 
 interface ChillFishingModalProps {
@@ -28,11 +29,12 @@ interface ChillFishingModalProps {
   onInventoryRefresh: () => Promise<void>;
 }
 
-function phaseMessageVi(phase: TidefallFishingState['phase'], observe: boolean): string {
+function phaseMessageVi(phase: TidefallFishingState['phase'], observe: boolean, spotId: DonorFishingSpotId): string {
   if (observe) return 'Đang xem bạn câu cùng chỗ — hai người thấy cùng màn hình.';
+  const water = spotId === 'east_stream' ? 'suối' : 'mặt nước';
   switch (phase) {
     case 'idle':
-      return 'Chạm Quăng cần để thả mồi xuống ao.';
+      return `Chạm Quăng cần để thả mồi xuống ${water}.`;
     case 'casting':
       return 'Đang quăng…';
     case 'waiting':
@@ -59,8 +61,11 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
   const [busy, setBusy] = useState(false);
   const [observeMode, setObserveMode] = useState(false);
   const [outcomeVi, setOutcomeVi] = useState<string | null>(null);
+  const [art, setArt] = useState<TidefallFishingArtBundle | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const artRef = useRef<TidefallFishingArtBundle | null>(null);
+  const spotRef = useRef(spotId);
   const fsmRef = useRef(fsm);
   const previewRef = useRef(preview);
   const observeRef = useRef(observeMode);
@@ -75,7 +80,23 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
     previewRef.current = preview;
     observeRef.current = observeMode;
     anglerRef.current = !observeMode;
-  }, [fsm, preview, observeMode]);
+    artRef.current = art;
+    spotRef.current = spotId;
+  }, [fsm, preview, observeMode, art, spotId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadTidefallFishingArt()
+      .then((bundle) => {
+        if (!cancelled) setArt(bundle);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Không tải được họa câu cá.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const applySession = useCallback(
     (session: Awaited<ReturnType<typeof fetchDonorFishingSession>>) => {
@@ -90,7 +111,7 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
         pointerNorm: session.pointerNorm,
         bobberDip: session.phase === 'bite' ? 0.3 : prev.bobberDip,
       }));
-      setMessage(phaseMessageVi(session.phase, true));
+      setMessage(phaseMessageVi(session.phase, true, spotId));
     },
     [spotId],
   );
@@ -173,7 +194,7 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
         setFsm((cur) => {
           const next = tickTidefallFishing(cur, dt);
           if (next.phase !== cur.phase) {
-            setMessage(phaseMessageVi(next.phase, false));
+            setMessage(phaseMessageVi(next.phase, false, spotId));
           }
           if (next.phase === 'landed' || next.phase === 'escaped') {
             void resolveCatch(next);
@@ -184,9 +205,21 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
         });
       }
       const canvas = canvasRef.current;
-      if (canvas) {
+      const bundle = artRef.current;
+      if (canvas && bundle) {
         const ctx = canvas.getContext('2d');
-        if (ctx) drawTidefallFishingScene(ctx, canvas.width, canvas.height, fsmRef.current, previewRef.current);
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          drawTidefallFishingScene(
+            ctx,
+            canvas.width,
+            canvas.height,
+            fsmRef.current,
+            previewRef.current,
+            bundle,
+            spotRef.current,
+          );
+        }
       }
       raf.current = requestAnimationFrame(loop);
     };
@@ -195,7 +228,7 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
       if (raf.current) cancelAnimationFrame(raf.current);
       lastTs.current = 0;
     };
-  }, [syncSession, resolveCatch]);
+  }, [syncSession, resolveCatch, spotId]);
 
   const startCast = useCallback(async () => {
     setBusy(true);
@@ -221,7 +254,7 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
         personality,
       });
       setFsm(next);
-      setMessage(phaseMessageVi(next.phase, false));
+      setMessage(phaseMessageVi(next.phase, false, spotId));
       syncSession(next);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Không quăng được cần — kiểm tra mạng rồi thử lại.';
