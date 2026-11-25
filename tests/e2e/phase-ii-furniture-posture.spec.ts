@@ -24,14 +24,6 @@ async function nudgeTowardSofa(page: import('@playwright/test').Page) {
   await page.waitForTimeout(700);
 }
 
-async function nudgeTowardBed(page: import('@playwright/test').Page) {
-  for (const key of ['ArrowLeft', 'ArrowLeft', 'ArrowUp', 'ArrowUp']) {
-    await page.keyboard.press(key);
-    await page.waitForTimeout(120);
-  }
-  await page.waitForTimeout(700);
-}
-
 test.describe('Phase II — furniture posture VQG', () => {
   test('sofa + bed sit/lie feedback (dataset + capture)', async ({ page }) => {
     test.setTimeout(120_000);
