@@ -69,6 +69,8 @@ import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
+import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
+import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -126,6 +128,7 @@ export class WorldScene extends Phaser.Scene {
   private petEntity: PetEntity | null = null;
   private petSnapshot: PetSnapshot | null = null;
   private livingPetDriver: PetLivingMainGameDriver | null = null;
+  private petCareMode = false;
   private livingPetSimulationActive = false;
   private studyPetMode = false;
 
@@ -950,6 +953,11 @@ export class WorldScene extends Phaser.Scene {
         this.petEntity?.triggerReaction('feed');
       }),
 
+      gameEventBus.on('cmd:pet-care-mode', ({ active }) => {
+        this.setPetCareMode(active);
+      }),
+
+
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
         if (!seat || this.currentMapId !== 'home') {
           this.clearLocalPosture(false);
@@ -1028,6 +1036,36 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
+  private setPetCareMode(active: boolean): void {
+    if (this.petCareMode === active) return;
+    this.petCareMode = active;
+    setPetCareModeActive(active);
+
+    if (active && this.petEntity && this.petSnapshot) {
+      this.pathQueue = [];
+      this.cameras.main.stopFollow();
+      this.petEntity.setCareCloseUp(false);
+      this.petEntity.setVisible(false);
+      this.scene.pause();
+      const visual = this.petEntity.getVisualIdentity();
+      enterPetCareRuntime(this.game, {
+        variant: visual.variant,
+        accessory: visual.accessory,
+        petName: visual.name,
+        traitId: this.livingPetDriver?.getTraitPresetId(),
+        petSnapshot: this.petSnapshot,
+      });
+    } else {
+      exitPetCareRuntime(this.game);
+      this.scene.resume();
+      if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+        this.petEntity.setCareCloseUp(false);
+        this.petEntity.setVisible(true);
+      }
+      this.handleResize(true);
+    }
+  }
+
   private bindContextEvents(): void {
     const canvas = this.game.canvas;
     const onLost = (e: Event) => {
@@ -1053,6 +1091,7 @@ export class WorldScene extends Phaser.Scene {
   private handleResize(snapFollow = false): void {
     const cam = this.cameras.main;
     if (!cam) return;
+    if (this.petCareMode) return;
     const def = getMapDefinition(this.currentMapId);
     const width = this.scale.width || 400;
     const height = this.scale.height || 600;
@@ -1118,7 +1157,13 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    if (this.livingPetDriver && this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+    if (
+      !this.petCareMode &&
+      this.livingPetDriver &&
+      this.petEntity &&
+      this.petSnapshot &&
+      this.currentMapId === 'home'
+    ) {
       const memberIds = this.members.map((m) => m.userId);
       const caregiverPair: [string, string] = [
         memberIds[0] ?? 'partner-a',
@@ -1907,3 +1952,4 @@ export class WorldScene extends Phaser.Scene {
     this.scale.off('resize', this.handleResize, this);
   }
 }
+

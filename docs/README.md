@@ -7,6 +7,10 @@ Toàn bộ tài liệu kiến trúc, nghiên cứu, thiết kế và kế hoạc
 - [README.md](../README.md) — Hướng dẫn cài đặt, chạy Local/Dev LAN giữa Windows & điện thoại, kiểm thử.
 - [CHANGELOG.md](../CHANGELOG.md) — Lịch sử thay đổi phiên bản & milestone nghiên cứu.
 - [docs/PRODUCT_SPEC.md](PRODUCT_SPEC.md) — Tầm nhìn sản phẩm, chân dung người dùng & nguyên tắc bất biến.
+- [docs/V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md) — **Plan v2** (Project Agent + 3 Composer).
+- [docs/V02_ROADMAP.md](V02_ROADMAP.md) — **Roadmap v2** P0 V0.2.
+- [docs/V02_INTEGRATION_PLAYBOOK.md](V02_INTEGRATION_PLAYBOOK.md) — Ghép build playable (farming + pet + world).
+- [docs/V02_TASK_BOARD.md](V02_TASK_BOARD.md) — Bảng nhiệm vụ P0 đang chạy.
 
 ## 2. Lộ trình, Tiến độ, Quyết định & Nghiệm thu
 - [docs/MASTER_ROADMAP.md](MASTER_ROADMAP.md) — Lộ trình đã duyệt `Spike 0 → V0.1 → V1.0+` (đã thay thế `ROADMAP.md`).

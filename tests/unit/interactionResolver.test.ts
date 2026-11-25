@@ -65,7 +65,7 @@ describe('Unified Contextual Interaction Resolver (M3)', () => {
       heldItem: EMPTY_HELD_ITEM,
       interactables: nearby,
     });
-    expect(resPet.primary?.code).toBe('pet_cat');
+    expect(resPet.primary?.code).toBe('enter_pet_care');
   });
 
   it('suppresses gameplay hotkeys when user types inside editable elements', () => {

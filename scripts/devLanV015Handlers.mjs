@@ -54,9 +54,67 @@ export const V015_CATALOG = [
   },
   { sku: 'tool_hoe', nameVi: 'Cuốc gỗ', descriptionVi: 'Cuốc đất vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'tool_watering_can', nameVi: 'Bình tưới', descriptionVi: 'Tưới cây ngoài vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
-  { sku: 'water_pitcher', nameVi: 'Bình nước', descriptionVi: 'Múc nước từ hồ.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'water_pitcher', nameVi: 'Bình nước', descriptionVi: 'Múc nước / đổ bát uống.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'seed_wheat', nameVi: 'Hạt lúa mì', descriptionVi: 'Gieo nhanh, vụ đầu dễ.', purpose: 'seed', stackLimit: 99, tradeable: false },
+  {
+    sku: 'fish_salmon_bite',
+    nameVi: 'Cá hồi mềm',
+    descriptionVi: 'Miếng cá mềm cho bé thử — coi là đồ ưa thích.',
+    purpose: 'pet_food',
+    stackLimit: 5,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_yarn',
+    nameVi: 'Cuộn len',
+    descriptionVi: 'Đồ chơi cuốn để rủ bé chạy nhảy trong nhà.',
+    purpose: 'pet_toy',
+    stackLimit: 3,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_cardboard_box',
+    nameVi: 'Hộp giấy',
+    descriptionVi: 'Hộp nhỏ để bé chui vào chơi.',
+    purpose: 'pet_toy',
+    stackLimit: 2,
+    tradeable: false,
+  },
 ];
+
+/** Dev LAN starter rows — real inventory, không UI giả. */
+export function grantPetCareStarterPack(v015, worldId, nowIso) {
+  adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+}
+
+/** Idempotent — nhà đã có mèo nhưng thiếu đồ chơi/đồ ăn (world cũ trước 04C). */
+export function ensurePetCareStarterPackIfMissing(v015, worldId, nowIso) {
+  const pet = v015.pets[worldId];
+  if (!pet) return false;
+  const list = getWorldInventoryList(v015, worldId);
+  const qty = (sku) => list.find((i) => i.ownerScope === 'shared' && i.itemSku === sku)?.qty ?? 0;
+  let changed = false;
+  if (qty('fish_salmon_bite') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+    changed = true;
+  }
+  if (qty('toy_yarn') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+    changed = true;
+  }
+  if (qty('toy_cardboard_box') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+    changed = true;
+  }
+  if (qty('water_pitcher') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+    changed = true;
+  }
+  return changed;
+}
 
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
 
@@ -168,6 +226,7 @@ export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, n
 }
 
 export function buildInventorySnapshot(v015, worldId, userId, nowMs = Date.now()) {
+  ensurePetCareStarterPackIfMissing(v015, worldId, new Date(nowMs).toISOString());
   const list = getWorldInventoryList(v015, worldId);
   const utcDate = new Date(nowMs).toISOString().slice(0, 10);
   const kibbleRow = list.find((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic');

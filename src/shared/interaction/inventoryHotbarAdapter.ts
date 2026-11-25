@@ -31,6 +31,8 @@ export const MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST = [
   'fish_carp_grilled',
   'cat_broth_warm',
   'chicken_pumpkin_mash',
+  'toy_yarn',
+  'toy_cardboard_box',
 ] as const;
 
 /** @deprecated Use MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST — name kept for call sites until Mission 02. */
@@ -81,7 +83,11 @@ function labelForSku(sku: string, snapshot: InventorySnapshot): string {
 
 function iconForSku(sku: string): HotbarSlot['iconId'] {
   const food = PET_FOOD_CATALOG.find((f) => f.sku === sku);
-  return food?.iconId ?? (sku === 'water_pitcher' ? 'water_pitcher_full' : 'food_kibble');
+  if (food) return food.iconId;
+  if (sku === 'water_pitcher') return 'water_pitcher_full';
+  if (sku === 'toy_yarn') return 'yarn_ball';
+  if (sku === 'toy_cardboard_box') return 'cardboard_box';
+  return 'food_kibble';
 }
 
 /**
@@ -127,6 +133,7 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
       labelVi: labelForSku(sku, snapshot),
       qty: stack.qty,
       quality: stack.key.quality,
+      ...(sku === 'water_pitcher' ? { waterFillLevel: 72 } : {}),
     };
   }
 

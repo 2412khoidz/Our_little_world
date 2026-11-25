@@ -98,6 +98,21 @@ export interface GameEventMap {
   'cmd:sync-held-item': HeldItemState;
   /** DEV living-pet local simulation — presentation only, no consumption. */
   'cmd:pet-local-food-offer': PetFoodOfferInput;
+  'cmd:pet-care-mode': { active: boolean };
+  'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
+  'cmd:pet-care-action': {
+    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'pour_water' | 'call' | 'observe';
+    sku?: string;
+    quality?: 'normal' | 'silver' | 'gold';
+    ownerScope?: string;
+  };
+  /** React shell → authoritative inventory + vitals (dev LAN / Supabase). */
+  'evt:pet-care-request-consume': {
+    sku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    ownerScope: string;
+  };
+  'evt:pet-care-mode': { active: boolean };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };

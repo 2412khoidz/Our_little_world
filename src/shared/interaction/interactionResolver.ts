@@ -91,6 +91,15 @@ function actionForTarget(
           available: true,
         };
       }
+      if (held.itemKind === 'none') {
+        return {
+          code: 'enter_pet_care',
+          keyHint: 'J',
+          labelVi: 'Chăm sóc gần',
+          targetId: target.id,
+          available: true,
+        };
+      }
       return {
         code: 'pet_cat',
         keyHint: 'J',
