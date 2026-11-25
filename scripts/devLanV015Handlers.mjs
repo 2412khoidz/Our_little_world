@@ -51,7 +51,47 @@ export const V015_CATALOG = [
     stackLimit: 10,
     tradeable: false,
   },
+  {
+    sku: 'fish_salmon_bite',
+    nameVi: 'Cá hồi mềm',
+    descriptionVi: 'Miếng cá mềm cho bé thử — coi là đồ ưa thích.',
+    purpose: 'pet_food',
+    stackLimit: 5,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_yarn',
+    nameVi: 'Cuộn len',
+    descriptionVi: 'Đồ chơi cuốn để rủ bé chạy nhảy trong nhà.',
+    purpose: 'pet_toy',
+    stackLimit: 3,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_cardboard_box',
+    nameVi: 'Hộp giấy',
+    descriptionVi: 'Hộp nhỏ để bé chui vào chơi.',
+    purpose: 'pet_toy',
+    stackLimit: 2,
+    tradeable: false,
+  },
+  {
+    sku: 'water_pitcher',
+    nameVi: 'Bình nước',
+    descriptionVi: 'Bình đựng nước cho bát uống.',
+    purpose: 'tool',
+    stackLimit: 1,
+    tradeable: false,
+  },
 ];
+
+/** Dev LAN starter rows — real inventory, không UI giả. */
+export function grantPetCareStarterPack(v015, worldId, nowIso) {
+  adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+}
 
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
 

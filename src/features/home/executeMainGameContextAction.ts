@@ -94,6 +94,16 @@ export async function executeMainGameContextAction(
     return;
   }
 
+  if (code === 'enter_pet_care') {
+    if (!ctx.hasPet) {
+      gameEventBus.emit('evt:open-pet-panel');
+      return;
+    }
+    gameEventBus.emit('cmd:pet-care-mode', { active: true });
+    ctx.onNotice('Vuốt lên mèo để chăm sóc — ESC để thoát.');
+    return;
+  }
+
   if (code === 'pet_cat') {
     if (!ctx.hasPet) {
       gameEventBus.emit('evt:open-pet-panel');

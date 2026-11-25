@@ -112,6 +112,7 @@ export class WorldScene extends Phaser.Scene {
   private petEntity: PetEntity | null = null;
   private petSnapshot: PetSnapshot | null = null;
   private livingPetDriver: PetLivingMainGameDriver | null = null;
+  private petCareMode = false;
   private livingPetSimulationActive = false;
   private studyPetMode = false;
 
@@ -950,6 +951,14 @@ export class WorldScene extends Phaser.Scene {
         this.petEntity?.triggerReaction('feed');
       }),
 
+      gameEventBus.on('cmd:pet-care-mode', ({ active }) => {
+        this.setPetCareMode(active);
+      }),
+
+      gameEventBus.on('cmd:pet-care-stroke', ({ zone }) => {
+        if (this.petCareMode) this.petEntity?.triggerCareStroke(zone);
+      }),
+
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
         if (!seat || this.currentMapId !== 'home') {
           this.clearLocalPosture(false);
@@ -1026,6 +1035,22 @@ export class WorldScene extends Phaser.Scene {
         this.refreshMailboxBadge();
       }),
     );
+  }
+
+  private setPetCareMode(active: boolean): void {
+    if (this.petCareMode === active) return;
+    this.petCareMode = active;
+    this.petEntity?.setCareCloseUp(active);
+    const cam = this.cameras.main;
+    if (active && this.petEntity) {
+      this.pathQueue = [];
+      const pos = this.petEntity.getWorldPosition();
+      cam.pan(pos.x, pos.y - 6, 280, 'Power2');
+      cam.zoomTo(Math.min(2.2, cam.zoom * 1.42), 280, 'Power2');
+    } else {
+      this.handleResize(true);
+    }
+    gameEventBus.emit('evt:pet-care-mode', { active });
   }
 
   private bindContextEvents(): void {
@@ -1113,7 +1138,13 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    if (this.livingPetDriver && this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+    if (
+      !this.petCareMode &&
+      this.livingPetDriver &&
+      this.petEntity &&
+      this.petSnapshot &&
+      this.currentMapId === 'home'
+    ) {
       const memberIds = this.members.map((m) => m.userId);
       const caregiverPair: [string, string] = [
         memberIds[0] ?? 'partner-a',

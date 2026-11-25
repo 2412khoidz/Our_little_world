@@ -97,6 +97,9 @@ export interface GameEventMap {
   'cmd:sync-held-item': HeldItemState;
   /** DEV living-pet local simulation — presentation only, no consumption. */
   'cmd:pet-local-food-offer': PetFoodOfferInput;
+  'cmd:pet-care-mode': { active: boolean };
+  'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
+  'evt:pet-care-mode': { active: boolean };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };

@@ -26,6 +26,7 @@ import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
 import { registerLivingPetDevAcceptanceHooks } from '../shared/petLiving/mainGame/livingPetDevAcceptance';
+import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -218,6 +219,7 @@ function MainCoupleApp() {
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
+  const [petCareMode, setPetCareMode] = useState(false);
   const [petCareBowlVersion, setPetCareBowlVersion] = useState(1);
   const [petBusy, setPetBusy] = useState(false);
   const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
@@ -599,6 +601,11 @@ function MainCoupleApp() {
   useEffect(() => () => stopStudyAmbient(), []);
 
   useEffect(() => registerLivingPetDevAcceptanceHooks(), []);
+
+  useEffect(
+    () => gameEventBus.on('evt:pet-care-mode', ({ active }) => setPetCareMode(active)),
+    [],
+  );
 
   useEffect(() => {
     if (!incomingHugInvite && !outgoingInviteExpiresAtMs) return;
@@ -1397,6 +1404,11 @@ function MainCoupleApp() {
       )}
 
       <LivingPetDevBanner />
+
+      <PetCareTouchOverlay
+        active={petCareMode}
+        onExit={() => gameEventBus.emit('cmd:pet-care-mode', { active: false })}
+      />
 
       <GameViewport
         worldId={worldSnapshot.world.id}
