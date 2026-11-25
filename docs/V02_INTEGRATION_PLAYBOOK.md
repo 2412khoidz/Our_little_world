@@ -7,7 +7,7 @@
 
 | Contract | Source PR / SHA | Consumers |
 |----------|-----------------|-----------|
-| Farm plots `1.0.0` | [#12](https://github.com/2412khoidz/Our_little_world/pull/12) @ `c253644` — `docs/handover/FARM_PLOT_CONTRACT.md`, `src/shared/world/farmPlotContract.ts`, `farmPlotContract.v1.json` | **#14** bind RPC (`farm_main_{index}`); DB today `farm_main:0-23` + trusts client coords — full 184 grid deferred |
+| Farm plots `1.0.0`→`1.0.1` | [#12](https://github.com/2412khoidz/Our_little_world/pull/12) — 184 anchors locked; **1.0.1** = shop portal tile (38,13) only | **#14** re-pull `farmPlotContract.v1.json` after #12 bump; bind `farm_main_{index}` |
 | Hand-feed RPC | [#10](https://github.com/2412khoidz/Our_little_world/pull/10) + [#13](https://github.com/2412khoidz/Our_little_world/pull/13) — `pet_consume_hand_food` migration `20261125001200` | On integrate: **one** migration file; drop duplicate hunk if both PRs carry it |
 
 ## PR stack (do not auto-merge `main`)
