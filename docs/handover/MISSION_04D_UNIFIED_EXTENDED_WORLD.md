@@ -55,6 +55,18 @@ npm run test:e2e -- tests/e2e/unified-world-navigation.spec.ts tests/e2e/extende
 - `tests/unit/realtimeMapContract.test.ts`
 - E2E: garden/outdoor nav, WASD trên outdoor
 
+## Phase 6 — World overhaul (reference repos, 2026-11-25)
+
+Owner yêu cầu thế giới kiểu Stardew (nhiều vùng, cửa hàng vào trong, collision trung thực). **Không** thay OLW bằng repo khác; giữ React + Phaser 4.
+
+| Tài liệu | Nội dung |
+|----------|----------|
+| [WORLD_OVERHAUL_REFERENCE_MATRIX.md](../research/WORLD_OVERHAUL_REFERENCE_MATRIX.md) | Clone + đánh giá Hollowmere, Harvest Duo, Rai Lanna, … |
+| [COMPOSER1_HOLLOWMERE_HARVEST_MEADOWBROOK.md](./COMPOSER1_HOLLOWMERE_HARVEST_MEADOWBROOK.md) | **Composer 1** — Hollowmere maps, Harvest Hollow ledger, Meadowbrook (`webfarmville`) sim |
+| `src/shared/world/worldAreaGraph.ts` | Đồ thị vùng **planned** (làng/rừng/hồ/biển) + warps đang live |
+
+**Quyết định:** mở rộng pipeline **Tiled tilemap + area graph** (mẫu Hollowmere JSON + Harvest Duo `warps`); dần thay vẽ tay `outdoorRenderer.ts` cho vùng playable.
+
 ## Known gaps (owner / follow-up)
 
 - Chưa ghi video gameplay đầy đủ 10 địa danh trên private build (cần máy owner + `build:private`).
