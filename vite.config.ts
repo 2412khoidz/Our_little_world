@@ -31,15 +31,24 @@ export default defineConfig(({ command, mode }) => {
   const privateBuild = mode === 'private-art';
   const forcePrivateArt =
     process.env.VITE_OLW_PRIVATE_ART === '1' || process.env.VITE_OLW_PRIVATE_ART === 'true';
+  const forceExtendedWorld =
+    process.env.VITE_OLW_EXTENDED_WORLD === '1' || process.env.VITE_OLW_EXTENDED_WORLD === 'true';
+  const forceDonorEconomy =
+    process.env.VITE_OLW_DONOR_ECONOMY === '1' || process.env.VITE_OLW_DONOR_ECONOMY === 'true';
   const localAtlasReady = privateArtFiles.every((file) => existsSync(resolve('public', file)));
+  const privatePreviewActive = privateBuild || forcePrivateArt || (command === 'serve' && localAtlasReady);
   if ((privateBuild || forcePrivateArt) && !localAtlasReady) {
     throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước hoặc copy owner handoff zip.');
   }
 
   return {
   define: {
-    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(
-      privateBuild || forcePrivateArt || (command === 'serve' && localAtlasReady),
+    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(privatePreviewActive),
+    'import.meta.env.VITE_OLW_EXTENDED_WORLD': JSON.stringify(
+      forceExtendedWorld || privatePreviewActive,
+    ),
+    'import.meta.env.VITE_OLW_DONOR_ECONOMY': JSON.stringify(
+      forceDonorEconomy || privatePreviewActive,
     ),
   },
   build: { copyPublicDir: false },
