@@ -2,9 +2,11 @@
 
 **Owner grid (canonical):** `6 × 4` row-major plot indices (`0..23`) — `src/shared/farming/crops.ts` (`GARDEN_COLUMNS`, `GARDEN_ROWS`).
 
-## Plot anchor table (V1 — garden map)
+## Plot anchor table (Composer 3 — farm map)
 
-Defined in `src/shared/farming/gardenPlotLayout.ts` (Mission 05 branch).
+**Authoritative:** `src/shared/world/farmPlotContract.ts` + `docs/handover/FARM_PLOT_CONTRACT.md` (PR #12).
+
+**Mission 05 bridge:** `src/shared/farming/farmPlayableBridge.ts` binds the 6×4 Dev LAN slice to `farm_main_0..23` (not duplicated rects).
 
 | plotId | tileX | tileY | world px (16px tile) |
 | --- | ---: | ---: | --- |

@@ -10,7 +10,7 @@ export const movementPacketSchema = z.object({
   worldId: z.string().min(1).max(128),
   userId: z.string().min(1).max(128),
   sessionId: z.string().min(1).max(128),
-  mapId: z.enum(['home', 'garden']),
+  mapId: z.enum(['home', 'garden', 'farm']),
   seq: z.number().int().nonnegative(),
   timestampMs: z.number().finite().nonnegative(),
   x: z.number().finite().min(0).max(10000),

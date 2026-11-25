@@ -1,4 +1,6 @@
 import type { MapId } from './types';
+import { getParsedTiledWorld } from './world/tiledMapRegistry';
+import { isTileBlockedFromParsed, type ParsedTiledPortal } from './world/parseTiledWorldMap';
 
 export const TILE_SIZE = 16;
 
@@ -98,7 +100,50 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
       return false;
     },
   },
+  farm: buildFarmZoneDefinition(),
 };
+
+function portalBlocksDecorate(portals: readonly ParsedTiledPortal[], tileX: number, tileY: number): boolean {
+  for (const portal of portals) {
+    const dx = Math.abs(tileX - portal.tileX);
+    const dy = Math.abs(tileY - portal.tileY);
+    if (dx <= 1 && dy <= 1) return true;
+  }
+  return false;
+}
+
+function buildFarmZoneDefinition(): MapDefinition {
+  const parsed = getParsedTiledWorld('farm');
+  if (!parsed) {
+    throw new Error('Missing parsed Tiled map for farm');
+  }
+  const fallbackHomePortal: MapPortal = {
+    id: 'farm-to-home',
+    labelVi: 'Về nhà',
+    tileX: 55,
+    tileY: 20,
+    radiusTiles: 2.25,
+    targetMapId: 'home',
+    targetSpawnX: 8,
+    targetSpawnY: 9,
+  };
+  return {
+    id: 'farm',
+    nameVi: 'Đồng ruộng',
+    tiledJsonPath: '/assets/maps/farm.json',
+    widthTiles: parsed.widthTiles,
+    heightTiles: parsed.heightTiles,
+    defaultSpawn: { tileX: 55, tileY: 20 },
+    portals: parsed.portals.length > 0 ? parsed.portals : [fallbackHomePortal],
+    isStaticBlocked(tileX, tileY) {
+      return isTileBlockedFromParsed(parsed, tileX, tileY);
+    },
+    isNoPlaceZone(tileX, tileY) {
+      if (portalBlocksDecorate(parsed.portals, tileX, tileY)) return true;
+      return isTileBlockedFromParsed(parsed, tileX, tileY);
+    },
+  };
+}
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
   return MAP_DEFINITIONS[mapId];

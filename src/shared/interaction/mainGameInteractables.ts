@@ -1,7 +1,12 @@
 import { getCatalogItem } from '../catalog';
 import { getMapDefinition, TILE_SIZE } from '../maps';
 import type { FurniturePlacement, MapId } from '../types';
-import { GARDEN_PLOT_ANCHORS } from '../farming/gardenPlotLayout';
+import {
+  buildFarmSlicePlotInteractables,
+  FARM_SLICE_SEED_SHOP_TILE,
+  PRIMARY_FARM_MAP_ID,
+} from '../farming/farmPlayableBridge';
+import { FARM_ZONE_MAP_ID } from '../world/farmPlotContract';
 import { MAIN_GAME_WORLD_ANCHORS, portalCenterPx } from './mainGameWorldAnchors';
 import type { InteractableTarget } from './interactionTypes';
 
@@ -102,31 +107,17 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       y: anchors.mailboxPx.y,
       maxRadiusPx: 40,
     });
-    for (const plot of GARDEN_PLOT_ANCHORS) {
-      targets.push({
-        id: `garden-plot-${plot.plotId}`,
-        kind: 'crop_plot',
-        labelVi: `Luống đất #${plot.plotId + 1}`,
-        x: plot.centerPxX,
-        y: plot.centerPxY,
-        maxRadiusPx: 22,
-      });
-    }
+  }
+
+  if (mapId === PRIMARY_FARM_MAP_ID || mapId === FARM_ZONE_MAP_ID) {
+    targets.push(...buildFarmSlicePlotInteractables());
     targets.push({
-      id: 'garden_seed_shop',
+      id: 'farm_seed_shop',
       kind: 'shop_npc',
       labelVi: 'Gian hạt Bác Hai',
-      x: anchors.mailboxPx.x - 32,
-      y: anchors.mailboxPx.y + 48,
+      x: FARM_SLICE_SEED_SHOP_TILE.tileX * TILE_SIZE + TILE_SIZE / 2,
+      y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
       maxRadiusPx: 44,
-    });
-    targets.push({
-      id: 'garden_shipping_bin',
-      kind: 'shipping_bin',
-      labelVi: 'Thùng giao hàng',
-      x: anchors.shippingBinPx.x,
-      y: anchors.shippingBinPx.y,
-      maxRadiusPx: 40,
     });
   }
 

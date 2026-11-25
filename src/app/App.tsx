@@ -308,7 +308,7 @@ function MainCoupleApp() {
   }, [backend.farm, backend.inventory, refreshInventorySnapshot]);
 
   useEffect(() => {
-    if (currentMapId === 'garden' && backend.farm) {
+    if ((currentMapId === 'farm' || currentMapId === 'garden') && backend.farm) {
       void refreshFarmWallet();
     }
   }, [currentMapId, backend.farm, refreshFarmWallet]);
