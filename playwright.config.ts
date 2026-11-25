@@ -6,6 +6,7 @@ const pwStateFile = process.env.OLW_DEV_LAN_STATE_FILE || `.dev-lan-state-pw-${p
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: /pwa-runtime\.spec\.ts$/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

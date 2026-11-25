@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { assertPillowAvailable, pythonArgv } from './resolve-python.mjs';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -311,6 +312,7 @@ export function buildPropsAtlas({ output = defaultOutput, packRoot = path.join(r
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--private')) {
+    assertPillowAvailable();
     const ts = (await import('typescript')).default;
     const registryFile = path.join(root, 'src/game/artDemos/semanticAssetRegistry.ts');
     const registrySource = fs.readFileSync(registryFile, 'utf8');
@@ -319,7 +321,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     });
     const { SEMANTIC_ASSETS } = await import('data:text/javascript;base64,' + Buffer.from(outputText).toString('base64'));
     const paths = JSON.parse(fs.readFileSync(path.join(root, 'scripts/atlas-sources/demo-e-textures.json'), 'utf8'));
-    const result = spawnSync('python', ['-X', 'utf8', path.join(root, 'scripts/build-private-atlas.py')], {
+    const pyScript = path.join(root, 'scripts/build-private-atlas.py');
+    const { cmd, args } = pythonArgv(pyScript);
+    const result = spawnSync(cmd, args, {
       input: JSON.stringify({
         output: path.join(root, 'public/assets/private-unified'),
         fallback: defaultOutput,

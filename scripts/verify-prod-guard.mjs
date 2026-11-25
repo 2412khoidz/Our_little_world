@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { findDuplicatePrecacheUrls } from './parse-sw-precache.mjs';
 import productionPublicFiles from './production-public-files.json' with { type: 'json' };
 
 const distAssets = path.join(process.cwd(), 'dist', 'assets');
@@ -35,6 +36,18 @@ const FORBIDDEN_PROD_MARKERS = [
 const jsFiles = fs.readdirSync(distAssets).filter((f) => f.endsWith('.js'));
 const leaks = [];
 
+const dist = path.resolve(distAssets, '..');
+const swPath = path.join(dist, 'sw.js');
+if (!fs.existsSync(swPath)) {
+  leaks.push('Thiếu dist/sw.js — Service Worker không được tạo sau build.');
+}
+const precache = fs.existsSync(swPath) ? fs.readFileSync(swPath, 'utf8') : '';
+for (const d of findDuplicatePrecacheUrls(precache)) {
+  leaks.push(
+    `Precache URL trùng (${d.count} lần): ${d.url} — revisions: ${d.revisions.join(', ')}`,
+  );
+}
+
 for (const file of jsFiles) {
   const text = fs.readFileSync(path.join(distAssets, file), 'utf8');
   for (const marker of FORBIDDEN_PROD_MARKERS) {
@@ -44,8 +57,6 @@ for (const file of jsFiles) {
   }
 }
 
-const dist = path.resolve(distAssets, '..');
-const precache = fs.readFileSync(path.join(dist, 'sw.js'), 'utf8');
 const publicPaths = new Set(productionPublicFiles);
 for (const file of fs.readdirSync(dist, { recursive: true, withFileTypes: true })) {
   if (!file.isFile()) continue;

@@ -1,7 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 import { expect, test, type Page } from '@playwright/test';
+
+const require = createRequire(import.meta.url);
+const { assertPillowAvailable, pythonArgv } = require('../../scripts/resolve-python.mjs') as {
+  assertPillowAvailable: () => void;
+  pythonArgv: (scriptPath: string, trailingArgs?: string[]) => { cmd: string; args: string[] };
+};
 
 const SHOWCASE_DIR = process.env.OLW_SHOWCASE_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'grand-showcase');
 const ART_AFTER_DIR = path.join(process.cwd(), 'test-results', 'art-pass', 'after');
@@ -30,7 +37,9 @@ function buildGifFromFrames(frameDir: string, outGifPath: string, durationMs = 2
     'print("GIF OK", len(imgs))',
   ];
   fs.writeFileSync(pyScript, lines.join('\n'), 'utf8');
-  execSync(`python "${pyScript}"`, { stdio: 'inherit' });
+  assertPillowAvailable();
+  const { cmd, args } = pythonArgv(pyScript);
+  execFileSync(cmd, args, { stdio: 'inherit', env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' } });
 }
 
 test.describe('Grand Pre-Integration Experience & Sandboxes QA', () => {
