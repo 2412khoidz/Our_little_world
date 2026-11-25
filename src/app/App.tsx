@@ -45,6 +45,7 @@ import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { isDonorLanPlayableMode, setDevLanDonorUiActive } from '../shared/donor/donorEconomyUiFlag';
 import type { DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
 import { parseDonorFishingSpot } from '../shared/donor/donorFishingSpots';
+import type { DonorWorkshopFocus } from '../shared/donor/donorWorkshopFocus';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
@@ -289,6 +290,7 @@ function MainCoupleApp() {
   const farmVersionRef = useRef(0);
   const [farmBusy, setFarmBusy] = useState(false);
   const [donorChillFishingSpot, setDonorChillFishingSpot] = useState<DonorFishingSpotId>('meadow_pond');
+  const [donorWorkshopFocus, setDonorWorkshopFocus] = useState<DonorWorkshopFocus | undefined>(undefined);
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
@@ -1754,7 +1756,12 @@ function MainCoupleApp() {
           donorLanPlayable && worldId ? () => setActiveModal('donor_stream_fishing') : undefined
         }
         onOpenDonorWorkshop={
-          donorLanPlayable && worldId ? () => setActiveModal('donor_workshop') : undefined
+          donorLanPlayable && worldId
+            ? (focus) => {
+                setDonorWorkshopFocus(focus);
+                setActiveModal('donor_workshop');
+              }
+            : undefined
         }
         donorLanPlayable={donorLanPlayable}
         onNotice={(message, isError) => showToast(message, isError)}
@@ -1980,7 +1987,11 @@ function MainCoupleApp() {
       {donorLanPlayable && activeModal === 'donor_workshop' && worldId && (
         <DonorWorkshopModal
           worldId={worldId}
-          onClose={() => setActiveModal(null)}
+          focusSection={donorWorkshopFocus}
+          onClose={() => {
+            setActiveModal(null);
+            setDonorWorkshopFocus(undefined);
+          }}
           onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
         />
       )}

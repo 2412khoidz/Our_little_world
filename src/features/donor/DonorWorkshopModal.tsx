@@ -9,14 +9,19 @@ import {
   postDonorWorkshopCollect,
   postDonorWorkshopQueue,
 } from '../../lib/backend/donorDevLanClient';
+import type { DonorWorkshopFocus } from '../../shared/donor/donorWorkshopFocus';
 
 interface DonorWorkshopModalProps {
   worldId: string;
+  focusSection?: DonorWorkshopFocus;
   onClose: () => void;
   onInventoryRefresh: () => Promise<void>;
 }
 
-export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: DonorWorkshopModalProps) {
+export function DonorWorkshopModal({ worldId, focusSection, onClose, onInventoryRefresh }: DonorWorkshopModalProps) {
+  const showMill = !focusSection || focusSection === 'mill';
+  const showBakery = !focusSection || focusSection === 'mill' || focusSection === 'bakery';
+  const showCoop = !focusSection || focusSection === 'mill' || focusSection === 'coop';
   const [view, setView] = useState<Awaited<ReturnType<typeof fetchDonorWorkshop>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +65,12 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
       <div className="modal-panel">
         <div className="modal-header">
           <h2 className="modal-title">
-            <Factory size={18} /> Donor chế biến (C1+)
+            <Factory size={18} />{' '}
+            {focusSection === 'bakery'
+              ? 'Lò Hollow — làng'
+              : focusSection === 'coop'
+                ? 'Chuồng gà — làng'
+                : 'Donor chế biến (C1+)'}
           </h2>
           <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
             <X size={16} />
@@ -71,22 +81,28 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
             {error}
           </div>
         )}
-        <p style={{ fontSize: 13, fontWeight: 600 }}>Cối xay Meadowbrook</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopQueue(worldId, 'olw_flour').then())}>
-            Xếp: 2 lúa → bột
-          </button>
-          <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopCollect(worldId).then())}>
-            Lấy từ cối xay
-          </button>
-        </div>
-        <ul style={{ fontSize: 12 }}>
-          {(view?.mill.queue ?? []).map((job) => (
-            <li key={`m-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
-          ))}
-        </ul>
+        {showMill && (
+          <>
+            <p style={{ fontSize: 13, fontWeight: 600 }}>Cối xay Meadowbrook</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopQueue(worldId, 'olw_flour').then())}>
+                Xếp: 2 lúa → bột
+              </button>
+              <button type="button" className="btn btn--secondary btn--sm" disabled={busy} onClick={() => void run(() => postDonorWorkshopCollect(worldId).then())}>
+                Lấy từ cối xay
+              </button>
+            </div>
+            <ul style={{ fontSize: 12 }}>
+              {(view?.mill.queue ?? []).map((job) => (
+                <li key={`m-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
+              ))}
+            </ul>
+          </>
+        )}
 
-        <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12 }}>Lò Hollow (harvest-hollow)</p>
+        {showBakery && (
+          <>
+        <p style={{ fontSize: 13, fontWeight: 600, marginTop: showMill ? 12 : 0 }}>Lò Hollow (harvest-hollow)</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button type="button" className="btn btn--primary btn--sm" disabled={busy} data-testid="donor-queue-bread" onClick={() => void run(() => postDonorBakeryQueue(worldId, 'olw_bread').then())}>
             Xếp: 1 bột → bánh mì
@@ -103,7 +119,11 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
             <li key={`b-${job.recipeId}-${job.endMs}`}>{job.recipeId}</li>
           ))}
         </ul>
+          </>
+        )}
 
+        {showCoop && (
+          <>
         <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12 }}>
           <Egg size={14} style={{ verticalAlign: 'middle' }} /> Chuồng gà
         </p>
@@ -115,6 +135,8 @@ export function DonorWorkshopModal({ worldId, onClose, onInventoryRefresh }: Don
             Nhặt trứng
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

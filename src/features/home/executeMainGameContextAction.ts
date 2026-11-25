@@ -23,7 +23,7 @@ export interface MainGameActionContext {
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
-  onOpenDonorWorkshop?: () => void;
+  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
   onNotice: (message: string, isError?: boolean) => void;
   livingPetLocalSimulation?: boolean;
 }
@@ -251,7 +251,7 @@ export async function executeMainGameContextAction(
     return;
   }
   if (code === 'open_donor_workshop' && ctx.onOpenDonorWorkshop) {
-    ctx.onOpenDonorWorkshop();
+    ctx.onOpenDonorWorkshop(action.workshopFocus);
     return;
   }
 

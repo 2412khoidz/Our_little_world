@@ -91758,6 +91758,78 @@
           ]
         },
         {
+          "id": 9208,
+          "name": "cabacos_village_hollow_bakery",
+          "type": "interactable",
+          "x": 288,
+          "y": 496,
+          "width": 32,
+          "height": 24,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "workshop_building"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Lò Hollow — nướng bánh"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "donorPlayable",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "workshopFocus",
+              "type": "string",
+              "value": "bakery"
+            }
+          ]
+        },
+        {
+          "id": 9209,
+          "name": "cabacos_village_hollow_coop",
+          "type": "interactable",
+          "x": 352,
+          "y": 496,
+          "width": 32,
+          "height": 24,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "workshop_building"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Chuồng gà Hollow — thu trứng"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "donorPlayable",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "workshopFocus",
+              "type": "string",
+              "value": "coop"
+            }
+          ]
+        },
+        {
           "id": 9207,
           "name": "cabacos_plaza_well",
           "type": "interactable",
@@ -91787,7 +91859,7 @@
     }
   ],
   "nextlayerid": 28,
-  "nextobjectid": 263,
+  "nextobjectid": 9210,
   "orientation": "orthogonal",
   "properties": [
     {

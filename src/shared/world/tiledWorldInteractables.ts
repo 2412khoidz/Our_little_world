@@ -54,6 +54,7 @@ export function buildTiledWorldInteractableTargets(
       maxRadiusPx: spawn.maxRadiusPx ?? 48,
       donorPlayable: playable ? true : undefined,
       fishingSpotId: spawn.fishingSpotId,
+      workshopFocus: spawn.workshopFocus,
     });
   }
   if (fromJson.length > 0) return fromJson;

@@ -293,6 +293,7 @@ function actionForTarget(
         targetId: target.id,
         available: target.donorPlayable === true,
         reasonVi: target.donorPlayable ? undefined : 'Xưởng chế biến sẽ mở trên bản preview farm/fish.',
+        workshopFocus: target.workshopFocus,
       };
     default:
       return { code: 'inspect_prop', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };

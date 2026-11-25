@@ -4,6 +4,7 @@ import type { LivingItemIconId } from '../petLiving/petVisualTypes';
 export type HeldItemKind = 'none' | 'food' | 'water_pitcher' | 'toy' | 'gift' | 'tool';
 
 import type { InventoryOwnerScope } from '../inventory/inventoryTypes';
+import type { DonorWorkshopFocus } from '../donor/donorWorkshopFocus';
 
 export interface HotbarSlot {
   slotIndex: number;
@@ -71,6 +72,8 @@ export interface InteractableTarget {
   donorPlayable?: boolean;
   /** Meadowbrook / Hollowmere / canvas-games spot id for fishing modals. */
   fishingSpotId?: string;
+  /** Opens donor workshop modal scrolled to mill / bakery / coop. */
+  workshopFocus?: DonorWorkshopFocus;
 }
 
 export type InteractionActionCode =
@@ -114,6 +117,7 @@ export interface ContextualAction {
   available: boolean;
   reasonVi?: string;
   donorFishingSpotId?: string;
+  workshopFocus?: DonorWorkshopFocus;
 }
 
 export interface ContextualResolution {

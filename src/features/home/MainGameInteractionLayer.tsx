@@ -41,7 +41,7 @@ export interface MainGameInteractionLayerProps {
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
-  onOpenDonorWorkshop?: () => void;
+  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
   donorLanPlayable?: boolean;
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */

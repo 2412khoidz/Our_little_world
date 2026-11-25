@@ -50,4 +50,29 @@ describe('village/beach economy interactables', () => {
     const pier = parsed?.interactableSpawns.find((s) => s.id === 'beach_pier_fishing');
     expect(pier?.fishingSpotId).toBe('gull_bay');
   });
+
+  it('village Hollow bakery/coop doors open workshop with focus', () => {
+    const targets = buildTiledWorldInteractableTargets('village', true);
+    const bakery = targets.find((t) => t.id === 'cabacos_village_hollow_bakery')!;
+    const coop = targets.find((t) => t.id === 'cabacos_village_hollow_coop')!;
+    expect(bakery.donorPlayable).toBe(true);
+    expect(bakery.workshopFocus).toBe('bakery');
+    expect(coop.workshopFocus).toBe('coop');
+    const resBakery = resolveContextualActions({
+      playerX: bakery.x,
+      playerY: bakery.y,
+      facing: 'down',
+      heldItem: EMPTY_HELD_ITEM,
+      interactables: targets,
+      economyPlayable: true,
+    });
+    expect(resBakery.primary?.code).toBe('open_donor_workshop');
+    expect(resBakery.primary?.workshopFocus).toBe('bakery');
+    expect(resBakery.primary?.available).toBe(true);
+  });
+
+  it('hides Hollow doors when economy preview is off', () => {
+    const targets = buildTiledWorldInteractableTargets('village', false);
+    expect(targets.some((t) => t.id === 'cabacos_village_hollow_bakery')).toBe(false);
+  });
 });

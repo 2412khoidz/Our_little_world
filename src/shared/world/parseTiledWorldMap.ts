@@ -1,5 +1,6 @@
 import type { MapId } from '../types';
 import type { InteractableDomainKind } from '../interaction/interactionTypes';
+import { parseDonorWorkshopFocus } from '../donor/donorWorkshopFocus';
 
 export interface TiledObjectProperty {
   name: string;
@@ -74,6 +75,7 @@ export interface ParsedTiledWorldMap {
     maxRadiusPx?: number;
     fishingSpotId?: string;
     donorPlayableFromJson?: boolean;
+    workshopFocus?: ReturnType<typeof parseDonorWorkshopFocus>;
   }[];
 }
 
@@ -153,6 +155,7 @@ export function parseTiledWorldMap(json: TiledWorldMapJson): ParsedTiledWorldMap
           maxRadiusPx: props.maxRadiusPx !== undefined ? Number(props.maxRadiusPx) : undefined,
           fishingSpotId: props.fishingSpotId ? String(props.fishingSpotId) : undefined,
           donorPlayableFromJson: props.donorPlayable === true ? true : undefined,
+          workshopFocus: parseDonorWorkshopFocus(props.workshopFocus),
         });
       }
     }
