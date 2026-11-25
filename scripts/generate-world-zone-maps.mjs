@@ -18,6 +18,7 @@ const T = {
   pathA: 22,
   pathB: 23,
   pathC: 23,
+  woodPlank: 24,
   fenceH: 25,
   fenceP: 26,
   fenceV: 27,
@@ -502,10 +503,20 @@ function buildFarmMap() {
   paths[idx(w, 5, 15)] = T.pathC;
   collision[idx(w, 5, 15)] = 0;
 
-  // Rừng viền bắc
-  for (let x = 2; x < w - 2; x += 3) {
-    vegetation[idx(w, x, 2)] = T.hedge;
-    collision[idx(w, x, 2)] = 1;
+  // Cây rải rác phía bắc (không hàng hedge lặp — tránh artifact “hộp vàng”)
+  const northTrees = [
+    [8, 3],
+    [22, 4],
+    [40, 3],
+    [52, 4],
+  ];
+  for (const [tx, ty] of northTrees) {
+    vegetation[idx(w, tx, ty)] = T.treeTL;
+    vegetation[idx(w, tx + 1, ty)] = T.treeTR;
+    vegetation[idx(w, tx, ty + 1)] = T.treeBL;
+    vegetation[idx(w, tx + 1, ty + 1)] = T.treeBR;
+    collision[idx(w, tx, ty + 1)] = 1;
+    collision[idx(w, tx + 1, ty + 1)] = 1;
   }
 
   // Khu chăn nuôi (tây nam) — hàng rào + cổng
@@ -742,7 +753,7 @@ function buildForestMap() {
         properties: [
           { name: 'targetMapId', type: 'string', value: 'beach' },
           { name: 'spawnX', type: 'int', value: 2 },
-          { name: 'spawnY', type: 'int', value: 18 },
+          { name: 'spawnY', type: 'int', value: 22 },
           { name: 'labelVi', type: 'string', value: 'Ra bãi biển' },
         ],
       },
@@ -775,31 +786,42 @@ function buildBeachMap() {
   const vegetation = empty(w, h);
   const collision = empty(w, h);
 
+  // Bắc: cồn cỏ; giữa: cát rộng; nam: bờ + nước (spawn y≈22 đứng trên cát)
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
-      const sand = (x + y * 3) % 2 === 0 ? T.sandA : T.sandB;
-      ground[idx(w, x, y)] = y >= 26 ? sand : (x + y) % 3 === 0 ? T.g2 : T.g0;
+      if (y >= 28) {
+        ground[idx(w, x, y)] = T.sandB;
+      } else if (y >= 26) {
+        ground[idx(w, x, y)] = T.shoreGrass;
+      } else if (y >= 11) {
+        ground[idx(w, x, y)] = (x + y) % 2 === 0 ? T.sandA : T.sandB;
+      } else {
+        ground[idx(w, x, y)] = (x + y) % 3 === 0 ? T.forestFloor : T.g2;
+      }
     }
   }
 
-  for (let y = 29; y < h; y += 1) {
+  for (let y = 28; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
       water[idx(w, x, y)] = T.waterDeep;
       collision[idx(w, x, y)] = 1;
     }
   }
-  for (let y = 26; y <= 28; y += 1) {
+  for (let y = 26; y <= 27; y += 1) {
     for (let x = 0; x < w; x += 1) {
-      ground[idx(w, x, y)] = T.shoreGrass;
       water[idx(w, x, y)] = 0;
       collision[idx(w, x, y)] = 0;
     }
   }
-  // Cầu gỗ ra biển
-  for (let x = 18; x < 38; x += 1) {
-    paths[idx(w, x, 27)] = x % 2 === 0 ? T.pathA : T.pathB;
+  // Cầu gỗ (gid 24) ra biển — không dùng cobble làng
+  for (let x = 20; x < 36; x += 1) {
+    paths[idx(w, x, 27)] = T.woodPlank;
     ground[idx(w, x, 27)] = 0;
     collision[idx(w, x, 27)] = 0;
+  }
+  for (let x = 22; x < 34; x += 1) {
+    paths[idx(w, x, 26)] = T.sandA;
+    ground[idx(w, x, 26)] = 0;
   }
 
   vegetation[idx(w, 8, 12)] = T.treeTL;

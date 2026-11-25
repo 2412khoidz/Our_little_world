@@ -15121,7 +15121,7 @@
             {
               "name": "spawnY",
               "type": "int",
-              "value": 18
+              "value": 22
             },
             {
               "name": "labelVi",
