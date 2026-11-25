@@ -10,6 +10,7 @@ import {
   buildHomeMovementBlockedTiles,
   findNavAnchor,
 } from './petHomeNavLayout';
+import { isConsumptionPlanningSupported } from './petAuthorityNavigationContract';
 import { findTilePath, type GridPoint } from './tilePathfinding';
 
 export const AUTHORITY_CONSUMPTION_TARGET_BY_ACTION = {
@@ -30,12 +31,16 @@ function specActionId(actionId: AuthorityConsumptionActionId): string {
 
 export interface PetAuthorityMovementPlan {
   pathSteps: number;
+  originTileX: number;
+  originTileY: number;
   destTileX: number;
   destTileY: number;
   travelMs: number;
   performMs: number;
   planHash: string;
   targetAffordanceId: string;
+  mapId: string;
+  furnitureCollisionMode: 'starter_static' | 'world_placement_snapshot' | 'unsupported';
 }
 
 export type PetAuthorityMovementPlanResult =
@@ -66,7 +71,7 @@ export function buildPetAuthorityMovementPlan(input: {
   if (input.targetAffordanceId !== required) {
     return { ok: false, code: 'TARGET_MISMATCH' };
   }
-  if (input.mapId !== PET_HOME_MAP_ID) {
+  if (!isConsumptionPlanningSupported(input.mapId)) {
     return { ok: false, code: 'MAP_NOT_SUPPORTED' };
   }
   const dest = standTileFromAnchor(input.targetAffordanceId);
@@ -93,12 +98,16 @@ export function buildPetAuthorityMovementPlan(input: {
     ok: true,
     plan: {
       pathSteps,
+      originTileX: start.tileX,
+      originTileY: start.tileY,
       destTileX: dest.tileX,
       destTileY: dest.tileY,
       travelMs,
       performMs,
       planHash,
       targetAffordanceId: input.targetAffordanceId,
+      mapId: input.mapId,
+      furnitureCollisionMode: 'starter_static',
     },
   };
 }

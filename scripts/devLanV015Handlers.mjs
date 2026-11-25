@@ -1,7 +1,7 @@
 // Server-side Dev LAN parity handlers for V0.1.5 Living Home (OLW-015-01..08)
 import crypto from 'node:crypto';
 import { handleSharedLifeRoute } from './devLanSharedLifeHandlers.mjs';
-import { ensurePetLivingDb, tryHandlePetLivingRoute } from './devLanPetLiving.mjs';
+import { ensurePetLivingDb, finalizeAcceptedOfferForFill, tryHandlePetLivingRoute } from './devLanPetLiving.mjs';
 
 export const V015_CATALOG = [
   {
@@ -652,10 +652,13 @@ export async function handleV015Route({
         sendJson(res, 409, { ok: false, code: 'BOWL_FULL', message: 'Bát thức ăn đã đầy.' });
         return true;
       }
-      const adj = adjustInventoryItem(v015, worldId, scope, 'pet_kibble_basic', -1, nowIso);
-      if (!adj.ok) {
-        sendJson(res, 400, { ok: false, code: adj.code, message: 'Hết hạt mèo rồi — hãy nhận thêm hạt 0₫ trong túi đồ nhé!' });
-        return true;
+      const usedOfferId = finalizeAcceptedOfferForFill(v015, worldId, userId, scope, 'pet_kibble_basic', quality, nowMs);
+      if (!usedOfferId) {
+        const adj = adjustInventoryItem(v015, worldId, scope, 'pet_kibble_basic', -1, nowIso, quality);
+        if (!adj.ok) {
+          sendJson(res, 400, { ok: false, code: adj.code, message: 'Hết hạt mèo rồi — hãy nhận thêm hạt 0₫ trong túi đồ nhé!' });
+          return true;
+        }
       }
       bowl.foodPortions += 1;
       bowl.foodSku = 'pet_kibble_basic';

@@ -46,6 +46,47 @@ function recoverStaleActions(living, nowMs) {
   }
 }
 
+function expireDueOffers({ v015, worldId, nowMs, adjustInventoryItem }) {
+  const living = ensureLivingWorld(v015, worldId);
+  for (const offer of living.offers) {
+    if (!['pending', 'accepted', 'deferred'].includes(offer.status)) continue;
+    if (nowMs <= offer.expiresAtMs) continue;
+    if (offer.inventoryReserved) {
+      adjustInventoryItem(
+        v015,
+        worldId,
+        offer.reservedOwnerScope,
+        offer.itemSku,
+        1,
+        new Date(nowMs).toISOString(),
+        offer.quality,
+      );
+      offer.inventoryReserved = false;
+    }
+    offer.status = 'expired';
+    offer.respondedAtMs = nowMs;
+  }
+}
+
+export function finalizeAcceptedOfferForFill(v015, worldId, userId, scope, sku, quality, nowMs = Date.now()) {
+  const living = ensureLivingWorld(v015, worldId);
+  const offer = living.offers.find(
+    (o) =>
+      o.worldId === worldId &&
+      o.status === 'accepted' &&
+      o.inventoryReserved &&
+      o.caregiverId === userId &&
+      o.reservedOwnerScope === scope &&
+      o.itemSku === sku &&
+      (o.quality ?? 'normal') === quality,
+  );
+  if (!offer) return null;
+  offer.status = 'consumed';
+  offer.inventoryReserved = false;
+  offer.respondedAtMs = nowMs;
+  return offer.id;
+}
+
 function authorityConsumeFood({ v015, worldId, petId, caregiverId, ensurePetBowl, catchupPetVitals, derivePetMood }) {
   const nowMs = Date.now();
   const pet = v015.pets[worldId];
@@ -131,10 +172,13 @@ function authorityConsumeWater({ v015, worldId, petId, caregiverId, ensurePetBow
   return { ok: true };
 }
 
-export function buildLivingSnapshot(v015, worldId, { projectPet, projectPetCareBowl }) {
+export function buildLivingSnapshot(v015, worldId, { projectPet, projectPetCareBowl, adjustInventoryItem }) {
   const nowMs = Date.now();
   const pet = v015.pets[worldId] ?? null;
   const living = ensureLivingWorld(v015, worldId);
+  if (adjustInventoryItem) {
+    expireDueOffers({ v015, worldId, nowMs, adjustInventoryItem });
+  }
   recoverStaleActions(living, nowMs);
   if (pet) ensurePetLivingVersion(pet);
   const bowl = projectPetCareBowl(v015, worldId);
@@ -229,7 +273,7 @@ export function tryHandlePetLivingRoute(ctx) {
     getWorldInventoryList,
   } = ctx;
 
-  const deps = { projectPet, projectPetCareBowl };
+  const deps = { projectPet, projectPetCareBowl, adjustInventoryItem };
   const snap = (worldId) => buildLivingSnapshot(v015, worldId, deps);
 
   if (req.method === 'GET' && route === '/pet/living') {
@@ -319,6 +363,10 @@ export function tryHandlePetLivingRoute(ctx) {
       performUntilMs: nowMs + plan.travelMs + plan.performMs,
       destTileX: plan.destTileX,
       destTileY: plan.destTileY,
+      originTileX: plan.originTileX,
+      originTileY: plan.originTileY,
+      authoritativeTileX: plan.originTileX,
+      authoritativeTileY: plan.originTileY,
       pathSteps: plan.pathSteps,
       movementPlanHash: plan.planHash,
       movementVerified: false,
@@ -349,7 +397,7 @@ export function tryHandlePetLivingRoute(ctx) {
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
       return true;
     }
-    const reqHash = JSON.stringify([instanceId, proposal, proof ?? {}]);
+    const reqHash = JSON.stringify([instanceId, proposal]);
     const prior = checkV015Idempotency(v015, worldId, userId, 'pet_living_submit_proposal', key, reqHash);
     if (prior) {
       if (prior.conflict) {
@@ -385,20 +433,14 @@ export function tryHandlePetLivingRoute(ctx) {
         sendJson(res, 403, { ok: false, code: 'CONSUMPTION_NOT_AUTHORIZED', message: 'Thiếu kế hoạch di chuyển máy chủ.' });
         return true;
       }
-      if (!proof || proof.standTileX == null || proof.standTileY == null) {
-        sendJson(res, 400, { ok: false, code: 'MOVEMENT_PROOF_REQUIRED', message: 'Cần chứng minh vị trí đứng.' });
-        return true;
-      }
-      if (proof.standTileX !== row.destTileX || proof.standTileY !== row.destTileY) {
-        sendJson(res, 409, { ok: false, code: 'MOVEMENT_PROOF_INVALID', message: 'Vị trí đứng không khớp kế hoạch.' });
-        return true;
-      }
       if (nowMs < row.arriveAtMs) {
         sendJson(res, 409, { ok: false, code: 'MOVEMENT_NOT_READY', message: 'Chưa đủ thời gian di chuyển (máy chủ).' });
         return true;
       }
       row.movementVerified = true;
       row.status = 'performing';
+      row.authoritativeTileX = row.destTileX;
+      row.authoritativeTileY = row.destTileY;
     } else {
       if (!row.movementVerified || nowMs < row.performUntilMs) {
         sendJson(res, 403, { ok: false, code: 'CONSUMPTION_NOT_AUTHORIZED', message: 'Chưa đủ điều kiện tiêu thụ (máy chủ).' });
@@ -406,6 +448,10 @@ export function tryHandlePetLivingRoute(ctx) {
       }
       if (row.consumptionRecorded) {
         sendJson(res, 409, { ok: false, code: 'ALREADY_CONSUMED', message: 'Phần ăn/uống này đã được ghi nhận.' });
+        return true;
+      }
+      if (row.authoritativeTileX !== row.destTileX || row.authoritativeTileY !== row.destTileY) {
+        sendJson(res, 403, { ok: false, code: 'CONSUMPTION_NOT_AUTHORIZED', message: 'Máy chủ chưa xác nhận vị trí.' });
         return true;
       }
       const consume =

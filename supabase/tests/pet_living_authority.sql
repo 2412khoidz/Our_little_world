@@ -36,6 +36,7 @@ DECLARE
   w uuid := current_setting('olw.test.w')::uuid;
   pet_id uuid := current_setting('olw.test.pet')::uuid;
   inst uuid;
+  offer_id uuid;
   snap jsonb;
   row public.pet_living_action_instances%ROWTYPE;
   qty_before integer;
@@ -81,19 +82,16 @@ BEGIN
   END;
 
   SELECT * INTO row FROM public.pet_living_action_instances WHERE id = inst;
-  PERFORM pg_sleep(greatest(0.2, (row.arrive_at_ms - floor(extract(epoch FROM clock_timestamp()) * 1000))::numeric / 1000.0 + 0.1));
 
   BEGIN
-    PERFORM public.pet_living_submit_proposal(
-      w, inst, 'movement_ready', 'la-bad-proof', jsonb_build_object('standTileX', 1, 'standTileY', 1));
-    RAISE EXCEPTION 'wrong stand tile accepted';
+    PERFORM public.pet_living_submit_proposal(w, inst, 'movement_ready', 'la-move-early', NULL);
+    RAISE EXCEPTION 'movement before server clock';
   EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM <> 'MOVEMENT_PROOF_INVALID' THEN RAISE; END IF;
+    IF SQLERRM <> 'MOVEMENT_NOT_READY' THEN RAISE; END IF;
   END;
 
-  PERFORM public.pet_living_submit_proposal(
-    w, inst, 'movement_ready', 'la-move',
-    jsonb_build_object('standTileX', row.dest_tile_x, 'standTileY', row.dest_tile_y));
+  PERFORM pg_sleep(greatest(0.2, (row.arrive_at_ms - floor(extract(epoch FROM clock_timestamp()) * 1000))::numeric / 1000.0 + 0.1));
+  PERFORM public.pet_living_submit_proposal(w, inst, 'movement_ready', 'la-move', NULL);
 
   PERFORM pg_sleep(greatest(0.2, (row.perform_until_ms - floor(extract(epoch FROM clock_timestamp()) * 1000))::numeric / 1000.0 + 0.1));
 
@@ -112,9 +110,7 @@ BEGIN
   )->>'instanceId')::uuid;
   SELECT * INTO row FROM public.pet_living_action_instances WHERE id = inst;
   PERFORM pg_sleep(greatest(0.2, (row.arrive_at_ms - floor(extract(epoch FROM clock_timestamp()) * 1000))::numeric / 1000.0 + 0.1));
-  PERFORM public.pet_living_submit_proposal(
-    w, inst, 'movement_ready', 'la-move2',
-    jsonb_build_object('standTileX', row.dest_tile_x, 'standTileY', row.dest_tile_y));
+  PERFORM public.pet_living_submit_proposal(w, inst, 'movement_ready', 'la-move2', NULL);
   PERFORM pg_sleep(greatest(0.2, (row.perform_until_ms - floor(extract(epoch FROM clock_timestamp()) * 1000))::numeric / 1000.0 + 0.1));
   PERFORM public.pet_living_submit_proposal(w, inst, 'animation_finished', 'la-finish2a', NULL);
   snap := public.pet_living_get_snapshot(w);
@@ -124,34 +120,109 @@ BEGIN
   ASSERT (snap->'bowl'->>'waterVolume')::int = 90;
 
   PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
+  RESET ROLE;
+  PERFORM public._inventory_adjust_quality(w, 'shared', 'pet_kibble_basic', 4, 'normal');
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
   SELECT qty INTO qty_before FROM public.inventory_items
   WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
-  inst := (public.pet_food_offer_create(
-    w, pet_id, 'pet_kibble_basic', 'normal', 600, 'la-offer')::jsonb)->>'offerId';
+  offer_id := (public.pet_food_offer_create(
+    w, pet_id, 'pet_kibble_basic', 'normal', 600, 'la-offer') ->> 'offerId')::uuid;
   SELECT qty INTO qty_after FROM public.inventory_items
   WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
   ASSERT qty_after = qty_before - 1;
   BEGIN
-    PERFORM public.pet_food_offer_respond(w, inst::uuid, 'refuse', 'la-refuse');
+    PERFORM public.pet_food_offer_respond(w, offer_id, 'refuse', 'la-refuse');
     RAISE EXCEPTION 'client refuse allowed';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM <> 'BRAIN_AUTHORITY_REQUIRED' THEN RAISE; END IF;
   END;
-  PERFORM public.pet_food_offer_evaluate(w, pet_id, 'la-eval');
-  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = inst::uuid) IN ('accepted', 'deferred', 'refused');
-  PERFORM public.pet_food_offer_respond(w, inst::uuid, 'cancel', 'la-cancel');
-  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = inst::uuid) = 'cancelled';
+  PERFORM public.pet_food_offer_respond(w, offer_id, 'cancel', 'la-cancel');
+  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = offer_id) = 'cancelled';
   SELECT qty INTO qty_after FROM public.inventory_items
   WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
   ASSERT qty_after = qty_before;
+  offer_id := (public.pet_food_offer_create(
+    w, pet_id, 'pet_kibble_basic', 'normal', 600, 'la-offer-eval') ->> 'offerId')::uuid;
+  PERFORM public.pet_food_offer_evaluate(w, pet_id, 'la-eval');
+  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = offer_id) IN ('accepted', 'deferred', 'refused');
 
   PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.outsider'), true);
   BEGIN
-    PERFORM public.pet_living_submit_proposal(w, inst, 'movement_ready', 'la-out', jsonb_build_object('standTileX', 12, 'standTileY', 10));
+    PERFORM public.pet_living_submit_proposal(w, inst, 'movement_ready', 'la-out', NULL);
     RAISE EXCEPTION 'outsider submit proposal';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM <> 'FORBIDDEN' THEN RAISE; END IF;
   END;
+
+  PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
+  SELECT qty INTO qty_before FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  offer_id := (public.pet_food_offer_create(
+    w, pet_id, 'pet_kibble_basic', 'normal', 600, 'la-offer-exp') ->> 'offerId')::uuid;
+  SELECT qty INTO qty_after FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  ASSERT qty_after = qty_before - 1;
+  PERFORM set_config('olw.test.offer_pend', offer_id::text, true);
+
+  SELECT qty INTO qty_before FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  offer_id := (public.pet_food_offer_create(
+    w, pet_id, 'pet_kibble_basic', 'normal', 600, 'la-offer-acc') ->> 'offerId')::uuid;
+  PERFORM set_config('olw.test.offer_acc', offer_id::text, true);
+END;
+$$;
+
+RESET ROLE;
+UPDATE public.pet_food_offers
+SET status = 'accepted', inventory_reserved = true, responded_at_ms = floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint
+WHERE id = current_setting('olw.test.offer_acc')::uuid;
+
+RESET ROLE;
+UPDATE public.pet_food_offers
+SET expires_at_ms = floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint - 500
+WHERE id = current_setting('olw.test.offer_pend')::uuid;
+
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  w uuid := current_setting('olw.test.w')::uuid;
+  qty_after integer;
+  qty_before integer;
+BEGIN
+  PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
+  SELECT qty INTO qty_before FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  PERFORM public.pet_living_get_snapshot(w);
+  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = current_setting('olw.test.offer_pend')::uuid) = 'expired';
+  ASSERT (SELECT inventory_reserved FROM public.pet_food_offers WHERE id = current_setting('olw.test.offer_pend')::uuid) = false;
+  SELECT qty INTO qty_after FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  ASSERT qty_after = qty_before + 1;
+END;
+$$;
+
+RESET ROLE;
+UPDATE public.pet_food_offers
+SET expires_at_ms = floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint - 500
+WHERE id = current_setting('olw.test.offer_acc')::uuid;
+
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  w uuid := current_setting('olw.test.w')::uuid;
+  qty_after integer;
+  qty_before integer;
+BEGIN
+  PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
+  SELECT qty INTO qty_before FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  PERFORM public.pet_living_get_snapshot(w);
+  ASSERT (SELECT status FROM public.pet_food_offers WHERE id = current_setting('olw.test.offer_acc')::uuid) = 'expired';
+  ASSERT (SELECT inventory_reserved FROM public.pet_food_offers WHERE id = current_setting('olw.test.offer_acc')::uuid) = false;
+  SELECT qty INTO qty_after FROM public.inventory_items
+  WHERE world_id = w AND owner_scope = 'shared' AND item_sku = 'pet_kibble_basic' AND quality = 'normal';
+  ASSERT qty_after = qty_before + 1;
 END;
 $$;
 RESET ROLE;

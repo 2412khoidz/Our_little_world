@@ -33,6 +33,11 @@ export interface PetLivingActionInstance {
   movementVerified: boolean;
   animationVerified: boolean;
   completedAtMs: number | null;
+  originTileX?: number | null;
+  originTileY?: number | null;
+  authoritativeTileX?: number | null;
+  authoritativeTileY?: number | null;
+  pathSteps?: number | null;
 }
 
 export interface PetFoodOfferRow {

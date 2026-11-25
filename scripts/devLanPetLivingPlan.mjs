@@ -19,11 +19,15 @@ export function buildDevLanMovementPlan(pet, actionId, targetAffordanceId) {
   const performMs = PERFORM_MS[actionId];
   const plan = {
     pathSteps,
+    originTileX: sx,
+    originTileY: sy,
     destTileX: dest[0],
     destTileY: dest[1],
     travelMs,
     performMs,
-    planHash: `${actionId}:${targetAffordanceId}:${sx}:${sy}:${dest[0]}:${dest[1]}:${pathSteps}`,
+    planHash: `home:${actionId}:${targetAffordanceId}:${sx}:${sy}:${dest[0]}:${dest[1]}:${pathSteps}`,
+    mapId: 'home',
+    furnitureCollisionMode: 'starter_static',
   };
   return { ok: true, plan };
 }
