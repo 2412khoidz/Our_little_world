@@ -482,6 +482,51 @@ export function createDevLanBackend(): WorldBackend {
           body: JSON.stringify(params),
         });
       },
+      async consumeHandFood(params) {
+        return apiJson<{ pet: import('../../shared/pet/petTypes').PetSnapshot; sku: string; quality: string }>(
+          '/pet/consume-hand-food',
+          { method: 'POST', body: JSON.stringify(params) },
+        );
+      },
+    },
+
+    petLiving: {
+      async getLivingSnapshot(worldId) {
+        return apiJson<import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot>(
+          `/pet/living?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async beginLivingAction(params) {
+        return apiJson<{
+          instanceId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/begin-action', { method: 'POST', body: JSON.stringify(params) });
+      },
+      async submitLivingProposal(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/submit-proposal',
+          { method: 'POST', body: JSON.stringify(params) },
+        );
+      },
+      async createFoodOffer(params) {
+        return apiJson<{
+          offerId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer', { method: 'POST', body: JSON.stringify(params) });
+      },
+      async respondFoodOffer(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/food-offer/respond',
+          { method: 'POST', body: JSON.stringify(params) },
+        );
+      },
+      async evaluateFoodOffer(params) {
+        return apiJson<{
+          outcome?: string;
+          offerId?: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer/evaluate', { method: 'POST', body: JSON.stringify(params) });
+      },
     },
 
     study: {

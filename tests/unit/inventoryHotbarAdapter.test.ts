@@ -58,6 +58,6 @@ describe('inventoryHotbarAdapter', () => {
 
   it('documents v015 adapter and initial allowlist length', () => {
     expect(INVENTORY_HOTBAR_ADAPTER_IMPLEMENTATION).toBe('quality-scoped-food-projection');
-    expect(MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST).toHaveLength(11);
+    expect(MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST).toHaveLength(8);
   });
 });

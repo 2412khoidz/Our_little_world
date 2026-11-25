@@ -32,6 +32,7 @@ import {
 import type { PetLocomotionSnapshot } from '../../shared/petLiving/petMovement/petLocomotionModel';
 import type { FurniturePlacement, MapId } from '../../shared/types';
 import { TILE_SIZE } from '../../shared/maps';
+import type { LivingPetDevTelemetry } from '../../shared/petLiving/mainGame/livingPetDevTelemetry';
 
 const BRAIN_TICK_MS = 2000;
 
@@ -59,15 +60,18 @@ export class PetLivingMainGameDriver {
   private movement: PetMovementExecutorState;
   private readonly authority: PetAuthorityPort = createMainGamePetAuthorityPort();
   private readonly traits: PetPersonalityTraits;
+  private readonly traitPresetId: string;
   private simNeeds: Pet8Needs = createDefault8Needs();
   private bowlFood = 1;
   private waterVol = 80;
   private lastBrainTickMs = 0;
   private pendingFoodOffer: PetFoodOfferInput | null = null;
   private lastBubbleMs = 0;
+  private foodOfferHandledTicks = 0;
 
   constructor(startX: number, startY: number, traitId: string = 'curious_bong') {
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
+    this.traitPresetId = preset.id;
     this.traits = preset.traits;
     this.movement = createPetMovementExecutorState(startX, startY);
   }
@@ -141,6 +145,7 @@ export class PetLivingMainGameDriver {
       }
       for (const f of brainOut.output.foodIntents) {
         this.authority.submitFoodOfferIntent(f);
+        this.foodOfferHandledTicks += 1;
       }
       this.pendingFoodOffer = null;
     }
@@ -187,6 +192,26 @@ export class PetLivingMainGameDriver {
       loco: this.movement.loco,
       ambientBubble,
       authority: this.authority,
+    };
+  }
+
+  getTraitPresetId(): string {
+    return this.traitPresetId;
+  }
+
+  getDevTelemetry(mapId: MapId, spriteVisible: boolean, nowMs: number): LivingPetDevTelemetry {
+    const loco = this.movement.loco;
+    return {
+      visible: spriteVisible && mapId === 'home',
+      mapId,
+      x: Math.round(loco.x * 10) / 10,
+      y: Math.round(loco.y * 10) / 10,
+      animState: loco.animState,
+      brainPhase: this.brain.phase,
+      lastIntent: this.brain.lastIntent?.actionId ?? 'rest',
+      locomotionKind: loco.committedIntent,
+      foodOfferHandled: this.foodOfferHandledTicks > 0,
+      sampleMs: nowMs,
     };
   }
 }
