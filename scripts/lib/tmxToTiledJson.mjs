@@ -59,7 +59,7 @@ export function loadTmxAsTiledJson(tmxPath, options = {}) {
   const tileheight = Number.parseInt(mapAttrs.tileheight, 10);
 
   const tilesets = [];
-  for (const [, attrStr] of xml.matchAll(/<tileset\s+([^/>]+)\/>/g)) {
+  for (const [, attrStr] of xml.matchAll(/<tileset\s+([^>]+)\/>/g)) {
     const attrs = parseAttrs(`<tileset ${attrStr}/>`);
     const firstgid = Number.parseInt(attrs.firstgid, 10);
     if (!attrs.source) continue;
