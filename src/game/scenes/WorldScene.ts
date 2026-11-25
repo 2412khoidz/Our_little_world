@@ -26,6 +26,11 @@ import {
   renderDonorTuxemonMapLayers,
 } from '../world/renderDonorTuxemonMap';
 import {
+  getDonorSproutTilesets,
+  isDonorSproutMap,
+  renderDonorSproutMapLayers,
+} from '../world/renderDonorSproutMap';
+import {
   nearestTiledNpc,
   spawnTiledWorldNpcs,
   tickTiledWorldNpcs,
@@ -61,7 +66,9 @@ import type {
 import { PetEntity } from '../entities/PetEntity';
 import { avatarIdleFrame, ensurePhaserAvatarTexture, isDonorPunyAvatarTexture, playDonorToolUseAnim } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
+import { USE_PRIVATE_ART } from '../art/atlasProfile';
 import { WORLD_ART_KEY, WORLD_PROPS_KEY, worldFurnitureFrame } from '../art/worldAtlas';
+import { isPrivateAtlasReady } from '../world/privateArtCapability';
 import artIds from '../art/worldArtIds.json';
 import extIds from '../art/worldExtendedArtIds.json';
 import {
@@ -93,6 +100,17 @@ import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
+
+function preferDemoEHomeGarden(
+  scene: Phaser.Scene,
+  mapId: MapId,
+  backgroundFrame: string,
+): boolean {
+  if (mapId !== 'home' && mapId !== 'garden') return false;
+  if (!USE_PRIVATE_ART || !isPrivateAtlasReady(scene)) return false;
+  const art = scene.textures.exists(WORLD_ART_KEY) ? scene.textures.get(WORLD_ART_KEY) : null;
+  return art?.has(backgroundFrame) ?? false;
+}
 import { WorldLightingOverlay } from '../world/WorldLightingOverlay';
 import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
@@ -379,7 +397,16 @@ export class WorldScene extends Phaser.Scene {
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
-    if (isTiledWorldMapId(mapId)) {
+    const demoEHomeGarden = preferDemoEHomeGarden(this, mapId, background);
+
+    if (demoEHomeGarden && art?.has(background)) {
+      this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
+      if (mapId === 'home') {
+        this.buildHomeDemoEAccents();
+      } else if (mapId === 'garden') {
+        this.buildGardenDemoEAccents(art);
+      }
+    } else if (isTiledWorldMapId(mapId)) {
       if (mapId === 'shop' && this.isDonorCabacosShop() && !this.isDonorCabacosShopTiled() && !this.isDonorCabacosShopImage()) {
         renderDonorCabacosShopInterior(this, (obj) => this.mapLayers.push(obj));
         const mapKey = TILED_MAP_PHASER_KEYS[mapId];
@@ -407,13 +434,6 @@ export class WorldScene extends Phaser.Scene {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
       this.moteBounds = outdoor.moteBounds;
       this.motes = outdoor.motes;
-    } else if (art?.has(background)) {
-      this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
-      if (mapId === 'home') {
-        this.buildHomeDemoEAccents();
-      } else if (mapId === 'garden') {
-        this.buildGardenDemoEAccents(art);
-      }
     } else {
       this.buildStarterMap(mapId);
     }
@@ -709,6 +729,23 @@ export class WorldScene extends Phaser.Scene {
           '[Cabacos] Donor map detected but no tilesets bound; check BootScene donor textures.',
           tilemap.tilesets.map((t) => t.name),
         );
+      }
+      return;
+    }
+
+    if (isDonorSproutMap(tilemap)) {
+      const tilesets = getDonorSproutTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorSproutMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[Sprout] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error('[Sprout] Donor map missing tileset textures', tilemap.tilesets.map((t) => t.name));
       }
       return;
     }

@@ -35,7 +35,9 @@
     "import-donor:pydew-forest": "node scripts/import-donor-pydew-forest.mjs",
     "import-donor:tuxemon-forest": "node scripts/import-donor-tuxemon-forest.mjs",
     "vendor-donor:tuxemon-forest": "node scripts/vendor-donor-tuxemon-forest.mjs",
-    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-pydew-farm.mjs && node scripts/import-donor-cabacos-beach.mjs && node scripts/import-donor-tuxemon-forest.mjs",
+    "vendor-donor:sprout-home-garden": "node scripts/vendor-donor-sprout-home-garden.mjs",
+    "import-donor:sprout-home-garden": "node scripts/vendor-donor-sprout-home-garden.mjs && node scripts/import-donor-sprout-home-garden.mjs",
+    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-pydew-farm.mjs && node scripts/import-donor-cabacos-beach.mjs && node scripts/import-donor-tuxemon-forest.mjs && node scripts/import-donor-sprout-home-garden.mjs",
     "import-donor:recovery-world": "OLW_MAP_RECOVERY=1 npm run import-donor:world-zones",
     "spike:video": "node scripts/generate-spike-video.mjs",
     "test:sql": "node scripts/run-local-sql-suite.mjs"

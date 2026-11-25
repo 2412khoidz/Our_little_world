@@ -5,9 +5,26 @@ import { PUNY_SHEET, punyDonorAssetBasePath } from '../../shared/donor/punyChara
 import { preloadWorldAtlas, registerWorldAtlas } from '../art/worldAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 import farmWorldJson from '../../../public/assets/maps/farm.json';
+import homeWorldJson from '../../../public/assets/maps/home.json';
+import gardenWorldJson from '../../../public/assets/maps/garden.json';
+import { sproutTextureKey } from '../world/renderDonorSproutMap';
 
 function pydewTextureKey(tilesetName: string): string {
   return `donor-pydew-${tilesetName.replace(/\s+/g, '-').toLowerCase()}`;
+}
+
+function isSproutDonorMap(json: { properties?: { name: string; value: string }[] }): boolean {
+  return json.properties?.some((p) => p.name === 'olwDonor' && p.value === 'sprout-lands') ?? false;
+}
+
+function preloadSproutTilesets(
+  loader: Phaser.Loader.LoaderPlugin,
+  json: { tilesets?: { name: string; image: string }[] },
+): void {
+  for (const ts of json.tilesets ?? []) {
+    if (!ts.image || !ts.name) continue;
+    loader.image(sproutTextureKey(ts.name), ts.image);
+  }
 }
 
 export class BootScene extends Phaser.Scene {
@@ -75,6 +92,12 @@ export class BootScene extends Phaser.Scene {
         this.load.image(pydewTextureKey(ts.name), ts.image);
       }
     }
+    if (isSproutDonorMap(homeWorldJson as { properties?: { name: string; value: string }[] })) {
+      preloadSproutTilesets(this.load, homeWorldJson as { tilesets?: { name: string; image: string }[] });
+    }
+    if (isSproutDonorMap(gardenWorldJson as { properties?: { name: string; value: string }[] })) {
+      preloadSproutTilesets(this.load, gardenWorldJson as { tilesets?: { name: string; image: string }[] });
+    }
   }
 
   create(): void {
@@ -99,6 +122,12 @@ export class BootScene extends Phaser.Scene {
     ) {
       for (const ts of (farmWorldJson as { tilesets?: { name: string }[] }).tilesets ?? []) {
         this.textures.get(pydewTextureKey(ts.name))?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
+    }
+    for (const json of [homeWorldJson, gardenWorldJson] as { properties?: { name: string; value: string }[]; tilesets?: { name: string }[] }[]) {
+      if (!isSproutDonorMap(json)) continue;
+      for (const ts of json.tilesets ?? []) {
+        this.textures.get(sproutTextureKey(ts.name))?.setFilter(Phaser.Textures.FilterMode.NEAREST);
       }
     }
 

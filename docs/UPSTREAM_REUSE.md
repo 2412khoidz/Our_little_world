@@ -220,6 +220,30 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 
 ---
 
+## OLWH-40 — Sprout Lands home + garden (`cbb0c9f`)
+
+| Field | Value |
+|-------|--------|
+| **Sprout repo** | [Maaack/Sprout-Lands-Tilemap](https://github.com/Maaack/Sprout-Lands-Tilemap) @ `47ddc077797d504b77ca96d602428e2ba3ba21f5` |
+| **Farmland ref** | [Adrigarsu/farmland](https://github.com/Adrigarsu/farmland) @ `c1e08bc410466c143bf17d52caf052514d89cff3` (`large_house.tscn` interior walls) |
+| **Maps** | `harvest_hill_example.tscn` → `garden.json`; Farmland house layout → `home.json` |
+| **Vendor** | `public/maps/donor/sprout-lands/` |
+| **Import** | `npm run import-donor:sprout-home-garden` |
+| **Private profile** | `olwPrivateArtPrefer=demo-e` — `VITE_OLW_PRIVATE_ART=1` keeps Demo E atlas when `private-unified` is on disk |
+
+### Reproduce
+
+```bash
+OLW_MAP_RECOVERY=1 npm run import-donor:sprout-home-garden
+npm run test -- tests/unit/donorSproutHomeGarden.test.ts
+node scripts/capture-donor-sprout-garden-donor.mjs
+OUT=/cursor/stores/.../media/map-transplant-home-olw.png node scripts/capture-donor-home-garden-olw.mjs
+```
+
+Evidence: store `internal/map-transplant-home.md`, `media/map-transplant-home-*`, `media/map-transplant-garden-*`.
+
+---
+
 ## OLWH-40 — Cabacos east-coast beach (map transplant @ `769347f`)
 
 | Field | Value |

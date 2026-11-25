@@ -7,10 +7,14 @@ import shopCropMarketJson from '../../../public/assets/maps/shop_crop_market.jso
 import shopSeedJson from '../../../public/assets/maps/shop_seed.json';
 import shopToolJson from '../../../public/assets/maps/shop_tool.json';
 import shopTownHallJson from '../../../public/assets/maps/shop_town_hall.json';
+import homeJson from '../../../public/assets/maps/home.json';
+import gardenJson from '../../../public/assets/maps/garden.json';
 import villageJson from '../../../public/assets/maps/village.json';
 import { parseTiledWorldMap, type ParsedTiledWorldMap, type TiledWorldMapJson } from './parseTiledWorldMap';
 
 export const PARSED_TILED_WORLDS: Partial<Record<MapId, ParsedTiledWorldMap>> = {
+  home: parseTiledWorldMap(homeJson as TiledWorldMapJson),
+  garden: parseTiledWorldMap(gardenJson as TiledWorldMapJson),
   village: parseTiledWorldMap(villageJson as TiledWorldMapJson),
   farm: parseTiledWorldMap(farmJson as TiledWorldMapJson),
   forest: parseTiledWorldMap(forestJson as TiledWorldMapJson),
@@ -27,6 +31,8 @@ export function getParsedTiledWorld(mapId: MapId): ParsedTiledWorldMap | null {
 }
 
 export const TILED_WORLD_MAP_IDS = [
+  'home',
+  'garden',
   'village',
   'farm',
   'forest',
@@ -44,6 +50,8 @@ export function isTiledWorldMapId(mapId: MapId): mapId is TiledWorldMapId {
 }
 
 export const TILED_MAP_PHASER_KEYS: Record<TiledWorldMapId, string> = {
+  home: 'map-home',
+  garden: 'map-garden',
   village: 'map-village',
   farm: 'map-farm',
   forest: 'map-forest',
