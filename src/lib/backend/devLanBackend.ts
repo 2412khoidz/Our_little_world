@@ -482,6 +482,12 @@ export function createDevLanBackend(): WorldBackend {
           body: JSON.stringify(params),
         });
       },
+      async consumeHandFood(params) {
+        return apiJson<{ pet: import('../../shared/pet/petTypes').PetSnapshot; sku: string; quality: string }>(
+          '/pet/consume-hand-food',
+          { method: 'POST', body: JSON.stringify(params) },
+        );
+      },
     },
 
     petLiving: {

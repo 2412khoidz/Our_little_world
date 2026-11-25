@@ -689,6 +689,100 @@ export async function handleV015Route({
     return true;
   }
 
+  const HAND_FEED_SKUS = new Set([
+    'pet_kibble_basic',
+    'fish_salmon_bite',
+    'fish_carp_grilled',
+    'cat_broth_warm',
+    'chicken_pumpkin_mash',
+  ]);
+
+  if (req.method === 'POST' && route === '/pet/consume-hand-food') {
+    const worldId = String(body.worldId ?? '').trim();
+    const petId = String(body.petId ?? '').trim();
+    const expectedVersion = Number(body.expectedVersion);
+    const scope = String(body.ownerScope ?? 'shared').trim();
+    const sku = String(body.itemSku ?? '').trim();
+    const quality = String(body.quality ?? 'normal').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !petId || !key || !HAND_FEED_SKUS.has(sku) || !Number.isInteger(expectedVersion)) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thao tác đưa thức ăn chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `consume_hand:${petId}:${sku}:${quality}:${expectedVersion}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'consume_hand_food', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+    const existing = v015.pets[worldId] ?? null;
+    if (!existing || existing.id !== petId) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo trong nhà.' });
+      return true;
+    }
+    if (existing.version !== expectedVersion) {
+      sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Bé mèo vừa được người kia chăm rồi nhé!' });
+      return true;
+    }
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (scope !== 'shared' && scope !== `user:${userId}`) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Phạm vi kho không hợp lệ.' });
+      return true;
+    }
+    const vitals = catchupPetVitals(existing.vitals, existing.simStateAtMs, nowMs);
+    if (vitals.hunger >= 92) {
+      sendJson(res, 409, { ok: false, code: 'PET_FULL', message: 'Bé no rồi — để dành món sau nhé.' });
+      return true;
+    }
+    const adj = adjustInventoryItem(v015, worldId, scope, sku, -1, nowIso, quality);
+    if (!adj.ok) {
+      sendJson(res, 400, { ok: false, code: adj.code, message: adj.message });
+      return true;
+    }
+    const hungerBump = sku === 'pet_kibble_basic' ? 26 : sku.includes('fish') ? 30 : 22;
+    const nextVitals = {
+      hunger: Math.min(100, vitals.hunger + hungerBump),
+      energy: Math.min(100, vitals.energy + 4),
+      fun: Math.min(100, vitals.fun + 8),
+    };
+    const updated = {
+      ...existing,
+      vitals: nextVitals,
+      emotion: derivePetMood(nextVitals),
+      lastFedAtMs: nowMs,
+      simStateAtMs: nowMs,
+      version: existing.version + 1,
+      updatedAt: nowIso,
+    };
+    v015.pets[worldId] = updated;
+    const events = (v015.petEvents[worldId] ??= []);
+    events.push({
+      id: `pevt-${crypto.randomUUID()}`,
+      petId: updated.id,
+      actorId: userId,
+      type: 'consume_hand',
+      sku,
+      quality,
+      key,
+      at: nowIso,
+    });
+    const resPayload = { pet: projectPet(updated, nowMs), sku, quality };
+    saveV015Idempotency(v015, worldId, userId, 'consume_hand_food', key, reqHash, resPayload);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    sendJson(res, 200, { ok: true, data: resPayload });
+    return true;
+  }
+
   // === OLW-015-05: Silent Study Room & Pomodoro Co-presence ===
   if (req.method === 'GET' && route === '/study') {
     const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();

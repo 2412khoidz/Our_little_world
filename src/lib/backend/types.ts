@@ -109,6 +109,16 @@ export interface PetBackend {
     quality: 'normal' | 'silver' | 'gold';
     idempotencyKey: string;
   }): Promise<MutationResult<PetCareApplyResult>>;
+  /** Mission 04C care scene — RPC `pet_consume_hand_food` (migration 20261125001200). */
+  consumeHandFood(params: {
+    worldId: string;
+    petId: string;
+    expectedVersion: number;
+    ownerScope: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ pet: PetSnapshot; sku: string; quality: string }>>;
 }
 
 export interface PetLivingBackend {
