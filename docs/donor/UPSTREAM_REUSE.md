@@ -61,3 +61,5 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `donorMeadowbrookWorkshop.test.ts`, `donorHollowBakery.test.ts`, `donorHollowCoop.test.ts`, `donorTensionFishing.test.ts`, `donorReelMinigame.test.ts`, `donorMeadowbrookCatch.test.ts` | `tests/e2e/donor-economy-two-client.spec.ts` |
 
 Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview`.
+
+**Merge:** held until Cabacos village + pet render P0 (owner 2026-11-25). C3 farm/plot alignment prep: [`C3_FARM_ALIGN.md`](C3_FARM_ALIGN.md).
