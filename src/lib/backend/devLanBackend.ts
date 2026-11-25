@@ -264,6 +264,13 @@ export function createDevLanBackend(): WorldBackend {
       });
     },
 
+    async rotateFurniture(params) {
+      return apiJson<{ layoutVersion: number; placement: FurniturePlacement }>('/furniture/rotate', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    },
+
     async removeFurniture(params) {
       return apiJson<{ layoutVersion: number; removedId: string }>('/furniture/remove', {
         method: 'POST',

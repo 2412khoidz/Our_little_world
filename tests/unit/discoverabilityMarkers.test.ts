@@ -27,6 +27,29 @@ describe('buildDiscoverabilityMarkerSpecs', () => {
     expect(specs.some((s) => s.glyph === '🌾')).toBe(true);
   });
 
+  it('adds Gull Bay beach hint on donor village when portal exists', () => {
+    const interactables: InteractableTarget[] = [
+      {
+        id: 'village-to-beach',
+        kind: 'door',
+        labelVi: 'Ra bãi biển',
+        x: 640,
+        y: 480,
+        maxRadiusPx: 48,
+      },
+      {
+        id: 'cabacos_player_seed_shop_door',
+        kind: 'shop_npc',
+        labelVi: 'Hạt giống',
+        x: 100,
+        y: 200,
+        maxRadiusPx: 56,
+      },
+    ];
+    const specs = buildDiscoverabilityMarkerSpecs('village', interactables);
+    expect(specs.some((s) => s.id === 'marker-gull-bay-beach')).toBe(true);
+  });
+
   it('caps farm plot markers to avoid clutter', () => {
     const plots: InteractableTarget[] = Array.from({ length: 20 }, (_, i) => ({
       id: i < 12 ? `farm_main_${i}` : `farm_annex_${i - 12}`,

@@ -314,6 +314,14 @@ export interface WorldBackend {
     sku: string;
     tileX: number;
     tileY: number;
+    rotated?: boolean;
+    expectedLayoutVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;
+
+  rotateFurniture(params: {
+    worldId: string;
+    placementId: string;
     expectedLayoutVersion: number;
     idempotencyKey: string;
   }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;

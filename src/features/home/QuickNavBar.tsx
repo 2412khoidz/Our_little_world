@@ -10,6 +10,7 @@ interface QuickNavBarProps {
   decorateActive: boolean;
   onSelectMap: (mapId: MapId) => void;
   onToggleDecorate: () => void;
+  onOpenOutdoorNav?: () => void;
   onOpenAvatar: () => void;
   onOpenMenu: () => void;
 }
@@ -20,6 +21,7 @@ export function QuickNavBar({
   decorateActive,
   onSelectMap,
   onToggleDecorate,
+  onOpenOutdoorNav,
   onOpenAvatar,
   onOpenMenu,
 }: QuickNavBarProps) {
@@ -62,10 +64,10 @@ export function QuickNavBar({
           type="button"
           className={`nav-btn ${DONOR_WORLD_NAV_IDS.includes(currentMapId) && !decorateActive ? 'nav-btn--active' : ''}`}
           data-testid="nav-outdoor"
-          onClick={() => onSelectMap('village')}
+          onClick={() => (onOpenOutdoorNav ? onOpenOutdoorNav() : onSelectMap('village'))}
         >
           <Compass size={19} />
-          <span>Làng</span>
+          <span>Khám phá</span>
         </button>
       )}
 

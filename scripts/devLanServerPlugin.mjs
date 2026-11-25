@@ -146,7 +146,16 @@ function buildStarterPlacements(worldId, ownerId, nowIso) {
   });
 }
 
-function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignorePlacementId }) {
+function validatePlacementOnServer({
+  mapId,
+  sku,
+  tileX,
+  tileY,
+  placements,
+  ignorePlacementId,
+  footprintW,
+  footprintH,
+}) {
   if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Vị trí đặt đồ chưa hợp lệ.' };
   }
@@ -180,8 +189,11 @@ function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignor
     }
   }
 
-  for (let dy = 0; dy < item.h; dy += 1) {
-    for (let dx = 0; dx < item.w; dx += 1) {
+  const w = footprintW ?? item.w;
+  const h = footprintH ?? item.h;
+
+  for (let dy = 0; dy < h; dy += 1) {
+    for (let dx = 0; dx < w; dx += 1) {
       const tx = tileX + dx;
       const ty = tileY + dy;
       if (isMapOutOfBounds(mapId, tx, ty)) {
@@ -199,7 +211,7 @@ function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignor
     }
   }
 
-  return { ok: true, item };
+  return { ok: true, item, w, h };
 }
 
 function createInitialDb() {
@@ -744,7 +756,7 @@ export function createDevLanHandler({
       }
 
       if (req.method === 'POST' && route === '/furniture/place') {
-        const { worldId, mapId, sku, tileX, tileY, expectedLayoutVersion, idempotencyKey } = body;
+        const { worldId, mapId, sku, tileX, tileY, rotated, expectedLayoutVersion, idempotencyKey } = body;
         if (!isWorldMember(worldId, userId)) {
           sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
           return;
@@ -768,7 +780,18 @@ export function createDevLanHandler({
           return;
         }
         const placements = db.placements[worldId] ?? [];
-        const check = validatePlacementOnServer({ mapId, sku, tileX, tileY, placements });
+        const item = FURNITURE_CATALOG.get(sku);
+        const footprintW = rotated && item ? item.h : undefined;
+        const footprintH = rotated && item ? item.w : undefined;
+        const check = validatePlacementOnServer({
+          mapId,
+          sku,
+          tileX,
+          tileY,
+          placements,
+          footprintW,
+          footprintH,
+        });
         if (!check.ok) {
           sendJson(res, 400, { ok: false, code: check.code, message: check.message });
           return;
@@ -781,8 +804,8 @@ export function createDevLanHandler({
           layerSlot: check.item.layerSlot,
           tileX,
           tileY,
-          widthTiles: check.item.w,
-          heightTiles: check.item.h,
+          widthTiles: check.w,
+          heightTiles: check.h,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
         };
@@ -833,6 +856,8 @@ export function createDevLanHandler({
           tileY,
           placements,
           ignorePlacementId: target.id,
+          footprintW: target.widthTiles,
+          footprintH: target.heightTiles,
         });
         if (!check.ok) {
           sendJson(res, 400, { ok: false, code: check.code, message: check.message });
@@ -842,6 +867,75 @@ export function createDevLanHandler({
           ...target,
           tileX,
           tileY,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        };
+        db.placements[worldId] = placements.map((p) => (p.id === target.id ? updated : p));
+        world.layoutVersion += 1;
+        const result = { layoutVersion: world.layoutVersion, placement: updated };
+        db.idempotency[idemKey] = result;
+        saveDb();
+        broadcastEvent(worldId, 'world_mutated', { reason: 'furniture' });
+        sendJson(res, 200, { ok: true, data: result });
+        return;
+      }
+
+      if (req.method === 'POST' && route === '/furniture/rotate') {
+        const { worldId, placementId, expectedLayoutVersion, idempotencyKey } = body;
+        if (!isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+          return;
+        }
+        const world = db.worlds[worldId];
+        if (!world) {
+          sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy ngôi nhà.' });
+          return;
+        }
+        const idemKey = `${worldId}:${idempotencyKey}`;
+        if (db.idempotency[idemKey]) {
+          sendJson(res, 200, { ok: true, data: db.idempotency[idemKey] });
+          return;
+        }
+        if (world.layoutVersion !== expectedLayoutVersion) {
+          sendJson(res, 409, {
+            ok: false,
+            code: 'VERSION_CONFLICT',
+            message: 'Người kia vừa sắp xếp lại đồ đạc, nhà đã được cập nhật mới nhất.',
+          });
+          return;
+        }
+        const placements = db.placements[worldId] ?? [];
+        const target = placements.find((p) => p.id === placementId);
+        if (!target) {
+          sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Món đồ này không còn ở trên sàn.' });
+          return;
+        }
+        if (target.widthTiles === target.heightTiles) {
+          sendJson(res, 400, {
+            ok: false,
+            code: 'VALIDATION_ERROR',
+            message: 'Món vuông này không cần xoay.',
+          });
+          return;
+        }
+        const check = validatePlacementOnServer({
+          mapId: target.mapId,
+          sku: target.sku,
+          tileX: target.tileX,
+          tileY: target.tileY,
+          placements,
+          ignorePlacementId: target.id,
+          footprintW: target.heightTiles,
+          footprintH: target.widthTiles,
+        });
+        if (!check.ok) {
+          sendJson(res, 400, { ok: false, code: check.code, message: check.message });
+          return;
+        }
+        const updated = {
+          ...target,
+          widthTiles: target.heightTiles,
+          heightTiles: target.widthTiles,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
         };

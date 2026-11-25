@@ -549,18 +549,24 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
       }
 
       const placements = db.placements[params.worldId] ?? [];
+      const catalogItem = getCatalogItem(params.sku)!;
+      const footprint = params.rotated
+        ? { widthTiles: catalogItem.heightTiles, heightTiles: catalogItem.widthTiles }
+        : { widthTiles: catalogItem.widthTiles, heightTiles: catalogItem.heightTiles };
+
       const validation = validatePlacement({
         mapId: params.mapId,
         sku: params.sku,
         tileX: params.tileX,
         tileY: params.tileY,
         placements,
+        footprintWidth: footprint.widthTiles,
+        footprintHeight: footprint.heightTiles,
       });
       if (!validation.ok) {
         return { ok: false, code: validation.code, message: validation.message };
       }
 
-      const catalogItem = getCatalogItem(params.sku)!;
       const newPlacement: FurniturePlacement = {
         id: generateId('furn'),
         worldId: params.worldId,
@@ -569,8 +575,8 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         layerSlot: catalogItem.layerSlot,
         tileX: params.tileX,
         tileY: params.tileY,
-        widthTiles: catalogItem.widthTiles,
-        heightTiles: catalogItem.heightTiles,
+        widthTiles: footprint.widthTiles,
+        heightTiles: footprint.heightTiles,
         updatedBy: user.userId,
         updatedAt: new Date().toISOString(),
       };
@@ -631,6 +637,8 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         tileY: params.tileY,
         placements,
         ignorePlacementId: target.id,
+        footprintWidth: target.widthTiles,
+        footprintHeight: target.heightTiles,
       });
       if (!validation.ok) {
         return { ok: false, code: validation.code, message: validation.message };
@@ -640,6 +648,80 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         ...target,
         tileX: params.tileX,
         tileY: params.tileY,
+        updatedBy: user.userId,
+        updatedAt: new Date().toISOString(),
+      };
+      db.placements[params.worldId] = placements.map((p) => (p.id === target.id ? updated : p));
+      world.layoutVersion += 1;
+      const result = { layoutVersion: world.layoutVersion, placement: updated };
+      db.idempotency[idemKey] = { worldId: params.worldId, key: params.idempotencyKey, result };
+      writeDb(db);
+
+      notifyWorldMutatedBroadcast(params.worldId, 'furniture');
+      return { ok: true, data: result };
+    },
+
+    async rotateFurniture(params) {
+      const user = getStoredUser();
+      if (!user) {
+        return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+      }
+      const db = readDb();
+      const members = db.memberships[params.worldId] ?? [];
+      if (!members.some((m) => m.userId === user.userId)) {
+        return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+      }
+
+      const world = db.worlds[params.worldId];
+      if (!world) {
+        return { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy ngôi nhà.' };
+      }
+
+      const idemKey = `${params.worldId}:${params.idempotencyKey}`;
+      const existingIdem = db.idempotency[idemKey];
+      if (existingIdem) {
+        return {
+          ok: true,
+          data: existingIdem.result as { layoutVersion: number; placement: FurniturePlacement },
+        };
+      }
+
+      if (world.layoutVersion !== params.expectedLayoutVersion) {
+        return {
+          ok: false,
+          code: 'VERSION_CONFLICT',
+          message: 'Bố cục nhà vừa được người kia cập nhật. Đang đồng bộ lại...',
+        };
+      }
+
+      const placements = db.placements[params.worldId] ?? [];
+      const target = placements.find((p) => p.id === params.placementId);
+      if (!target) {
+        return { ok: false, code: 'NOT_FOUND', message: 'Món đồ này không còn ở trên sàn.' };
+      }
+
+      if (target.widthTiles === target.heightTiles) {
+        return { ok: false, code: 'VALIDATION_ERROR', message: 'Món vuông này không cần xoay.' };
+      }
+
+      const validation = validatePlacement({
+        mapId: target.mapId,
+        sku: target.sku,
+        tileX: target.tileX,
+        tileY: target.tileY,
+        placements,
+        ignorePlacementId: target.id,
+        footprintWidth: target.heightTiles,
+        footprintHeight: target.widthTiles,
+      });
+      if (!validation.ok) {
+        return { ok: false, code: validation.code, message: validation.message };
+      }
+
+      const updated: FurniturePlacement = {
+        ...target,
+        widthTiles: target.heightTiles,
+        heightTiles: target.widthTiles,
         updatedBy: user.userId,
         updatedAt: new Date().toISOString(),
       };

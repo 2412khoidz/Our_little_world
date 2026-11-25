@@ -294,6 +294,14 @@ export function createSupabaseBackend(): WorldBackend {
       };
     },
 
+    async rotateFurniture() {
+      return {
+        ok: false,
+        code: 'VALIDATION_ERROR',
+        message: 'Xoay đồ trên máy chủ sẽ bật ở bản V0.2 tiếp theo — hiện dùng chế độ xem trước khi đặt.',
+      };
+    },
+
     async removeFurniture(params) {
       const { data, error } = await supabase.rpc('remove_furniture', {
         p_world_id: params.worldId,

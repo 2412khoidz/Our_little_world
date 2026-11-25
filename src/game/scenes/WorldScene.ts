@@ -25,6 +25,8 @@ import {
   findPlacementAtTile,
   validatePlacement,
 } from '../../shared/placement';
+import { isDecorateMapId } from '../../shared/decorate/decorateInteriorPolicy';
+import { footprintForCatalog } from '../../shared/decorate/decoratePlacementLoop';
 import {
   MovementTxThrottle,
   RemoteAvatarFilter,
@@ -167,6 +169,7 @@ export class WorldScene extends Phaser.Scene {
     active: false,
     activeSku: null,
     selectedPlacementId: null,
+    previewRotated: false,
   };
   private hoverTile: GridPoint | null = null;
 
@@ -778,11 +781,13 @@ export class WorldScene extends Phaser.Scene {
     this.redrawDecoratePreview();
 
     if (this.decorateState.activeSku) {
+      if (!isDecorateMapId(this.currentMapId)) return;
       gameEventBus.emit('evt:decorate-place', {
         mapId: this.currentMapId,
         sku: this.decorateState.activeSku,
         tileX,
         tileY,
+        rotated: this.decorateState.previewRotated,
       });
       return;
     }
@@ -826,7 +831,7 @@ export class WorldScene extends Phaser.Scene {
   private redrawDecorateOverlay(): void {
     if (!this.decorateGridGraphics) return;
     this.decorateGridGraphics.clear();
-    if (!this.decorateState.active) {
+    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) {
       this.decoratePreviewGraphics.clear();
       return;
     }
@@ -855,7 +860,7 @@ export class WorldScene extends Phaser.Scene {
   private redrawDecoratePreview(): void {
     if (!this.decoratePreviewGraphics) return;
     this.decoratePreviewGraphics.clear();
-    if (!this.decorateState.active) return;
+    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) return;
 
     if (this.decorateState.selectedPlacementId) {
       const selected = this.placements.find(
@@ -888,6 +893,17 @@ export class WorldScene extends Phaser.Scene {
     const item = getCatalogItem(previewSku);
     if (!item) return;
 
+    const selectedPlacement = ignoreId
+      ? this.placements.find((p) => p.id === ignoreId)
+      : undefined;
+    const rotated =
+      this.decorateState.activeSku != null
+        ? this.decorateState.previewRotated
+        : selectedPlacement != null &&
+          (selectedPlacement.widthTiles !== item.widthTiles ||
+            selectedPlacement.heightTiles !== item.heightTiles);
+    const footprint = footprintForCatalog(item, rotated);
+
     const check = validatePlacement({
       mapId: this.currentMapId,
       sku: previewSku,
@@ -895,6 +911,8 @@ export class WorldScene extends Phaser.Scene {
       tileY: this.hoverTile.tileY,
       placements: this.placements,
       ignorePlacementId: ignoreId,
+      footprintWidth: footprint.widthTiles,
+      footprintHeight: footprint.heightTiles,
     });
 
     const color = check.ok ? 0x6b9b76 : 0xe05b5b;
@@ -903,14 +921,14 @@ export class WorldScene extends Phaser.Scene {
     this.decoratePreviewGraphics.fillRect(
       this.hoverTile.tileX * TILE_SIZE,
       this.hoverTile.tileY * TILE_SIZE,
-      item.widthTiles * TILE_SIZE,
-      item.heightTiles * TILE_SIZE,
+      footprint.widthTiles * TILE_SIZE,
+      footprint.heightTiles * TILE_SIZE,
     );
     this.decoratePreviewGraphics.strokeRect(
       this.hoverTile.tileX * TILE_SIZE,
       this.hoverTile.tileY * TILE_SIZE,
-      item.widthTiles * TILE_SIZE,
-      item.heightTiles * TILE_SIZE,
+      footprint.widthTiles * TILE_SIZE,
+      footprint.heightTiles * TILE_SIZE,
     );
   }
 
@@ -975,6 +993,11 @@ export class WorldScene extends Phaser.Scene {
         if (modeChanged) {
           this.handleResize(true);
         }
+      }),
+
+      gameEventBus.on('evt:decorate-rotate-preview', ({ rotated }) => {
+        this.decorateState = { ...this.decorateState, previewRotated: rotated };
+        this.redrawDecoratePreview();
       }),
 
       gameEventBus.on('cmd:set-joystick', (vec) => {
