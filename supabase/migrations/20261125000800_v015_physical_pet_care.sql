@@ -39,6 +39,11 @@ BEGIN
      p_action IS NULL OR p_action NOT IN ('fill_food', 'eat_food', 'fill_water', 'drink_water') THEN
     RAISE EXCEPTION 'VALIDATION_ERROR';
   END IF;
+  -- Consumption needs a server-owned simulation lifecycle. Client claims
+  -- cannot establish that the cat reached the bowl and chose to consume.
+  IF p_action IN ('eat_food', 'drink_water') THEN
+    RAISE EXCEPTION 'SERVER_AUTHORITY_REQUIRED';
+  END IF;
   v_request := jsonb_build_array(p_pet_id, p_action, p_expected_version, p_scope, p_sku, p_quality)::text;
   PERFORM 1 FROM public.worlds WHERE id = p_world_id FOR UPDATE;
   SELECT * INTO v_receipt FROM public.v015_rpc_idempotency
