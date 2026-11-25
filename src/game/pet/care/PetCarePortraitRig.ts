@@ -75,6 +75,7 @@ export class PetCarePortraitRig {
       .setOrigin(0.5, 0.88)
       .setScale(PET_CARE_CAT_ORANGE_SCALE);
     this.framePlayer = createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
+    this.publishAtlasRegressionMarkers(scene, bodyKey, defaultIndex);
 
     this.bubble = scene.add
       .text(0, -72, '', {
@@ -250,6 +251,18 @@ export class PetCarePortraitRig {
     }
     this.playAnim(expr.anim);
     if (expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
+  }
+
+  private publishAtlasRegressionMarkers(scene: Phaser.Scene, bodyKey: string, frameIndex: number): void {
+    const canvas = scene.game.canvas;
+    if (!scene.textures.exists(bodyKey)) return;
+    const tex = scene.textures.get(bodyKey);
+    const frame = tex.get(frameIndex);
+    const sourceW = tex.source[0]?.width ?? 0;
+    canvas.dataset.petCareAtlasIsolated = '1';
+    canvas.dataset.petCareBodyTexW = String(sourceW);
+    canvas.dataset.petCareBodyFrameW = String(frame?.width ?? 0);
+    canvas.dataset.petCareBodyFrameH = String(frame?.height ?? 0);
   }
 
   private playAnim(state: PetAnimState): void {

@@ -5,13 +5,18 @@ import Phaser from 'phaser';
 import { ART_ATLAS_PATH, USE_PRIVATE_ART } from '../../art/atlasProfile';
 import { WORLD_PROPS_KEY, registerWorldAtlas } from '../../art/worldAtlas';
 import extIds from '../../art/worldExtendedArtIds.json';
+import {
+  PET_CARE_CAT_SHEET_COLS,
+  petCareCatFrameCrop,
+  petCareCatSheetCols,
+} from '../../../shared/petLiving/petCare/petCareAtlasFrameMath';
 
 const WORLD_PROPS_MANIFEST = 'world-props-manifest';
 
 export const PET_CARE_CAT_BODY_KEY = 'olw-pet-care-cat-body';
 export const PET_CARE_CAT_SHADOW_KEY = 'olw-pet-care-cat-shadow';
 
-const COLS = 12;
+const COLS = PET_CARE_CAT_SHEET_COLS;
 
 interface PropsManifestEntry {
   id: string;
@@ -57,11 +62,10 @@ function sliceSheetFromParent(
   const fw = entry.frameWidth;
   const fh = entry.frameHeight;
   const count = entry.frameCount ?? 1;
-  const cols = Math.max(1, Math.floor(w / fw));
+  void petCareCatSheetCols(w, fw);
   for (let i = 0; i < count; i += 1) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    tex.add(i, 0, col * fw, row * fh, fw, fh);
+    const { x: cropX, y: cropY } = petCareCatFrameCrop(i, fw, fh, w);
+    tex.add(i, 0, cropX, cropY, fw, fh);
   }
   return true;
 }
