@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
-import type { AvatarConfig, Direction } from '../../shared/types';
+import type { AvatarConfig } from '../../shared/types';
 import { DIAGONAL_FACINGS } from '../../shared/movement/facing8';
 import { AVATAR_ATLAS_KEY } from './atlasProfile';
 import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } from './avatarSpriteBuilder';
+import { donorPunyTextureForConfig, registerDonorPunyAvatarAnims } from './donorPunyAvatarTexture';
+
+export { avatarIdleFrame, avatarIdleFrameForFacing8, isDonorPunyAvatarTexture, playDonorToolUseAnim } from './donorPunyAvatarTexture';
 import {
   AVATAR_ATLAS_ROW_LIE,
   AVATAR_ATLAS_ROW_SIT,
@@ -18,7 +21,16 @@ import {
   buildWorldAvatarCanvas,
 } from './worldAvatarCanvas';
 
+import type { Direction } from '../../shared/types';
+
 const LEGACY_DIRECTIONS: readonly Direction[] = ['down', 'up', 'left', 'right'];
+
+function donorPunyPreferred(scene: Phaser.Scene, config: AvatarConfig): string | null {
+  const key = donorPunyTextureForConfig(config);
+  if (!scene.textures.exists(key)) return null;
+  registerDonorPunyAvatarAnims(scene, key);
+  return key;
+}
 
 function rowY(row: number): number {
   return row * AVATAR_FRAME_HEIGHT;
@@ -79,6 +91,9 @@ function registerDiagonalClips(scene: Phaser.Scene, key: string, tex: Phaser.Tex
 }
 
 export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarConfig): string {
+  const donorKey = donorPunyPreferred(scene, config);
+  if (donorKey) return donorKey;
+
   const key = getAvatarTextureKey(config);
   if (scene.textures.exists(key)) return key;
 

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL } from '../art/atlasProfile';
+import { DONOR_PUNY_TEXTURE_IDS } from '../art/donorPunyAvatarTexture';
+import { PUNY_SHEET } from '../../shared/donor/punyCharacter8dSheet';
 import { preloadWorldAtlas, registerWorldAtlas } from '../art/worldAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 
@@ -10,6 +12,10 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image(AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL);
+    const punyFrame = { frameWidth: PUNY_SHEET.frameWidth, frameHeight: PUNY_SHEET.frameHeight };
+    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.base, '/assets/donor/cc0-puny-8d/character-base.png', punyFrame);
+    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.soldierBlue, '/assets/donor/cc0-puny-8d/soldier-blue.png', punyFrame);
+    this.load.spritesheet(DONOR_PUNY_TEXTURE_IDS.soldierRed, '/assets/donor/cc0-puny-8d/soldier-red.png', punyFrame);
     preloadWorldAtlas(this);
     this.load.image('tileset-cozy', '/assets/starter/tileset-cozy.png');
     this.load.image('furniture-cozy', '/assets/starter/furniture-cozy.png');
@@ -64,6 +70,9 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-sunflower',
       'donor-cabacos-cabbage',
       'donor-cabacos-beetroot',
+      DONOR_PUNY_TEXTURE_IDS.base,
+      DONOR_PUNY_TEXTURE_IDS.soldierBlue,
+      DONOR_PUNY_TEXTURE_IDS.soldierRed,
     ]) {
       this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }

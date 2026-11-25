@@ -46,8 +46,7 @@ import type {
   WorldMember,
 } from '../../shared/types';
 import { PetEntity } from '../entities/PetEntity';
-import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
-import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
+import { avatarIdleFrame, ensurePhaserAvatarTexture, isDonorPunyAvatarTexture, playDonorToolUseAnim } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
 import { WORLD_ART_KEY, WORLD_PROPS_KEY, worldFurnitureFrame } from '../art/worldAtlas';
 import artIds from '../art/worldArtIds.json';
@@ -201,6 +200,7 @@ export class WorldScene extends Phaser.Scene {
   private mapDebugOverlay: MapDebugOverlay | null = null;
   private movementConnection: number | null = null;
   private heldItem: HeldItemState = EMPTY_HELD_ITEM;
+  private lastHeldToolAction: HeldItemState['temporaryActionState'] = 'none';
   private heldRenderer: HeldItemRenderer | null = null;
   private localMoving = false;
   private farmPlotVisual: FarmPlotVisualController | null = null;
@@ -306,7 +306,7 @@ export class WorldScene extends Phaser.Scene {
       .ellipse(startX, startY - 1, 11, 4.5, 0x22151c, 0.34)
       .setDepth(startY - 1);
     this.localSprite = this.add
-      .sprite(startX, startY, this.localTextureKey, getIdleFrameIndex(this.localFacing))
+      .sprite(startX, startY, this.localTextureKey, avatarIdleFrame(this.localTextureKey, this.localFacing))
       .setOrigin(0.5, 1)
       .setDepth(startY);
 
@@ -322,7 +322,7 @@ export class WorldScene extends Phaser.Scene {
     this.localSprite.stop();
     this.localSprite.setTexture(
       this.localTextureKey,
-      getIdleFrameIndex(this.localFacing),
+      avatarIdleFrame(this.localTextureKey, this.localFacing),
     );
     this.updateTagText(this.localLabel, this.localLabelText, me.nickname, '#8bc4d9');
   }
@@ -1434,7 +1434,7 @@ export class WorldScene extends Phaser.Scene {
   private updateLocalMovement(dtSec: number): boolean {
     if (this.decorateState.active) {
       this.localSprite.stop();
-      this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
+      this.localSprite.setFrame(avatarIdleFrame(this.localTextureKey, this.localFacing));
       return false;
     }
 
@@ -2078,7 +2078,7 @@ export class WorldScene extends Phaser.Scene {
         const { x: px, y: py } = position;
         const shadow = this.add.ellipse(px, py - 1, 11, 4.5, 0x22151c, 0.32);
         const sprite = this.add
-          .sprite(px, py, texKey, getIdleFrameIndex(position.facing))
+          .sprite(px, py, texKey, avatarIdleFrame(texKey, position.facing))
           .setOrigin(0.5, 1);
         const tag = this.buildNameTag(px, py - 25, nickname, '#f2a2ba');
 
@@ -2130,7 +2130,7 @@ export class WorldScene extends Phaser.Scene {
       entity.nickname = member.nickname;
       entity.textureKey = ensurePhaserAvatarTexture(this, member.avatarConfig);
       entity.sprite.stop();
-      entity.sprite.setTexture(entity.textureKey, getIdleFrameIndex(entity.facing));
+      entity.sprite.setTexture(entity.textureKey, avatarIdleFrame(entity.textureKey, entity.facing));
       this.updateTagText(entity.label, entity.labelText, member.nickname, '#f2a2ba');
     }
     if (this.latestPresences.length > 0) {
@@ -2237,6 +2237,15 @@ export class WorldScene extends Phaser.Scene {
 
   private syncHeldItemPresentation(timeMs: number): void {
     if (!this.heldRenderer || !this.localSprite) return;
+    if (
+      isDonorPunyAvatarTexture(this.localTextureKey) &&
+      this.heldItem.itemKind === 'tool' &&
+      this.heldItem.temporaryActionState !== 'none' &&
+      this.heldItem.temporaryActionState !== this.lastHeldToolAction
+    ) {
+      playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing);
+    }
+    this.lastHeldToolAction = this.heldItem.temporaryActionState;
     this.heldRenderer.sync(
       this.localSprite.x,
       this.localSprite.y,

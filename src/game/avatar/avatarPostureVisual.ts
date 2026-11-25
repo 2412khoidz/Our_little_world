@@ -2,7 +2,7 @@ import type Phaser from 'phaser';
 import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
 import { cardinalFromFacing8, type Facing8 } from '../../shared/movement/facing8';
 import { avatarWalkAnimKey } from '../art/avatarAtlasLayout';
-import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
+import { avatarIdleFrame } from '../art/phaserAvatarTexture';
 
 const DEFAULT_ORIGIN_Y = 0.88;
 const LIE_ORIGIN_Y = 0.95;
@@ -38,7 +38,7 @@ export function playAvatarPostureAnim(
   if (posture === 'none') {
     resetAvatarSpriteOrigin(sprite);
     sprite.stop();
-    sprite.setFrame(getIdleFrameIndex(cardinal));
+    sprite.setFrame(avatarIdleFrame(textureKey, cardinal));
     return;
   }
 
