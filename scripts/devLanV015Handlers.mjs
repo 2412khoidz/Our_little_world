@@ -56,6 +56,9 @@ export const V015_CATALOG = [
   { sku: 'tool_watering_can', nameVi: 'Bình tưới', descriptionVi: 'Tưới cây ngoài vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'water_pitcher', nameVi: 'Bình nước', descriptionVi: 'Múc nước / đổ bát uống.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
   { sku: 'seed_wheat', nameVi: 'Hạt lúa mì', descriptionVi: 'Gieo nhanh, vụ đầu dễ.', purpose: 'seed', stackLimit: 99, tradeable: false },
+  { sku: 'wheat', nameVi: 'Lúa mì', descriptionVi: 'Thu hoạch — xay bột tại cối donor.', purpose: 'ingredient', stackLimit: 99, tradeable: false },
+  { sku: 'flour', nameVi: 'Bột mì', descriptionVi: 'Xay từ lúa tại cối xay donor (C1).', purpose: 'ingredient', stackLimit: 99, tradeable: false },
+  { sku: 'carp_pond', nameVi: 'Cá chép ao', descriptionVi: 'Câu được tại ao donor preview.', purpose: 'ingredient', stackLimit: 20, tradeable: false },
   {
     sku: 'fish_salmon_bite',
     nameVi: 'Cá hồi mềm',
