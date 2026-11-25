@@ -55,3 +55,20 @@ Cập nhật tự động bởi agent triển khai ban đêm trên nhánh `neon/
   - `pet-locomotion-and-wake.gif` (12 frames) & `pet-physical-feeding-and-play.gif` (9 frames)
 - **Tài liệu Phase 14:** `docs/pet/LIVING_PET_QUALITY_REPORT.md`, `docs/ui/GAME_UI_DESIGN_SYSTEM.md`, `docs/gameplay/PHYSICAL_INTERACTION_SPEC.md`, `docs/world/WORLD_EXPANSION_DESIGN.md`, `docs/research/QUALITY_AUDIT.md`.
 - **Hạng mục còn chờ phê duyệt / hạ tầng thật:** Chủ dự án chọn biến thể mèo (`Quýt` / `Mochi` / `Bông`), biến thể UI (`Cottage` / `Storybook`) và cỡ map (`64×64` / `96×96`); Integration Master xử lý xung đột migration `20261125000100` + nối `OLW-deepseek-night`; chạy `supabase/tests/v015_inventory_security.sql` trên PostgreSQL / Supabase Cloud thật và nghiệm thu trên iPhone Safari thật + Redmi K70E.
+
+## Final Neon Art Direction & Quality Pass (`integration/night-merge`, sau baseline `f6924a7`)
+
+- **Phạm vi:** Đối chiếu pipeline mỹ thuật (`WorldScene.ts` ↔ `WorldExpansionScene.ts`), phục hồi khu vực mẫu Homestead Demo E + mở cửa vào nhà thật (`map.home`), nâng cấp sprite mèo bốn chân sel-out (`petSpriteBuilder.ts`), nâng cấp bảng gỗ/nỉ chung cho 4 mini-game (`minigames.css`), viết kế hoạch tái sử dụng tài nguyên 0₫ (`docs/art/`). Không đụng `main`, không sửa reducer/luật DeepSeek, không push/deploy.
+- **Tài liệu mới:**
+  - `docs/art/ART_PIPELINE_RECONCILIATION.md` — Bảng đối chiếu nguyên nhân chênh lệch chất lượng & kế hoạch xuất 9-slice tile rời cho bản đồ mở rộng.
+  - `docs/art/ASSET_DETAIL_UPGRADE_PLAN.md` — Map chi tiết asset local miễn phí trong `asset-candidates/extracted/` và chuẩn mèo 4 chân + tabletop mini-games.
+- **Bằng chứng Before / After (`test-results/art-pass/`):**
+  - `before/`: `main-garden-benchmark.png`, `main-home-benchmark.png`, `before-combined-{desktop,mobile}.png`, `before-pet-art-desktop.png`, `before-minigames-mobile.png`.
+  - `after/`: `after-combined-outdoor-{desktop,mobile}.png`, `after-combined-indoor-desktop.png`, `after-pet-art-desktop.png`, `after-pet-quadruped.gif`, `after-minigame-caro-desktop.png`, `after-minigame-{othello,memory,battleship}-mobile.png`.
+- **Kiểm chứng mới nhất trên `integration/night-merge` (`PLAYWRIGHT_PORT=4176`):**
+  - `npm run lint`: **Pass** (0 errors)
+  - `npm run typecheck` (`tsc -b`): **Pass** (0 errors)
+  - `npm test` (`vitest run`): **Pass — 46 test files, 453/453 tests pass**
+  - `npm run build` + `node scripts/verify-prod-guard.mjs` + `npm run build:private`: **Pass** (0 dev leaks)
+  - `npx playwright test`: **15 passed, 1 skipped** (bài quay GIF desktop bỏ qua có chủ đích trên iPhone project)
+- **Việc cần làm tiếp:** (1) Cắt 16 ô `path_dirt_*` 9-slice từ `Tilled_Dirt_Wide_v2.png` ra `props-manifest.json` để Phaser Tilemap vẽ đường mượt trên toàn map `64×64` / `96×96`; (2) Bổ sung nội dung tương tác cho 5 landmark ngoại vi (*Quảng trường*, *Rừng thông*, *Vườn quả*, *Mũi Hoàng hôn*, *Góc Anh đào*); (3) Chủ dự án duyệt mẫu mèo 4 chân, UI Tabletop & Homestead mới.
