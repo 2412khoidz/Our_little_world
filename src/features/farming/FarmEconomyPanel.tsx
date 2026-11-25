@@ -5,12 +5,16 @@ import { FARM_SHOP_SEED_SKUS, FARM_SELLABLE_CROP_SKUS } from '../../shared/farmi
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import type { NuvoraGridCell } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
+import { formatFarmChainSummaryVi } from '../../shared/farming/farmDonorChainPresentation';
+import type { FarmWorldClockFarmContext } from '../../shared/farming/farmWorldClockBridge';
+import { farmSeedRecommendedThisSeason } from '../../shared/farming/farmWorldClockBridge';
 import '../inventory/nuvora/nuvoraInventorySkin.css';
 
 export interface FarmEconomyPanelProps {
   walletCoins: number;
   inventory: InventorySnapshot | null;
   busy: boolean;
+  farmClockContext?: FarmWorldClockFarmContext | null;
   mode: 'shop' | 'shipping';
   onBuySeed: (seedSku: string, qty: number) => Promise<void>;
   onShip: (sku: string, qty: number, quality: 'normal' | 'silver' | 'gold') => Promise<void>;
@@ -41,6 +45,7 @@ export function FarmEconomyPanel({
   walletCoins,
   inventory,
   busy,
+  farmClockContext,
   mode,
   onBuySeed,
   onShip,
@@ -87,8 +92,23 @@ export function FarmEconomyPanel({
           {mode === 'shipping' ? 'Đóng' : '×'}
         </button>
       </div>
+      {farmClockContext ? (
+        <p
+          className={mode === 'shipping' ? '' : 'olw-modal-sub'}
+          data-testid="farm-world-clock-context"
+          style={{ fontSize: 12, margin: '0 0 6px' }}
+        >
+          Ngày {farmClockContext.calendarDay} · {farmClockContext.seasonLabelVi} ·{' '}
+          {farmClockContext.weatherLabelVi}
+        </p>
+      ) : null}
       <p className={mode === 'shipping' ? '' : 'olw-modal-sub'} style={{ fontSize: 13, margin: '0 0 8px' }}>
         Ví chung: {walletCoins} xu
+        {mode === 'shop' ? (
+          <small style={{ display: 'block', marginTop: 4, fontSize: 11, opacity: 0.85 }}>
+            Chuỗi: {formatFarmChainSummaryVi()}
+          </small>
+        ) : null}
       </p>
       <div className={mode === 'shop' ? 'olw-modal-body stack gap-sm' : ''}>
         {mode === 'shop' &&
@@ -103,15 +123,20 @@ export function FarmEconomyPanel({
               /* skip */
             }
             if (price <= 0) return null;
+            const inSeason =
+              !farmClockContext ||
+              farmSeedRecommendedThisSeason(seedSku, farmClockContext.season);
             return (
               <button
                 key={seedSku}
                 type="button"
                 className="olw-btn"
                 disabled={busy || walletCoins < price}
+                data-in-season={inSeason ? '1' : '0'}
+                title={inSeason ? undefined : 'Ngoài mùa gợi ý (vẫn mua được)'}
                 onClick={() => onBuySeed(String(seedSku), 1)}
               >
-                Mua 1 {nameVi} ({price} xu)
+                Mua 1 {nameVi} ({price} xu){inSeason ? '' : ' · ngoài mùa'}
               </button>
             );
           })}
