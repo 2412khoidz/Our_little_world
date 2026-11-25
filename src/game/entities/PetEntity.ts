@@ -25,6 +25,11 @@ const HOME_WAYPOINTS = [
 const STUDY_LOUNGE_SPOT = { x: 11.4 * TILE_SIZE, y: 5.4 * TILE_SIZE };
 const FOOD_BOWL_SPOT = { x: 12.4 * TILE_SIZE, y: 10.1 * TILE_SIZE };
 
+/** Mission 04C — readable in world without blurry upscale. */
+const LIVING_PET_WORLD_SCALE = 1.45;
+/** Legacy zoom-scale — Mission 04C close-up rig replaces this in care mode. */
+const LIVING_PET_CARE_SCALE = 1.45;
+
 export class PetEntity {
   private readonly scene: Phaser.Scene;
   private readonly sprite: Phaser.GameObjects.Sprite;
@@ -47,6 +52,7 @@ export class PetEntity {
   private reactionIntent: PetBehaviorIntent = 'happy_hop';
   private bubbleTimerMs = 0;
   private livingDriver: PetLivingMainGameDriver | null = null;
+  private careCloseUp = false;
 
   constructor(scene: Phaser.Scene, onTap: () => void) {
     this.scene = scene;
@@ -66,9 +72,10 @@ export class PetEntity {
       .setOrigin(0.5, 0.85)
       .setVisible(false);
 
-    this.sprite.setInteractive({ useHandCursor: true });
+    this.applySpriteScale();
+    this.sprite.setInteractive({ useHandCursor: true, pixelPerfect: true });
     this.sprite.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.getDistance() <= 14) {
+      if (pointer.getDistance() <= 22) {
         onTap();
       }
     });
@@ -111,6 +118,43 @@ export class PetEntity {
   setLivingDriver(driver: PetLivingMainGameDriver | null): void {
     this.livingDriver = driver;
     driver?.seedFromSnapshot(this.petSnapshot);
+    if (driver) this.applySpriteScale();
+  }
+
+  getVisualIdentity(): { variant: CatCoatVariantId; accessory: CatAccessoryId; name: string } {
+    return {
+      variant: this.variant,
+      accessory: this.accessory,
+      name: this.petSnapshot?.name ?? 'Bé mèo',
+    };
+  }
+
+  setCareCloseUp(active: boolean): void {
+    this.careCloseUp = active;
+    this.applySpriteScale();
+    const depthBoost = active ? 200 : 0;
+    this.sprite.setDepth(Math.round(this.sprite.y) + depthBoost);
+    if (active) {
+      this.playAnimState('sit_south');
+      this.spawnFloatingBubble('Mrow?');
+    }
+  }
+
+  triggerCareStroke(zone: 'head' | 'chin' | 'back'): void {
+    const anim: PetAnimState =
+      zone === 'back' ? 'groom' : zone === 'chin' ? 'sit_south' : 'happy_hop';
+    this.playAnimState(anim);
+    const bubble = zone === 'chin' ? 'Purr~' : zone === 'head' ? '❤️' : 'Mlem';
+    this.spawnFloatingBubble(bubble);
+  }
+
+  private applySpriteScale(): void {
+    const scale = this.careCloseUp
+      ? LIVING_PET_CARE_SCALE
+      : this.livingDriver
+        ? LIVING_PET_WORLD_SCALE
+        : 1;
+    this.sprite.setScale(scale);
   }
 
   applyLivingLocomotion(loco: PetLocomotionSnapshot, bubbleText: string | null): void {

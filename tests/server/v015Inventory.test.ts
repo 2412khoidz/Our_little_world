@@ -71,18 +71,21 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
     const initial = await callApi(handler, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
     expect(initial.status).toBe(200);
     expect(initial.json.data.canClaimFreeKibble).toBe(true);
-    expect(initial.json.data.items).toEqual([]);
+    expect(initial.json.data.items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ ownerScope: 'shared', itemSku: 'toy_yarn', qty: 1 })]),
+    );
 
-    // Claim by Mây
     const claimA = await callApi(handler, 'POST', '/inventory/claim-free-kibble', MAY_ID, {
       worldId,
       idempotencyKey: 'kibble-key-1',
     });
     expect(claimA.status).toBe(200);
     expect(claimA.json.data.canClaimFreeKibble).toBe(false);
-    expect(claimA.json.data.items).toEqual([
-      expect.objectContaining({ ownerScope: 'shared', itemSku: 'pet_kibble_basic', qty: 3 }),
-    ]);
+    expect(claimA.json.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ownerScope: 'shared', itemSku: 'pet_kibble_basic', qty: 3 }),
+      ]),
+    );
 
     // Same actor exact retry replays cached response cleanly
     const replayA = await callApi(handler, 'POST', '/inventory/claim-free-kibble', MAY_ID, {
@@ -90,7 +93,10 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
       idempotencyKey: 'kibble-key-1',
     });
     expect(replayA.status).toBe(200);
-    expect(replayA.json.data.items[0].qty).toBe(3);
+    const replayKibble = replayA.json.data.items.find(
+      (i: { itemSku: string }) => i.itemSku === 'pet_kibble_basic',
+    );
+    expect(replayKibble?.qty).toBe(3);
 
     // Same idempotency key by different actor (Nắng) is rejected
     const conflictB = await callApi(handler, 'POST', '/inventory/claim-free-kibble', NANG_ID, {
@@ -111,6 +117,43 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
     // Outsider cannot read inventory
     const outsiderRes = await callApi(handler, 'GET', `/inventory?worldId=${worldId}`, OUTSIDER_ID);
     expect(outsiderRes.status).toBe(403);
+  });
+
+  it('backfills pet care starter rows on inventory GET when pet exists but toys missing', async () => {
+    const db = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    db.v015.inventory[worldId] = [];
+    db.v015.pets[worldId] = {
+      id: 'pet-legacy',
+      worldId,
+      species: 'cat-orange',
+      name: 'Mochi',
+      vitals: { hunger: 80, energy: 70, fun: 75 },
+      emotion: 'happy',
+      mapId: 'home',
+      anchorTileX: 13,
+      anchorTileY: 10,
+      lastFedAtMs: null,
+      lastWateredAtMs: null,
+      lastPettedAtMs: null,
+      simStateAtMs: Date.now(),
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      serverNowMs: Date.now(),
+    };
+    fs.writeFileSync(stateFile, JSON.stringify(db), 'utf8');
+
+    const h2 = createDevLanHandler({ stateFilePath: stateFile });
+    try {
+      const inv = await callApi(h2, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+      expect(inv.json.data.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ itemSku: 'toy_yarn', qty: 1 }),
+          expect.objectContaining({ itemSku: 'fish_salmon_bite', qty: 2 }),
+        ]),
+      );
+    } finally {
+      h2.closeAll();
+    }
   });
 
   it('isolates personal user:<uuid> pockets so Nắng cannot see Mây private items', async () => {

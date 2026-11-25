@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { gameEventBus, type NearbyInteractable } from '../../game/eventBus';
+import {
+  LIVING_PET_TELEMETRY_TEST_ID,
+  type LivingPetDevTelemetry,
+} from '../../shared/petLiving/mainGame/livingPetDevTelemetry';
+import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import type {
   FurniturePlacement,
   MapId,
@@ -46,6 +51,7 @@ export function GameViewport({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
   const [nearby, setNearby] = useState<NearbyInteractable | null>(null);
+  const [livingPetTelemetry, setLivingPetTelemetry] = useState<LivingPetDevTelemetry | null>(null);
   const [knobOffset, setKnobOffset] = useState({ x: 0, y: 0 });
   const joyDragRef = useRef<{ active: boolean; centerX: number; centerY: number }>({
     active: false,
@@ -68,6 +74,12 @@ export function GameViewport({
     const unsubNearby = gameEventBus.on('evt:nearby-interactable', (item) => {
       setNearby(item);
     });
+    const unsubPetTel =
+      import.meta.env.DEV && isLivingPetLocalSimulationEnabled()
+        ? gameEventBus.on('evt:living-pet-dev-telemetry', (t) => {
+            setLivingPetTelemetry(t);
+          })
+        : () => {};
 
     void import('../../game/createGame').then(({ createWorldGame }) => {
       if (destroyed || !hostRef.current) return;
@@ -89,6 +101,7 @@ export function GameViewport({
       resizeObserver?.disconnect();
       unsubReady();
       unsubNearby();
+      unsubPetTel();
       gameInstance?.destroy(true);
     };
   }, []);
@@ -164,6 +177,27 @@ export function GameViewport({
         data-testid="game-canvas-host"
         aria-label="Không gian trò chơi Our Little World"
       />
+
+      {import.meta.env.DEV && livingPetTelemetry && livingPetTelemetry.visible && (
+        <div
+          data-testid={LIVING_PET_TELEMETRY_TEST_ID}
+          data-visible={livingPetTelemetry.visible ? '1' : '0'}
+          data-x={String(livingPetTelemetry.x)}
+          data-y={String(livingPetTelemetry.y)}
+          data-anim={livingPetTelemetry.animState}
+          data-brain-phase={livingPetTelemetry.brainPhase}
+          data-loco={livingPetTelemetry.locomotionKind}
+          data-food-offer={livingPetTelemetry.foodOfferHandled ? '1' : '0'}
+          aria-hidden
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            overflow: 'hidden',
+            clip: 'rect(0 0 0 0)',
+          }}
+        />
+      )}
 
       {!sceneReady && (
         <div

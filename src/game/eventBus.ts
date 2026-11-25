@@ -2,6 +2,7 @@ import type { HeldItemState, InteractableTarget } from '../shared/interaction/in
 import type { CoupleEmoteId, CouplePostureKind } from '../shared/couple/coupleTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import type { PetFoodOfferInput } from '../shared/petLiving/petBrainContract04B';
+import type { LivingPetDevTelemetry } from '../shared/petLiving/mainGame/livingPetDevTelemetry';
 import type {
   Direction,
   FurniturePlacement,
@@ -97,6 +98,26 @@ export interface GameEventMap {
   'cmd:sync-held-item': HeldItemState;
   /** DEV living-pet local simulation — presentation only, no consumption. */
   'cmd:pet-local-food-offer': PetFoodOfferInput;
+  'cmd:pet-care-mode': { active: boolean };
+  'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
+  'cmd:pet-care-action': {
+    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'pour_water' | 'call' | 'observe';
+    sku?: string;
+    quality?: 'normal' | 'silver' | 'gold';
+    ownerScope?: string;
+  };
+  /** React shell → authoritative inventory + vitals (dev LAN / Supabase). */
+  'evt:pet-care-request-consume': {
+    sku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    ownerScope: string;
+  };
+  'evt:pet-care-mode': { active: boolean };
+  'evt:pet-care-session-goals': { count: number; total: number; labelsVi: string[] };
+  'evt:pet-care-stroke-done': { zone: 'head' | 'chin' | 'back' | 'belly' };
+  'evt:pet-care-refuse': { squeak: 'refuse' | 'purr' | 'mrow' | 'chirp' };
+  /** Scene autonomy tick — soak / acceptance diversity (no PII). */
+  'evt:pet-care-autonomy-cue': { action: string; bubbleVi: string };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -126,6 +147,8 @@ export interface GameEventMap {
   'evt:nearby-interactable': NearbyInteractable | null;
   'evt:interaction-frame': InteractionFramePayload;
   'evt:diagnostics': GameDiagnosticsSnapshot;
+  /** DEV living-pet acceptance — sampled ~2 Hz from WorldScene. */
+  'evt:living-pet-dev-telemetry': LivingPetDevTelemetry;
 }
 
 type Listener<T> = (payload: T) => void;

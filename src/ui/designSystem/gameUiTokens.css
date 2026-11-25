@@ -93,6 +93,27 @@
   transform: translateY(1px);
 }
 
+.olw-hotbar-tray--touch {
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.olw-hotbar-tray--touch .olw-hotbar-slot {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+}
+
+@media (pointer: coarse) {
+  .olw-hotbar-tray .olw-hotbar-slot {
+    min-width: 48px;
+    min-height: 48px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
 .olw-keycap {
   display: inline-flex;
   align-items: center;
