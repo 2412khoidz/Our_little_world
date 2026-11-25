@@ -9,6 +9,7 @@ export type PetCareActionKind =
   | 'toy_box'
   | 'offer_food'
   | 'brush'
+  | 'pour_water'
   | 'call'
   | 'observe';
 

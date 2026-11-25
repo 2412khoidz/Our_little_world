@@ -32,6 +32,16 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
     setHint('Quan sát — để bé tự làm việc của mình');
   };
 
+  const brush = () => {
+    gameEventBus.emit('cmd:pet-care-action', { kind: 'brush' });
+    setHint('Chải lông — bát ăn/nước hai bên chỉ là giao diện gần');
+  };
+
+  const pourWater = () => {
+    gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
+    setHint('Rót nước — mô phỏng gần, không trừ bình hay sync bát');
+  };
+
   if (!active) return null;
 
   return (
@@ -51,6 +61,12 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
         </button>
         <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-observe" onClick={observe}>
           Quan sát
+        </button>
+        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-brush" onClick={brush}>
+          Chải lông
+        </button>
+        <button type="button" className="pet-care-overlay__chip" data-testid="pet-care-water" onClick={pourWater}>
+          Rót nước
         </button>
         <button type="button" className="pet-care-overlay__exit" data-testid="pet-care-exit" onClick={onExit}>
           Thoát (ESC)

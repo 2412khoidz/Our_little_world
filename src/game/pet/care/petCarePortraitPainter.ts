@@ -215,13 +215,11 @@ export function carePortraitFramesForAnim(anim: PetAnimState): number {
 
 export function buildCarePortraitCanvas(variant: CatCoatVariantId, _accessory: CatAccessoryId): HTMLCanvasElement {
   const frameW = PET_CARE_ATLAS_FRAME;
-  let frameIndex = 0;
   const frames: Array<{ anim: PetAnimState; fi: number }> = [];
   for (const anim of CARE_ANIMS) {
     const count = carePortraitFramesForAnim(anim);
     for (let fi = 0; fi < count; fi += 1) {
       frames.push({ anim, fi });
-      frameIndex += 1;
     }
   }
   const rows = Math.ceil(frames.length / COLS);

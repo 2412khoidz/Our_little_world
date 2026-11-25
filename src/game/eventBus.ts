@@ -100,7 +100,7 @@ export interface GameEventMap {
   'cmd:pet-care-mode': { active: boolean };
   'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
   'cmd:pet-care-action': {
-    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'call' | 'observe';
+    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'pour_water' | 'call' | 'observe';
     sku?: string;
     quality?: 'normal' | 'silver' | 'gold';
     ownerScope?: string;

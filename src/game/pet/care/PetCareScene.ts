@@ -85,6 +85,7 @@ export class PetCareScene extends Phaser.Scene {
     ownerScope = 'shared',
   ): void {
     this.rig?.performAction(kind);
+    // offer_food only → inventory RPC (dev LAN / Supabase after #10); brush/pour_water stay scene-local.
     if (kind === 'offer_food' && sku) {
       gameEventBus.emit('evt:pet-care-request-consume', { sku, quality, ownerScope });
     }

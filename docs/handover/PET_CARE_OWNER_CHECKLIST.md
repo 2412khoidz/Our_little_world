@@ -13,7 +13,7 @@
 | 4 | Slot len → J | Kéo len, mèo vồ/đuổi |
 | 5 | Slot hộp → J | Hộp + peek anim |
 | 6 | Slot cá → J | Sniff/eat + **trừ kho** (dev LAN / Supabase) |
-| 7 | Chải (J khi không cầm đồ trong care) | Groom anim |
+| 7 | Chải / Rót nước (HUD hoặc J vuốt) | Bàn chải quét + bát nước nhấp nhô; **không RPC bát** |
 | 8 | Thoát ESC, vào lại | State mèo không fork |
 
 ## Automated
@@ -31,6 +31,6 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 node scripts/capture-pet-care-session.
 
 ## Authority
 
-- Prod Supabase: `pet_consume_hand_food` (migration `20261125001200`).
+- Prod Supabase hand-feed: migration `20261125001200` + **merge #10** (`petLiving` in App) — đến khi đó chỉ claim Dev LAN/đã wire.
 - Dev LAN: `POST /pet/consume-hand-food`.
 - DEV-only: `?living-pet=1` + `SERVER_AUTHORITY_REQUIRED` → presentation fallback (không trừ kho).

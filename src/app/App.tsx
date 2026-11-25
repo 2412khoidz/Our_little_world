@@ -653,6 +653,7 @@ function MainCoupleApp() {
           void refreshInventorySnapshot(targetWorldId);
           realtimeRef.current?.notifyWorldMutated('inventory');
           realtimeRef.current?.notifyWorldMutated('pet');
+          // Authoritative debit — prod path requires PR #10 petLiving wired; not a substitute for bowl RPC.
           showToast(`${res.data.pet.name} đã ăn món nhé!`);
           playPetFeedbackChime('feed');
         })();

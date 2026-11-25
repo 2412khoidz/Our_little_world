@@ -122,9 +122,9 @@ export async function executeMainGameContextAction(
       gameEventBus.emit('evt:open-pet-panel');
       return;
     }
-    if (ctx.livingPetLocalSimulation && isPetCareModeActive()) {
+    if (isPetCareModeActive()) {
       gameEventBus.emit('cmd:pet-care-action', { kind: 'brush' });
-      ctx.onNotice('Chải lông nhẹ nhàng…');
+      ctx.onNotice('Chải lông nhẹ nhàng (gần — chưa ghi server).');
       return;
     }
     await ctx.onPetPetAuthoritative();
@@ -161,7 +161,25 @@ export async function executeMainGameContextAction(
     return;
   }
 
-  if (code === 'fill_food_bowl' || code === 'pour_water_bowl' || code === 'fill_water_pitcher') {
+  if (code === 'pour_water_bowl' || code === 'fill_water_pitcher') {
+    if (isPetCareModeActive()) {
+      gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
+      ctx.onNotice(
+        code === 'fill_water_pitcher'
+          ? 'Bình đầy — rót vào bát gần (mô phỏng, chưa RPC bát).'
+          : 'Rót nước vào bát gần (mô phỏng, chưa RPC bát).',
+      );
+      return;
+    }
+    ctx.onNotice(MISSION02_PENDING_VI, true);
+    return;
+  }
+
+  if (code === 'fill_food_bowl') {
+    if (isPetCareModeActive()) {
+      ctx.onNotice('Đổ thức ăn bát — chờ tích hợp #10; dùng tay cầm món + J.');
+      return;
+    }
     ctx.onNotice(MISSION02_PENDING_VI, true);
     return;
   }

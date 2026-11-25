@@ -104,6 +104,15 @@ export function reactToCareAction(kind: PetCareActionKind, ctx: PetCareReactionC
         eyeMood: 'blink',
         squeak: 'purr',
       };
+    case 'pour_water':
+      return {
+        anim: 'eat',
+        bubbleVi: 'Uống nước mát~',
+        earTilt: 2,
+        tail: 'wag_slow',
+        eyeMood: 'happy',
+        squeak: 'purr',
+      };
     case 'call':
       return {
         anim: ctx.traits.independent > 0.6 ? 'idle_south' : 'happy_hop',

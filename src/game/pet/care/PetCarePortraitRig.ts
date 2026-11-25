@@ -16,6 +16,7 @@ import {
   getPetCarePortraitAnimKey,
 } from './petCarePortraitTexture';
 import { PetCareToyLayer } from './PetCareToyLayer';
+import { PetCareAmbientProps } from './PetCareAmbientProps';
 
 const BODY_SCALE = 3.15;
 
@@ -31,6 +32,7 @@ export class PetCarePortraitRig {
   private readonly bubble: Phaser.GameObjects.Text;
   private readonly hitPad: Phaser.GameObjects.Rectangle;
   private readonly toys: PetCareToyLayer;
+  private readonly ambient: PetCareAmbientProps;
 
   private variant: CatCoatVariantId;
   private accessory: CatAccessoryId;
@@ -92,6 +94,7 @@ export class PetCarePortraitRig {
       .setInteractive({ useHandCursor: true, draggable: true });
 
     this.toys = new PetCareToyLayer(scene, this.root, (kind) => this.onToyBounce(kind));
+    this.ambient = new PetCareAmbientProps(scene, this.root);
 
     this.root.add([
       floor,
@@ -133,6 +136,7 @@ export class PetCarePortraitRig {
 
   destroy(): void {
     this.scene.input.off('pointermove', this.trackPointer, this);
+    this.ambient.destroy();
     this.toys.destroy();
     this.root.destroy(true);
   }
@@ -158,12 +162,21 @@ export class PetCarePortraitRig {
   performAction(kind: PetCareActionKind): void {
     if (kind === 'toy_yarn') this.toys.spawnYarn();
     if (kind === 'toy_box') this.toys.spawnBox();
+    if (kind === 'brush') this.ambient.playBrush();
+    if (kind === 'pour_water') {
+      this.ambient.playPourWater(() => {
+        const mood = derivePetCareMood(this.snapshot, this.traits);
+        const ctx = { traits: this.traits, petName: this.petName, shyRefuseRoll: Math.random() + mood.refuseFoodBias * 0.1 };
+        this.applyExpression(reactToCareAction('pour_water', ctx));
+      });
+    }
     const mood = derivePetCareMood(this.snapshot, this.traits);
     const ctx = {
       traits: this.traits,
       petName: this.petName,
       shyRefuseRoll: Math.random() + mood.refuseFoodBias * 0.25,
     };
+    if (kind === 'pour_water') return;
     const expr = reactToCareAction(kind, ctx);
     this.applyExpression(expr);
     if (kind === 'toy_yarn' || kind === 'toy_box') this.toys.playWithToy();

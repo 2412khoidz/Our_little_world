@@ -42,6 +42,12 @@ test.describe('Pet care — owner session', () => {
     while (Date.now() - started < sessionMs) {
       await page.getByTestId('pet-care-call').click();
       reactions.add('call');
+      await page.waitForTimeout(1200);
+      await page.getByTestId('pet-care-brush').click();
+      reactions.add('brush');
+      await page.waitForTimeout(1800);
+      await page.getByTestId('pet-care-water').click();
+      reactions.add('water');
       await page.waitForTimeout(2200);
 
       await page.keyboard.press('3');

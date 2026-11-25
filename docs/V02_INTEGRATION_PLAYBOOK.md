@@ -11,7 +11,7 @@
 | 2 | [#11](https://github.com/2412khoidz/Our_little_world/pull/11) | Composer 2 | Living overworld (DEV flag production-off) |
 | 3 | [#12](https://github.com/2412khoidz/Our_little_world/pull/12) | Composer 3 | World/farm plot anchors |
 | 4 | [#14](https://github.com/2412khoidz/Our_little_world/pull/14) | Composer 1 | Farming RPC on those anchors |
-| 5 | [#13](https://github.com/2412khoidz/Our_little_world/pull/13) | Composer 2 | Pet care scene + hand-feed |
+| 5 | [#13](https://github.com/2412khoidz/Our_little_world/pull/13) | Composer 2 | Pet care scene + hand-feed (care bowl/brush/water = scene-only until #10) |
 
 Recommended integration branch (when owner approves): `integration/playtest-all` — rebase stack per [project-context](/cursor/stores/self/docs/project-context.md).
 
