@@ -3,6 +3,8 @@
  * Production Supabase stays off; Dev LAN + optional VITE flag enables J-key loop without Dev menu.
  */
 
+import { isDonorEconomyBuildDefault } from '../../lib/olwPreviewProfile';
+
 let devLanDonorUiActive = false;
 
 /** Call when React shell knows the active backend (e.g. dev-lan preview host). */
@@ -12,7 +14,7 @@ export function setDevLanDonorUiActive(active: boolean): void {
 
 export function isDonorEconomyUiEnabled(): boolean {
   if (import.meta.env.DEV) return true;
-  if (import.meta.env.VITE_OLW_DONOR_ECONOMY === '1') return true;
+  if (isDonorEconomyBuildDefault()) return true;
   return devLanDonorUiActive;
 }
 

@@ -1476,7 +1476,7 @@ function MainCoupleApp() {
 
   function handleSelectMap(target: MapId) {
     const mapId =
-      import.meta.env.DEV && isExtendedWorldDevEnabled() && target === 'outdoor' ? 'village' : target;
+      isExtendedWorldDevEnabled() && target === 'outdoor' ? 'village' : target;
     setDecorateActive(false);
     setActiveSku(null);
     setSelectedPlacementId(null);
