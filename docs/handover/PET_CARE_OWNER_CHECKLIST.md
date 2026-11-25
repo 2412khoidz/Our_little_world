@@ -22,8 +22,9 @@
 # CI ~90s session + trace
 npm run test:e2e -- tests/e2e/pet-care-session-acceptance.spec.ts
 
-# Owner long run ~5 phút
-OLW_ACCEPTANCE_LONG=1 npm run test:e2e -- tests/e2e/pet-care-session-acceptance.spec.ts
+# Owner long run ~7 phút + trace + `artifacts/pet-care-session-summary.json`
+npm run test:e2e:pet-care-long
+# Playwright trace: `test-results/.../trace.zip`
 
 # Screenshot burst
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 node scripts/capture-pet-care-session.mjs

@@ -114,6 +114,7 @@ export interface GameEventMap {
   'evt:pet-care-mode': { active: boolean };
   'evt:pet-care-session-goals': { count: number; total: number; labelsVi: string[] };
   'evt:pet-care-stroke-done': { zone: 'head' | 'chin' | 'back' | 'belly' };
+  'evt:pet-care-refuse': { squeak: 'refuse' | 'purr' | 'mrow' | 'chirp' };
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };

@@ -254,6 +254,9 @@ export class PetCarePortraitRig {
 
   private applyExpression(expr: PetCareExpression): void {
     this.expression = expr;
+    if (expr.refuse) {
+      gameEventBus.emit('evt:pet-care-refuse', { squeak: expr.squeak ?? 'refuse' });
+    }
     const tailMode = expr.tail ?? 'idle';
     if (tailMode === 'wag_fast') this.tail.setFillStyle(0xe8a56e, 0.95);
     else if (tailMode === 'tuck') this.tail.setFillStyle(0xc76e2e, 0.85);

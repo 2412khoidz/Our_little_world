@@ -70,6 +70,9 @@ export class PetCareScene extends Phaser.Scene {
       gameEventBus.on('evt:pet-care-stroke-done', () => {
         if (this.sessionGoals.record('stroke')) this.emitSessionGoals();
       }),
+      gameEventBus.on('evt:pet-care-refuse', () => {
+        this.autonomy?.notifyRefuse(Date.now());
+      }),
       gameEventBus.on('cmd:pet-care-action', (payload) => {
         this.handleCareAction(payload.kind, payload.sku, payload.quality, payload.ownerScope);
       }),
