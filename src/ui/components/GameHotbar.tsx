@@ -2,6 +2,8 @@ import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interac
 import { CatalogPropsIcon } from './CatalogPropsIcon';
 import { ItemArtSvg } from '../designSystem/GameIcons';
 
+export const HOTBAR_SLOT_COUNT = 8;
+
 interface GameHotbarProps {
   slots: readonly HotbarSlot[];
   heldItem: HeldItemState;
@@ -18,7 +20,7 @@ export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = fals
       aria-label="Thanh vật phẩm nhanh"
       data-testid="game-hotbar"
     >
-      {Array.from({ length: 6 }, (_, idx) => {
+      {Array.from({ length: HOTBAR_SLOT_COUNT }, (_, idx) => {
         const slot = slots.find((s) => s.slotIndex === idx);
         const isSelected = heldItem.slotIndex === idx && heldItem.itemKind !== 'none';
         const hasItem = Boolean(slot && slot.itemSku && slot.qty > 0);

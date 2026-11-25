@@ -12,8 +12,14 @@ import type { PetSnapshot } from '../../../shared/pet/petTypes';
 import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../shared/petLiving/petVisualTypes';
 import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood';
 import { ensureLicensedCareCatReady, getLicensedCareCatTextureKey, PET_CARE_CAT_ORANGE_SCALE } from './petCareCatOrange';
+import { PET_CARE_ILLUSTRATION_DISPLAY_SCALE, petCareIllustrationAtlasEnabled } from '../../../shared/petLiving/petCare/petCareIllustrationFlag';
+import { ensurePetCareIllustrationSheet, petCareIllustrationFrameForState } from './petCarePortraitTexture';
 import { petCareCatShadowTextureKey } from './petCareCatIsolateTexture';
-import { createPetCareLicensedFramePlayer, type PetCareLicensedAnimPlayer } from './petCareLicensedFramePlayer';
+import {
+  createPetCareIllustrationFramePlayer,
+  createPetCareLicensedFramePlayer,
+  type PetCareLicensedAnimPlayer,
+} from './petCareLicensedFramePlayer';
 import { gameEventBus } from '../../eventBus';
 import { PetCareToyLayer } from './PetCareToyLayer';
 import { PetCareAmbientProps } from './PetCareAmbientProps';
@@ -50,17 +56,24 @@ export class PetCarePortraitRig {
     traitId?: string,
   ) {
     this.scene = scene;
-    void _variant;
-    void _accessory;
+    const illustration = petCareIllustrationAtlasEnabled();
     this.petName = petName;
     this.snapshot = snapshot;
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
     this.traits = preset.traits;
 
-    ensureLicensedCareCatReady(scene);
-    const bodyKey = getLicensedCareCatTextureKey();
+    const displayScale = illustration ? PET_CARE_ILLUSTRATION_DISPLAY_SCALE : PET_CARE_CAT_ORANGE_SCALE;
+    let bodyKey: string;
+    let defaultIndex: number;
+    if (illustration) {
+      bodyKey = ensurePetCareIllustrationSheet(scene, _variant, _accessory);
+      defaultIndex = petCareIllustrationFrameForState('sit_south', 0);
+    } else {
+      ensureLicensedCareCatReady(scene);
+      bodyKey = getLicensedCareCatTextureKey();
+      defaultIndex = 48;
+    }
     const shadowKey = petCareCatShadowTextureKey();
-    const defaultIndex = 48;
 
     this.root = scene.add.container(x, y).setScrollFactor(0).setDepth(12_000);
 
@@ -68,14 +81,17 @@ export class PetCarePortraitRig {
     this.shadow = scene.add
       .sprite(2, 42, shadowKey, defaultIndex)
       .setOrigin(0.5, 0.5)
-      .setAlpha(0.45)
-      .setScale(PET_CARE_CAT_ORANGE_SCALE * 0.95);
+      .setAlpha(illustration ? 0.28 : 0.45)
+      .setScale(displayScale * 0.95)
+      .setVisible(!illustration);
     this.body = scene.add
       .sprite(0, 6, bodyKey, defaultIndex)
       .setOrigin(0.5, 0.88)
-      .setScale(PET_CARE_CAT_ORANGE_SCALE);
-    this.framePlayer = createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
-    this.publishAtlasRegressionMarkers(scene, bodyKey, defaultIndex);
+      .setScale(displayScale);
+    this.framePlayer = illustration
+      ? createPetCareIllustrationFramePlayer(this.body, scene, _variant, _accessory)
+      : createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
+    this.publishAtlasRegressionMarkers(scene, bodyKey, defaultIndex, illustration);
 
     this.bubble = scene.add
       .text(0, -72, '', {
@@ -253,13 +269,19 @@ export class PetCarePortraitRig {
     if (expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
   }
 
-  private publishAtlasRegressionMarkers(scene: Phaser.Scene, bodyKey: string, frameIndex: number): void {
+  private publishAtlasRegressionMarkers(
+    scene: Phaser.Scene,
+    bodyKey: string,
+    frameIndex: number,
+    illustration = false,
+  ): void {
     const canvas = scene.game.canvas;
     if (!scene.textures.exists(bodyKey)) return;
     const tex = scene.textures.get(bodyKey);
     const frame = tex.get(frameIndex);
     const sourceW = tex.source[0]?.width ?? 0;
-    canvas.dataset.petCareAtlasIsolated = '1';
+    canvas.dataset.petCareAtlasIsolated = illustration ? '0' : '1';
+    canvas.dataset.petCareIllustration = illustration ? '1' : '0';
     canvas.dataset.petCareBodyTexW = String(sourceW);
     canvas.dataset.petCareBodyFrameW = String(frame?.width ?? 0);
     canvas.dataset.petCareBodyFrameH = String(frame?.height ?? 0);

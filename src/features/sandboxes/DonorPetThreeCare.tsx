@@ -71,7 +71,8 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
   const brainRef = useRef(new OlwCatStrokeBrain());
   const [care, setCare] = useState<PhysicalCarePetState>(() => donorCarePhysicalSeed());
   const [autonomy, setAutonomy] = useState<DonorPetAutonomyState>(() => createDonorPetAutonomyState());
-  const [partner, setPartner] = useState<CarePartnerId>('partner-a');
+  /** Phase II — one cat, shared session; per-client caregiver toggle removed. */
+  const partner: CarePartnerId = 'partner-a';
   const [adoption] = useState(() => createAdoptionState({ id: 'donor-quyt', name: 'Quýt' }));
   const petDisplayName = adoption.adoptedName ?? 'Quýt';
   const [bubble, setBubble] = useState('...Quýt?');
@@ -318,15 +319,8 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     <main className="donor-pet-three" data-testid="donor-pet-three-care" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#120e10' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', color: '#ffe8c7', fontSize: 14 }}>
         <span>
-          C2 multi-donor · ~{Math.floor((autonomy.simulatedSessionMs || sessionMs) / 1000)}s · {partner}
+          C2 (tùy chọn) · ~{Math.floor((autonomy.simulatedSessionMs || sessionMs) / 1000)}s · một mèo, hai người
         </span>
-        <button
-          type="button"
-          className="btn btn--secondary btn--sm"
-          onClick={() => setPartner((p) => (p === 'partner-a' ? 'partner-b' : 'partner-a'))}
-        >
-          Đổi người chăm
-        </button>
         <button type="button" className="btn btn--secondary btn--sm" onClick={onExit}>
           Thoát
         </button>

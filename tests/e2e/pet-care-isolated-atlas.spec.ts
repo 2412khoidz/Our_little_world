@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function enterPetCare(page: Page) {
-  await page.goto('/?living-pet=1');
+  await page.goto('/?living-pet=1&pet-care-illustration=0');
   await page.getByTestId('btn-dev-seed-couple').click();
   await page.getByTestId('preset-partner-a').click();
   await expect(page.getByTestId('game-hotbar')).toBeVisible({ timeout: 25_000 });

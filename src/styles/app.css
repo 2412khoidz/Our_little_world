@@ -1,3 +1,11 @@
+:root {
+  --z-game-hud: 32;
+  --z-game-prompt: 33;
+  --z-couple-dock: 34;
+  --z-dev-banner: 36;
+  --z-modal-overlay: 60;
+}
+
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -149,13 +157,187 @@
   left: 50%;
   bottom: calc(118px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 28;
+  z-index: var(--z-couple-dock);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   max-width: calc(100vw - 24px);
   pointer-events: none;
+}
+
+.couple-action-shell--embedded {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: auto;
+  max-width: min(320px, calc(100vw - 48px));
+}
+
+.couple-emote-dock {
+  position: fixed;
+  right: calc(10px + var(--safe-right));
+  bottom: calc(178px + var(--safe-bottom));
+  z-index: var(--z-couple-dock);
+  pointer-events: none;
+}
+
+.couple-emote-dock__fab {
+  pointer-events: auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 2px solid var(--accent-rose, #cf6b84);
+  background: rgba(45, 32, 38, 0.92);
+  color: #ff8fa8;
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: var(--shadow-pill);
+  cursor: pointer;
+}
+
+.couple-emote-dock__fab--pulse {
+  animation: coupleFabPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes coupleFabPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(207, 107, 132, 0.45);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(207, 107, 132, 0);
+  }
+}
+
+.couple-emote-dock__panel {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(340px, calc(100vw - 24px));
+}
+
+.couple-emote-dock__close {
+  align-self: flex-end;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 240, 230, 0.35);
+  background: rgba(40, 30, 36, 0.9);
+  color: #fff5ea;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.olw-held-item-chip {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: rgba(40, 30, 36, 0.88);
+  border: 2px solid rgba(255, 232, 199, 0.35);
+  color: #fff5ea;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: min(100vw - 24px, 360px);
+}
+
+.olw-held-item-chip__label {
+  opacity: 0.72;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.olw-held-item-chip__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.olw-held-item-chip__clear {
+  margin-left: 2px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.olw-dev-banner {
+  position: fixed;
+  z-index: var(--z-dev-banner);
+  pointer-events: auto;
+  font-size: 11px;
+  color: #fff5ea;
+  border-radius: 10px;
+  background: rgba(45, 32, 38, 0.82);
+  border: 1px solid rgba(255, 200, 168, 0.35);
+  max-width: min(440px, calc(100vw - 16px));
+}
+
+.olw-dev-banner--living-pet {
+  left: 8px;
+  bottom: calc(62px + var(--safe-bottom));
+}
+
+.olw-dev-banner--extended-world {
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(6px + var(--safe-top));
+}
+
+.olw-dev-banner--collapsed {
+  max-width: 220px;
+}
+
+.olw-dev-banner__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.olw-dev-banner__badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(207, 107, 132, 0.35);
+}
+
+.olw-dev-banner__summary {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.olw-dev-banner__body {
+  padding: 0 10px 8px;
 }
 
 @media (max-height: 460px) {
@@ -199,7 +381,7 @@
   left: 50%;
   bottom: calc(128px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 21;
+  z-index: var(--z-game-hud);
   display: flex;
   flex-direction: column;
   align-items: center;

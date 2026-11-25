@@ -17,6 +17,8 @@ test.describe('Main game — physical interaction (Mission 03)', () => {
 
     await expect(page.getByTestId('main-game-interaction-hud')).toBeVisible();
     await expect(page.getByTestId('game-hotbar')).toBeVisible();
+    await expect(page.getByTestId('hotbar-slot-8')).toBeVisible();
+    await expect(page.getByTestId('couple-emote-fab')).toBeVisible();
 
     await page.getByTestId('nav-menu').click();
     await page.getByTestId('menu-inventory').click();

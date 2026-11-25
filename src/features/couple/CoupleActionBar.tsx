@@ -11,6 +11,7 @@ interface CoupleActionBarProps {
   onAcceptHug: () => void;
   onDeclineHug: () => void;
   onStandUp: () => void;
+  embedded?: boolean;
 }
 
 const POSTURE_LABELS: Record<Exclude<CouplePostureKind, 'none'>, string> = {
@@ -32,9 +33,10 @@ export function CoupleActionBar({
   onAcceptHug,
   onDeclineHug,
   onStandUp,
+  embedded = false,
 }: CoupleActionBarProps) {
   return (
-    <div className="couple-action-shell">
+    <div className={`couple-action-shell${embedded ? ' couple-action-shell--embedded' : ''}`}>
       {incomingInvite && (
         <div
           className="cozy-card"

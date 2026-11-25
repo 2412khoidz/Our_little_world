@@ -56,8 +56,12 @@
 
 .olw-hotbar-tray {
   display: flex;
-  gap: 5px;
-  padding: 6px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 5px 6px;
+  max-width: min(calc(100vw - 12px), 392px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--ui-bg-panel);
   border: 3px solid var(--ui-border-outer);
   border-radius: var(--ui-radius);
@@ -67,9 +71,9 @@
 
 .olw-hotbar-slot {
   position: relative;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   border-radius: calc(var(--ui-radius) * 0.75);
   border: 2px solid var(--ui-border-inner);
   background: var(--ui-bg-slot);
