@@ -17,6 +17,8 @@ const TMP_STATE = path.join(os.tmpdir(), `olw-vqg-${Date.now()}.json`);
 /** Same framing across before/after runs. */
 const SHOTS = [
   { file: 'vqg-village-pond', mapId: 'village', tileX: 10, tileY: 17 },
+  { file: 'vqg-village-plaza', mapId: 'village', tileX: 24, tileY: 20 },
+  { file: 'vqg-farm-homestead', mapId: 'farm', tileX: 22, tileY: 16 },
   { file: 'vqg-shop-interior', mapId: 'shop', tileX: 6, tileY: 5 },
   { file: 'vqg-home-interior', mapId: 'home', tileX: 8, tileY: 8 },
   { file: 'vqg-secret-spring', mapId: 'forest', tileX: 35, tileY: 34 },
