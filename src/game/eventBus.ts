@@ -12,7 +12,7 @@ import type {
   WorldMember,
 } from '../shared/types';
 import type { SharedPetCareSession } from '../shared/petLiving/petCare/sharedPetCareSession';
-import type { EnvInteractionHook } from '../shared/world/envInteractionHooks';
+import type { EnvInteractionHook, EnvInteractionHookKind } from '../shared/world/envInteractionHooks';
 
 export interface WorldSyncPayload {
   worldId: string;
@@ -111,6 +111,12 @@ export interface GameEventMap {
   };
   'cmd:sync-shared-pet-care-session': SharedPetCareSession;
   'cmd:env-transition': EnvInteractionHook;
+  'cmd:play-partner-env-transition': {
+    userId: string;
+    mapId: MapId;
+    kind: EnvInteractionHookKind;
+    hookId: string;
+  };
   /** React shell → authoritative inventory + vitals (dev LAN / Supabase). */
   'evt:pet-care-request-consume': {
     sku: string;
@@ -128,7 +134,7 @@ export interface GameEventMap {
   'evt:scene-ready': { mapId: MapId };
   'evt:local-movement': MovementPacket;
   'evt:local-tile-changed': { mapId: MapId; tileX: number; tileY: number; facing: Direction };
-  'evt:request-map-change': { targetMapId: MapId; spawnX: number; spawnY: number };
+  'evt:request-map-change': { targetMapId: MapId; spawnX: number; spawnY: number; portalId?: string };
   'evt:open-avatar-customizer': undefined;
   'evt:open-pet-panel': undefined;
   'evt:open-study-panel': undefined;

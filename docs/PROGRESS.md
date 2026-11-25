@@ -12,6 +12,7 @@
 | **Playthrough** | [PHASE_II_OWNER_PLAYTHROUGH.md](PHASE_II_OWNER_PLAYTHROUGH.md) |
 | **Interactables** | store [`interactable-inventory.md`](/cursor/stores/self/docs/interactable-inventory.md) |
 | **8-dir walk clips** | `facing8` → Phaser `walk-{diagonal}` rows (procedural + atlas composite); VQG `media/vqg-phase-ii-diagonal-walk.png`; e2e `phase-ii-diagonal-walk.spec.ts` (Chromium desktop, chưa iPhone) |
+| **Cửa / thang env hooks** | Portal table + ladder pairs; 2P `COUPLE_ENV_TRANSITION`; VQG door/ladder png; e2e `phase-ii-env-transition.spec.ts` |
 
 `integration/playtest-all` vẫn @ `c01d291` — không đổi.
 

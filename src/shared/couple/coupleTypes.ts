@@ -1,4 +1,5 @@
 import type { Direction, MapId } from '../types';
+import type { EnvInteractionHookKind } from '../world/envInteractionHooks';
 
 export type CoupleEmoteId = 'heart' | 'wave' | 'sleepy' | 'cheer' | 'miss_you';
 export type CouplePostureKind = 'none' | 'sit_study' | 'sit_sofa' | 'sit_bench' | 'lie_bed' | 'hug';
@@ -80,13 +81,25 @@ export interface CouplePosturePayload {
   facing: Direction;
 }
 
+export interface CoupleEnvTransitionPayload {
+  type: 'COUPLE_ENV_TRANSITION';
+  worldId: string;
+  userId: string;
+  mapId: MapId;
+  kind: EnvInteractionHookKind;
+  hookId: string;
+  toMapId: MapId;
+  atMs: number;
+}
+
 export type CoupleEventPacket =
   | CoupleInvitePayload
   | CoupleAcceptPayload
   | CoupleDeclinePayload
   | CoupleEndPayload
   | CoupleEmotePayload
-  | CouplePosturePayload;
+  | CouplePosturePayload
+  | CoupleEnvTransitionPayload;
 
 export interface PhotoFramePreset {
   id: string;
