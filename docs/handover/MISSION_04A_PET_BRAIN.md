@@ -42,11 +42,19 @@ PetBrainDecisionOutput (phase, intents, completions — no inventory RPC)
 - `/?pet-lab=1` — uses real `tickPetBrain`, ~72s session trace, debug phase/intent strip.
 - Long traces: `runPetLabSessionTrace({ durationMs, stepMs })`.
 
+## Session traces (Vitest artifact)
+
+After `npm run test -- tests/unit/petBrainAutonomous.test.ts`:
+
+- `test-results/pet-brain-traces/session-curious-explore.json`
+- `test-results/pet-brain-traces/session-sleepy-interrupt.json`
+- `test-results/pet-brain-traces/session-hungry-food.json`
+
 ## Verification (local)
 
 | Check | Result |
 |--------|--------|
-| `npm run lint` / `typecheck` / `npm run test` | Run on PR branch |
+| `npm run lint` / `typecheck` / **466** Vitest | Pass on branch |
 | `verify-prod-guard` | Unchanged Pet Lab DEV marker |
 | Device / private art | Not claimed |
 
