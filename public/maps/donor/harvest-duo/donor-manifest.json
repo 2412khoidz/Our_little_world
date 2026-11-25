@@ -1,0 +1,18 @@
+{
+  "donorId": "harvest-duo",
+  "upstreamRepo": "Intelisgod/harvest-duo",
+  "upstreamPin": "HEAD",
+  "sliceId": "area-graph-v1",
+  "engine": "pygame-ce",
+  "olwReuse": "patterns_only",
+  "authoredSources": [
+    "src/world.py:build_beach",
+    "src/world.py:build_forest",
+    "src/world.py:build_town",
+    "src/settings.py:AREA_*"
+  ],
+  "olwConsumers": [
+    "scripts/import-donor-hollowmere-beach.mjs",
+    "public/assets/maps/beach.json"
+  ]
+}

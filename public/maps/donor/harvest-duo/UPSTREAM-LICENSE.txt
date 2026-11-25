@@ -1,0 +1,10 @@
+Harvest Duo (Intelisgod/harvest-duo)
+https://github.com/Intelisgod/harvest-duo
+
+Our Little World vendors NO Harvest Duo art, audio, or Python sources in this folder.
+Only JSON layout metadata derived from reading upstream world.py (area sizes, warps,
+pier tile anchors) for donor-reuse documentation.
+
+Upstream graphics are procedural (generated in code). Before any deeper reuse, confirm
+license on the upstream repository default branch and keep reuse pattern-only unless
+explicit permission and attribution requirements are met.
