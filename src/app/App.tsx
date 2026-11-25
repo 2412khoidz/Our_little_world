@@ -45,6 +45,13 @@ import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
+import { WorldClockHud } from '../features/home/WorldClockHud';
+import {
+  loadTimeOfDayMode,
+  resolveWorldClockPresentation,
+  saveTimeOfDayMode,
+  type TimeOfDayMode,
+} from '../shared/world/worldClock';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
 import { TensionFishingModal } from '../features/donor/TensionFishingModal';
@@ -349,6 +356,8 @@ function MainCoupleApp() {
   const [incomingHugInvite, setIncomingHugInvite] = useState<CoupleInvitePayload | null>(null);
   const [outgoingInviteExpiresAtMs, setOutgoingInviteExpiresAtMs] = useState<number | null>(null);
   const [coupleClockNowMs, setCoupleClockNowMs] = useState(() => Date.now());
+  const [worldClockNowMs, setWorldClockNowMs] = useState(() => Date.now());
+  const [timeOfDayMode, setTimeOfDayMode] = useState<TimeOfDayMode>(() => loadTimeOfDayMode());
   const [selectedPhotoPresetId, setSelectedPhotoPresetId] = useState<string>(
     STATIC_PHOTO_PRESETS[0]!.id,
   );
@@ -1710,6 +1719,34 @@ function MainCoupleApp() {
     };
   }, [handlePlaceRequest, handleMoveRequest]);
 
+  const worldClockPresentation = useMemo(() => {
+    if (!worldSnapshot) return null;
+    const created = Date.parse(worldSnapshot.world.createdAt);
+    const worldCreatedAtMs = Number.isFinite(created) ? created : worldClockNowMs;
+    return resolveWorldClockPresentation({
+      nowMs: worldClockNowMs,
+      worldId: worldSnapshot.world.id,
+      worldCreatedAtMs,
+      mode: timeOfDayMode,
+    });
+  }, [worldSnapshot, worldClockNowMs, timeOfDayMode]);
+
+  useEffect(() => {
+    if (!worldSnapshot) return;
+    const id = window.setInterval(() => setWorldClockNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [worldSnapshot]);
+
+  useEffect(() => {
+    if (!worldClockPresentation) return;
+    gameEventBus.emit('cmd:sync-world-clock', worldClockPresentation);
+  }, [worldClockPresentation]);
+
+  const handleTimeOfDayModeChange = useCallback((mode: TimeOfDayMode) => {
+    setTimeOfDayMode(mode);
+    saveTimeOfDayMode(mode);
+  }, []);
+
   async function handleSaveAvatar(nickname: string, config: AvatarConfig): Promise<boolean> {
     const res = await backend.updateProfile(nickname, config);
     if (!res.ok) {
@@ -1806,6 +1843,15 @@ function MainCoupleApp() {
         presences={presences}
         onOpenInvite={() => setActiveModal('invite')}
       />
+
+      {worldClockPresentation ? (
+        <WorldClockHud
+          presentation={worldClockPresentation}
+          mode={timeOfDayMode}
+          hidden={petCareMode || isAnyModalOpen || decorateActive}
+          onModeChange={handleTimeOfDayModeChange}
+        />
+      ) : null}
 
       {activeFloatingStudy && derivedFloatingStudy && derivedFloatingStudy.status !== 'completed' && (
         <button

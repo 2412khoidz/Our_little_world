@@ -17,6 +17,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | **C3-decorate** | cocoworking `947494f` + cozy-space `7b8cb1e` | Interior-only decorate (catalog, snap, rotate, persist); beach nav sheet | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/unit/decorate*.test.ts` |
 | **C1-economy** | webfarmville + harvest-hollow + chill-fishing + canvas-games · PR **#22** + **#25** @ `769c54f` | Mill + Hollow bakery/coop + pond + **east_stream** tension reel | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
 | **OLWH-27** | Demo E props manifest · PR **#19** @ `80e118d` | Inventory + hotbar `CatalogPropsIcon` (CSS atlas slices) | `scripts/vqg-inventory-modal-capture.mjs` · unit: `catalogSkuPropsIcon.test.ts` |
+| **W3-clock** | [nhungcute/game-xay-nha](https://github.com/nhungcute/game-xay-nha) @ `ab2ad7f7` (AI Farm) | Day/night curve + HUD clock + Phaser overlay; farm growth authority unchanged | `src/donors/ai-farm-xay-nha/UPSTREAM_REUSE.md` · `tests/unit/aiFarmDayCyclePresentation.test.ts` · `tests/unit/worldClockPresentation.test.ts` |
 
 ## Pending (composer / open PR)
 

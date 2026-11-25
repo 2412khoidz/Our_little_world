@@ -35,6 +35,105 @@
   flex-wrap: wrap;
 }
 
+.world-clock-hud {
+  position: fixed;
+  top: calc(46px + var(--safe-top));
+  left: calc(10px + var(--safe-left));
+  z-index: 22;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  max-width: min(100vw - 24px, 360px);
+  pointer-events: auto;
+}
+
+.world-clock-hud__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(40, 30, 36, 0.88);
+  border: 1px solid rgba(255, 248, 239, 0.14);
+  color: var(--surface-cream);
+  font-size: 12px;
+}
+
+.world-clock-hud__pill strong {
+  display: block;
+  line-height: 1.2;
+  font-size: 12.5px;
+}
+
+.world-clock-hud__pill small {
+  display: block;
+  opacity: 0.82;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.world-clock-hud__weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: rgba(40, 30, 36, 0.72);
+  border: 1px solid rgba(255, 248, 239, 0.1);
+  color: var(--surface-cream);
+  font-size: 11px;
+}
+
+.world-clock-hud__mode {
+  position: relative;
+}
+
+.world-clock-hud__mode-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(40, 30, 36, 0.72);
+  border: 1px solid rgba(255, 248, 239, 0.1);
+  font-size: 11.5px;
+  color: var(--surface-cream);
+}
+
+.world-clock-hud__mode-summary::-webkit-details-marker {
+  display: none;
+}
+
+.world-clock-hud__mode-buttons {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(32, 24, 28, 0.96);
+  border: 1px solid rgba(255, 248, 239, 0.12);
+  min-width: 148px;
+}
+
+.world-clock-hud__mode-buttons button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  text-align: left;
+  background: transparent;
+  color: var(--surface-cream);
+  cursor: pointer;
+}
+
+.world-clock-hud__mode-buttons button.is-active {
+  background: rgba(139, 196, 217, 0.22);
+  border-color: rgba(139, 196, 217, 0.45);
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
