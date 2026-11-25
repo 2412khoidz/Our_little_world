@@ -130,7 +130,8 @@ export type WorldMutationReason =
   | 'inventory'
   | 'pet'
   | 'study'
-  | 'mailbox';
+  | 'mailbox'
+  | 'farm';
 
 export type MutationErrorCode =
   | 'UNAUTHENTICATED'
