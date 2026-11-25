@@ -179,6 +179,29 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 
 ---
 
+## OLWH-40 — Cabacos east-coast beach (map transplant @ `769347f`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [goncalojbsousa/Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) |
+| **Commit** | `79e423defc12bd99327cfcc28bf7ec0085996244` |
+| **Map** | `public/assets/tilemap/Cabacos_map.tmj` → vendored `public/maps/donor/cabacos/Cabacos_map.tmj` |
+| **Crop** | `38,10,48,34` — east coast (sand, sea, pier, cliffs) |
+| **Script** | `scripts/import-donor-cabacos-beach.mjs` → `public/assets/maps/beach.json` |
+| **Replaces** | Hollowmere cozy rebuild in `import-donor:world-zones` (recovery path) |
+
+### Reproduce
+
+```bash
+OLW_MAP_RECOVERY=1 npm run import-donor:cabacos-beach
+node scripts/capture-donor-cabacos-beach-donor.mjs
+OUT=media/map-transplant-beach-olw.png node scripts/capture-donor-beach-olw.mjs
+```
+
+Evidence: project store `internal/map-transplant-beach.md`, `media/map-transplant-beach-*.png`.
+
+---
+
 ## PREV-50 — pet-shop care face + idle loops (stack `6d0e7fd`)
 
 | Field | Value |
