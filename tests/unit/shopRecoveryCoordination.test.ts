@@ -11,9 +11,7 @@ describe('shopRecoveryCoordination', () => {
     expect(isRecoveryFarmMarketTarget('farm_seed_shop')).toBe(true);
   });
 
-  it('flags cabacos seed door as interior-deferred', () => {
-    expect(shopRecoveryEntryForTarget('cabacos_player_seed_shop_door')?.route).toBe(
-      'portal_cabacos_interior_deferred',
-    );
+  it('routes cabacos interior seed counter to farm market', () => {
+    expect(shopRecoveryEntryForTarget('cabacos_player_seed_shop_door')?.route).toBe('farm_market_modal');
   });
 });

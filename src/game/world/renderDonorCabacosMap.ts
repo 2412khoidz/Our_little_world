@@ -52,6 +52,21 @@ export function renderDonorCabacosShopInterior(
   pushLayer(img);
 }
 
+export function renderDonorCabacosImageInteriorFromMap(
+  scene: Phaser.Scene,
+  tilemap: Phaser.Tilemaps.Tilemap,
+  pushLayer: (obj: Phaser.GameObjects.GameObject) => void,
+): void {
+  const textureKey = tiledMapPropertyValue(tilemap, 'olwDonorInteriorTextureKey');
+  if (typeof textureKey !== 'string' || !scene.textures.exists(textureKey)) return;
+  const img = scene.add.image(0, 0, textureKey).setOrigin(0, 0).setDepth(0);
+  pushLayer(img);
+}
+
+export function isDonorCabacosImageShop(tilemap: Phaser.Tilemaps.Tilemap): boolean {
+  return isDonorCabacosMap(tilemap) && tiledMapPropertyValue(tilemap, 'olwShopRender') === 'image';
+}
+
 type TiledProperty = { name: string; value: string | number | boolean };
 
 /** Tiled stores map `properties` as an array; Phaser assigns that to `tilemap.properties`. */

@@ -27,12 +27,14 @@ describe('map recovery import contract', () => {
     expect(recoveryEnabled(beachJson)).toBe(true);
   });
 
-  it('shop recovery uses seeds_market tiled render not Casa_player', () => {
-    if (shopJson.properties?.find((p) => p.name === 'olwDonorInterior')?.value !== 'seeds_market_overworld_slice') {
+  it('shop recovery uses donor image interiors not Casa_player', () => {
+    if (shopJson.properties?.find((p) => p.name === 'olwDonorInterior')?.value !== 'Seed_shop.tmj') {
       return;
     }
-    expect(shopJson.properties?.find((p) => p.name === 'olwShopRender')?.value).toBe('tiled');
-    expect(shopJson.tilesets?.length).toBeGreaterThan(0);
+    expect(shopJson.properties?.find((p) => p.name === 'olwShopRender')?.value).toBe('image');
+    expect(shopJson.properties?.find((p) => p.name === 'olwDonorInteriorTextureKey')?.value).toBe(
+      'donor-cabacos-seed-shop',
+    );
     expect(recoveryEnabled(shopJson)).toBe(true);
   });
 

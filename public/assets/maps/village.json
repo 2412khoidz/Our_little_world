@@ -91395,7 +91395,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Về vườn"
+              "value": "V\u1ec1 v\u01b0\u1eddn"
             },
             {
               "name": "spawnX",
@@ -91426,7 +91426,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Đường về vườn"
+              "value": "\u0110\u01b0\u1eddng v\u1ec1 v\u01b0\u1eddn"
             },
             {
               "name": "spawnX",
@@ -91457,7 +91457,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Ra đồng"
+              "value": "Ra \u0111\u1ed3ng"
             },
             {
               "name": "spawnX",
@@ -91483,22 +91483,22 @@
             {
               "name": "targetMapId",
               "type": "string",
-              "value": "shop"
+              "value": "home"
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Cửa nhà — vào bên trong (E)"
+              "value": "V\u1ec1 nh\u00e0"
             },
             {
               "name": "spawnX",
               "type": "int",
-              "value": 12
+              "value": 8
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 14
+              "value": 9
             }
           ]
         },
@@ -91548,6 +91548,11 @@
               "value": "forest"
             },
             {
+              "name": "labelVi",
+              "type": "string",
+              "value": "V\u00e0o r\u1eebng Route 1"
+            },
+            {
               "name": "spawnX",
               "type": "int",
               "value": 3
@@ -91556,11 +91561,130 @@
               "name": "spawnY",
               "type": "int",
               "value": 32
+            }
+          ]
+        },
+        {
+          "id": 9110,
+          "name": "village-to-shop-seed",
+          "type": "portal",
+          "x": 523,
+          "y": 383.5,
+          "width": 27.5,
+          "height": 12,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_seed"
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Vào rừng Route 1"
+              "value": "V\u00e0o c\u1eeda h\u00e0ng h\u1ea1t"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9111,
+          "name": "village-to-shop-tool",
+          "type": "portal",
+          "x": 437.5,
+          "y": 575.5,
+          "width": 14.5,
+          "height": 34,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_tool"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "V\u00e0o c\u1eeda h\u00e0ng d\u1ee5ng c\u1ee5"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9112,
+          "name": "village-to-shop-crop-market",
+          "type": "portal",
+          "x": 240.5,
+          "y": 512.5,
+          "width": 37,
+          "height": 13,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_crop_market"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "V\u00e0o ch\u1ee3 n\u00f4ng s\u1ea3n"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9113,
+          "name": "village-to-shop-town-hall",
+          "type": "portal",
+          "x": 535.5,
+          "y": 207,
+          "width": 31,
+          "height": 16.5,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_town_hall"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "V\u00e0o t\u00f2a th\u1ecb ch\u00ednh"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
             }
           ]
         }
@@ -91593,7 +91717,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Cửa nhà — vào bên trong (E)"
+              "value": "C\u1eeda nh\u00e0 \u2014 v\u1ec1 nh\u00e0"
             },
             {
               "name": "maxRadiusPx",
@@ -91609,99 +91733,6 @@
         },
         {
           "id": 9202,
-          "name": "cabacos_player_crop_market_door",
-          "type": "interactable",
-          "x": 240.5,
-          "y": 512.5,
-          "width": 37,
-          "height": 13,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Chợ nông sản Cabacos"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_crop_market_door"
-            }
-          ]
-        },
-        {
-          "id": 9203,
-          "name": "cabacos_player_seed_shop_door",
-          "type": "interactable",
-          "x": 523,
-          "y": 383.5,
-          "width": 27.5,
-          "height": 12,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Hạt giống & dụng cụ"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_seed_shop_door"
-            }
-          ]
-        },
-        {
-          "id": 9204,
-          "name": "cabacos_player_town_hall_door",
-          "type": "interactable",
-          "x": 535.5,
-          "y": 207,
-          "width": 31,
-          "height": 16.5,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Tòa thị chính — chưa mở"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_town_hall_door"
-            }
-          ]
-        },
-        {
-          "id": 9205,
           "name": "cabacos_sign_farm_gate",
           "type": "interactable",
           "x": 1280,
@@ -91717,7 +91748,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "→ Trang trại chính (184 luống)"
+              "value": "\u2192 Trang tr\u1ea1i ch\u00ednh (184 lu\u1ed1ng)"
             },
             {
               "name": "maxRadiusPx",
@@ -91727,7 +91758,7 @@
           ]
         },
         {
-          "id": 9206,
+          "id": 9203,
           "name": "cabacos_sign_beach",
           "type": "interactable",
           "x": 1344,
@@ -91743,7 +91774,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "→ Gull Bay (bãi biển)"
+              "value": "\u2192 Gull Bay (b\u00e3i bi\u1ec3n)"
             },
             {
               "name": "maxRadiusPx",
@@ -91758,7 +91789,7 @@
           ]
         },
         {
-          "id": 9207,
+          "id": 9204,
           "name": "cabacos_village_hollow_bakery",
           "type": "interactable",
           "x": 288,
@@ -91774,7 +91805,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Lò Hollow — nướng bánh"
+              "value": "L\u00f2 Hollow \u2014 n\u01b0\u1edbng b\u00e1nh"
             },
             {
               "name": "maxRadiusPx",
@@ -91794,7 +91825,7 @@
           ]
         },
         {
-          "id": 9208,
+          "id": 9205,
           "name": "cabacos_village_hollow_coop",
           "type": "interactable",
           "x": 352,
@@ -91810,7 +91841,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Chuồng gà Hollow — thu trứng"
+              "value": "Chu\u1ed3ng g\u00e0 Hollow \u2014 thu tr\u1ee9ng"
             },
             {
               "name": "maxRadiusPx",
@@ -91830,7 +91861,7 @@
           ]
         },
         {
-          "id": 9209,
+          "id": 9206,
           "name": "cabacos_plaza_well",
           "type": "interactable",
           "x": 480,
@@ -91846,7 +91877,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Giếng nước"
+              "value": "Gi\u1ebfng n\u01b0\u1edbc"
             },
             {
               "name": "maxRadiusPx",

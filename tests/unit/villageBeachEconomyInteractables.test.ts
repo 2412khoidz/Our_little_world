@@ -4,18 +4,20 @@ import { resolveContextualActions, EMPTY_HELD_ITEM } from '../../src/shared/inte
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 
 describe('village/beach economy interactables', () => {
-  it('exposes Cabacos seed shop and crop market when preview economy is on', () => {
-    const targets = buildTiledWorldInteractableTargets('village', true);
-    const seed = targets.find((t) => t.id === 'cabacos_player_seed_shop_door');
-    const market = targets.find((t) => t.id === 'cabacos_player_crop_market_door');
+  it('exposes Cabacos shop counters inside donor interiors when preview economy is on', () => {
+    const seedTargets = buildTiledWorldInteractableTargets('shop_seed', true);
+    const marketTargets = buildTiledWorldInteractableTargets('shop_crop_market', true);
+    const seed = seedTargets.find((t) => t.id === 'cabacos_player_seed_shop_door');
+    const market = marketTargets.find((t) => t.id === 'cabacos_player_crop_market_door');
     expect(seed?.donorPlayable).toBe(true);
     expect(market?.donorPlayable).toBe(true);
-    expect(targets.some((t) => t.id === 'cabacos_player_town_hall_door')).toBe(false);
-    expect(targets.some((t) => t.id.startsWith('cabacos_sign_'))).toBe(false);
+    const villageTargets = buildTiledWorldInteractableTargets('village', true);
+    expect(villageTargets.some((t) => t.id === 'cabacos_player_town_hall_door')).toBe(false);
+    expect(villageTargets.some((t) => t.id.startsWith('cabacos_sign_'))).toBe(false);
   });
 
-  it('resolves village seed shop J to farm market when playable', () => {
-    const targets = buildTiledWorldInteractableTargets('village', true);
+  it('resolves seed shop interior counter J to farm market when playable', () => {
+    const targets = buildTiledWorldInteractableTargets('shop_seed', true);
     const shop = targets.find((t) => t.id === 'cabacos_player_seed_shop_door')!;
     const res = resolveContextualActions({
       playerX: shop.x,

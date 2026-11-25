@@ -29,7 +29,7 @@ const PORTAL_HOOKS: ReadonlyArray<{
   { portalId: 'village-to-forest', kind: 'ladder', hookId: 'village_forest_ladder', from: 'village', to: 'forest' },
   { portalId: 'forest-to-village', kind: 'ladder', hookId: 'forest_village_ladder', from: 'forest', to: 'village' },
   { portalId: 'forest-to-beach', kind: 'ladder', hookId: 'forest_beach_ladder', from: 'forest', to: 'beach' },
-  { portalId: 'player_house_door', kind: 'door', hookId: 'village_player_house_door', from: 'village', to: 'shop' },
+  { portalId: 'player_house_door', kind: 'door', hookId: 'village_player_house_door', from: 'village', to: 'home' },
   { portalId: 'shop-to-village', kind: 'door', hookId: 'shop_village_door', from: 'shop', to: 'village' },
   { portalId: 'farm_barn_door', kind: 'door', hookId: 'farm_barn_door', from: 'farm', to: 'shop' },
 ];

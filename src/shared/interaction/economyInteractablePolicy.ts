@@ -5,6 +5,7 @@ export const ECONOMY_FARM_MARKET_TARGET_IDS = new Set([
   'outdoor_market',
   'farm_seed_shop',
   'cabacos_player_seed_shop_door',
+  'cabacos_interior_tool_shop_counter',
 ]);
 
 export const ECONOMY_SHIPPING_TARGET_IDS = new Set(['cabacos_player_crop_market_door']);

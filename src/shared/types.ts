@@ -1,6 +1,18 @@
 import type { Facing8 } from './movement/facing8';
 
-export type MapId = 'home' | 'garden' | 'outdoor' | 'village' | 'farm' | 'forest' | 'beach' | 'shop';
+export type MapId =
+  | 'home'
+  | 'garden'
+  | 'outdoor'
+  | 'village'
+  | 'farm'
+  | 'forest'
+  | 'beach'
+  | 'shop'
+  | 'shop_seed'
+  | 'shop_tool'
+  | 'shop_crop_market'
+  | 'shop_town_hall';
 
 export type Direction = 'down' | 'up' | 'left' | 'right';
 

@@ -11,7 +11,20 @@ import type { MapId } from './types';
 
 export const TILE_SIZE = 16;
 
-export const MAP_IDS = ['home', 'garden', 'outdoor', 'village', 'farm', 'forest', 'beach', 'shop'] as const;
+export const MAP_IDS = [
+  'home',
+  'garden',
+  'outdoor',
+  'village',
+  'farm',
+  'forest',
+  'beach',
+  'shop',
+  'shop_seed',
+  'shop_tool',
+  'shop_crop_market',
+  'shop_town_hall',
+] as const;
 
 export interface MapPortal {
   id: string;
@@ -140,7 +153,31 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', { tileX: 55, tileY: 20 }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 14, tileY: 32 }),
   beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 1, tileY: 16 }),
-  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 12, tileY: 14 }),
+  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 11, tileY: 14 }),
+  shop_seed: buildTiledZoneDefinition(
+    'shop_seed',
+    'Cửa hàng hạt',
+    '/assets/maps/shop_seed.json',
+    { tileX: 11, tileY: 14 },
+  ),
+  shop_tool: buildTiledZoneDefinition(
+    'shop_tool',
+    'Cửa hàng dụng cụ',
+    '/assets/maps/shop_tool.json',
+    { tileX: 11, tileY: 16 },
+  ),
+  shop_crop_market: buildTiledZoneDefinition(
+    'shop_crop_market',
+    'Chợ nông sản',
+    '/assets/maps/shop_crop_market.json',
+    { tileX: 11, tileY: 14 },
+  ),
+  shop_town_hall: buildTiledZoneDefinition(
+    'shop_town_hall',
+    'Tòa thị chính',
+    '/assets/maps/shop_town_hall.json',
+    { tileX: 11, tileY: 15 },
+  ),
 };
 
 function portalBlocksDecorate(portals: readonly ParsedTiledPortal[], tileX: number, tileY: number): boolean {
@@ -153,7 +190,7 @@ function portalBlocksDecorate(portals: readonly ParsedTiledPortal[], tileX: numb
 }
 
 function buildTiledZoneDefinition(
-  id: 'village' | 'farm' | 'forest' | 'beach' | 'shop',
+  id: 'village' | 'farm' | 'forest' | 'beach' | 'shop' | 'shop_seed' | 'shop_tool' | 'shop_crop_market' | 'shop_town_hall',
   nameVi: string,
   tiledJsonPath: string,
   defaultSpawn: { tileX: number; tileY: number },

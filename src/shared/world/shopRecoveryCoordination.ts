@@ -32,15 +32,21 @@ const ENTRIES: readonly ShopRecoveryEntry[] = [
   },
   {
     targetId: 'cabacos_player_seed_shop_door',
-    route: 'portal_cabacos_interior_deferred',
+    route: 'farm_market_modal',
     labelVi: 'Cửa hàng hạt Cabacos',
-    recoveryNoteVi: 'Recovery: thay map shop hiện tại bằng seed shop interior donor.',
+    recoveryNoteVi: 'Quầy hạt trong nội thất Seed_shop — J mở gian hạt.',
+  },
+  {
+    targetId: 'cabacos_interior_tool_shop_counter',
+    route: 'farm_market_modal',
+    labelVi: 'Quầy dụng cụ',
+    recoveryNoteVi: 'Nội thất tool_shop Cabacos.',
   },
   {
     targetId: 'cabacos_player_crop_market_door',
     route: 'shipping_bin_modal',
     labelVi: 'Chợ nông sản',
-    recoveryNoteVi: 'Chờ C3: crop market interior (Cabacos market map).',
+    recoveryNoteVi: 'Quầy chợ trong nội thất Crop_market.',
   },
   {
     targetId: 'farm_barn_door',
