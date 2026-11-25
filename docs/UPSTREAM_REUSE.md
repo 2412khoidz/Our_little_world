@@ -133,3 +133,39 @@ npm run import-donor:world-zones
 VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 # Village east exit → Gull Bay; west shore → về làng Cabacos
 ```
+
+---
+
+## PREV-50 — pet-shop care face + idle loops (stack `6d0e7fd`)
+
+| Field | Value |
+|-------|--------|
+| **Upstream URL** | [j4lpan/pet-shop](https://github.com/j4lpan/pet-shop) |
+| **Upstream SHA** | `77f8b59a33c93881b44e15209b310b199a423d2a` (MIT Jalpan Dave 2026) |
+| **License / terms** | MIT |
+| **OLW branch** | `cursor/petshop-care-anim-86c2` on `integration/donor-reuse-preview` |
+
+### Source → destination
+
+| Upstream path | OLW path |
+|---------------|----------|
+| `src/main.js` `selectFace()` | `src/shared/donor/pet-shop-j4lpan/petShopCareFace.ts` |
+| `src/main.js` blink / idle yawn / tail wag | `src/shared/donor/pet-shop-j4lpan/petShopCareAnimLoop.ts` |
+| `CAT_SVG` eye/mouth groups + `styles.css` data attrs | `petShopCloseUpCatSvg.ts`, `petShopCloseUpCat.css`, `PetShopCloseUpCat.tsx` |
+| Care button flash | `src/features/pets/PetPanel.tsx` |
+| Evidence | `src/donors/pet-shop-j4lpan/UPSTREAM_REUSE.md` · `scripts/vendor-pet-shop-upstream.mjs` |
+
+### Gameplay
+
+| | Mô tả |
+|-|--------|
+| **Before** | Pet panel SVG close-up (PR #47) — static tail sway, single eye/mouth. |
+| **After** | Chăm sóc: vuốt ve / đổ bát / rót nước → mắt–miệng pet-shop + đuôi vẫy mạnh; nháy mắt / ngáp / giật tai idle; tâm trạng OLW map sang biểu cảm. |
+| **Proof** | `tests/unit/petShopCareFace.test.ts` · `petShopCareAnimLoop.test.ts` |
+
+```bash
+npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoop.test.ts
+```
+
+**Kept / adapted:** Presentation-only; vitals/mood authority unchanged.  
+**Excluded:** Desktop tray locomotion, multi-pet AI, Tauri shell.

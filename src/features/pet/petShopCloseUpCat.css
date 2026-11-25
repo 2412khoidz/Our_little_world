@@ -8,6 +8,7 @@
   background: linear-gradient(180deg, rgba(255, 248, 239, 0.95), rgba(245, 228, 200, 0.85));
   border: 2px solid var(--border-honey, #e8c9a0);
   box-shadow: 0 4px 0 rgba(61, 40, 16, 0.12);
+  position: relative;
 }
 
 .pet-shop-closeup-cat__stage {
@@ -26,6 +27,10 @@
   animation: pet-shop-tail-sway 2.8s ease-in-out infinite;
 }
 
+.pet-shop-closeup-cat--wag-boost .pet-shop-closeup-cat__tail {
+  animation: pet-shop-tail-wag-boost 0.45s ease-in-out infinite;
+}
+
 @keyframes pet-shop-tail-sway {
   0%,
   100% {
@@ -33,6 +38,116 @@
   }
   50% {
     transform: rotate(10deg);
+  }
+}
+
+@keyframes pet-shop-tail-wag-boost {
+  0%,
+  100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(22deg);
+  }
+}
+
+/* Eye / mouth variants — pet-shop data-eyes / data-mouth pattern */
+.pet-shop-closeup-cat .eye-style,
+.pet-shop-closeup-cat .mouth-style {
+  display: none;
+}
+
+.pet-shop-closeup-cat[data-eyes='normal'] .eye-normal,
+.pet-shop-closeup-cat[data-eyes='wide'] .eye-wide,
+.pet-shop-closeup-cat[data-eyes='hearts'] .eye-hearts,
+.pet-shop-closeup-cat[data-eyes='stars'] .eye-stars,
+.pet-shop-closeup-cat[data-eyes='happy'] .eye-happy,
+.pet-shop-closeup-cat[data-eyes='angry'] .eye-angry,
+.pet-shop-closeup-cat[data-mouth='normal'] .mouth-normal,
+.pet-shop-closeup-cat[data-mouth='smile'] .mouth-smile,
+.pet-shop-closeup-cat[data-mouth='grumpy'] .mouth-grumpy,
+.pet-shop-closeup-cat[data-mouth='tongue'] .mouth-tongue,
+.pet-shop-closeup-cat[data-mouth='pursed'] .mouth-pursed {
+  display: block;
+}
+
+.pet-shop-closeup-cat__blush {
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.pet-shop-closeup-cat--blush-on .pet-shop-closeup-cat__blush {
+  opacity: 1;
+}
+
+.pet-shop-closeup-cat__eyes {
+  transform-origin: 60px 62px;
+  transition: transform 60ms ease;
+}
+
+.pet-shop-closeup-cat--blink .pet-shop-closeup-cat__eyes {
+  transform: scaleY(0.08);
+}
+
+.pet-shop-closeup-cat--yawn .pet-shop-closeup-cat__mouth {
+  transform: scaleY(1.15);
+  transform-origin: 60px 75px;
+}
+
+.pet-shop-closeup-cat__ear-l,
+.pet-shop-closeup-cat__ear-r {
+  transform-origin: 50% 42px;
+}
+
+.pet-shop-closeup-cat--ear-twitch .pet-shop-closeup-cat__ear-l {
+  animation: pet-shop-ear-twitch-l 0.42s ease-in-out;
+}
+
+.pet-shop-closeup-cat--ear-twitch .pet-shop-closeup-cat__ear-r {
+  animation: pet-shop-ear-twitch-r 0.42s ease-in-out;
+}
+
+@keyframes pet-shop-ear-twitch-l {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-8deg);
+  }
+}
+
+@keyframes pet-shop-ear-twitch-r {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(8deg);
+  }
+}
+
+.pet-shop-closeup-cat__zzz {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted, #6b4b3e);
+  opacity: 0.75;
+  animation: pet-shop-zzz-float 2.2s ease-in-out infinite;
+}
+
+@keyframes pet-shop-zzz-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 0.9;
   }
 }
 

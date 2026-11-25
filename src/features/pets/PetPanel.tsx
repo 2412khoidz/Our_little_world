@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Cat, Droplets, Heart, Sparkles, Utensils, Volume2, VolumeX, X } from 'lucide-react';
 import {
   getPetActionCooldownRemainingMs,
@@ -64,6 +64,25 @@ export function PetPanel({
   const [nameInput, setNameInput] = useState(pet?.name ?? 'Quýt');
   const [editingName, setEditingName] = useState(!pet);
   const [tick, setTick] = useState(0);
+  const [careFlashAction, setCareFlashAction] = useState<PetActionType | null>(null);
+  const [careFlashAtMs, setCareFlashAtMs] = useState<number | null>(null);
+
+  const runCareAction = useCallback(
+    async (action: PetActionType) => {
+      const flashAt = (pet?.serverNowMs ?? Date.now()) + tick * 1000;
+      setCareFlashAction(action);
+      setCareFlashAtMs(flashAt);
+      try {
+        await onInteract(action);
+      } finally {
+        window.setTimeout(() => {
+          setCareFlashAction((prev) => (prev === action ? null : prev));
+          setCareFlashAtMs((prev) => (prev === flashAt ? null : prev));
+        }, 2_600);
+      }
+    },
+    [onInteract, pet?.serverNowMs, tick],
+  );
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -176,7 +195,15 @@ export function PetPanel({
               </button>
             </div>
 
-            <PetShopCloseUpCat catName={pet.name} moodLabel={getPetMoodLabelVi(pet.emotion)} />
+            <PetShopCloseUpCat
+              catName={pet.name}
+              moodLabel={getPetMoodLabelVi(pet.emotion)}
+              mood={pet.emotion}
+              vitals={pet.vitals}
+              careFlashAction={careFlashAction}
+              careFlashAtMs={careFlashAtMs}
+              nowMs={(pet.serverNowMs ?? 0) + tick * 1000}
+            />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <VitalBar label="Độ no (giảm chậm theo giờ)" value={pet.vitals.hunger} color="#e58f65" />
@@ -211,7 +238,7 @@ export function PetPanel({
                 className="btn btn--primary btn--sm"
                 disabled={busy || petCdSec > 0}
                 data-testid="btn-pet-pet"
-                onClick={() => void onInteract('pet')}
+                onClick={() => void runCareAction('pet')}
               >
                 <Heart size={14} /> {petCdSec > 0 ? `${petCdSec}s` : 'Vuốt ve'}
               </button>
@@ -220,7 +247,7 @@ export function PetPanel({
                 className="btn btn--primary btn--sm"
                 disabled={busy || feedCdSec > 0 || kibbleCount <= 0}
                 data-testid="btn-pet-feed"
-                onClick={() => void onInteract('feed')}
+                onClick={() => void runCareAction('feed')}
               >
                 <Utensils size={14} /> {feedCdSec > 0 ? `${feedCdSec}s` : 'Đổ vào bát ăn'}
               </button>
@@ -229,7 +256,7 @@ export function PetPanel({
                 className="btn btn--secondary btn--sm"
                 disabled={busy || waterCdSec > 0}
                 data-testid="btn-pet-water"
-                onClick={() => void onInteract('water')}
+                onClick={() => void runCareAction('water')}
               >
                 <Droplets size={14} /> {waterCdSec > 0 ? `${waterCdSec}s` : 'Rót vào bát nước'}
               </button>
