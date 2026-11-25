@@ -72,7 +72,7 @@ import { PetPanel } from '../features/pets/PetPanel';
 import { isPetSoundMuted, playPetFeedbackChime, setPetSoundMuted } from '../features/pets/petAudio';
 import { PomodoroPanel } from '../features/study/PomodoroPanel';
 import { setStudyAmbientTrack, stopStudyAmbient, type AmbientTrack } from '../features/study/ambientAudio';
-import { createHugInvite, validateInviteAcceptance } from '../shared/couple/coupleProtocol';
+import { createCoupleInvite, validateInviteAcceptance } from '../shared/couple/coupleProtocol';
 import {
   STATIC_PHOTO_PRESETS,
   type CoupleEmoteId,
@@ -933,14 +933,18 @@ function MainCoupleApp() {
           consumedInviteIdsRef.current.add(packet.inviteId);
           setOutgoingInviteExpiresAtMs(null);
           setIncomingHugInvite(null);
+          const acceptKind = packet.kind ?? 'hug';
+          const nextPosture: CouplePostureKind = acceptKind === 'hold_hands' ? 'hold_hands' : 'hug';
           if (currentMapIdRef.current === packet.mapId) {
             const isInviter = packet.toUserId === currentUser.userId;
-            const targetX = packet.anchorX + (isInviter ? -7 : 7);
+            const spacing = acceptKind === 'hold_hands' ? 10 : 7;
+            const targetX = packet.anchorX + (isInviter ? -spacing : spacing);
             const targetY = packet.anchorY;
-            const targetFacing: Direction = isInviter ? 'right' : 'left';
-            setLocalPosture('hug');
+            const targetFacing: Direction =
+              acceptKind === 'hold_hands' ? 'down' : isInviter ? 'right' : 'left';
+            setLocalPosture(nextPosture);
             gameEventBus.emit('cmd:apply-local-posture', {
-              posture: 'hug',
+              posture: nextPosture,
               x: targetX,
               y: targetY,
               facing: targetFacing,
@@ -948,18 +952,22 @@ function MainCoupleApp() {
             gameEventBus.emit('cmd:spawn-emote', {
               userId: currentUser.userId,
               mapId: packet.mapId,
-              emote: 'hug_hearts',
+              emote: acceptKind === 'hold_hands' ? 'heart' : 'hug_hearts',
               local: true,
             });
           }
-          showToast('Hai người vừa ôm nhau một cái thật ấm ❤️');
+          showToast(
+            acceptKind === 'hold_hands'
+              ? 'Hai người đang nắm tay thật ấm áp 💛'
+              : 'Hai người vừa ôm nhau một cái thật ấm ❤️',
+          );
         }
         return;
       }
       if (packet.type === 'COUPLE_DECLINE') {
         if (packet.toUserId === currentUser.userId) {
           setOutgoingInviteExpiresAtMs(null);
-          showToast('Người thương hẹn ôm sau một lát nhé.');
+          showToast('Người thương hẹn lại sau một lát nhé.');
         }
         return;
       }
@@ -1005,35 +1013,56 @@ function MainCoupleApp() {
     [currentMapId, currentUser],
   );
 
+  const sendCoupleInvite = useCallback(
+    (kind: 'hug' | 'hold_hands') => {
+      const snap = snapshotRef.current;
+      if (!snap || !currentUser) return;
+      const partner = presences.find(
+        (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
+      );
+      if (!partner) {
+        showToast(
+          kind === 'hold_hands'
+            ? 'Hãy vào cùng một phòng với người thương để nắm tay nhé.'
+            : 'Hãy vào cùng một phòng với người thương để ôm nhau nhé.',
+          true,
+        );
+        return;
+      }
+      const now = Date.now();
+      const anchorX = Math.round(((localTileRef.current.tileX + 0.5) * 16 + (partner.tileX + 0.5) * 16) / 2);
+      const anchorY = Math.round(((localTileRef.current.tileY + 1) * 16 + (partner.tileY + 1) * 16) / 2);
+      const invite = createCoupleInvite({
+        inviteId: makeIdempotencyKey(kind),
+        kind,
+        worldId: snap.world.id,
+        fromUserId: currentUser.userId,
+        fromSessionId: sessionId,
+        toUserId: partner.userId,
+        mapId: currentMapId,
+        anchorX,
+        anchorY,
+        nowMs: now,
+      });
+      setCoupleClockNowMs(now);
+      setOutgoingInviteExpiresAtMs(invite.expiresAtMs);
+      realtimeRef.current?.publishCoupleEvent?.(invite);
+      showToast(
+        kind === 'hold_hands'
+          ? 'Đã gửi lời mời nắm tay (15 giây)...'
+          : 'Đã gửi lời mời ôm nhau (15 giây)...',
+      );
+    },
+    [currentMapId, currentUser, presences, sessionId, showToast],
+  );
+
   const handleRequestHug = useCallback(() => {
-    const snap = snapshotRef.current;
-    if (!snap || !currentUser) return;
-    const partner = presences.find(
-      (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
-    );
-    if (!partner) {
-      showToast('Hãy vào cùng một phòng với người thương để ôm nhau nhé.', true);
-      return;
-    }
-    const now = Date.now();
-    const anchorX = Math.round(((localTileRef.current.tileX + 0.5) * 16 + (partner.tileX + 0.5) * 16) / 2);
-    const anchorY = Math.round(((localTileRef.current.tileY + 1) * 16 + (partner.tileY + 1) * 16) / 2);
-    const invite = createHugInvite({
-      inviteId: makeIdempotencyKey('hug'),
-      worldId: snap.world.id,
-      fromUserId: currentUser.userId,
-      fromSessionId: sessionId,
-      toUserId: partner.userId,
-      mapId: currentMapId,
-      anchorX,
-      anchorY,
-      nowMs: now,
-    });
-    setCoupleClockNowMs(now);
-    setOutgoingInviteExpiresAtMs(invite.expiresAtMs);
-    realtimeRef.current?.publishCoupleEvent?.(invite);
-    showToast('Đã gửi lời mời ôm nhau (15 giây)...');
-  }, [currentMapId, currentUser, presences, sessionId, showToast]);
+    sendCoupleInvite('hug');
+  }, [sendCoupleInvite]);
+
+  const handleRequestHoldHands = useCallback(() => {
+    sendCoupleInvite('hold_hands');
+  }, [sendCoupleInvite]);
 
   const handleAcceptHug = useCallback(() => {
     if (!incomingHugInvite || !currentUser) return;
@@ -1046,23 +1075,26 @@ function MainCoupleApp() {
     );
     if (!check.ok) {
       setIncomingHugInvite(null);
-      showToast('Lời mời ôm đã hết hạn hoặc không còn ở cùng phòng.', true);
+      showToast('Lời mời đã hết hạn hoặc không còn ở cùng phòng.', true);
       return;
     }
+    const acceptKind = incomingHugInvite.kind;
+    const nextPosture: CouplePostureKind = acceptKind === 'hold_hands' ? 'hold_hands' : 'hug';
+    const spacing = acceptKind === 'hold_hands' ? 10 : 7;
     consumedInviteIdsRef.current.add(incomingHugInvite.inviteId);
     setIncomingHugInvite(null);
     realtimeRef.current?.publishCoupleEvent?.(check.accept);
-    setLocalPosture('hug');
+    setLocalPosture(nextPosture);
     gameEventBus.emit('cmd:apply-local-posture', {
-      posture: 'hug',
-      x: check.accept.anchorX + 7,
+      posture: nextPosture,
+      x: check.accept.anchorX + spacing,
       y: check.accept.anchorY,
-      facing: 'left',
+      facing: acceptKind === 'hold_hands' ? 'down' : 'left',
     });
     gameEventBus.emit('cmd:spawn-emote', {
       userId: currentUser.userId,
       mapId: check.accept.mapId,
-      emote: 'hug_hearts',
+      emote: acceptKind === 'hold_hands' ? 'heart' : 'hug_hearts',
       local: true,
     });
   }, [currentMapId, currentUser, incomingHugInvite, showToast]);
@@ -2094,6 +2126,7 @@ function MainCoupleApp() {
           outgoingInviteActive={outgoingInviteExpiresAtMs !== null}
           onSendEmote={handleSendEmote}
           onRequestHug={handleRequestHug}
+          onRequestHoldHands={handleRequestHoldHands}
           onAcceptHug={handleAcceptHug}
           onDeclineHug={handleDeclineHug}
           onStandUp={handleStandUp}

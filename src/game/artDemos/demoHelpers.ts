@@ -363,19 +363,19 @@ export function createCompactNameTag(
     fontFamily: 'system-ui, -apple-system, sans-serif',
     fontSize: '6px',
     fontStyle: 'bold',
-    color: '#fff8f0',
+    color: '#fffaf2',
     resolution: 4,
   });
   text.setOrigin(0.5, 0.5);
-  const padX = 3;
+  const padX = 3.5;
   const w = Math.ceil(text.width + padX * 2);
-  const h = 9;
+  const h = 9.5;
 
   const bg = scene.add.graphics();
-  bg.fillStyle(0x281e24, 0.72);
-  bg.fillRoundedRect(-w / 2, -h / 2, w, h, 2.5);
-  bg.lineStyle(0.75, Phaser.Display.Color.HexStringToColor(accentColor).color, 0.88);
-  bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 2.5);
+  bg.fillStyle(0x261a20, 0.8);
+  bg.fillRoundedRect(-w / 2, -h / 2, w, h, 3);
+  bg.lineStyle(0.8, Phaser.Display.Color.HexStringToColor(accentColor).color, 0.92);
+  bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 3);
 
   const container = scene.add.container(Math.round(x), Math.round(y), [bg, text]);
   container.setDepth(1100);

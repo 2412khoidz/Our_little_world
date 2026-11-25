@@ -321,21 +321,69 @@ def main() -> None:
         "source": public_manifest["entries"][-1]["source"],
     })
 
-    # === 4. Build Avatars Sheet (384 x 288: idle_anim + run + sit for Adam, Alex, Amelia) ===
-    avatars_sheet = Image.new("RGBA", (384, 288))
+    # === 4. Build Avatars Sheet (384 x 384: idle + run + repacked sit2/sit3 + phone for Adam, Alex, Amelia) ===
+    avatars_sheet = Image.new("RGBA", (384, 384))
     avatar_entries = []
     for index, (style, rig) in enumerate(zip(config["rigStyles"], ("Adam", "Alex", "Amelia"))):
-        files = [f"modern-interiors-free/Characters_free/{rig}_{action}_16x16.png" for action in ("idle_anim", "run", "sit")]
-        frames = Image.new("RGBA", (384, 96))
-        for row, relative in enumerate(files):
-            frames.paste(cut(relative, 0, 0, 384, 32), (0, row * 32))
-        avatars_sheet.paste(frames, (0, index * 96))
+        idle_rel = f"modern-interiors-free/Characters_free/{rig}_idle_anim_16x16.png"
+        run_rel = f"modern-interiors-free/Characters_free/{rig}_run_16x16.png"
+        sit2_rel = f"modern-interiors-free/Characters_free/{rig}_sit2_16x16.png"
+        sit3_rel = f"modern-interiors-free/Characters_free/{rig}_sit3_16x16.png"
+        phone_rel = f"modern-interiors-free/Characters_free/{rig}_phone_16x16.png"
+        files = [idle_rel, run_rel, sit2_rel, sit3_rel, phone_rel]
+
+        idle_strip = cut(idle_rel, 0, 0, 384, 32)
+        run_strip = cut(run_rel, 0, 0, 384, 32)
+        sit2_img = load(sit2_rel)
+        sit3_img = load(sit3_rel)
+        phone_img = load(phone_rel)
+
+        # Repack Row 2 (sit) across 24 x 16x32 slots: right (0..5), up (6..11), left (12..17), down (18..23)
+        sit_row = Image.new("RGBA", (384, 32))
+        for i in range(6):
+            # Right sit from sit2 slots 0..5 (32px stride), shifted down to y=31 baseline
+            slot_r = sit2_img.crop((i * 32, 0, (i + 1) * 32, 32))
+            bb_r = slot_r.getbbox()
+            if bb_r:
+                crop_r = slot_r.crop((max(0, bb_r[2] - 16), bb_r[1], bb_r[2], bb_r[3]))
+                ox = (16 - crop_r.width) // 2
+                oy = max(0, 31 - crop_r.height)
+                sit_row.paste(crop_r, (i * 16 + ox, oy))
+
+            # Up sit (for study desk facing up): idle_up shifted +3px down for seated torso height
+            up_frame = idle_strip.crop(((6 + i) * 16, 0, (7 + i) * 16, 32))
+            sit_row.paste(up_frame.crop((0, 0, 16, 29)), ((6 + i) * 16, 3))
+
+            # Left sit from sit2 slots 6..11 (32px stride), shifted down to y=31 baseline
+            slot_l = sit2_img.crop(((6 + i) * 32, 0, (7 + i) * 32, 32))
+            bb_l = slot_l.getbbox()
+            if bb_l:
+                crop_l = slot_l.crop((bb_l[0], bb_l[1], min(32, bb_l[0] + 16), bb_l[3]))
+                ox = (16 - crop_l.width) // 2
+                oy = max(0, 31 - crop_l.height)
+                sit_row.paste(crop_l, ((12 + i) * 16 + ox, oy))
+
+            # Down sit (front-angled sofa/bench): sit3 frames 0..5
+            sit_row.paste(sit3_img.crop((i * 16, 0, (i + 1) * 16, 32)), ((18 + i) * 16, 0))
+
+        # Row 3 (phone/relax): idle fallback on right/up/left + real 6-frame phone loop on down
+        phone_row = Image.new("RGBA", (384, 32))
+        phone_row.paste(idle_strip.crop((0, 0, 18 * 16, 32)), (0, 0))
+        for i, src_col in enumerate((0, 2, 4, 6, 7, 8)):
+            phone_row.paste(phone_img.crop((src_col * 16, 0, (src_col + 1) * 16, 32)), ((18 + i) * 16, 0))
+
+        frames = Image.new("RGBA", (384, 128))
+        frames.paste(idle_strip, (0, 0))
+        frames.paste(run_strip, (0, 32))
+        frames.paste(sit_row, (0, 64))
+        frames.paste(phone_row, (0, 96))
+        avatars_sheet.paste(frames, (0, index * 128))
         avatar_entries.append({
             "id": ids["rigs"][style],
             "texture": "avatars",
-            "rect": {"x": 0, "y": index * 96, "w": 384, "h": 96},
+            "rect": {"x": 0, "y": index * 128, "w": 384, "h": 128},
             "anchor": {"ox": 0.5, "oy": 1},
-            "source": {**used[files[0]], "inputs": files, "composed": True},
+            "source": {**used[idle_rel], "inputs": files, "composed": True},
         })
 
     # === 5. Build Extended Demo E Props & Animated Spritesheets (world-props.png) ===
@@ -485,30 +533,33 @@ def main() -> None:
         "entries": world_entries + avatar_entries,
         "upstream": list(used.values()),
         "avatarGameplay": {
-            "provider": "artemn0va-pydew-valley-cc0",
-            "sourceUrl": "https://github.com/artemn0va/pydew-valley",
-            "frameWidth": 64,
-            "frameHeight": 64,
-            "colsPerRow": 16,
-            "framesPerDirection": 4,
+            "provider": "limezu-modern-interiors-cozy-human-v2",
+            "sourceUrl": "https://limezu.itch.io/moderninteriors",
+            "frameWidth": 16,
+            "frameHeight": 32,
+            "colsPerRow": 24,
+            "framesPerDirection": 6,
             "rowIndex": {
                 "idle": 0,
                 "walk": 1,
-                "hoe": 2,
-                "water": 3,
-                "harvest": 4,
+                "sit": 2,
+                "phone": 3,
             },
-            "facing8Order": [
-                "down",
-                "down-left",
-                "left",
-                "up-left",
-                "up",
-                "up-right",
-                "right",
-                "down-right",
+            "directionsOrder": ["right", "up", "left", "down"],
+            "posturePolicy": {
+                "idle": "row-0-idle_anim",
+                "walk": "row-1-run",
+                "run": "row-1-run-fast",
+                "sit": "row-2-sit2-sit3",
+                "phone": "row-3-phone",
+                "lie": "row-0-tucked-quilt",
+                "facing8": "cardinal",
+            },
+            "missingDonorAnimations": [
+                "lie_bed horizontal sleeping strip",
+                "dedicated hoe/water/fish/hold arm-swing character strips",
+                "true 8-direction diagonal character sprites",
             ],
-            "posturePolicy": {"sit": "idle-row", "lie": "idle-row", "facing8": "cardinal"},
             "wardrobeAvatarsPx": {"width": avatars_sheet.width, "height": avatars_sheet.height},
             "files": gameplay_files,
         },

@@ -8,6 +8,7 @@ interface CoupleActionBarProps {
   outgoingInviteActive: boolean;
   onSendEmote: (emote: CoupleEmoteId) => void;
   onRequestHug: () => void;
+  onRequestHoldHands?: () => void;
   onAcceptHug: () => void;
   onDeclineHug: () => void;
   onStandUp: () => void;
@@ -20,6 +21,7 @@ const POSTURE_LABELS: Record<Exclude<CouplePostureKind, 'none'>, string> = {
   sit_bench: 'Đang ngồi ghế vườn',
   lie_bed: 'Đang nằm nghỉ',
   hug: 'Đang ôm nhau ❤️',
+  hold_hands: 'Đang nắm tay 💛',
 };
 
 export function CoupleActionBar({
@@ -30,11 +32,14 @@ export function CoupleActionBar({
   outgoingInviteActive,
   onSendEmote,
   onRequestHug,
+  onRequestHoldHands,
   onAcceptHug,
   onDeclineHug,
   onStandUp,
   embedded = false,
 }: CoupleActionBarProps) {
+  const isHoldHandsInvite = incomingInvite?.kind === 'hold_hands';
+
   return (
     <div className={`couple-action-shell${embedded ? ' couple-action-shell--embedded' : ''}`}>
       {incomingInvite && (
@@ -56,7 +61,9 @@ export function CoupleActionBar({
           }}
         >
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
-            🫂 Người thương mời ôm nhau ({inviteRemainingSec}s)
+            {isHoldHandsInvite
+              ? `🤝 Người thương mời nắm tay (${inviteRemainingSec}s)`
+              : `🫂 Người thương mời ôm nhau (${inviteRemainingSec}s)`}
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
@@ -65,7 +72,7 @@ export function CoupleActionBar({
               data-testid="couple-hug-accept"
               onClick={onAcceptHug}
             >
-              Đồng ý
+              {isHoldHandsInvite ? 'Nắm tay nhé' : 'Ôm lại ngay'}
             </button>
             <button
               type="button"
@@ -80,13 +87,14 @@ export function CoupleActionBar({
       )}
 
       <div
+        className="couple-action-bar"
         data-testid="couple-action-bar"
         style={{
           pointerEvents: 'auto',
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
-          padding: '5px 8px',
+          gap: 6,
+          padding: '6px 10px',
           borderRadius: 999,
           background: 'rgba(255, 248, 239, 0.92)',
           border: '1px solid var(--border-honey)',
@@ -136,8 +144,32 @@ export function CoupleActionBar({
             whiteSpace: 'nowrap',
           }}
         >
-          {outgoingInviteActive ? 'Đang đợi ôm...' : '🫂 Ôm nhau'}
+          {outgoingInviteActive ? 'Đang đợi...' : '🫂 Ôm nhau'}
         </button>
+
+        {onRequestHoldHands && (
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            data-testid="couple-hold-hands-btn"
+            disabled={!partnerOnlineSameRoom || outgoingInviteActive}
+            title={
+              partnerOnlineSameRoom
+                ? 'Mời người thương nắm tay'
+                : 'Cần cả hai đang ở cùng phòng'
+            }
+            onClick={onRequestHoldHands}
+            style={{
+              minHeight: 36,
+              borderRadius: 999,
+              padding: '4px 10px',
+              fontSize: 12.5,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            🤝 Nắm tay
+          </button>
+        )}
 
         {localPosture !== 'none' && (
           <button

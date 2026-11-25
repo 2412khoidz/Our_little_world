@@ -13,9 +13,15 @@ describe('avatar gameplay policy', () => {
     expect(sheet.width).toBe(48);
   });
 
-  it('registers Puny gameplay + Cabacos reference rows', () => {
-    const ids = OLW_ASSET_REGISTRY.map((r) => r.id);
-    expect(ids).toContain('avatar.walk.pydew-farmer');
-    expect(ids).toContain('avatar.reference.cabacos-sunnyside');
+  it('registers Cozy Human V2 as active gameplay rig and PyDew/Cabacos/Puny as references', () => {
+    const gameplay = OLW_ASSET_REGISTRY.find((r) => r.id === 'avatar.gameplay.cozy-human-v2');
+    expect(gameplay?.role).toBe('gameplay');
+    expect(gameplay?.frames).toMatchObject({ width: 16, height: 32 });
+
+    const pydew = OLW_ASSET_REGISTRY.find((r) => r.id === 'avatar.walk.pydew-farmer');
+    expect(pydew?.role).toBe('reference');
+
+    const cabacos = OLW_ASSET_REGISTRY.find((r) => r.id === 'avatar.reference.cabacos-sunnyside');
+    expect(cabacos?.role).toBe('reference');
   });
 });
