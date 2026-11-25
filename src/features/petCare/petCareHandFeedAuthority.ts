@@ -61,5 +61,11 @@ export async function consumeHandFoodInCare(
     return { status: 'dev_presentation' };
   }
 
-  return { status: 'error', message: res.message, code: res.code };
+  const message =
+    res.code === 'INSUFFICIENT_ITEMS'
+      ? 'Trong túi không đủ món để cho bé.'
+      : res.code === 'COOLDOWN_ACTIVE'
+        ? 'Bé vừa ăn — chờ một chút nhé.'
+        : res.message;
+  return { status: 'error', message, code: res.code };
 }
