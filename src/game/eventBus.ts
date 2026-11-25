@@ -109,6 +109,8 @@ export interface GameEventMap {
     /** Plot index that changed (e.g. after till) for one-shot Cabacos soil pop. */
     highlightPlotId?: number;
   };
+  /** React shell → Phaser presentation-only day/night + weather overlay. */
+  'cmd:sync-world-clock': import('../shared/world/worldClock').WorldClockPresentation;
   /** DEV living-pet local simulation — presentation only, no consumption. */
   'cmd:pet-local-food-offer': PetFoodOfferInput;
   'cmd:pet-care-mode': { active: boolean };

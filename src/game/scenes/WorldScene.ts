@@ -80,6 +80,8 @@ import type { InteractableTarget } from '../../shared/interaction/interactionTyp
 import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
+import { WorldLightingOverlay } from '../world/WorldLightingOverlay';
+import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
@@ -202,6 +204,8 @@ export class WorldScene extends Phaser.Scene {
   private localMoving = false;
   private farmPlotVisual: FarmPlotVisualController | null = null;
   private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
+  private worldLighting: WorldLightingOverlay | null = null;
+  private worldClockPresentation: WorldClockPresentation | null = null;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -250,6 +254,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
+    this.worldLighting = new WorldLightingOverlay(this);
     this.buildMap(this.currentMapId);
     this.setupPointerInput();
     this.bindEventBus();
@@ -1187,6 +1192,11 @@ export class WorldScene extends Phaser.Scene {
         this.mailboxUnreadCount = Math.max(0, unreadCount);
         this.refreshMailboxBadge();
       }),
+
+      gameEventBus.on('cmd:sync-world-clock', (payload) => {
+        this.worldClockPresentation = payload;
+        this.worldLighting?.apply(payload);
+      }),
     );
 
     const devVqgHooks =
@@ -1399,6 +1409,9 @@ export class WorldScene extends Phaser.Scene {
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);
+    if (this.worldClockPresentation && this.worldLighting) {
+      this.worldLighting.apply(this.worldClockPresentation);
+    }
     this.syncCameraDataset();
     this.emitLocalMovement(moved ? 'walk' : 'idle');
 
@@ -2285,6 +2298,9 @@ export class WorldScene extends Phaser.Scene {
   private cleanup(): void {
     this.mapDebugOverlay?.destroy();
     this.mapDebugOverlay = null;
+    this.worldLighting?.destroy();
+    this.worldLighting = null;
+    this.worldClockPresentation = null;
     this.heldRenderer?.destroy();
     this.heldRenderer = null;
     this.petEntity?.destroy();
