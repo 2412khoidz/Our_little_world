@@ -294,8 +294,8 @@ export async function executeMainGameContextAction(
     ctx.onOpenDonorFishing(action.donorFishingSpotId);
     return;
   }
-  if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorStreamFishing) {
-    ctx.onOpenDonorStreamFishing();
+  if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorFishing) {
+    ctx.onOpenDonorFishing('east_stream');
     return;
   }
   if (code === 'open_donor_workshop' && ctx.onOpenDonorWorkshop) {

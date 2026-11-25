@@ -55,7 +55,6 @@ import {
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
 import { farmContextFromWorldClock } from '../shared/farming/farmWorldClockBridge';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
-import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { isDonorLanPlayableMode, setDevLanDonorUiActive } from '../shared/donor/donorEconomyUiFlag';
 import type { DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
@@ -299,7 +298,6 @@ function MainCoupleApp() {
     | 'farm_shipping'
     | 'donor_workshop'
     | 'donor_fishing'
-    | 'donor_stream_fishing'
     | 'dev_console'
     | 'v03_proto'
   >(null);
@@ -1992,7 +1990,12 @@ function MainCoupleApp() {
             : undefined
         }
         onOpenDonorStreamFishing={
-          donorLanPlayable && worldId ? () => setActiveModal('donor_stream_fishing') : undefined
+          donorLanPlayable && worldId
+            ? () => {
+                setDonorChillFishingSpot('east_stream');
+                setActiveModal('donor_fishing');
+              }
+            : undefined
         }
         onOpenDonorWorkshop={
           donorLanPlayable && worldId
@@ -2277,15 +2280,6 @@ function MainCoupleApp() {
         />
       )}
 
-      {donorLanPlayable && activeModal === 'donor_stream_fishing' && worldId && (
-        <TensionFishingModal
-          worldId={worldId}
-          spotId="east_stream"
-          titleVi="Suối phía Đông"
-          onClose={() => setActiveModal(null)}
-          onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
-        />
-      )}
 
       {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
         <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>

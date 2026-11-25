@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildTiledWorldInteractableTargets } from '../../src/shared/world/tiledWorldInteractables';
 import { resolveContextualActions, EMPTY_HELD_ITEM } from '../../src/shared/interaction/interactionResolver';
 describe('forest/farm economy interactables', () => {
-  it('exposes forest canvas stream tension fishing when economy on', () => {
+  it('exposes forest canvas stream fishing when economy on', () => {
     const targets = buildTiledWorldInteractableTargets('forest', true);
     const stream = targets.find((t) => t.id === 'forest_canvas_stream');
     expect(stream?.fishingSpotId).toBe('east_stream');
@@ -15,7 +15,7 @@ describe('forest/farm economy interactables', () => {
       interactables: targets,
       economyPlayable: true,
     });
-    expect(res.primary?.code).toBe('open_donor_stream_fishing');
+    expect(res.primary?.code).toBe('open_donor_fishing');
     expect(res.primary?.donorFishingSpotId).toBe('east_stream');
     expect(res.primary?.available).toBe(true);
   });

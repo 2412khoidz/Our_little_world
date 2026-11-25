@@ -30,7 +30,8 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | Upstream | OLW path |
 | --- | --- |
 | `FishingSystem.js` cast/wait/bite/minigame flow + `Constants.js` `FISHING.*` | `tidefall-phaser/tidefallFishingFsm.ts`, `tidefallFishingConstants.ts` |
-| `FishingSystem.js#createMinigameUI` / `minigamePress` | `features/donor/tidefallFishingCanvas.ts` + `ChillFishingModal.tsx` (pond spots) |
+| `public/assets/sprites/**` (beach, bobber, ripple, UI, terrain) | `public/assets/donor/tidefall-phaser/sprites/**` + `UPSTREAM-LICENSE.txt` |
+| `FishingSystem.js#createMinigameUI` / `minigamePress` | `tidefallFishingArt.ts` (9-slice), `tidefallFishingCanvas.ts`, `ChillFishingModal.tsx` (pond spots) |
 | `public/assets/data/fish.json` (44 species) | `scripts/vendor-tidefall-fish-catalog.mjs` → `tidefallFishCatalog.v1.json`, `tidefallFishCatalog.ts` |
 
 **Spot:** `meadow_pond`, `gull_bay` → tidefall bar minigame (economy still `olwDonorAuthority` meadowbrook resolve).
@@ -50,7 +51,7 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `src/games/fishing/systems/FishingSystem.ts#updateReeling` | `canvas-games-fishing/tensionReelSim.ts` |
 | `src/games/fishing/data/fish.ts` (trout/salmon/bass excerpt) | `canvas-games-fishing/streamFishSpecies.ts` |
 
-**Spot:** `east_stream` → tension reel (not meadowbrook table).
+**Spot:** `east_stream` → economy via `pickCanvasStreamFish`; presentation unified on Tidefall bar (`tidefall_bar`).
 
 ## Dropped weaker duplicate
 
