@@ -4,6 +4,8 @@ import {
   BookOpen,
   Bug,
   Cat,
+  Factory,
+  Fish,
   FlaskConical,
   Gamepad2,
   LogOut,
@@ -35,6 +37,8 @@ interface MenuModalProps {
   onOpenV03Prototypes?: () => void;
   onQuickSwitchDev?: (preset: LocalPresetAccountId) => void;
   onResetDevWorld?: () => void;
+  onOpenDonorWorkshop?: () => void;
+  onOpenDonorFishing?: () => void;
   onSignOut: () => void;
   onClose: () => void;
 }
@@ -56,6 +60,8 @@ export function MenuModal({
   onOpenV03Prototypes,
   onQuickSwitchDev,
   onResetDevWorld,
+  onOpenDonorWorkshop,
+  onOpenDonorFishing,
   onSignOut,
   onClose,
 }: MenuModalProps) {
@@ -200,6 +206,34 @@ export function MenuModal({
                 }}
               >
                 <Bug size={16} /> Dev Console K6 (Ctrl+Shift+D)
+              </button>
+            )}
+
+            {backendMode === 'dev-lan' && onOpenDonorWorkshop && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-donor-workshop"
+                onClick={() => {
+                  onClose();
+                  onOpenDonorWorkshop();
+                }}
+              >
+                <Factory size={16} /> Cối xay donor (C1)
+              </button>
+            )}
+
+            {backendMode === 'dev-lan' && onOpenDonorFishing && (
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                data-testid="menu-donor-fishing"
+                onClick={() => {
+                  onClose();
+                  onOpenDonorFishing();
+                }}
+              >
+                <Fish size={16} /> Cầu câu donor (C1)
               </button>
             )}
 

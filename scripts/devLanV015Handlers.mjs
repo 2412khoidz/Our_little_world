@@ -360,10 +360,30 @@ export async function handleV015Route({
   saveDb,
   broadcastEvent,
   tryHandleFarmDevLan = null,
+  tryHandleDonorDevLan = null,
 }) {
   const v015 = ensureV015Db(db);
 
   const routeWorldId = String(body.worldId ?? reqUrl.searchParams.get('worldId') ?? '').trim();
+  if (tryHandleDonorDevLan && route.startsWith('/donor/')) {
+    const handledDonor = await tryHandleDonorDevLan({
+      req,
+      res,
+      route,
+      body,
+      userId,
+      worldId: routeWorldId,
+      v015,
+      isWorldMember,
+      sendJson,
+      getInventoryList: (worldId) => getWorldInventoryList(v015, worldId),
+      setInventoryList: (worldId, items) => {
+        v015.inventory[worldId] = items;
+      },
+      saveDb,
+    });
+    if (handledDonor) return true;
+  }
   if (tryHandleFarmDevLan && (route.startsWith('/farm') || route === '/farm')) {
     const handled = await tryHandleFarmDevLan({
       req,

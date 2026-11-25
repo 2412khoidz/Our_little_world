@@ -49,6 +49,7 @@ export type InteractableDomainKind =
   | 'portal'
   | 'crop_plot'
   | 'fishing_spot'
+  | 'workshop_building'
   | 'kitchen'
   | 'shop_npc'
   | 'shipping_bin';
@@ -63,6 +64,8 @@ export interface InteractableTarget {
   busy?: boolean;
   empty?: boolean;
   full?: boolean;
+  /** Dev LAN donor economy preview (Mission C1). */
+  donorPlayable?: boolean;
 }
 
 export type InteractionActionCode =
@@ -92,6 +95,8 @@ export type InteractionActionCode =
   | 'harvest_crop'
   | 'open_farm_market'
   | 'open_shipping_bin'
+  | 'open_donor_fishing'
+  | 'open_donor_workshop'
   | 'inspect_prop'
   | 'put_away_held';
 
