@@ -9,6 +9,27 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
+const PRIVATE_SIX_PACK = [
+  'public/assets/private-unified/world.png',
+  'public/assets/private-unified/world-props.png',
+  'public/assets/private-unified/avatars.png',
+  'public/assets/private-unified/manifest.json',
+  'public/assets/private-unified/props-manifest.json',
+  'public/assets/private-unified/CREDITS.md',
+];
+
+function assertPrivateVQGReady() {
+  const requirePrivate =
+    process.env.VITE_OLW_PRIVATE_ART === '1' || process.env.OLW_VQG_REQUIRE_PRIVATE === '1';
+  if (!requirePrivate) return;
+  const missing = PRIVATE_SIX_PACK.filter((p) => !fs.existsSync(path.join(process.cwd(), p)));
+  if (missing.length > 0) {
+    console.error('VQG BLOCKED (private profile): thiếu atlas Demo E:', missing.join(', '));
+    console.error('Upload theo docs/private-asset-handoff-owner.md rồi chạy npm run assets:atlas:private');
+    process.exit(2);
+  }
+}
+
 const PORT = process.env.OLW_VQG_PORT || '4178';
 const BASE = `http://127.0.0.1:${PORT}`;
 const OUT_DIR = process.env.OLW_VQG_OUTPUT_DIR || path.join(process.cwd(), 'test-results', 'vqg-capture');
@@ -63,12 +84,17 @@ async function jumpTo(page, mapId, tileX, tileY) {
 }
 
 async function main() {
+  assertPrivateVQGReady();
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const srv = spawn(
     process.execPath,
     [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', PORT, '--strictPort'],
     {
-      env: { ...process.env, OLW_DEV_LAN_STATE_FILE: TMP_STATE },
+      env: {
+        ...process.env,
+        OLW_DEV_LAN_STATE_FILE: TMP_STATE,
+        VITE_OLW_PRIVATE_ART: '1',
+      },
       stdio: 'ignore',
     },
   );
