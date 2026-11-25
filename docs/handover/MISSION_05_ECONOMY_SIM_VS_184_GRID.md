@@ -32,8 +32,9 @@ The simulator caps daily plant/harvest cycles by `profile.plotCount`. It does **
 ## Commands
 
 ```bash
-npm run economy:sim              # full audit (default seed 20261125, 1000× batch, 180d)
-npm run economy:sim -- --smoke   # CI / agent smoke: 50 sessions, 7 days (same plotCount=12)
+npm run economy:sim                 # default plotCount=12 on v021+ profiles
+npm run economy:sim -- --plots=184  # contract grid (Mission 06)
+npm run economy:sim -- --smoke      # quick gate
 ```
 
-Gameplay plot count is logged at sim start when farm module is present (`FARM_PLOT_COUNT` from `farmPlotIndex.ts`).
+See [MISSION_06_ECONOMY_BALANCE_184.md](./MISSION_06_ECONOMY_BALANCE_184.md) for curves and Composer 1 checklist.
