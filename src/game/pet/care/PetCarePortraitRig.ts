@@ -155,6 +155,24 @@ export class PetCarePortraitRig {
     if (snapshot) this.petName = snapshot.name;
   }
 
+  /** 2P shared session — reflect partner care without caregiver toggle. */
+  syncSharedPhysical(
+    physical: import('../../../shared/petLiving/petPhysicalCare').PhysicalCarePetState,
+    actorUserId: string | null,
+  ): void {
+    const mood = derivePetCareMood(this.snapshot, this.traits);
+    if (!actorUserId) return;
+    const happy = physical.fun >= 70;
+    this.applyExpression({
+      anim: physical.isSleeping ? 'sleep' : physical.fun > 75 ? 'pet_purr' : 'sit_south',
+      bubbleVi: happy ? 'Purr~ hai người cùng chăm!' : 'Mlem~ người kia vừa chăm bé.',
+      earTilt: happy ? 6 : 0,
+      tail: happy ? 'wag_slow' : 'idle',
+      eyeMood: happy ? 'happy' : 'open',
+    });
+    window.setTimeout(() => this.bubble.setText(mood.bubbleVi), 2400);
+  }
+
   getLastInteractionMs(): number {
     return Math.max(this.lastStrokeMs, this.toys.getLastToyMs());
   }

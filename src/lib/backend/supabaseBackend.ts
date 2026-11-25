@@ -400,6 +400,9 @@ export function createSupabaseBackend(): WorldBackend {
             payload: packet,
           });
         },
+        publishPetCareSession() {
+          /* Supabase RPC lands with Mission 04c — dev-LAN authoritative for preview. */
+        },
         async reconnect() {
           handlers.onConnectionChange('reconnecting');
           await supabase.auth.refreshSession();

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ensureV015Db, grantPetCareStarterPack, handleV015Route } from './devLanV015Handlers.mjs';
+import { createSharedPetCareSession, mergeSharedPetCareSession } from './devLanPetCareSession.mjs';
 
 const DEV_IDENTITIES = [
   {
@@ -219,6 +220,7 @@ function createInitialDb() {
     invites: [],
     placements: {},
     idempotency: {},
+    petCareSessions: {},
   };
   ensureV015Db(dbObj);
   return dbObj;
@@ -253,6 +255,16 @@ export function createDevLanHandler({
     }
   } catch {
     db = createInitialDb();
+  }
+  db.petCareSessions ??= {};
+
+  function ensurePetCareSession(worldId) {
+    const petId = db.v015?.pets?.[worldId]?.id ?? `pet-${worldId}`;
+    const existing = db.petCareSessions[worldId];
+    if (existing) return existing;
+    const session = createSharedPetCareSession(worldId, petId);
+    db.petCareSessions[worldId] = session;
+    return session;
   }
 
   function saveDb() {
@@ -418,8 +430,41 @@ export function createDevLanHandler({
         db.placements[worldId] = buildStarterPlacements(worldId, may.userId, nowIso);
         const v015 = ensureV015Db(db);
         grantPetCareStarterPack(v015, worldId, nowIso);
+        ensurePetCareSession(worldId);
         saveDb();
         sendJson(res, 200, { ok: true, data: buildSnapshot(worldId) });
+        return;
+      }
+
+      if (req.method === 'GET' && route === '/pet-care/session') {
+        const worldId = reqUrl.searchParams.get('worldId') ?? '';
+        if (!worldId || !isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn chưa là thành viên của ngôi nhà này.' });
+          return;
+        }
+        const session = ensurePetCareSession(worldId);
+        sendJson(res, 200, { ok: true, data: session });
+        return;
+      }
+
+      if (req.method === 'POST' && route === '/pet-care/session/patch') {
+        const patchBody = await readJsonBody(req);
+        const { worldId, patch } = patchBody;
+        if (!worldId || !patch || !isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Không thể cập nhật phiên chăm mèo.' });
+          return;
+        }
+        if (patch.actorUserId !== userId) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Không khớp người chơi.' });
+          return;
+        }
+        const prev = ensurePetCareSession(worldId);
+        const next = mergeSharedPetCareSession(prev, { ...patch, atMs: patch.atMs ?? Date.now() });
+        db.petCareSessions[worldId] = next;
+        saveDb();
+        const payload = { type: 'PET_CARE_SESSION', worldId, session: next };
+        broadcastEvent(worldId, 'pet_care_session', payload, null);
+        sendJson(res, 200, { ok: true, data: next });
         return;
       }
 
@@ -867,6 +912,8 @@ export function createDevLanHandler({
           broadcastEvent(worldId, 'world_mutated', payload ?? { reason: 'furniture' }, sessionId || null);
         } else if (kind === 'couple_event' && payload) {
           broadcastEvent(worldId, 'couple_event', payload, sessionId || null);
+        } else if (kind === 'pet_care_session' && payload) {
+          broadcastEvent(worldId, 'pet_care_session', payload, sessionId || null);
         } else if (kind === 'spike_cinema' && payload) {
           broadcastEvent(worldId, 'spike_cinema', payload, sessionId || null);
         }

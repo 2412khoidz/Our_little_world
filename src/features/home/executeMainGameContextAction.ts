@@ -5,6 +5,7 @@ import type { ContextualAction, HeldItemState, InteractionActionCode } from '../
 import { plotIdFromInteractableId } from '../../shared/farming/gardenPlotLayout';
 import { PET_KIBBLE_BASIC_SKU } from '../../shared/inventory/inventoryRules';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
+import { resolveEnvHookForPortal } from '../../shared/world/envInteractionHooks';
 
 const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
@@ -201,6 +202,8 @@ export async function executeMainGameContextAction(
     const def = getMapDefinition(ctx.mapId);
     const portal = def.portals.find((p) => p.id === action.targetId) ?? def.portals[0];
     if (portal) {
+      const hook = resolveEnvHookForPortal(ctx.mapId, action.targetId);
+      if (hook) gameEventBus.emit('cmd:env-transition', hook);
       gameEventBus.emit('evt:request-map-change', {
         targetMapId: portal.targetMapId,
         spawnX: portal.targetSpawnX,

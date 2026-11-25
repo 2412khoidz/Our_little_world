@@ -83,6 +83,12 @@ import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRunt
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 import { playAvatarPostureAnim, resetAvatarSpriteOrigin } from '../avatar/avatarPostureVisual';
 import { MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
+import {
+  cardinalFromFacing8,
+  resolveFacing8,
+  type Facing8,
+} from '../../shared/movement/facing8';
+import type { EnvInteractionHook } from '../../shared/world/envInteractionHooks';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -124,6 +130,7 @@ export class WorldScene extends Phaser.Scene {
   private localLabelText!: Phaser.GameObjects.Text;
   private localTextureKey = '';
   private localFacing: Direction = 'down';
+  private localFacing8: Facing8 = 'down';
   private localPosture: CouplePostureKind = 'none';
   private localBlanket: Phaser.GameObjects.Rectangle | null = null;
   private localRestAura: Phaser.GameObjects.Text | null = null;
@@ -973,6 +980,10 @@ export class WorldScene extends Phaser.Scene {
         this.enterSharedPosture(kind);
       }),
 
+      gameEventBus.on('cmd:env-transition', (hook) => {
+        this.playEnvTransition(hook);
+      }),
+
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
       }),
@@ -1533,10 +1544,29 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private vectorToDirection(dx: number, dy: number): Direction {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      return dx >= 0 ? 'right' : 'left';
-    }
-    return dy >= 0 ? 'down' : 'up';
+    this.localFacing8 = resolveFacing8(dx, dy, this.localFacing8);
+    this.localFacing = cardinalFromFacing8(this.localFacing8);
+    this.game.canvas.dataset.localFacing8 = this.localFacing8;
+    return this.localFacing;
+  }
+
+  private playEnvTransition(hook: EnvInteractionHook): void {
+    const sprite = this.localSprite;
+    if (!sprite) return;
+    const yFrom = sprite.scaleY;
+    const isLadder = hook.kind === 'ladder';
+    this.tweens.add({
+      targets: sprite,
+      scaleY: isLadder ? yFrom * 0.82 : yFrom * 0.9,
+      y: sprite.y + (isLadder ? -6 : 0),
+      duration: isLadder ? 180 : 140,
+      yoyo: true,
+      ease: 'Sine.Out',
+      onComplete: () => {
+        sprite.setScale(sprite.scaleX, yFrom);
+      },
+    });
+    this.game.canvas.dataset.envTransitionHook = hook.hookId;
   }
 
   private findNearbyInteractable(): NearbyInteractable | null {

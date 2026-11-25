@@ -87,6 +87,9 @@ export class PetCareScene extends Phaser.Scene {
           this.autonomy.setMood(derivePetCareMood(pet, t));
         }
       }),
+      gameEventBus.on('cmd:sync-shared-pet-care-session', (session) => {
+        this.rig?.syncSharedPhysical(session.physical, session.lastActorUserId);
+      }),
     );
   }
 

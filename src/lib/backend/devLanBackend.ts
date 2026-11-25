@@ -347,6 +347,11 @@ export function createDevLanBackend(): WorldBackend {
           handlers.onCoupleEvent?.(pkt);
         });
 
+        es.addEventListener('pet_care_session', (ev) => {
+          const pkt = JSON.parse((ev as MessageEvent).data) as import('../../shared/petLiving/petCare/sharedPetCareTypes').PetCareSessionEventPacket;
+          handlers.onPetCareSession?.(pkt);
+        });
+
         es.addEventListener('world_reset', () => {
           handlers.onWorldMutated('member');
         });
@@ -373,6 +378,9 @@ export function createDevLanBackend(): WorldBackend {
         },
         publishCoupleEvent(packet) {
           postRealtime('couple_event', packet);
+        },
+        publishPetCareSession(packet) {
+          postRealtime('pet_care_session', packet);
         },
         async reconnect() {
           if (simulatedOffline) {
