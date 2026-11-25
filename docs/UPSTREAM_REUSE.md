@@ -96,6 +96,33 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 
 **Proof:** `cabacosCropVisual.test.ts`, `tidefallFishCatalog.test.ts`
 
+## OLWH Asset Worker D — fishing-frenzy presentation @ `f3939a3`
+
+| Field | Value |
+|-------|--------|
+| **Upstream URL** | [kofkdk/fishing-frenzy](https://github.com/kofkdk/fishing-frenzy) |
+| **Upstream SHA** | `f3939a3f9855104abd55fdf9f465acd52da65c79` |
+| **License** | Public demo repo (verify before redistribution; sprites vendored for OLW dev presentation) |
+| **Vendor** | `npm run vendor-donor:fishing-frenzy` → `public/assets/donor/fishing-frenzy/sprites/` |
+
+### Kept vs adapted
+
+| Kept (authority) | Tidefall FSM `tidefallFishingFsm.ts`, Dev LAN `POST /donor/fishing/*`, Meadowbrook resolve |
+| Adapted (presentation) | `FishRenderer` card pattern → `ChillFishingModal` catch reveal + catalog thumbs; fisher cast/reel/idle on canvas; bobber accent |
+
+| Upstream | OLW path |
+|----------|----------|
+| `src/assets/sprites/*.png` | `public/assets/donor/fishing-frenzy/sprites/` |
+| `FishRenderer.js` rarity borders | `fishingFrenzyRarityUi.ts`, `CatchRevealCard` |
+| `sprites.js` phase fisher | `fishingFrenzyArt.ts`, `drawFishingFrenzyScene.ts` |
+| `fishing-minigame.js` (reference only) | Logic **not** ported — Tidefall bar FSM remains |
+
+### Proof
+
+- `tests/unit/fishingFrenzySpriteMap.test.ts`
+- `npm run vendor-donor:fishing-frenzy` + `node scripts/capture-fishing-frenzy-contact-sheet.mjs`
+- In-game: `data-testid` `fishing-frenzy-catch-reveal`, `tidefall-fishing-canvas` (fisher overlay)
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`
