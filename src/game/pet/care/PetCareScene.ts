@@ -8,6 +8,7 @@ import type { PetCareActionKind } from '../../../shared/petLiving/petCare/petCar
 import { PET_PERSONALITY_PRESETS } from '../../../shared/petLiving/petIntelligenceConfig';
 import { setPetCareModeActive } from '../../../shared/petLiving/petCare/petCareModeFlag';
 import { PetCareSessionGoals } from '../../../shared/petLiving/petCare/petCareSessionGoals';
+import { registerWorldAtlas } from '../../art/worldAtlas';
 import { PetCarePortraitRig } from './PetCarePortraitRig';
 
 export interface PetCareSceneData {
@@ -37,12 +38,15 @@ export class PetCareScene extends Phaser.Scene {
 
   create(data: PetCareSceneData): void {
     setPetCareModeActive(true);
+    registerWorldAtlas(this);
     const { width, height } = this.scale;
     const cx = width / 2;
     const cy = height / 2 - 12;
 
+    this.cameras.main.setBackgroundColor(0x0c0a0e);
+
     this.backdrop = this.add
-      .rectangle(cx, cy, width + 8, height + 8, 0x0e0a10, 0.72)
+      .rectangle(cx, cy, width + 8, height + 8, 0x0c0a0e, 0.96)
       .setScrollFactor(0)
       .setDepth(0);
 
