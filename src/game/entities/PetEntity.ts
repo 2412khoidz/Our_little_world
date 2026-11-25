@@ -121,7 +121,7 @@ export class PetEntity {
     if (bubbleText) this.spawnFloatingBubble(bubbleText);
   }
 
-  syncSnapshot(pet: PetSnapshot | null, currentMapId: 'home' | 'garden'): void {
+  syncSnapshot(pet: PetSnapshot | null, currentMapId: import('../../shared/types').MapId): void {
     this.petSnapshot = pet;
     this.livingDriver?.seedFromSnapshot(pet);
     const show = currentMapId === 'home';

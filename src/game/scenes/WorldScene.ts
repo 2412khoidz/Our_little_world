@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
 import { getCatalogItem } from '../../shared/catalog';
 import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
+import { MEADOW_MAP_HEIGHT_TILES, MEADOW_MAP_WIDTH_TILES } from '../../shared/worldContent/meadowGameplayAnchors';
 import {
   buildMovementCollisionGrid,
   findPlacementAtTile,
@@ -277,13 +278,16 @@ export class WorldScene extends Phaser.Scene {
     this.buildScenicSurround(mapId, worldW, worldH);
 
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
-    const background = artIds.background[mapId];
+    const background =
+      mapId === 'meadow' ? artIds.background.garden : artIds.background[mapId as keyof typeof artIds.background];
     if (art?.has(background)) {
       this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
       if (mapId === 'home') {
         this.buildHomeDemoEAccents();
       } else if (mapId === 'garden') {
         this.buildGardenDemoEAccents(art);
+      } else if (mapId === 'meadow') {
+        this.buildMeadowExtendedAccents();
       }
     } else {
       this.buildStarterMap(mapId);
@@ -569,8 +573,56 @@ export class WorldScene extends Phaser.Scene {
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
   }
 
+  /** Mission 04D — dense meadow slice (not full sandbox map). */
+  private buildMeadowExtendedAccents(): void {
+    const foot = (tileX: number, tileY: number) => ({
+      x: tileX * TILE_SIZE + TILE_SIZE / 2,
+      y: tileY * TILE_SIZE + TILE_SIZE * 0.85,
+    });
+
+    const picnic = foot(5, 8);
+    this.placeProp(extIds.props.picnic_blanket, picnic.x, picnic.y, 0.5, 0.85, Math.round(picnic.y));
+    this.placeProp(extIds.props.picnic_basket, picnic.x - 10, picnic.y - 4, 0.5, 0.85, Math.round(picnic.y));
+
+    const farm = foot(16, 7);
+    this.placeProp(extIds.props.fence_3w, farm.x + 8, farm.y - 8, 0.5, 1, Math.round(farm.y));
+    this.placeProp(extIds.props.sunflower, farm.x - 12, farm.y, 0.5, 1, Math.round(farm.y));
+    this.placeProp(extIds.props.tomato, farm.x, farm.y + 6, 0.5, 1, Math.round(farm.y + 6));
+    this.placeProp(extIds.props.beehive, farm.x + 16, farm.y + 2, 0.5, 1, Math.round(farm.y + 2));
+
+    const pond = foot(11, 13);
+    this.placeProp(extIds.props.bridge_wood, pond.x, pond.y - 8, 0.5, 1, Math.round(pond.y));
+
+    const table = foot(11, 5);
+    this.placeProp(extIds.props.picnic_tart, table.x, table.y, 0.5, 1, Math.round(table.y));
+    const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
+    if (art?.has(artIds.furniture.bench_garden)) {
+      const ly = Math.round(table.y);
+      this.mapLayers.push(
+        this.add
+          .image(table.x - 22, table.y, WORLD_ART_KEY, artIds.furniture.bench_garden)
+          .setOrigin(0.5, 1)
+          .setDepth(ly),
+      );
+      this.mapLayers.push(
+        this.add
+          .image(table.x + 22, table.y, WORLD_ART_KEY, artIds.furniture.bench_garden)
+          .setOrigin(0.5, 1)
+          .setDepth(ly),
+      );
+    }
+
+    const market = foot(4, 14);
+    this.placeProp(extIds.props.planter_box, market.x, market.y, 0.5, 1, Math.round(market.y));
+    this.placeProp(extIds.props.sakura_bush, market.x + 20, market.y - 6, 0.5, 1, Math.round(market.y));
+
+    this.moteBounds = { x: -24, y: 0, w: MEADOW_MAP_WIDTH_TILES * TILE_SIZE + 48, h: MEADOW_MAP_HEIGHT_TILES * TILE_SIZE };
+    this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 10);
+  }
+
   private buildStarterMap(mapId: MapId): void {
-    const mapKey = mapId === 'home' ? 'map-home' : 'map-garden';
+    const mapKey =
+      mapId === 'home' ? 'map-home' : mapId === 'meadow' ? 'map-meadow' : 'map-garden';
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
 

@@ -1,4 +1,5 @@
-import { Armchair, Home, Menu, Shirt, Trees } from 'lucide-react';
+import { Armchair, Compass, Home, Menu, Shirt, Trees } from 'lucide-react';
+import { isMeadowMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
 interface QuickNavBarProps {
@@ -18,6 +19,7 @@ export function QuickNavBar({
   onOpenAvatar,
   onOpenMenu,
 }: QuickNavBarProps) {
+  const meadowUnlocked = isMeadowMapUnlocked();
   return (
     <nav className="quick-nav" aria-label="Điều hướng nhanh">
       <button
@@ -39,6 +41,18 @@ export function QuickNavBar({
         <Trees size={19} />
         <span>Vườn</span>
       </button>
+
+      {meadowUnlocked && (
+        <button
+          type="button"
+          className={`nav-btn ${currentMapId === 'meadow' && !decorateActive ? 'nav-btn--active' : ''}`}
+          data-testid="nav-meadow"
+          onClick={() => onSelectMap('meadow')}
+        >
+          <Compass size={19} />
+          <span>Đồng cỏ</span>
+        </button>
+      )}
 
       <button
         type="button"

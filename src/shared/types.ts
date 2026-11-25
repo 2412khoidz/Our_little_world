@@ -1,4 +1,4 @@
-export type MapId = 'home' | 'garden';
+export type MapId = 'home' | 'garden' | 'meadow';
 
 export type Direction = 'down' | 'up' | 'left' | 'right';
 

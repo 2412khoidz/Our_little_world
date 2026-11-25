@@ -1,3 +1,8 @@
+import {
+  MEADOW_MAP_HEIGHT_TILES,
+  MEADOW_MAP_WIDTH_TILES,
+} from './worldContent/meadowGameplayAnchors';
+import { isExtendedWorldDevEnabled } from './worldIntegration/extendedWorldDevFlag';
 import type { MapId } from './types';
 
 export const TILE_SIZE = 16;
@@ -98,8 +103,65 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
       return false;
     },
   },
+  meadow: {
+    id: 'meadow',
+    nameVi: 'Đồng cỏ mở rộng',
+    tiledJsonPath: '/assets/maps/meadow.json',
+    widthTiles: MEADOW_MAP_WIDTH_TILES,
+    heightTiles: MEADOW_MAP_HEIGHT_TILES,
+    defaultSpawn: { tileX: 8, tileY: 3 },
+    portals: [
+      {
+        id: 'meadow-to-garden',
+        labelVi: 'Về khu vườn',
+        tileX: 8,
+        tileY: 1,
+        radiusTiles: 1.6,
+        targetMapId: 'garden',
+        targetSpawnX: 8,
+        targetSpawnY: 11,
+      },
+    ],
+    isStaticBlocked(tileX, tileY) {
+      if (tileX < 0 || tileY < 0 || tileX >= MEADOW_MAP_WIDTH_TILES || tileY >= MEADOW_MAP_HEIGHT_TILES) {
+        return true;
+      }
+      if (tileX === 0 || tileX === MEADOW_MAP_WIDTH_TILES - 1 || tileY === 0 || tileY === MEADOW_MAP_HEIGHT_TILES - 1) {
+        return true;
+      }
+      if (tileX >= 9 && tileX <= 13 && tileY >= 12 && tileY <= 15) return true;
+      if (tileY >= 5 && tileY <= 9 && tileX >= 14 && tileX <= 19) {
+        if (tileX === 14 || tileX === 19 || tileY === 5 || tileY === 9) return true;
+      }
+      return false;
+    },
+    isNoPlaceZone(tileX, tileY) {
+      if (tileY <= 2 && tileX >= 7 && tileX <= 9) return true;
+      if (tileY === 3 && tileX === 8) return true;
+      return false;
+    },
+  },
+};
+
+const GARDEN_TO_MEADOW_PORTAL: MapPortal = {
+  id: 'garden-to-meadow',
+  labelVi: 'Ra đồng cỏ',
+  tileX: 8,
+  tileY: 12,
+  radiusTiles: 1.6,
+  targetMapId: 'meadow',
+  targetSpawnX: 8,
+  targetSpawnY: 3,
 };
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
-  return MAP_DEFINITIONS[mapId];
+  const base = MAP_DEFINITIONS[mapId];
+  if (mapId === 'garden' && isExtendedWorldDevEnabled()) {
+    return { ...base, portals: [...base.portals, GARDEN_TO_MEADOW_PORTAL] };
+  }
+  return base;
+}
+
+export function isMeadowMapUnlocked(): boolean {
+  return isExtendedWorldDevEnabled();
 }

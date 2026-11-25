@@ -25,6 +25,7 @@ import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
+import { ExtendedWorldDevBanner } from '../features/home/ExtendedWorldDevBanner';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -1394,6 +1395,7 @@ function MainCoupleApp() {
       )}
 
       <LivingPetDevBanner />
+      <ExtendedWorldDevBanner />
 
       <GameViewport
         worldId={worldSnapshot.world.id}
