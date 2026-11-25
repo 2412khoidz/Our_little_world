@@ -1,4 +1,4 @@
-export type MapId = 'home' | 'garden' | 'outdoor' | 'village' | 'farm' | 'forest' | 'beach' | 'shop';
+export type MapId = 'home' | 'garden' | 'farm';
 
 export type Direction = 'down' | 'up' | 'left' | 'right';
 
@@ -128,6 +128,7 @@ export type WorldMutationReason =
   | 'profile'
   | 'member'
   | 'inventory'
+  | 'farm'
   | 'pet'
   | 'study'
   | 'mailbox';

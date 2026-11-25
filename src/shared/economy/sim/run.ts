@@ -25,6 +25,7 @@ import {
   getPersona,
   getProfile,
 } from './config.ts';
+import { resolveSimProfile } from './plotCount.ts';
 import {
   addTo,
   availableCrops,
@@ -95,7 +96,7 @@ function makeSnapshot(
 
 /** Runs one persona through one milestone profile, day by day. */
 export function runSimulation(options: SimOptions): SimResult {
-  const profile = getProfile(options.profileId);
+  const profile = resolveSimProfile(getProfile(options.profileId), options.plotCountOverride);
   const persona = getPersona(options.personaId);
   const strategy: StrategyId = options.strategy ?? 'balanced';
   const days = Math.max(1, Math.floor(options.days));
@@ -196,6 +197,7 @@ export interface BatchOptions {
   readonly baseSeed: number;
   readonly days?: number;
   readonly personas?: readonly PersonaId[];
+  readonly plotCountOverride?: number;
 }
 
 function median(values: number[]): number {
@@ -236,6 +238,7 @@ export function runBatch(options: BatchOptions): BatchSessionSummary {
       profileId: options.profileId,
       personaId,
       days,
+      plotCountOverride: options.plotCountOverride,
     });
     const bucket = perPersona[personaId];
     if (!bucket) {
@@ -347,6 +350,7 @@ export interface StrategyOptions {
   readonly personaId: PersonaId;
   readonly seed: number;
   readonly days?: number;
+  readonly plotCountOverride?: number;
 }
 
 /** Monoculture (highest coins/second crop) vs a balanced rotation. */
@@ -364,6 +368,7 @@ export function compareStrategies(options: StrategyOptions): StrategyComparison 
     days,
     strategy: 'monoculture',
     milestones,
+    plotCountOverride: options.plotCountOverride,
   });
   const balanced = runSimulation({
     seed: options.seed,
@@ -372,6 +377,7 @@ export function compareStrategies(options: StrategyOptions): StrategyComparison 
     days,
     strategy: 'balanced',
     milestones,
+    plotCountOverride: options.plotCountOverride,
   });
 
   const monoRate = monoculture.snapshots[monoculture.snapshots.length - 1]?.incomePerMinute ?? 0;

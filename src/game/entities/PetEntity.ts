@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../../shared/maps';
 import type { PetActionType, PetSnapshot } from '../../shared/pet/petTypes';
+import type { MapId } from '../../shared/types';
 import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../shared/petLiving/petVisualTypes';
 import {
   createLocomotionSnapshot,
@@ -13,7 +14,6 @@ import {
   getLivingCatAnimKey,
   getLivingCatTextureKey,
 } from '../pet/petSpriteBuilder';
-import type { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
 const HOME_WAYPOINTS = [
   { x: 13.5 * TILE_SIZE, y: 10.2 * TILE_SIZE }, // Coral pet rug
@@ -46,7 +46,6 @@ export class PetEntity {
   private reactionUntilMs = 0;
   private reactionIntent: PetBehaviorIntent = 'happy_hop';
   private bubbleTimerMs = 0;
-  private livingDriver: PetLivingMainGameDriver | null = null;
 
   constructor(scene: Phaser.Scene, onTap: () => void) {
     this.scene = scene;
@@ -108,22 +107,8 @@ export class PetEntity {
     }
   }
 
-  setLivingDriver(driver: PetLivingMainGameDriver | null): void {
-    this.livingDriver = driver;
-    driver?.seedFromSnapshot(this.petSnapshot);
-  }
-
-  applyLivingLocomotion(loco: PetLocomotionSnapshot, bubbleText: string | null): void {
-    this.loco = loco;
-    this.sprite.setPosition(Math.round(loco.x), Math.round(loco.y));
-    this.syncShadowAndLabel();
-    this.playAnimState(loco.animState);
-    if (bubbleText) this.spawnFloatingBubble(bubbleText);
-  }
-
-  syncSnapshot(pet: PetSnapshot | null, currentMapId: import('../../shared/types').MapId): void {
+  syncSnapshot(pet: PetSnapshot | null, currentMapId: MapId): void {
     this.petSnapshot = pet;
-    this.livingDriver?.seedFromSnapshot(pet);
     const show = currentMapId === 'home';
     this.nameTag.setText(pet ? pet.name : 'Mèo con');
     this.setVisible(show);
@@ -167,7 +152,6 @@ export class PetEntity {
 
   update(dtSec: number): void {
     if (!this.visible) return;
-    if (this.livingDriver) return;
     const now = Date.now();
 
     if (!this.petSnapshot) {

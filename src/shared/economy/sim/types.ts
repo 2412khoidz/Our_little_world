@@ -91,6 +91,8 @@ export interface SimOptions {
   readonly saturation?: SaturationConfig;
   /** Full experimental market policy (supersedes saturation when set). */
   readonly market?: MarketPolicy;
+  /** When set, farming profiles use this plot capacity (e.g. 184 contract). */
+  readonly plotCountOverride?: number;
 }
 
 export interface SimStats {

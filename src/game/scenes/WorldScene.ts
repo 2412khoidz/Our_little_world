@@ -2,17 +2,6 @@ import Phaser from 'phaser';
 import { DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
 import { getCatalogItem } from '../../shared/catalog';
 import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
-import { MapDebugOverlay } from '../dev/mapDebugOverlay';
-import { renderOutdoorWorld } from '../world/outdoorRenderer';
-import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
-import {
-  nearestTiledNpc,
-  spawnTiledWorldNpcs,
-  tickTiledWorldNpcs,
-  type TiledWorldNpcEntity,
-} from '../world/tiledWorldNpcs';
-import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
-import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
   buildMovementCollisionGrid,
   findPlacementAtTile,
@@ -63,9 +52,10 @@ import { findTilePath, type GridPoint } from '../systems/pathfinding';
 import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
+import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
+import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
+import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
-import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
-import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -122,9 +112,6 @@ export class WorldScene extends Phaser.Scene {
   private furnitureSprites = new Map<string, Phaser.GameObjects.Image>();
   private petEntity: PetEntity | null = null;
   private petSnapshot: PetSnapshot | null = null;
-  private livingPetDriver: PetLivingMainGameDriver | null = null;
-  private livingPetSimulationActive = false;
-  private studyPetMode = false;
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
@@ -147,15 +134,12 @@ export class WorldScene extends Phaser.Scene {
   private joystickVector = { vx: 0, vy: 0 };
 
   private lastPortalAtMs = 0;
-  private buildingMap = false;
-  private tiledNpcs: TiledWorldNpcEntity[] = [];
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
   private lastInteractionFrameAtMs = 0;
   private contextLost = false;
   private paused = false;
-  private mapDebugOverlay: MapDebugOverlay | null = null;
   private movementConnection: number | null = null;
   private heldItem: HeldItemState = EMPTY_HELD_ITEM;
   private heldRenderer: HeldItemRenderer | null = null;
@@ -190,24 +174,6 @@ export class WorldScene extends Phaser.Scene {
     this.petEntity = new PetEntity(this, () => {
       gameEventBus.emit('evt:open-pet-panel');
     });
-    this.livingPetSimulationActive = isLivingPetLocalSimulationEnabled();
-    if (this.livingPetSimulationActive) {
-      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * TILE_SIZE, 10.2 * TILE_SIZE);
-      this.petEntity.setLivingDriver(this.livingPetDriver);
-    }
-    if (import.meta.env.DEV) {
-      this.mapDebugOverlay = new MapDebugOverlay(this);
-      if (this.input.keyboard) {
-        const keyC = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-        keyC.on('down', () => {
-          const on = this.mapDebugOverlay?.toggle() ?? false;
-          if (on) {
-            this.mapDebugOverlay?.redraw(this.currentMapId, this.blockedGrid);
-          }
-        });
-      }
-    }
-
     this.buildMap(this.currentMapId);
     this.setupPointerInput();
     this.bindEventBus();
@@ -280,7 +246,6 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
-    this.buildingMap = true;
     this.currentMapId = mapId;
     this.clearLocalPosture(true);
     this.pathQueue = [];
@@ -296,11 +261,6 @@ export class WorldScene extends Phaser.Scene {
       mote.sprite.destroy();
     }
     this.motes = [];
-    for (const npc of this.tiledNpcs) {
-      npc.body.destroy();
-      npc.label.destroy();
-    }
-    this.tiledNpcs = [];
     this.tilemap?.destroy();
     this.tilemap = null;
 
@@ -311,15 +271,10 @@ export class WorldScene extends Phaser.Scene {
 
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
     const background =
-      artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
+      mapId === 'home' || mapId === 'garden' ? artIds.background[mapId] : undefined;
     if (isTiledWorldMapId(mapId)) {
       this.buildTiledWorldMap(mapId);
-      this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
-    } else if (mapId === 'outdoor') {
-      const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
-      this.moteBounds = outdoor.moteBounds;
-      this.motes = outdoor.motes;
-    } else if (art?.has(background)) {
+    } else if (background && art?.has(background)) {
       this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
       if (mapId === 'home') {
         this.buildHomeDemoEAccents();
@@ -349,7 +304,6 @@ export class WorldScene extends Phaser.Scene {
     this.syncCameraDataset();
 
     this.lastPortalAtMs = Date.now();
-    this.buildingMap = false;
     this.emitCurrentTile(true);
     this.emitLocalMovement('idle');
     gameEventBus.emit('evt:scene-ready', { mapId });
@@ -364,23 +318,48 @@ export class WorldScene extends Phaser.Scene {
     return img;
   }
 
-  /**
-   * Overscroll sky haze only — no cottages, animals, or trees outside collision bounds.
-   * Explorable landmarks live on Tiled zone maps (village/farm) or inside map accents.
-   */
   private buildScenicSurround(mapId: MapId, worldW: number, worldH: number): void {
-    if (mapId === 'outdoor' || isTiledWorldMapId(mapId)) return;
+    if (isTiledWorldMapId(mapId)) return;
 
-    const pad = 20;
-    const haze = this.add.graphics().setDepth(-2);
-    haze.fillStyle(0x9ec87a, 0.18);
-    haze.fillRect(-pad, -pad, worldW + pad * 2, worldH + pad * 2);
-    this.mapLayers.push(haze);
+    const propsTex = this.textures.exists(WORLD_PROPS_KEY) ? this.textures.get(WORLD_PROPS_KEY) : null;
+    if (!propsTex || !propsTex.has(extIds.props.meadow_tile)) return;
 
-    const sky = this.add.graphics().setDepth(-1);
-    sky.fillGradientStyle(0xd4ecf8, 0xd4ecf8, 0xb8dba0, 0xb8dba0, 0.55);
-    sky.fillRect(-pad, -48, worldW + pad * 2, 48);
-    this.mapLayers.push(sky);
+    const meadowFill = this.add.graphics().setDepth(-0.5);
+    meadowFill.fillStyle(0xb8ca7d, 1);
+    meadowFill.fillRect(-320, -256, worldW + 640, worldH + 512);
+    this.mapLayers.push(meadowFill);
+
+    const patchFrame = propsTex.get(extIds.props.meadow_tile);
+    const patchSize = Math.max(16, patchFrame?.width || 64);
+    for (let y = -192; y < worldH + 192; y += patchSize) {
+      for (let x = -256; x < worldW + 256; x += patchSize) {
+        const tile = this.add.image(x, y, WORLD_PROPS_KEY, extIds.props.meadow_tile).setOrigin(0, 0).setDepth(0);
+        this.mapLayers.push(tile);
+      }
+    }
+    const minTx = -14;
+    const maxTx = Math.ceil(worldW / 16) + 14;
+    const minTy = -12;
+    const maxTy = Math.ceil(worldH / 16) + 12;
+    for (let ty = minTy; ty <= maxTy; ty += 1) {
+      for (let tx = minTx; tx <= maxTx; tx += 1) {
+        if (tx >= 0 && tx < worldW / 16 && ty >= 0 && ty < worldH / 16) continue;
+        const h = Math.abs((tx * 73856093) ^ (ty * 19349663) ^ 4219);
+        if (h % 23 === 0 && propsTex.has(extIds.props.meadow_flora)) {
+          this.mapLayers.push(
+            this.add.image(tx * 16, ty * 16, WORLD_PROPS_KEY, extIds.props.meadow_flora).setOrigin(0, 0).setDepth(0.5),
+          );
+        }
+      }
+    }
+
+    const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
+    const placeOuterBlossom = (x: number, y: number) => {
+      if (art?.has(artIds.scenery.blossom)) {
+        this.mapLayers.push(placeSoftShadow(this, x, y - 1, 32, 10, Math.round(y) - 10, 0.48));
+        this.mapLayers.push(this.add.image(x, y, WORLD_ART_KEY, artIds.scenery.blossom).setOrigin(0.5, 1).setDepth(Math.round(y)));
+      }
+    };
 
     if (mapId === 'home') {
       const shell = this.add.graphics().setDepth(0.8);
@@ -390,12 +369,52 @@ export class WorldScene extends Phaser.Scene {
       shell.strokeRoundedRect(-2, -2, worldW + 4, worldH + 4, 3);
       this.mapLayers.push(shell);
 
+      // Front courtyard stoop + porch planters & red mailbox outside doorway
       const doorPad = this.add.graphics().setDepth(0.9);
       doorPad.fillStyle(0xdfba8a, 1);
       doorPad.fillRoundedRect(102, worldH, 52, 42, 6);
       doorPad.lineStyle(1, 0xbd996b, 0.85);
       doorPad.strokeRoundedRect(102, worldH, 52, 42, 6);
       this.mapLayers.push(doorPad);
+
+      this.placeProp(extIds.props.planter_box, 88, worldH + 10, 0.5, 1, worldH + 10);
+      this.placeProp(extIds.props.planter_box, 168, worldH + 10, 0.5, 1, worldH + 10);
+      this.placeProp(extIds.props.mailbox_red, 162, worldH + 22, 0.5, 1, worldH + 22);
+
+      placeOuterBlossom(-38, 64);
+      placeOuterBlossom(worldW + 42, 64);
+      placeOuterBlossom(-30, worldH + 34);
+      placeOuterBlossom(worldW + 34, worldH + 34);
+      this.placeProp(extIds.props.oak_tree, -48, 164);
+      this.placeProp(extIds.props.apple_tree, worldW + 48, 152);
+      this.placeProp(extIds.props.sakura_bush, 22, worldH + 18, 0.5, 1, worldH + 18);
+      this.placeProp(extIds.props.sakura_bush, worldW - 22, worldH + 20, 0.5, 1, worldH + 20);
+    } else {
+      // Garden panoramic horizon framing outside walkable 288x224
+      placeOuterBlossom(-34, 48);
+      placeOuterBlossom(worldW + 36, 48);
+      placeOuterBlossom(42, -16);
+      placeOuterBlossom(240, -16);
+      this.placeProp(extIds.props.oak_tree, 144, -20);
+      this.placeProp(extIds.props.peach_tree, -52, 210);
+      this.placeProp(extIds.props.apple_tree, worldW + 44, 216);
+      placeOuterBlossom(worldW + 52, 92);
+      this.placeProp(extIds.props.side_cottage, -58, 126);
+      this.mapLayers.push(placeWarmLight(this, -58, 104, 28, 0xffd284, 0.28, 860));
+
+      if (this.anims.exists('olw-windmill')) {
+        const wm = this.add.sprite(worldW + 64, 134, WORLD_PROPS_KEY, `${extIds.sheets.windmill}:0`).setOrigin(0.5, 0.85).setDepth(134);
+        wm.play('olw-windmill');
+        this.mapLayers.push(wm);
+      }
+      if (this.anims.exists('olw-sheep')) {
+        this.mapLayers.push(placeSoftShadow(this, -54, 173, 18, 6, 165, 0.45));
+        const sheep = this.add.sprite(-54, 174, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`).setOrigin(0.5, 0.84).setDepth(174);
+        sheep.play('olw-sheep');
+        this.mapLayers.push(sheep);
+      }
+      placeOuterBlossom(54, worldH + 42);
+      placeOuterBlossom(236, worldH + 42);
     }
   }
 
@@ -543,11 +562,8 @@ export class WorldScene extends Phaser.Scene {
       this.mapLayers.push(ch);
     }
 
-    // 5. Drifting cherry blossom petals (within walkable garden bounds)
-    const gardenDef = getMapDefinition('garden');
-    const gW = gardenDef.widthTiles * TILE_SIZE;
-    const gH = gardenDef.heightTiles * TILE_SIZE;
-    this.moteBounds = { x: 8, y: 8, w: gW - 16, h: gH - 16 };
+    // 5. Drifting cherry blossom petals
+    this.moteBounds = { x: -24, y: 0, w: 336, h: 240 };
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
   }
 
@@ -565,8 +581,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildStarterMap(mapId: MapId): void {
-    const mapKey =
-      mapId === 'home' ? 'map-home' : mapId === 'outdoor' ? 'map-meadow' : 'map-garden';
+    const mapKey = mapId === 'home' ? 'map-home' : 'map-garden';
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
 
@@ -592,7 +607,6 @@ export class WorldScene extends Phaser.Scene {
 
   private rebuildFurnitureAndCollisions(): void {
     this.blockedGrid = buildMovementCollisionGrid(this.currentMapId, this.placements);
-    this.mapDebugOverlay?.redraw(this.currentMapId, this.blockedGrid);
     for (const img of this.furnitureSprites.values()) {
       img.destroy();
     }
@@ -937,13 +951,7 @@ export class WorldScene extends Phaser.Scene {
       }),
 
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
-        this.studyPetMode = active;
         this.petEntity?.setStudyMode(active);
-      }),
-
-      gameEventBus.on('cmd:pet-local-food-offer', (offer) => {
-        this.livingPetDriver?.setFoodOffer(offer);
-        this.petEntity?.triggerReaction('feed');
       }),
 
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
@@ -1064,16 +1072,11 @@ export class WorldScene extends Phaser.Scene {
     } else {
       const zoom = computeGameplayZoom(width, height, worldW, worldH);
       cam.setZoom(zoom);
-      const largeWorld =
-        this.currentMapId === 'outdoor' || isTiledWorldMapId(this.currentMapId);
-      const marginX = largeWorld ? 8 : 12;
-      const marginY = largeWorld ? 8 : 12;
-      const scenic = computeScenicBounds(width, height, zoom, worldW, worldH, marginX, marginY);
+      const scenic = computeScenicBounds(width, height, zoom, worldW, worldH, 96, 68);
       cam.setBounds(scenic.x, scenic.y, scenic.width, scenic.height);
       const fitsEntireMapHorizontally = width / zoom >= worldW;
       const fitsEntireMapVertically = height / zoom >= worldH;
-      const forceFollow = largeWorld;
-      if (!forceFollow && fitsEntireMapHorizontally && fitsEntireMapVertically) {
+      if (fitsEntireMapHorizontally && fitsEntireMapVertically) {
         cam.stopFollow();
         cam.centerOn(worldW / 2, worldH / 2);
       } else {
@@ -1114,30 +1117,8 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    if (this.livingPetDriver && this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
-      const memberIds = this.members.map((m) => m.userId);
-      const caregiverPair: [string, string] = [
-        memberIds[0] ?? 'partner-a',
-        memberIds[1] ?? 'partner-b',
-      ];
-      const out = this.livingPetDriver.update({
-        mapId: this.currentMapId,
-        placements: this.placements,
-        nowMs: now,
-        dtMs: deltaMs,
-        isStudying: this.studyPetMode,
-        partnersSittingSofa: this.localPosture === 'sit_sofa',
-        localPlayerX: this.localSprite?.x ?? null,
-        localPlayerY: this.localSprite?.y ?? null,
-        caregiverIds: caregiverPair,
-        foodOffer: null,
-      });
-      this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
-    } else {
-      this.petEntity?.update(dtSec);
-    }
+    this.petEntity?.update(dtSec);
     this.updateRemoteEntities(deltaMs);
-    tickTiledWorldNpcs(this.tiledNpcs, time);
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);
@@ -1329,18 +1310,11 @@ export class WorldScene extends Phaser.Scene {
     const tileY = (this.localSprite.y - 8) / TILE_SIZE;
     const def = getMapDefinition(this.currentMapId);
 
-    const tileXi = Math.floor(tileX);
-    const tileYi = Math.floor(tileY);
-  for (const portal of def.portals) {
+    for (const portal of def.portals) {
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
       if (dist <= portal.radiusTiles) {
         return { kind: 'portal', labelVi: portal.labelVi };
       }
-    }
-
-    const npc = nearestTiledNpc(this.tiledNpcs, tileXi, tileYi);
-    if (npc) {
-      return { kind: 'npc_talk', labelVi: `Trò chuyện · ${npc.labelVi}` };
     }
 
     if (this.currentMapId === 'home' && this.petEntity?.isNearbyTile(tileX, tileY)) {
@@ -1406,19 +1380,17 @@ export class WorldScene extends Phaser.Scene {
     const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
     const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
 
-    if (this.buildingMap || now - this.lastPortalAtMs < 2200) return;
-
-    for (const portal of def.portals) {
-      if (portal.targetMapId === this.currentMapId) continue;
-      const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-      if (dist <= 0.85) {
-        this.lastPortalAtMs = now;
-        gameEventBus.emit('evt:request-map-change', {
-          targetMapId: portal.targetMapId,
-          spawnX: portal.targetSpawnX,
-          spawnY: portal.targetSpawnY,
-        });
-        return;
+    if (now - this.lastPortalAtMs > 1200) {
+      for (const portal of def.portals) {
+        if (tileX === portal.tileX && tileY === portal.tileY) {
+          this.lastPortalAtMs = now;
+          gameEventBus.emit('evt:request-map-change', {
+            targetMapId: portal.targetMapId,
+            spawnX: portal.targetSpawnX,
+            spawnY: portal.targetSpawnY,
+          });
+          return;
+        }
       }
     }
 
@@ -1436,14 +1408,7 @@ export class WorldScene extends Phaser.Scene {
 
     if (near.kind === 'portal') {
       const def = getMapDefinition(this.currentMapId);
-      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
-      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
-      const portal =
-        def.portals.find((p) => p.labelVi === near.labelVi) ??
-        def.portals.find((p) => {
-          const dist = Math.hypot(tileX - p.tileX, tileY - p.tileY);
-          return dist <= p.radiusTiles + 0.5;
-        });
+      const portal = def.portals[0];
       if (portal) {
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
@@ -1461,17 +1426,6 @@ export class WorldScene extends Phaser.Scene {
       gameEventBus.emit('evt:open-photo-frame');
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
-    } else if (near.kind === 'npc_talk') {
-      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
-      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
-      const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
-      if (npc) {
-        gameEventBus.emit('evt:preview-notice', {
-          title: npc.labelVi,
-          version: 'Làng · V0.2 preview',
-          body: npc.dialogueVi,
-        });
-      }
     } else if (
       near.kind === 'sofa_sit' ||
       near.kind === 'bench_sit' ||
@@ -1864,16 +1818,6 @@ export class WorldScene extends Phaser.Scene {
         waterFull: false,
       },
     });
-    for (const npc of this.tiledNpcs) {
-      interactables.push({
-        id: `npc:${npc.id}`,
-        kind: 'shop_npc',
-        labelVi: `Trò chuyện · ${npc.labelVi}`,
-        x: npc.body.x,
-        y: npc.body.y,
-        maxRadiusPx: 44,
-      });
-    }
     interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId));
 
     gameEventBus.emit('evt:interaction-frame', {
@@ -1886,8 +1830,6 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
-    this.mapDebugOverlay?.destroy();
-    this.mapDebugOverlay = null;
     this.heldRenderer?.destroy();
     this.heldRenderer = null;
     this.petEntity?.destroy();

@@ -15,12 +15,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('furniture-cozy', '/assets/starter/furniture-cozy.png');
     this.load.tilemapTiledJSON('map-home', '/assets/maps/home.json');
     this.load.tilemapTiledJSON('map-garden', '/assets/maps/garden.json');
-    this.load.tilemapTiledJSON('map-meadow', '/assets/maps/meadow.json');
-    this.load.tilemapTiledJSON('map-village', '/assets/maps/village.json');
     this.load.tilemapTiledJSON('map-farm', '/assets/maps/farm.json');
-    this.load.tilemapTiledJSON('map-forest', '/assets/maps/forest.json');
-    this.load.tilemapTiledJSON('map-beach', '/assets/maps/beach.json');
-    this.load.tilemapTiledJSON('map-shop', '/assets/maps/shop.json');
   }
 
   create(): void {
