@@ -91,61 +91,64 @@ describe('V0.1.5 Pet MVP Contract & Feed Race (OLW-015-03)', () => {
     expect(nangView.json.data.id).toBe(petId);
     expect(nangView.json.data.name).toBe('Quýt');
 
-    // Simulate Mây and Nắng racing on version 1: Mây feeds first -> consumes 1 kibble, bumps version to 2
-    const feedMay = await callApi(handler, 'POST', '/pet/interact', MAY_ID, {
+    const legacyFeed = await callApi(handler, 'POST', '/pet/interact', MAY_ID, {
       worldId,
       petId,
       action: 'feed',
       expectedVersion: 1,
       idempotencyKey: 'feed-may-1',
     });
-    expect(feedMay.status).toBe(200);
-    expect(feedMay.json.data.kibbleRemaining).toBe(2);
-    expect(feedMay.json.data.pet.version).toBe(2);
+    expect(legacyFeed.status).toBe(403);
+    expect(legacyFeed.json.code).toBe('SERVER_AUTHORITY_REQUIRED');
 
-    // Nắng arrives with stale version 1 and different key -> VERSION_CONFLICT, kibble still 2
-    const feedNangRace = await callApi(handler, 'POST', '/pet/interact', NANG_ID, {
+  const fillMay = await callApi(handler, 'POST', '/pet/care/apply', MAY_ID, {
       worldId,
       petId,
-      action: 'feed',
-      expectedVersion: 1,
-      idempotencyKey: 'feed-nang-1',
+      action: 'fill_food',
+      expectedBowlVersion: 1,
+      ownerScope: 'shared',
+      itemSku: 'pet_kibble_basic',
+      quality: 'normal',
+      idempotencyKey: 'fill-may-1',
     });
-    expect(feedNangRace.status).toBe(409);
-    expect(feedNangRace.json.code).toBe('VERSION_CONFLICT');
+    expect(fillMay.status).toBe(200);
+    expect(fillMay.json.data.bowl.version).toBe(2);
 
-    // Mây retries exact same key `feed-may-1` even though version is now 2 -> MUST replay cached success before version check
-    const replayMay = await callApi(handler, 'POST', '/pet/interact', MAY_ID, {
+    const fillNangRace = await callApi(handler, 'POST', '/pet/care/apply', NANG_ID, {
       worldId,
       petId,
-      action: 'feed',
-      expectedVersion: 1,
-      idempotencyKey: 'feed-may-1',
+      action: 'fill_food',
+      expectedBowlVersion: 1,
+      ownerScope: 'shared',
+      itemSku: 'pet_kibble_basic',
+      quality: 'normal',
+      idempotencyKey: 'fill-nang-1',
+    });
+    expect(fillNangRace.status).toBe(409);
+    expect(fillNangRace.json.code).toBe('VERSION_CONFLICT');
+
+    const replayMay = await callApi(handler, 'POST', '/pet/care/apply', MAY_ID, {
+      worldId,
+      petId,
+      action: 'fill_food',
+      expectedBowlVersion: 1,
+      ownerScope: 'shared',
+      itemSku: 'pet_kibble_basic',
+      quality: 'normal',
+      idempotencyKey: 'fill-may-1',
     });
     expect(replayMay.status).toBe(200);
-    expect(replayMay.json.data.kibbleRemaining).toBe(2);
+    expect(replayMay.json.data.bowl.version).toBe(2);
 
-    // Even with fresh version 2, feeding immediately again hits 60s cooldown
-    const feedTooSoon = await callApi(handler, 'POST', '/pet/interact', NANG_ID, {
-      worldId,
-      petId,
-      action: 'feed',
-      expectedVersion: 2,
-      idempotencyKey: 'feed-nang-2',
-    });
-    expect(feedTooSoon.status).toBe(409);
-    expect(feedTooSoon.json.code).toBe('COOLDOWN_ACTIVE');
-
-    // Petting succeeds on version 2 -> bumps version to 3
     const petMay = await callApi(handler, 'POST', '/pet/interact', MAY_ID, {
       worldId,
       petId,
       action: 'pet',
-      expectedVersion: 2,
+      expectedVersion: 1,
       idempotencyKey: 'pet-may-1',
     });
     expect(petMay.status).toBe(200);
-    expect(petMay.json.data.pet.version).toBe(3);
+    expect(petMay.json.data.pet.version).toBe(2);
 
     // Outsider rejected
     const outsider = await callApi(handler, 'GET', `/pet?worldId=${worldId}`, OUTSIDER_ID);

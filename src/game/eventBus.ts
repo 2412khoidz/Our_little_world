@@ -1,3 +1,4 @@
+import type { HeldItemState, InteractableTarget } from '../shared/interaction/interactionTypes';
 import type { CoupleEmoteId, CouplePostureKind } from '../shared/couple/coupleTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
 import type {
@@ -36,6 +37,14 @@ export interface NearbyInteractable {
     | 'photo_frame'
     | 'mailbox';
   labelVi: string;
+}
+
+export interface InteractionFramePayload {
+  mapId: MapId;
+  playerX: number;
+  playerY: number;
+  facing: Direction;
+  interactables: readonly InteractableTarget[];
 }
 
 export interface GameDiagnosticsSnapshot {
@@ -83,6 +92,7 @@ export interface GameEventMap {
     local?: boolean;
   };
   'cmd:sync-mailbox-unread': { unreadCount: number };
+  'cmd:sync-held-item': HeldItemState;
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };
@@ -110,6 +120,7 @@ export interface GameEventMap {
   'evt:decorate-move': { placementId: string; tileX: number; tileY: number };
   'evt:decorate-select': { placementId: string | null };
   'evt:nearby-interactable': NearbyInteractable | null;
+  'evt:interaction-frame': InteractionFramePayload;
   'evt:diagnostics': GameDiagnosticsSnapshot;
 }
 

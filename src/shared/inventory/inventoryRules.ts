@@ -7,60 +7,10 @@ import type {
 export const PET_KIBBLE_BASIC_SKU = 'pet_kibble_basic';
 export const FREE_KIBBLE_CLAIM_QTY = 3;
 
-/**
- * Starter V0.1.5 read-only item catalog (no currency/prices).
- * Stable SKUs intentionally align with future V0.2.0 `item_catalog` migrations.
- */
-export const V015_ITEM_CATALOG: readonly InventoryCatalogItem[] = [
-  {
-    sku: PET_KIBBLE_BASIC_SKU,
-    nameVi: 'Hạt mèo cơ bản',
-    descriptionVi: 'Phần hạt ấm bụng miễn phí hằng ngày cho bé mèo cam.',
-    purpose: 'pet_food',
-    stackLimit: 10,
-    tradeable: false,
-  },
-  {
-    sku: 'gift_flower_bouquet',
-    nameVi: 'Bó hoa nhỏ dịu dàng',
-    descriptionVi: 'Món quà nhỏ giữ trong ngăn riêng để tạo bất ngờ cho người thương.',
-    purpose: 'gift',
-    stackLimit: 5,
-    tradeable: false,
-  },
-  {
-    sku: 'gift_strawberry_cake',
-    nameVi: 'Bánh dâu ngọt ngào',
-    descriptionVi: 'Miếng bánh dâu xinh xắn có thể gửi kèm thư tay.',
-    purpose: 'gift',
-    stackLimit: 5,
-    tradeable: false,
-  },
-  {
-    sku: 'gift_plush_cat',
-    nameVi: 'Thú bông mèo cam nhỏ',
-    descriptionVi: 'Gối ôm nho nhỏ mang hơi ấm căn nhà chung.',
-    purpose: 'gift',
-    stackLimit: 3,
-    tradeable: false,
-  },
-  {
-    sku: 'gift_star_jar',
-    nameVi: 'Hũ sao giấy kỷ niệm',
-    descriptionVi: 'Những ngôi sao giấy gấp tay lưu giữ lời chúc.',
-    purpose: 'keepsake',
-    stackLimit: 5,
-    tradeable: false,
-  },
-  {
-    sku: 'letter_stationery_pink',
-    nameVi: 'Giấy viết thư hoa anh đào',
-    descriptionVi: 'Bộ giấy thư màu phấn hồng cho những lời nhắn ấm áp.',
-    purpose: 'stationery',
-    stackLimit: 10,
-    tradeable: false,
-  },
-] as const;
+import { CANONICAL_K5_STARTER_CATALOG } from '../catalog/canonicalCatalog.ts';
+
+/** Starter V0.1.5 projection from canonical catalog (no currency/prices). */
+export const V015_ITEM_CATALOG: readonly InventoryCatalogItem[] = CANONICAL_K5_STARTER_CATALOG;
 
 const CATALOG_MAP = new Map(V015_ITEM_CATALOG.map((item) => [item.sku, item]));
 

@@ -4,6 +4,10 @@ import type { MovementPacket } from '../../src/shared/types';
 const pwPort = process.env.PLAYWRIGHT_PORT || '4173';
 const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
 
+function contextPrimaryAction(page: Page) {
+  return page.getByTestId('btn-context-primary').or(page.getByTestId('btn-nearby-action'));
+}
+
 async function tapWorldTile(page: Page, _map: 'home' | 'garden', tileX: number, tileY: number, touch: boolean) {
   const canvas = page.getByTestId('game-canvas-host').locator('canvas');
   await expect(canvas).toBeVisible();
@@ -93,12 +97,12 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
 
     // 4. Tap-to-move follows the original collision grid through the door.
     await tapWorldTile(pageA, 'home', 7, 10, !!hasTouch);
-    await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Ra khu vườn');
-    await pageA.getByTestId('btn-nearby-action').click();
+    await expect(contextPrimaryAction(pageA)).toContainText('Ra khu vườn');
+    await contextPrimaryAction(pageA).click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Ngoài vườn');
     await tapWorldTile(pageA, 'garden', 8, 3, !!hasTouch);
-    await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Vào trong nhà');
-    await pageA.getByTestId('btn-nearby-action').click();
+    await expect(contextPrimaryAction(pageA)).toContainText('Vào trong nhà');
+    await contextPrimaryAction(pageA).click();
     await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây đang ở Trong nhà');
 
     // 5. Both clients redraw the same configuration and preserve it after reload.
@@ -257,9 +261,7 @@ test.describe('Spike 0 + V0.1 — Multi-Device LAN E2E (Isolated Browser Context
         mapId: 'home',
       });
 
-      await tapWorldTile(pageA, 'home', 7, 10, !!hasTouch);
-      await expect(pageA.getByTestId('btn-nearby-action')).toHaveText('Ra khu vườn');
-      await pageA.getByTestId('btn-nearby-action').click();
+      await pageA.getByTestId('nav-garden').click();
       await expect.poll(() => movement.filter((packet) => packet.mapId === 'garden')).toEqual([
         expect.objectContaining({ anim: 'idle', sessionId: idleAtHide.sessionId }),
       ]);

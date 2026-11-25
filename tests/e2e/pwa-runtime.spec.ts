@@ -18,14 +18,14 @@ test.describe('Production PWA runtime (vite preview + dist/)', () => {
     await page.goto('/');
     await expect(page.locator('#root')).toBeVisible({ timeout: 15000 });
 
-    await page.evaluate(async () => {
-      if (!('serviceWorker' in navigator)) throw new Error('No serviceWorker');
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
-      if (!reg.active && !reg.installing && !reg.waiting) throw new Error('SW not active');
-    });
+    await expect.poll(async () => page.evaluate(async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      return registration?.active?.state ?? null;
+    }), { timeout: 15000 }).toBe('activated');
     await page.reload({ waitUntil: 'networkidle' });
     await expect(page.locator('#root')).toBeVisible({ timeout: 15000 });
+
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
 
     const cacheKeys = await page.evaluate(async () => {
       const keys = await caches.keys();
@@ -44,6 +44,7 @@ test.describe('Production PWA runtime (vite preview + dist/)', () => {
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('#root')).toBeVisible({ timeout: 15000 });
+    expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
     expect(workboxErrors).toEqual([]);
   });
 });

@@ -49,6 +49,10 @@ import {
   type WorldSyncPayload,
 } from '../eventBus';
 import { findTilePath, type GridPoint } from '../systems/pathfinding';
+import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
+import type { HeldItemState } from '../../shared/interaction/interactionTypes';
+import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
+import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -130,9 +134,13 @@ export class WorldScene extends Phaser.Scene {
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
+  private lastInteractionFrameAtMs = 0;
   private contextLost = false;
   private paused = false;
   private movementConnection: number | null = null;
+  private heldItem: HeldItemState = EMPTY_HELD_ITEM;
+  private heldRenderer: HeldItemRenderer | null = null;
+  private localMoving = false;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -159,6 +167,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     this.createLocalAvatar();
+    this.heldRenderer = new HeldItemRenderer(this);
     this.petEntity = new PetEntity(this, () => {
       gameEventBus.emit('evt:open-pet-panel');
     });
@@ -897,6 +906,10 @@ export class WorldScene extends Phaser.Scene {
         this.triggerNearbyInteraction();
       }),
 
+      gameEventBus.on('cmd:sync-held-item', (held) => {
+        this.heldItem = held;
+      }),
+
       gameEventBus.on('cmd:set-paused', ({ paused }) => {
         this.paused = paused;
         if (paused) {
@@ -1076,17 +1089,19 @@ export class WorldScene extends Phaser.Scene {
     if (this.paused || document.hidden) return;
 
     const dtSec = Math.min(deltaMs, 50) / 1000;
+    const now = Date.now();
     if (this.motes.length > 0) {
       updateAmbientMotes(this.motes, this.moteBounds, dtSec, time / 1000, 'petal');
     }
 
     const moved = this.updateLocalMovement(dtSec);
+    this.localMoving = moved;
     this.petEntity?.update(dtSec);
     this.updateRemoteEntities(deltaMs);
     this.checkPortalsAndNearbyInteractable();
+    this.syncHeldItemPresentation(time);
+    this.emitInteractionFrameIfDue(now);
     this.syncCameraDataset();
-
-    const now = Date.now();
     this.emitLocalMovement(moved ? 'walk' : 'idle');
 
     if (now - this.lastDiagnosticsAtMs >= 500) {
@@ -1749,7 +1764,52 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private syncHeldItemPresentation(timeMs: number): void {
+    if (!this.heldRenderer || !this.localSprite) return;
+    this.heldRenderer.sync(
+      this.localSprite.x,
+      this.localSprite.y,
+      this.localSprite.depth,
+      this.localFacing,
+      this.localMoving,
+      this.heldItem,
+      timeMs,
+    );
+  }
+
+  private emitInteractionFrameIfDue(nowMs: number): void {
+    if (nowMs - this.lastInteractionFrameAtMs < 180) return;
+    this.lastInteractionFrameAtMs = nowMs;
+    if (!this.localSprite) return;
+
+    const petPos = this.petEntity?.isOnMapVisible() ? this.petEntity.getWorldPosition() : null;
+
+    const interactables = buildMainGameInteractables({
+      mapId: this.currentMapId,
+      placements: this.placements,
+      petWorldPosition: petPos,
+      petVisible: Boolean(petPos),
+      mailboxUnread: this.mailboxUnreadCount,
+      bowlPresentation: {
+        foodEmpty: true,
+        foodFull: false,
+        waterEmpty: true,
+        waterFull: false,
+      },
+    });
+
+    gameEventBus.emit('evt:interaction-frame', {
+      mapId: this.currentMapId,
+      playerX: this.localSprite.x,
+      playerY: this.localSprite.y,
+      facing: this.localFacing,
+      interactables,
+    });
+  }
+
   private cleanup(): void {
+    this.heldRenderer?.destroy();
+    this.heldRenderer = null;
     this.petEntity?.destroy();
     this.petEntity = null;
     for (const unsub of this.unsubscribes) {

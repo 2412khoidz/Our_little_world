@@ -6,7 +6,13 @@ import type {
   OpenMailboxParams,
   SendMailboxParams,
 } from '../../shared/mailbox/mailboxTypes';
-import type { PetActionType, PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type {
+  PetActionType,
+  PetCareApplyResult,
+  PetCareBowlSnapshot,
+  PetInteractionResult,
+  PetSnapshot,
+} from '../../shared/pet/petTypes';
 import type {
   StudyControlAction,
   StudyMode,
@@ -66,6 +72,15 @@ export interface RealtimeHandle {
 export interface InventoryBackend {
   getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
   claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
+  transferInventoryQuality(params: {
+    worldId: string;
+    fromScope: 'shared' | 'personal';
+    toScope: 'shared' | 'personal';
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    qty: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<InventorySnapshot>>;
 }
 
 export interface PetBackend {
@@ -83,6 +98,17 @@ export interface PetBackend {
     expectedVersion: number;
     idempotencyKey: string;
   }): Promise<MutationResult<PetInteractionResult>>;
+  getPetCareSnapshot(worldId: string): Promise<MutationResult<PetCareBowlSnapshot>>;
+  applyPetCare(params: {
+    worldId: string;
+    petId: string;
+    action: 'fill_food' | 'fill_water';
+    expectedBowlVersion: number;
+    ownerScope: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetCareApplyResult>>;
 }
 
 export interface SpikeCinemaPacket {

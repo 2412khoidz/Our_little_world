@@ -20,6 +20,8 @@ interface GameViewportProps {
   selectedPlacementId: string | null;
   showJoystick: boolean;
   isModalOpen: boolean;
+  /** When true, legacy E/nearby button is hidden (main game J/K HUD). */
+  contextualInteractionHud?: boolean;
   movementConnection: number | null;
   toast: { message: string; isError?: boolean } | null;
 }
@@ -37,6 +39,7 @@ export function GameViewport({
   selectedPlacementId,
   showJoystick,
   isModalOpen,
+  contextualInteractionHud = false,
   movementConnection,
   toast,
 }: GameViewportProps) {
@@ -191,7 +194,7 @@ export function GameViewport({
         </div>
       )}
 
-      {nearby && !decorateActive && (
+      {nearby && !decorateActive && !contextualInteractionHud && (
         <div className="nearby-action-wrap">
           <button
             type="button"

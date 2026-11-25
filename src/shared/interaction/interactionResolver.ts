@@ -43,6 +43,7 @@ export function selectHotbarSlot(
   }
   return {
     slotIndex: slot.slotIndex,
+    ownerScope: slot.ownerScope ?? 'shared',
     itemSku: slot.itemSku,
     itemKind: slot.itemKind,
     iconId: slot.iconId,
@@ -200,7 +201,8 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     // Lower score wins: distance penalized less when object is in front and action is directly usable
     const contextBonus = action.available ? -12 : 10;
     const facingBonus = -facingDot * 10;
-    const score = dist + contextBonus + facingBonus;
+    const portalBoost = t.kind === 'portal' && dist < 14 ? -40 : 0;
+    const score = dist + contextBonus + facingBonus + portalBoost;
     scored.push({ target: t, action, score });
   }
 

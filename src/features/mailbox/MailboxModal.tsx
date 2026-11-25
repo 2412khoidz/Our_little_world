@@ -22,6 +22,7 @@ interface MailboxModalProps {
     body: string;
     giftItemSku: string | null;
     giftQty: number;
+    giftQuality: 'normal' | 'silver' | 'gold';
     sourceScope: MailboxGiftSourceScope;
     isSurprise: boolean;
   }) => Promise<boolean>;
@@ -68,12 +69,14 @@ export function MailboxModal({
       .map((item) => {
         const meta = catalogBySku.get(item.itemSku);
         const sourceScope: MailboxGiftSourceScope = item.ownerScope === 'shared' ? 'shared' : 'personal';
+        const quality = item.quality ?? 'normal';
         return {
-          key: `${sourceScope}:${item.itemSku}`,
+          key: `${sourceScope}:${quality}:${item.itemSku}`,
           sourceScope,
           sku: item.itemSku,
+          quality,
           qty: item.qty,
-          label: `${meta?.nameVi ?? item.itemSku} (${sourceScope === 'shared' ? 'Túi chung' : 'Ngăn riêng'}, còn ${item.qty})`,
+          label: `${meta?.nameVi ?? item.itemSku} (${quality}, ${sourceScope === 'shared' ? 'Túi chung' : 'Ngăn riêng'}, còn ${item.qty})`,
         };
       });
   }, [catalogBySku, inventory]);
@@ -100,9 +103,12 @@ export function MailboxModal({
 
     let sourceScope: MailboxGiftSourceScope = 'shared';
     let giftItemSku: string | null = null;
+    let giftQuality: 'normal' | 'silver' | 'gold' = 'normal';
     if (selectedAttachmentKey) {
-      const [scopePart, ...skuParts] = selectedAttachmentKey.split(':');
+      const [scopePart, qualityPart, ...skuParts] = selectedAttachmentKey.split(':');
       sourceScope = scopePart === 'personal' ? 'personal' : 'shared';
+      giftQuality =
+        qualityPart === 'silver' || qualityPart === 'gold' ? qualityPart : 'normal';
       giftItemSku = skuParts.join(':') || null;
     }
 
@@ -119,6 +125,7 @@ export function MailboxModal({
       body: textCheck.body,
       giftItemSku: giftCheck.giftItemSku,
       giftQty: giftCheck.giftQty,
+      giftQuality,
       sourceScope,
       isSurprise,
     });

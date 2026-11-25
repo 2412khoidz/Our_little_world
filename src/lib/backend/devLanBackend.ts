@@ -447,6 +447,12 @@ export function createDevLanBackend(): WorldBackend {
           body: JSON.stringify({ worldId, idempotencyKey }),
         });
       },
+      async transferInventoryQuality(params) {
+        return apiJson<InventorySnapshot>('/inventory/transfer-quality', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
     },
 
     pet: {
@@ -461,6 +467,17 @@ export function createDevLanBackend(): WorldBackend {
       },
       async interactPet(params) {
         return apiJson<PetInteractionResult>('/pet/interact', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async getPetCareSnapshot(worldId) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareBowlSnapshot>(
+          `/pet/care?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyPetCare(params) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareApplyResult>('/pet/care/apply', {
           method: 'POST',
           body: JSON.stringify(params),
         });

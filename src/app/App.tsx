@@ -23,6 +23,7 @@ import { CoupleActionBar } from '../features/couple/CoupleActionBar';
 import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
+import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -41,10 +42,11 @@ import {
   type CoupleInvitePayload,
   type CouplePostureKind,
 } from '../shared/couple/coupleTypes';
-import { getSharedKibbleQty } from '../shared/inventory/inventoryRules';
+import { getSharedKibbleQty, PET_KIBBLE_BASIC_SKU } from '../shared/inventory/inventoryRules';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 import type { MailboxGiftSourceScope, MailboxSnapshot } from '../shared/mailbox/mailboxTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
+import { getPetActionCooldownRemainingMs } from '../shared/pet/petNeeds';
 import { deriveStudySessionAt, formatDurationMmSs } from '../shared/study/pomodoro';
 import type { StudyControlAction, StudyMode, StudySnapshot } from '../shared/study/studyTypes';
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
@@ -214,6 +216,7 @@ function MainCoupleApp() {
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
+  const [petCareBowlVersion, setPetCareBowlVersion] = useState(1);
   const [petBusy, setPetBusy] = useState(false);
   const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
   const [studySnapshot, setStudySnapshot] = useState<StudySnapshot | null>(null);
@@ -306,6 +309,18 @@ function MainCoupleApp() {
     showToast('Đã thêm 3 phần hạt mèo miễn phí vào túi chung!');
   }, [backend, showToast]);
 
+  const refreshPetCareBowl = useCallback(
+    async (explicitWorldId?: string) => {
+      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
+      if (!targetWorldId || !backend.pet) return;
+      const res = await backend.pet.getPetCareSnapshot(targetWorldId);
+      if (res.ok) {
+        setPetCareBowlVersion(res.data.version);
+      }
+    },
+    [backend],
+  );
+
   const refreshPetSnapshot = useCallback(
     async (explicitWorldId?: string) => {
       const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
@@ -315,8 +330,9 @@ function MainCoupleApp() {
         setPetSnapshot(res.data);
         gameEventBus.emit('cmd:sync-pet', res.data);
       }
+      void refreshPetCareBowl(targetWorldId);
     },
-    [backend],
+    [backend, refreshPetCareBowl],
   );
 
   const handleAdoptOrRenamePet = useCallback(
@@ -350,6 +366,47 @@ function MainCoupleApp() {
       const targetWorldId = snapshotRef.current?.world.id;
       if (!targetWorldId || !backend.pet || !petSnapshot) return;
       setPetBusy(true);
+
+      if (action === 'feed' || action === 'water') {
+        const careAction = action === 'feed' ? 'fill_food' : 'fill_water';
+        const res = await backend.pet.applyPetCare({
+          worldId: targetWorldId,
+          petId: petSnapshot.id,
+          action: careAction,
+          expectedBowlVersion: petCareBowlVersion,
+          ownerScope: 'shared',
+          itemSku: PET_KIBBLE_BASIC_SKU,
+          quality: 'normal',
+          idempotencyKey: makeIdempotencyKey(`pet-care-${careAction}`),
+        });
+        setPetBusy(false);
+        if (!res.ok) {
+          showToast(res.message, true);
+          if (res.code === 'VERSION_CONFLICT' || res.code === 'BOWL_FULL') {
+            void refreshPetSnapshot(targetWorldId);
+            void refreshInventorySnapshot(targetWorldId);
+          }
+          return;
+        }
+        setPetCareBowlVersion(res.data.bowl.version);
+        if (res.data.pet) {
+          setPetSnapshot(res.data.pet);
+          gameEventBus.emit('cmd:sync-pet', res.data.pet);
+        }
+        gameEventBus.emit('cmd:pet-reaction', { action });
+        void refreshInventorySnapshot(targetWorldId);
+        realtimeRef.current?.notifyWorldMutated('inventory');
+        realtimeRef.current?.notifyWorldMutated('pet');
+        showToast(
+          action === 'feed'
+            ? 'Đã cho thức ăn vào bát — bé sẽ tự ăn khi đói (Mission 04).'
+            : 'Đã làm đầy bát nước.',
+        );
+        const studyActiveNow = Boolean(studySnapshot?.sharedSession || studySnapshot?.soloSession);
+        if (!studyActiveNow) playPetFeedbackChime(action);
+        return;
+      }
+
       const res = await backend.pet.interactPet({
         worldId: targetWorldId,
         petId: petSnapshot.id,
@@ -369,22 +426,20 @@ function MainCoupleApp() {
       setPetSnapshot(res.data.pet);
       gameEventBus.emit('cmd:sync-pet', res.data.pet);
       gameEventBus.emit('cmd:pet-reaction', { action });
-      if (action === 'feed') {
-        void refreshInventorySnapshot(targetWorldId);
-        realtimeRef.current?.notifyWorldMutated('inventory');
-      }
       realtimeRef.current?.notifyWorldMutated('pet');
       const studyActiveNow = Boolean(studySnapshot?.sharedSession || studySnapshot?.soloSession);
       playPetFeedbackChime(action, studyActiveNow);
-      const msg =
-        action === 'feed'
-          ? `${res.data.pet.name} ăn hạt rất ngon!`
-          : action === 'water'
-            ? `${res.data.pet.name} đã uống nước mát!`
-            : `${res.data.pet.name} đang rừ rừ vui sướng!`;
-      showToast(msg);
+      showToast(`${res.data.pet.name} đang rừ rừ vui sướng!`);
     },
-    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast, studySnapshot],
+    [
+      backend,
+      petCareBowlVersion,
+      petSnapshot,
+      refreshInventorySnapshot,
+      refreshPetSnapshot,
+      showToast,
+      studySnapshot,
+    ],
   );
 
   const refreshStudySnapshot = useCallback(
@@ -421,6 +476,7 @@ function MainCoupleApp() {
       body: string;
       giftItemSku: string | null;
       giftQty: number;
+      giftQuality: 'normal' | 'silver' | 'gold';
       sourceScope: MailboxGiftSourceScope;
       isSurprise: boolean;
     }): Promise<boolean> => {
@@ -1284,6 +1340,11 @@ function MainCoupleApp() {
   }
 
   const isAnyModalOpen = activeModal !== null || previewNotice !== null;
+  const kibbleCount = getSharedKibbleQty(inventorySnapshot?.items ?? []);
+  const petFeedCooldownMs = petSnapshot
+    ? getPetActionCooldownRemainingMs('feed', petSnapshot.lastFedAtMs, coupleClockNowMs)
+    : 0;
+  const petCanFeed = Boolean(petSnapshot) && kibbleCount > 0 && petFeedCooldownMs <= 0;
   const activeFloatingStudy = studySnapshot?.sharedSession ?? studySnapshot?.soloSession ?? null;
   const derivedFloatingStudy = activeFloatingStudy
     ? deriveStudySessionAt(
@@ -1345,7 +1406,37 @@ function MainCoupleApp() {
         showJoystick={showJoystick}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
+        contextualInteractionHud
         toast={toast}
+      />
+
+      <MainGameInteractionLayer
+        localUserId={currentUser.userId}
+        key={currentMapId}
+        enabled={Boolean(backend.inventory)}
+        currentMapId={currentMapId}
+        inventorySnapshot={inventorySnapshot}
+        petSnapshot={petSnapshot}
+        decorateActive={decorateActive}
+        modalOpen={isAnyModalOpen}
+        showJoystick={showJoystick}
+        petCanFeed={petCanFeed}
+        interactionMutationBusy={petBusy}
+        onOpenInventory={() => {
+          setActiveModal('inventory');
+          void refreshInventorySnapshot();
+        }}
+        onCloseTopModal={() => {
+          if (activeModal) setActiveModal(null);
+          else if (previewNotice) setPreviewNotice(null);
+        }}
+        onFeedPetAuthoritative={async () => {
+          await handleInteractPet('feed');
+        }}
+        onPetPetAuthoritative={async () => {
+          await handleInteractPet('pet');
+        }}
+        onNotice={(message, isError) => showToast(message, isError)}
       />
 
       {!decorateActive && !isAnyModalOpen && (
