@@ -48,3 +48,11 @@ export interface PetCareReactionContext {
   petName: string;
   shyRefuseRoll?: number;
 }
+
+/** Body language first — speech bubbles only for refusals / fussy food. */
+export function shouldShowCareBubble(expr: PetCareExpression): boolean {
+  if (expr.refuse) return Boolean(expr.bubbleVi);
+  if (expr.squeak === 'refuse') return Boolean(expr.bubbleVi);
+  if (expr.anim === 'sniff' && expr.bubbleVi.includes('…')) return true;
+  return false;
+}
