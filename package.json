@@ -29,6 +29,7 @@
     "vendor-donor:cabacos-maps": "node scripts/vendor-donor-cabacos-maps.mjs",
     "import-donor:cabacos": "node scripts/vendor-donor-cabacos-maps.mjs && node scripts/import-donor-cabacos.mjs",
     "import-donor:cabacos-farm": "node scripts/import-donor-cabacos-farm.mjs",
+    "import-donor:cabacos-ui-inventory": "node scripts/import-donor-cabacos-ui-inventory.mjs",
     "import-donor:pydew-farm": "node scripts/vendor-donor-pydew-valley.mjs && node scripts/import-donor-pydew-farm.mjs",
     "import-donor:hollowmere-beach": "node scripts/import-donor-hollowmere-beach.mjs",
     "import-donor:cabacos-beach": "node scripts/import-donor-cabacos-beach.mjs",
