@@ -139,6 +139,10 @@ export class PetEntity {
     return { x: this.sprite.x, y: this.sprite.y };
   }
 
+  isOnMapVisible(): boolean {
+    return this.visible;
+  }
+
   isNearbyTile(tileX: number, tileY: number): boolean {
     const cx = this.sprite.x / TILE_SIZE;
     const cy = this.sprite.y / TILE_SIZE;

@@ -3,8 +3,12 @@ import type { LivingItemIconId } from '../petLiving/petVisualTypes';
 
 export type HeldItemKind = 'none' | 'food' | 'water_pitcher' | 'toy' | 'gift' | 'tool';
 
+import type { InventoryOwnerScope } from '../inventory/inventoryTypes';
+
 export interface HotbarSlot {
   slotIndex: number;
+  /** Mission 02 stack owner; V0.1.5 adapter only fills shared stacks. */
+  ownerScope?: InventoryOwnerScope;
   itemSku: string | null;
   itemKind: HeldItemKind;
   iconId: LivingItemIconId | null;
@@ -15,6 +19,7 @@ export interface HotbarSlot {
 }
 
 export interface HeldItemState {
+  ownerScope?: InventoryOwnerScope;
   slotIndex: number | null;
   itemSku: string | null;
   itemKind: HeldItemKind;
