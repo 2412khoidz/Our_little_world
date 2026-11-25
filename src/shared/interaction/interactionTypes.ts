@@ -95,6 +95,7 @@ export type InteractionActionCode =
   | 'sit_bench'
   | 'enter_home'
   | 'exit_home'
+  | 'enter_barn_shop'
   | 'use_portal'
   | 'talk_npc'
   | 'till_plot'

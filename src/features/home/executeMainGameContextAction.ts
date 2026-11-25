@@ -5,6 +5,7 @@ import type { ContextualAction, HeldItemState, InteractionActionCode } from '../
 import { plotIdFromInteractableId } from '../../shared/farming/gardenPlotLayout';
 import { PET_KIBBLE_BASIC_SKU } from '../../shared/inventory/inventoryRules';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
+import { waterPitcherAfterFill, waterPitcherPourDelta } from '../../shared/interaction/homeBowlPresentation';
 
 const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
@@ -25,6 +26,7 @@ export interface MainGameActionContext {
   onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
   onNotice: (message: string, isError?: boolean) => void;
   livingPetLocalSimulation?: boolean;
+  donorLanPlayable?: boolean;
 }
 
 function emitDiegeticOpen(code: InteractionActionCode, targetId?: string): boolean {
@@ -169,6 +171,9 @@ export async function executeMainGameContextAction(
     return;
   }
 
+  const mainGameBowlPlayable =
+    ctx.mapId === 'home' && (ctx.livingPetLocalSimulation || ctx.donorLanPlayable);
+
   if (code === 'pour_water_bowl' || code === 'fill_water_pitcher') {
     if (isPetCareModeActive()) {
       gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
@@ -179,16 +184,61 @@ export async function executeMainGameContextAction(
       );
       return;
     }
+    if (mainGameBowlPlayable) {
+      if (code === 'fill_water_pitcher') {
+        gameEventBus.emit('evt:held-water-adjust', {
+          level: waterPitcherAfterFill(),
+          iconId: 'water_pitcher_full',
+        });
+        ctx.onNotice('Đã múc đầy bình nước mát (0₫)!');
+        return;
+      }
+      const nextLevel = waterPitcherPourDelta(ctx.heldItem.waterFillLevel);
+      gameEventBus.emit('evt:held-water-adjust', {
+        level: nextLevel,
+        iconId: nextLevel > 0 ? 'water_pitcher_full' : 'water_pitcher_empty',
+      });
+      gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
+      ctx.onNotice('Đã rót nước vào bát — bé có thể uống khi khát.');
+      return;
+    }
     ctx.onNotice(MISSION02_PENDING_VI, true);
     return;
   }
 
   if (code === 'fill_food_bowl') {
     if (isPetCareModeActive()) {
-      ctx.onNotice('Đổ thức ăn bát — chờ tích hợp #10; dùng tay cầm món + J.');
+      gameEventBus.emit('cmd:pet-care-action', {
+        kind: 'offer_food',
+        sku: ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU,
+        quality: ctx.heldItem.quality ?? 'normal',
+        ownerScope: ctx.heldItem.ownerScope ?? 'shared',
+      });
+      ctx.onNotice('Đổ vào bát trong chế độ chăm sóc — dùng J khi cầm món.');
+      return;
+    }
+    if (mainGameBowlPlayable) {
+      gameEventBus.emit('cmd:apply-home-bowl', { kind: 'food' });
+      ctx.onNotice('Đã đổ thức ăn vào bát — bé sẽ tự ghé khi đói.');
       return;
     }
     ctx.onNotice(MISSION02_PENDING_VI, true);
+    return;
+  }
+
+  if (code === 'enter_barn_shop') {
+    if (!ctx.donorLanPlayable) {
+      ctx.onNotice('Cửa chuồng chưa mở ngoài bản preview ruộng.', true);
+      return;
+    }
+    const shopDef = getMapDefinition('shop');
+    gameEventBus.emit('evt:request-map-change', {
+      targetMapId: 'shop',
+      spawnX: shopDef.defaultSpawn.tileX,
+      spawnY: shopDef.defaultSpawn.tileY,
+      portalId: 'farm_barn_door',
+    });
+    ctx.onNotice('Bước vào cửa hàng Bác Hai…');
     return;
   }
 

@@ -89,6 +89,12 @@ import {
   type Facing8,
 } from '../../shared/movement/facing8';
 import type { EnvInteractionHook } from '../../shared/world/envInteractionHooks';
+import {
+  DEFAULT_HOME_BOWL_PRESENTATION,
+  fillHomeFoodBowl,
+  pourHomeWaterBowl,
+  type HomeBowlPresentation,
+} from '../../shared/interaction/homeBowlPresentation';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -140,6 +146,7 @@ export class WorldScene extends Phaser.Scene {
   private mailboxBadge: Phaser.GameObjects.Container | null = null;
   private mailboxUnreadCount = 0;
   private homeDoorGfx: Phaser.GameObjects.Graphics | null = null;
+  private homeBowls: HomeBowlPresentation = { ...DEFAULT_HOME_BOWL_PRESENTATION };
 
   private remoteEntities = new Map<string, RemoteAvatarEntity>();
   private latestPresences: PresencePayload[] = [];
@@ -989,6 +996,18 @@ export class WorldScene extends Phaser.Scene {
         this.playEnvTransition(hook);
       }),
 
+      gameEventBus.on('cmd:apply-home-bowl', ({ kind }) => {
+        if (this.currentMapId !== 'home') return;
+        if (kind === 'food') this.homeBowls = fillHomeFoodBowl(this.homeBowls);
+        else if (kind === 'water') this.homeBowls = pourHomeWaterBowl(this.homeBowls);
+        this.syncHomeBowlPresentation();
+      }),
+
+      gameEventBus.on('cmd:sync-partner-home-bowl', (state) => {
+        this.homeBowls = { ...state };
+        this.syncHomeBowlPresentation();
+      }),
+
       gameEventBus.on('cmd:play-partner-env-transition', ({ userId, mapId, kind, hookId }) => {
         if (mapId !== this.currentMapId) return;
         const entity = this.remoteEntities.get(userId);
@@ -1153,6 +1172,9 @@ export class WorldScene extends Phaser.Scene {
             toMapId: this.currentMapId,
           });
         };
+      (globalThis as { __olwDevApplyHomeBowl?: (kind: 'food' | 'water') => void }).__olwDevApplyHomeBowl = (kind) => {
+        gameEventBus.emit('cmd:apply-home-bowl', { kind });
+      };
       (globalThis as { __olwDevTravelPortal?: (portalId: string) => void }).__olwDevTravelPortal = (portalId) => {
         const def = getMapDefinition(this.currentMapId);
         const portal = def.portals.find((p) => p.id === portalId);
@@ -2147,6 +2169,12 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private syncHomeBowlPresentation(): void {
+    this.game.canvas.dataset.homeFoodBowl = this.homeBowls.foodFull ? 'full' : 'empty';
+    this.game.canvas.dataset.homeWaterBowl = this.homeBowls.waterFull ? 'full' : 'empty';
+    gameEventBus.emit('evt:local-home-bowl-changed', { ...this.homeBowls });
+  }
+
   private syncHeldItemPresentation(timeMs: number): void {
     if (!this.heldRenderer || !this.localSprite) return;
     this.heldRenderer.sync(
@@ -2168,12 +2196,7 @@ export class WorldScene extends Phaser.Scene {
       petWorldPosition: petPos,
       petVisible: Boolean(petPos),
       mailboxUnread: this.mailboxUnreadCount,
-      bowlPresentation: {
-        foodEmpty: true,
-        foodFull: false,
-        waterEmpty: true,
-        waterFull: false,
-      },
+      bowlPresentation: { ...this.homeBowls },
       donorEconomyDev: isDonorEconomyUiEnabled(),
     });
     for (const npc of this.tiledNpcs) {

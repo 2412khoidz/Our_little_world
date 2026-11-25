@@ -793,6 +793,17 @@ function MainCoupleApp() {
         }
         return;
       }
+      if (packet.type === 'COUPLE_HOME_BOWL') {
+        if (packet.userId !== currentUser.userId) {
+          gameEventBus.emit('cmd:sync-partner-home-bowl', {
+            foodEmpty: packet.foodEmpty,
+            foodFull: packet.foodFull,
+            waterEmpty: packet.waterEmpty,
+            waterFull: packet.waterFull,
+          });
+        }
+        return;
+      }
       if (packet.type === 'COUPLE_ENV_TRANSITION') {
         if (packet.userId !== currentUser.userId) {
           gameEventBus.emit('cmd:play-partner-env-transition', {
@@ -1279,6 +1290,22 @@ function MainCoupleApp() {
       });
     });
 
+    const unsubHomeBowl = gameEventBus.on('evt:local-home-bowl-changed', (bowls) => {
+      const targetWorldId = snapshotRef.current?.world.id;
+      if (!targetWorldId || !currentUser) return;
+      if (currentMapIdRef.current !== 'home') return;
+      realtimeRef.current?.publishCoupleEvent?.({
+        type: 'COUPLE_HOME_BOWL',
+        worldId: targetWorldId,
+        userId: currentUser.userId,
+        foodEmpty: bowls.foodEmpty,
+        foodFull: bowls.foodFull,
+        waterEmpty: bowls.waterEmpty,
+        waterFull: bowls.waterFull,
+        atMs: Date.now(),
+      });
+    });
+
     return () => {
       unsubMove();
       unsubTile();
@@ -1293,6 +1320,7 @@ function MainCoupleApp() {
       unsubPhoto();
       unsubMailbox();
       unsubPosture();
+      unsubHomeBowl();
     };
   }, [currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 

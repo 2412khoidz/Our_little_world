@@ -78,6 +78,7 @@ function facingVector(facing: Direction): { x: number; y: number } {
 function actionForTarget(
   target: InteractableTarget,
   held: HeldItemState,
+  economyPlayable: boolean,
 ): ContextualAction {
   switch (target.kind) {
     case 'pet': {
@@ -183,9 +184,31 @@ function actionForTarget(
       return { code: 'sit_sofa', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'bed':
       return { code: 'lie_bed', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
-    case 'bench':
+    case 'bench': {
+      if (target.id === 'outdoor_minigame') {
+        return {
+          code: 'inspect_prop',
+          keyHint: 'J',
+          labelVi: 'Bàn mini-game',
+          targetId: target.id,
+          available: false,
+          reasonVi: 'Hotseat PvP chưa mở (V0.3). Hai bạn vẫn có thể ngồi ghế khác hoặc ôm nhau gần đó.',
+        };
+      }
       return { code: 'sit_bench', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
-    case 'door':
+    }
+    case 'door': {
+      if (target.id === 'farm_barn_door') {
+        const open = Boolean(economyPlayable);
+        return {
+          code: 'enter_barn_shop',
+          keyHint: 'J',
+          labelVi: open ? 'Vào cửa hàng Bác Hai' : target.labelVi,
+          targetId: target.id,
+          available: open,
+          reasonVi: open ? undefined : 'Cần môi trường donor preview (dev LAN + economy).',
+        };
+      }
       return {
         code: target.id === 'cottage_exit' ? 'exit_home' : 'enter_home',
         keyHint: 'J',
@@ -193,6 +216,7 @@ function actionForTarget(
         targetId: target.id,
         available: true,
       };
+    }
     case 'portal':
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'crop_plot': {
@@ -311,7 +335,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const dist = Math.hypot(dx, dy);
     if (dist > t.maxRadiusPx) continue;
 
-    const action = actionForTarget(t, heldItem);
+    const action = actionForTarget(t, heldItem, economyPlayable);
     if (shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;
     const nx = dist > 0.01 ? dx / dist : 0;
     const ny = dist > 0.01 ? dy / dist : 0;

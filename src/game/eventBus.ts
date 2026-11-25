@@ -12,6 +12,7 @@ import type {
   WorldMember,
 } from '../shared/types';
 import type { SharedPetCareSession } from '../shared/petLiving/petCare/sharedPetCareSession';
+import type { HomeBowlPresentation } from '../shared/interaction/homeBowlPresentation';
 import type { EnvInteractionHook, EnvInteractionHookKind } from '../shared/world/envInteractionHooks';
 
 export interface WorldSyncPayload {
@@ -111,6 +112,10 @@ export interface GameEventMap {
   };
   'cmd:sync-shared-pet-care-session': SharedPetCareSession;
   'cmd:env-transition': EnvInteractionHook;
+  'cmd:apply-home-bowl': { kind: 'food' | 'water' | 'fill_pitcher' };
+  'evt:local-home-bowl-changed': HomeBowlPresentation;
+  'cmd:sync-partner-home-bowl': HomeBowlPresentation;
+  'evt:held-water-adjust': { level: number; iconId: 'water_pitcher_full' | 'water_pitcher_empty' };
   'cmd:play-partner-env-transition': {
     userId: string;
     mapId: MapId;
