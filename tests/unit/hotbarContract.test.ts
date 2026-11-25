@@ -17,6 +17,6 @@ describe('hotbarContract', () => {
   it('maps toy and water kinds', () => {
     expect(hotbarSkuToHeldKind('toy_yarn')).toBe('toy');
     expect(hotbarSkuToHeldKind('water_pitcher')).toBe('water_pitcher');
-    expect(FARM_TOOL_HOTBAR_SKUS).toEqual([]);
+    expect(FARM_TOOL_HOTBAR_SKUS).toContain('tool_hoe');
   });
 });

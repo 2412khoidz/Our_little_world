@@ -16,8 +16,14 @@ export const PET_CARE_HOTBAR_SKUS = [
   'water_pitcher',
 ] as const;
 
-/** Composer 1 (#14): seed, hoe, watering can — empty until SKU lands on integration branch. */
-export const FARM_TOOL_HOTBAR_SKUS = [] as const;
+/** Frozen playtest-all @ c01d291 farm/hotbar SKUs — extend via donor C1 slice later. */
+export const FARM_TOOL_HOTBAR_SKUS = [
+  'tool_hoe',
+  'tool_watering_can',
+  'seed_wheat',
+  'seed_carrot',
+  'seed_tomato',
+] as const;
 
 export const MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST = [
   ...PET_CARE_HOTBAR_SKUS,
