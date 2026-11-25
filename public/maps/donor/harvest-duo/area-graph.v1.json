@@ -1,0 +1,51 @@
+{
+  "schema": "olw-donor-area-graph",
+  "version": 1,
+  "source": "harvest-duo src/world.py",
+  "areas": {
+    "farm": { "w": 42, "h": 30, "olwMapId": "farm" },
+    "town": { "w": 42, "h": 28, "olwMapId": "village" },
+    "forest": { "w": 38, "h": 28, "olwMapId": "forest" },
+    "beach": { "w": 42, "h": 30, "olwMapId": "beach" }
+  },
+  "warps": [
+    {
+      "from": "farm",
+      "gx": 41,
+      "gy": 22,
+      "to": "beach",
+      "spawn": [39, 22],
+      "olwNote": "farm right-edge sandy trail → beach headland"
+    },
+    {
+      "from": "beach",
+      "gx": 3,
+      "gy": 0,
+      "to": "farm",
+      "spawn": [39, 22],
+      "olwNote": "paired return warp"
+    },
+    {
+      "from": "town",
+      "gx": 41,
+      "gy": 14,
+      "to": "forest",
+      "spawn": [18, 2],
+      "olwNote": "town east edge; OLW uses Cabacos village-to-forest portal"
+    },
+    {
+      "from": "forest",
+      "gx": 18,
+      "gy": 0,
+      "to": "town",
+      "spawn": [39, 14],
+      "olwNote": "forest north return"
+    }
+  ],
+  "olwPortalHooks": [
+    "village-to-beach",
+    "beach-to-village",
+    "village-to-forest",
+    "forest-to-beach"
+  ]
+}

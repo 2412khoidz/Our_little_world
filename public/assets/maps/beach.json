@@ -9988,6 +9988,37 @@
               "value": "gull_bay"
             }
           ]
+        },
+        {
+          "id": 22,
+          "name": "beach_lifebuoy_post",
+          "type": "interactable",
+          "x": 528,
+          "y": 272,
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "bench"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Phao cứu sinh bến — cặp đôi nghỉ gần cầu câu"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 48
+            },
+            {
+              "name": "donorRef",
+              "type": "string",
+              "value": "harvest-duo:lifebuoy@19,17"
+            }
+          ]
         }
       ]
     }
@@ -10045,7 +10076,12 @@
     {
       "name": "olwCoastPolish",
       "type": "string",
-      "value": "2025-11-25-pier-sign"
+      "value": "2025-11-25-pier-lifebuoy"
+    },
+    {
+      "name": "olwHarvestDuoRef",
+      "type": "string",
+      "value": "beach-layout-reference.v1"
     }
   ]
 }

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
-import { assertCanvasPixelVariance } from './lib/assertScreenshotMapVariance.mjs';
+import { assertCanvasPixelVariance, assertScreenshotCenterVariance } from './lib/assertScreenshotMapVariance.mjs';
 
 const PORT = process.env.OLW_PORT || '4182';
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -21,6 +21,28 @@ async function waitServer() {
   throw new Error('dev server timeout');
 }
 
+async function vqgJumpUntilMap(page, canvas, mapId, tx, ty) {
+  await page.waitForFunction(
+    () => typeof globalThis.__OLW_VQG?.jump === 'function',
+    undefined,
+    { timeout: 20_000 },
+  );
+  for (let i = 0; i < 50; i += 1) {
+    const id = await canvas.getAttribute('data-map-id');
+    if (id === mapId) return;
+    await page.evaluate(
+      ({ mapId: mid, tileX: x, tileY: y }) => {
+        if (!globalThis.__OLW_VQG?.jump) throw new Error('VQG jump unavailable');
+        globalThis.__OLW_VQG.jump(mid, x, y);
+      },
+      { mapId, tileX: tx, tileY: ty },
+    );
+    await page.waitForTimeout(250);
+  }
+  const finalId = await canvas.getAttribute('data-map-id');
+  if (finalId !== mapId) throw new Error(`VQG: expected ${mapId}, got ${finalId}`);
+}
+
 async function main() {
   const srv = spawn(
     process.execPath,
@@ -29,26 +51,18 @@ async function main() {
   );
   try {
     await waitServer();
+    await fetch(`${BASE}/api/dev-lan/reset`, { method: 'POST', body: '{}' });
+    await fetch(`${BASE}/api/dev-lan/seed-couple`, { method: 'POST', body: '{}' });
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     await page.goto(`${BASE}/?extended-world=1&vqg-capture=1`);
-    await fetch(`${BASE}/api/dev-lan/reset`, { method: 'POST', body: '{}' });
-    await page.getByTestId('btn-dev-seed-couple').click();
     await page.getByTestId('preset-partner-a').click();
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await canvas.waitFor({ state: 'visible', timeout: 20000 });
-    await page.waitForTimeout(1500);
-    await page.evaluate(() => window.__OLW_VQG?.jump?.('beach', 1, 16));
-    for (let i = 0; i < 40; i += 1) {
-      const id = await canvas.getAttribute('data-map-id');
-      if (id === 'beach') break;
-      await page.waitForTimeout(250);
-    }
-  const mapId = await canvas.getAttribute('data-map-id');
-    if (mapId !== 'beach') throw new Error(`Expected beach map, got ${mapId}`);
+    await canvas.waitFor({ state: 'visible', timeout: 30_000 });
+    await vqgJumpUntilMap(page, canvas, 'beach', 1, 16);
     await page.waitForTimeout(1200);
+    await assertCanvasPixelVariance(canvas, { minUnique: 22 });
     await page.screenshot({ path: OUT, fullPage: false });
-    const { assertScreenshotCenterVariance } = await import('./lib/assertScreenshotMapVariance.mjs');
     const unique = assertScreenshotCenterVariance(OUT, { minUnique: 22 });
     await browser.close();
     console.log('Wrote', OUT, 'uniqueColors', unique);

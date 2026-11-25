@@ -69,7 +69,7 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 |------|--------|---------|
 | [clear-code-projects/PyDew](https://github.com/clear-code-projects/PyDew) | `HEAD` | CC0 pygame Tiled 48px — wrong engine/scale for OLW Phaser 16px |
 | [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) | `HEAD` | **Transplanted:** `gull_bay` → `beach.json` (§ Hollowmere below) |
-| [Intelisgod/harvest-duo](https://github.com/Intelisgod/harvest-duo) | `HEAD` | Pygame `build_beach()` — layout reference; pygame scale mismatch |
+| [Intelisgod/harvest-duo](https://github.com/Intelisgod/harvest-duo) | `HEAD` | **Surveyed:** `public/maps/donor/harvest-duo/` area graph + beach pier ref → Hollowmere coast polish |
 | [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | — | GPL — pattern only, no asset vendoring |
 | Kaetram | — | Not cloned this slice — reserved for forest candidate |
 

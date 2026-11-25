@@ -480,6 +480,25 @@ function buildFromHollowmere(mapData) {
           { name: 'fishingSpotId', type: 'string', value: 'gull_bay' },
         ],
       },
+      {
+        id: 22,
+        name: 'beach_lifebuoy_post',
+        type: 'interactable',
+        x: 33 * TW,
+        y: 17 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'kind', type: 'string', value: 'bench' },
+          {
+            name: 'labelVi',
+            type: 'string',
+            value: 'Phao cứu sinh bến — cặp đôi nghỉ gần cầu câu',
+          },
+          { name: 'maxRadiusPx', type: 'int', value: 48 },
+          { name: 'donorRef', type: 'string', value: 'harvest-duo:lifebuoy@19,17' },
+        ],
+      },
     ],
   };
 
@@ -498,7 +517,8 @@ function buildFromHollowmere(mapData) {
     [portals, interactables],
     [
       { name: 'hollowmereMusic', type: 'string', value: mapData.music ?? 'beach' },
-      { name: 'olwCoastPolish', type: 'string', value: '2025-11-25-pier-sign' },
+      { name: 'olwCoastPolish', type: 'string', value: '2025-11-25-pier-lifebuoy' },
+      { name: 'olwHarvestDuoRef', type: 'string', value: 'beach-layout-reference.v1' },
     ],
   );
 }

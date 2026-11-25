@@ -24,9 +24,14 @@ describe('donor farm/beach sketch', () => {
     const names = parsed!.interactableSpawns.map((s) => s.id);
     expect(names).toContain('beach_gull_bay_sign');
     expect(names).toContain('beach_pier_fishing');
+    expect(names).toContain('beach_lifebuoy_post');
     const polish = (beachJson as { properties?: { name: string; value: string }[] }).properties?.find(
       (p) => p.name === 'olwCoastPolish',
     );
-    expect(polish?.value).toBeTruthy();
+    expect(polish?.value).toBe('2025-11-25-pier-lifebuoy');
+    const hdRef = (beachJson as { properties?: { name: string; value: string }[] }).properties?.find(
+      (p) => p.name === 'olwHarvestDuoRef',
+    );
+    expect(hdRef?.value).toBe('beach-layout-reference.v1');
   });
 });
