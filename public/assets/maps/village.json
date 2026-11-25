@@ -91488,7 +91488,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Vào nhà"
+              "value": "Cửa nhà — vào bên trong (E)"
             },
             {
               "name": "spawnX",
@@ -91547,6 +91547,187 @@
       "objects": [
         {
           "id": 9201,
+          "name": "cabacos_player_house_door",
+          "type": "interactable",
+          "x": 666,
+          "y": 479.5,
+          "width": 29.5,
+          "height": 13,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "door"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Cửa nhà — vào bên trong (E)"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "anchorId",
+              "type": "string",
+              "value": "player_house_door"
+            }
+          ]
+        },
+        {
+          "id": 9202,
+          "name": "cabacos_player_crop_market_door",
+          "type": "interactable",
+          "x": 240.5,
+          "y": 512.5,
+          "width": 37,
+          "height": 13,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "shop_npc"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Chợ nông sản Cabacos"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "anchorId",
+              "type": "string",
+              "value": "player_crop_market_door"
+            }
+          ]
+        },
+        {
+          "id": 9203,
+          "name": "cabacos_player_seed_shop_door",
+          "type": "interactable",
+          "x": 523,
+          "y": 383.5,
+          "width": 27.5,
+          "height": 12,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "shop_npc"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Hạt giống & dụng cụ"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "anchorId",
+              "type": "string",
+              "value": "player_seed_shop_door"
+            }
+          ]
+        },
+        {
+          "id": 9204,
+          "name": "cabacos_player_town_hall_door",
+          "type": "interactable",
+          "x": 535.5,
+          "y": 207,
+          "width": 31,
+          "height": 16.5,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "shop_npc"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Tòa thị chính — chưa mở"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "anchorId",
+              "type": "string",
+              "value": "player_town_hall_door"
+            }
+          ]
+        },
+        {
+          "id": 9205,
+          "name": "cabacos_sign_farm_gate",
+          "type": "interactable",
+          "x": 1280,
+          "y": 384,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "crop_plot"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "→ Trang trại chính (184 luống)"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 64
+            }
+          ]
+        },
+        {
+          "id": 9206,
+          "name": "cabacos_sign_beach",
+          "type": "interactable",
+          "x": 1344,
+          "y": 416,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "fishing_spot"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "→ Gull Bay (bãi biển donor)"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 64
+            },
+            {
+              "name": "donorPlayable",
+              "type": "bool",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": 9207,
           "name": "cabacos_plaza_well",
           "type": "interactable",
           "x": 480,

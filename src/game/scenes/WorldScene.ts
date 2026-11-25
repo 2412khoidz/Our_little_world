@@ -70,6 +70,11 @@ import { findTilePath, type GridPoint } from '../systems/pathfinding';
 import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
+import {
+  buildDiscoverabilityMarkerSpecs,
+  spawnDiscoverabilityMarkers,
+} from '../world/discoverabilityMarkers';
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
@@ -362,6 +367,7 @@ export class WorldScene extends Phaser.Scene {
     this.redrawDecorateOverlay();
     this.handleResize(true);
     this.syncCameraDataset();
+    this.refreshDiscoverabilityMarkers();
 
     this.lastPortalAtMs = Date.now();
     this.buildingMap = false;
@@ -1942,13 +1948,8 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
-  private emitInteractionFrameIfDue(nowMs: number): void {
-    if (nowMs - this.lastInteractionFrameAtMs < 180) return;
-    this.lastInteractionFrameAtMs = nowMs;
-    if (!this.localSprite) return;
-
+  private collectSceneInteractableTargets(): InteractableTarget[] {
     const petPos = this.petEntity?.isOnMapVisible() ? this.petEntity.getWorldPosition() : null;
-
     const interactables = buildMainGameInteractables({
       mapId: this.currentMapId,
       placements: this.placements,
@@ -1974,6 +1975,23 @@ export class WorldScene extends Phaser.Scene {
       });
     }
     interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId));
+    return interactables;
+  }
+
+  private refreshDiscoverabilityMarkers(): void {
+    const interactables = this.collectSceneInteractableTargets();
+    const specs = buildDiscoverabilityMarkerSpecs(this.currentMapId, interactables);
+    for (const obj of spawnDiscoverabilityMarkers(this, specs)) {
+      this.mapLayers.push(obj);
+    }
+  }
+
+  private emitInteractionFrameIfDue(nowMs: number): void {
+    if (nowMs - this.lastInteractionFrameAtMs < 180) return;
+    this.lastInteractionFrameAtMs = nowMs;
+    if (!this.localSprite) return;
+
+    const interactables = this.collectSceneInteractableTargets();
 
     gameEventBus.emit('evt:interaction-frame', {
       mapId: this.currentMapId,
