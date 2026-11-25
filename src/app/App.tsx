@@ -24,6 +24,10 @@ import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
+import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
+import { registerLivingPetDevAcceptanceHooks } from '../shared/petLiving/mainGame/livingPetDevAcceptance';
+import { consumeHandFoodInCare } from '../features/petCare/petCareHandFeedAuthority';
+import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -105,7 +109,11 @@ const DevCombinedExperienceDemo = import.meta.env.DEV
   ? lazy(() => import('../features/sandboxes/CombinedExperienceDemo').then((m) => ({ default: m.CombinedExperienceDemo })))
   : null;
 
-type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo';
+const DevDonorPetThreeCare = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/DonorPetThreeCare').then((m) => ({ default: m.DonorPetThreeCare })))
+  : null;
+
+type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo' | 'donor-pet-three';
 
 function readDevSandboxKind(): DevSandboxKind | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
@@ -115,6 +123,7 @@ function readDevSandboxKind(): DevSandboxKind | null {
   if (q.has('world-sandbox')) return 'world-sandbox';
   if (q.has('pet-lab')) return 'pet-lab';
   if (q.has('experience-demo')) return 'experience-demo';
+  if (q.has('donor-pet-three')) return 'donor-pet-three';
   return null;
 }
 
@@ -181,6 +190,7 @@ export function App() {
         {initialSandbox === 'world-sandbox' && DevWorldExpansionSandbox && <DevWorldExpansionSandbox onExit={exitToHome} />}
         {initialSandbox === 'pet-lab' && DevPetLabSandbox && <DevPetLabSandbox onClose={exitToHome} />}
         {initialSandbox === 'experience-demo' && DevCombinedExperienceDemo && <DevCombinedExperienceDemo onExit={exitToHome} />}
+        {initialSandbox === 'donor-pet-three' && DevDonorPetThreeCare && <DevDonorPetThreeCare onExit={exitToHome} />}
       </Suspense>
     );
   }
@@ -216,6 +226,7 @@ function MainCoupleApp() {
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
+  const [petCareMode, setPetCareMode] = useState(false);
   const [petCareBowlVersion, setPetCareBowlVersion] = useState(1);
   const [petBusy, setPetBusy] = useState(false);
   const [petSoundMutedState, setPetSoundMutedState] = useState(() => isPetSoundMuted());
@@ -595,6 +606,55 @@ function MainCoupleApp() {
   }, [studySnapshot]);
 
   useEffect(() => () => stopStudyAmbient(), []);
+
+  useEffect(() => registerLivingPetDevAcceptanceHooks(), []);
+
+  useEffect(
+    () => gameEventBus.on('evt:pet-care-mode', ({ active }) => setPetCareMode(active)),
+    [],
+  );
+
+  useEffect(
+    () =>
+      gameEventBus.on('evt:pet-care-request-consume', ({ sku, quality, ownerScope }) => {
+        const targetWorldId = snapshotRef.current?.world.id;
+        if (!targetWorldId || !petSnapshot) return;
+        void (async () => {
+          setPetBusy(true);
+          const outcome = await consumeHandFoodInCare(backend, {
+            worldId: targetWorldId,
+            petId: petSnapshot.id,
+            expectedVersion: petSnapshot.version,
+            ownerScope,
+            itemSku: sku,
+            quality,
+            idempotencyKey: makeIdempotencyKey(`pet-care-consume-${sku}`),
+          });
+          setPetBusy(false);
+          if (outcome.status === 'dev_presentation') {
+            showToast('Bé ngửi món (mô phỏng DEV — chưa trừ kho).', true);
+            return;
+          }
+          if (outcome.status === 'error') {
+            showToast(outcome.message, true);
+            if (outcome.code === 'VERSION_CONFLICT') {
+              void refreshPetSnapshot(targetWorldId);
+              void refreshInventorySnapshot(targetWorldId);
+            }
+            return;
+          }
+          setPetSnapshot(outcome.pet);
+          gameEventBus.emit('cmd:sync-pet', outcome.pet);
+          gameEventBus.emit('cmd:pet-reaction', { action: 'feed' });
+          void refreshInventorySnapshot(targetWorldId);
+          realtimeRef.current?.notifyWorldMutated('inventory');
+          realtimeRef.current?.notifyWorldMutated('pet');
+          showToast(`${outcome.pet.name} đã ăn món nhé!`);
+          playPetFeedbackChime('feed');
+        })();
+      }),
+    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast],
+  );
 
   useEffect(() => {
     if (!incomingHugInvite && !outgoingInviteExpiresAtMs) return;
@@ -1392,6 +1452,13 @@ function MainCoupleApp() {
         </button>
       )}
 
+      {!petCareMode && <LivingPetDevBanner />}
+
+      <PetCareTouchOverlay
+        active={petCareMode}
+        onExit={() => gameEventBus.emit('cmd:pet-care-mode', { active: false })}
+      />
+
       <GameViewport
         worldId={worldSnapshot.world.id}
         localUserId={currentUser.userId}
@@ -1413,6 +1480,7 @@ function MainCoupleApp() {
       <MainGameInteractionLayer
         localUserId={currentUser.userId}
         key={currentMapId}
+        petCareOverlayActive={petCareMode}
         enabled={Boolean(backend.inventory)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}
@@ -1439,7 +1507,7 @@ function MainCoupleApp() {
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
-      {!decorateActive && !isAnyModalOpen && (
+      {!decorateActive && !isAnyModalOpen && !petCareMode && (
         <CoupleActionBar
           partnerOnlineSameRoom={presences.some(
             (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
@@ -1481,6 +1549,7 @@ function MainCoupleApp() {
         />
       ) : (
         <QuickNavBar
+          hidden={petCareMode}
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}

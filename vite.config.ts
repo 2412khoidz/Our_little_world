@@ -29,14 +29,18 @@ function approvedPublicAssets(privateBuild: boolean): Plugin {
 
 export default defineConfig(({ command, mode }) => {
   const privateBuild = mode === 'private-art';
+  const forcePrivateArt =
+    process.env.VITE_OLW_PRIVATE_ART === '1' || process.env.VITE_OLW_PRIVATE_ART === 'true';
   const localAtlasReady = privateArtFiles.every((file) => existsSync(resolve('public', file)));
-  if (privateBuild && !localAtlasReady) {
-    throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước.');
+  if ((privateBuild || forcePrivateArt) && !localAtlasReady) {
+    throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước hoặc copy owner handoff zip.');
   }
 
   return {
   define: {
-    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(privateBuild || (command === 'serve' && localAtlasReady)),
+    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(
+      privateBuild || forcePrivateArt || (command === 'serve' && localAtlasReady),
+    ),
   },
   build: { copyPublicDir: false },
   plugins: [

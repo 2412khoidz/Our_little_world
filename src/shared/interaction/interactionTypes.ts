@@ -70,6 +70,7 @@ export type InteractionActionCode =
   | 'pour_water_bowl'
   | 'fill_water_pitcher'
   | 'pet_cat'
+  | 'enter_pet_care'
   | 'roll_toy'
   | 'place_cardboard_box'
   | 'pickup_starter_kibble'

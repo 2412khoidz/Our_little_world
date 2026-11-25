@@ -157,6 +157,7 @@ export type MutationErrorCode =
   | 'SERVER_AUTHORITY_REQUIRED'
   | 'BOWL_FULL'
   | 'BOWL_EMPTY'
+  | 'PET_FULL'
   | 'NETWORK_ERROR';
 
 export type MutationResult<T> =

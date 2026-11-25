@@ -51,7 +51,73 @@ export const V015_CATALOG = [
     stackLimit: 10,
     tradeable: false,
   },
+  {
+    sku: 'fish_salmon_bite',
+    nameVi: 'Cá hồi mềm',
+    descriptionVi: 'Miếng cá mềm cho bé thử — coi là đồ ưa thích.',
+    purpose: 'pet_food',
+    stackLimit: 5,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_yarn',
+    nameVi: 'Cuộn len',
+    descriptionVi: 'Đồ chơi cuốn để rủ bé chạy nhảy trong nhà.',
+    purpose: 'pet_toy',
+    stackLimit: 3,
+    tradeable: false,
+  },
+  {
+    sku: 'toy_cardboard_box',
+    nameVi: 'Hộp giấy',
+    descriptionVi: 'Hộp nhỏ để bé chui vào chơi.',
+    purpose: 'pet_toy',
+    stackLimit: 2,
+    tradeable: false,
+  },
+  {
+    sku: 'water_pitcher',
+    nameVi: 'Bình nước',
+    descriptionVi: 'Bình đựng nước cho bát uống.',
+    purpose: 'tool',
+    stackLimit: 1,
+    tradeable: false,
+  },
 ];
+
+/** Dev LAN starter rows — real inventory, không UI giả. */
+export function grantPetCareStarterPack(v015, worldId, nowIso) {
+  adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+  adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+}
+
+/** Idempotent — nhà đã có mèo nhưng thiếu đồ chơi/đồ ăn (world cũ trước 04C). */
+export function ensurePetCareStarterPackIfMissing(v015, worldId, nowIso) {
+  const pet = v015.pets[worldId];
+  if (!pet) return false;
+  const list = getWorldInventoryList(v015, worldId);
+  const qty = (sku) => list.find((i) => i.ownerScope === 'shared' && i.itemSku === sku)?.qty ?? 0;
+  let changed = false;
+  if (qty('fish_salmon_bite') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
+    changed = true;
+  }
+  if (qty('toy_yarn') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
+    changed = true;
+  }
+  if (qty('toy_cardboard_box') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
+    changed = true;
+  }
+  if (qty('water_pitcher') < 1) {
+    adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
+    changed = true;
+  }
+  return changed;
+}
 
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
 
@@ -162,6 +228,7 @@ export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, n
 }
 
 export function buildInventorySnapshot(v015, worldId, userId, nowMs = Date.now()) {
+  ensurePetCareStarterPackIfMissing(v015, worldId, new Date(nowMs).toISOString());
   const list = getWorldInventoryList(v015, worldId);
   const utcDate = new Date(nowMs).toISOString().slice(0, 10);
   const kibbleRow = list.find((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic');
@@ -678,6 +745,100 @@ export async function handleV015Route({
     saveV015Idempotency(v015, worldId, userId, 'pet_care_apply', key, reqHash, resPayload);
     saveDb();
     broadcastEvent(worldId, 'world_mutated', { reason: action === 'fill_food' ? 'inventory' : 'pet' });
+    sendJson(res, 200, { ok: true, data: resPayload });
+    return true;
+  }
+
+  const HAND_FEED_SKUS = new Set([
+    'pet_kibble_basic',
+    'fish_salmon_bite',
+    'fish_carp_grilled',
+    'cat_broth_warm',
+    'chicken_pumpkin_mash',
+  ]);
+
+  if (req.method === 'POST' && route === '/pet/consume-hand-food') {
+    const worldId = String(body.worldId ?? '').trim();
+    const petId = String(body.petId ?? '').trim();
+    const expectedVersion = Number(body.expectedVersion);
+    const scope = String(body.ownerScope ?? 'shared').trim();
+    const sku = String(body.itemSku ?? '').trim();
+    const quality = String(body.quality ?? 'normal').trim();
+    const key = String(body.idempotencyKey ?? '').trim();
+    if (!worldId || !petId || !key || !HAND_FEED_SKUS.has(sku) || !Number.isInteger(expectedVersion)) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thao tác đưa thức ăn chưa hợp lệ.' });
+      return true;
+    }
+    if (!isWorldMember(worldId, userId)) {
+      sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+      return true;
+    }
+    const reqHash = `consume_hand:${petId}:${sku}:${quality}:${expectedVersion}`;
+    const prior = checkV015Idempotency(v015, worldId, userId, 'consume_hand_food', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác nội dung.' });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, data: prior.response });
+      return true;
+    }
+    const existing = v015.pets[worldId] ?? null;
+    if (!existing || existing.id !== petId) {
+      sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Chưa có bé mèo trong nhà.' });
+      return true;
+    }
+    if (existing.version !== expectedVersion) {
+      sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Bé mèo vừa được người kia chăm rồi nhé!' });
+      return true;
+    }
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    if (scope !== 'shared' && scope !== `user:${userId}`) {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Phạm vi kho không hợp lệ.' });
+      return true;
+    }
+    const vitals = catchupPetVitals(existing.vitals, existing.simStateAtMs, nowMs);
+    if (vitals.hunger >= 92) {
+      sendJson(res, 409, { ok: false, code: 'PET_FULL', message: 'Bé no rồi — để dành món sau nhé.' });
+      return true;
+    }
+    const adj = adjustInventoryItem(v015, worldId, scope, sku, -1, nowIso, quality);
+    if (!adj.ok) {
+      sendJson(res, 400, { ok: false, code: adj.code, message: adj.message });
+      return true;
+    }
+    const hungerBump = sku === 'pet_kibble_basic' ? 26 : sku.includes('fish') ? 30 : 22;
+    const nextVitals = {
+      hunger: Math.min(100, vitals.hunger + hungerBump),
+      energy: Math.min(100, vitals.energy + 4),
+      fun: Math.min(100, vitals.fun + 8),
+    };
+    const updated = {
+      ...existing,
+      vitals: nextVitals,
+      emotion: derivePetMood(nextVitals),
+      lastFedAtMs: nowMs,
+      simStateAtMs: nowMs,
+      version: existing.version + 1,
+      updatedAt: nowIso,
+    };
+    v015.pets[worldId] = updated;
+    const events = (v015.petEvents[worldId] ??= []);
+    events.push({
+      id: `pevt-${crypto.randomUUID()}`,
+      petId: updated.id,
+      actorId: userId,
+      type: 'consume_hand',
+      sku,
+      quality,
+      key,
+      at: nowIso,
+    });
+    const resPayload = { pet: projectPet(updated, nowMs), sku, quality };
+    saveV015Idempotency(v015, worldId, userId, 'consume_hand_food', key, reqHash, resPayload);
+    saveDb();
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
     sendJson(res, 200, { ok: true, data: resPayload });
     return true;
   }

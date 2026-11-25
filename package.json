@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:pet-care-long": "OLW_ACCEPTANCE_LONG=1 playwright test tests/e2e/pet-care-session-acceptance.spec.ts --project=chromium-desktop",
     "test:e2e:pwa": "npm run build && playwright test -c playwright.pwa.config.ts",
     "economy:sim": "node scripts/economy-sim.ts",
     "economy:experiments": "node scripts/economy-experiments.ts",
@@ -30,10 +31,12 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",
+    "@types/three": "^0.186.0",
     "lucide-react": "^1.79.0",
     "phaser": "^4.2.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "three": "^0.186.1",
     "workbox-window": "^7.4.1",
     "zod": "^4.6.7"
   },

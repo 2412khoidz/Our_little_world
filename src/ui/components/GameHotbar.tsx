@@ -5,11 +5,18 @@ interface GameHotbarProps {
   slots: readonly HotbarSlot[];
   heldItem: HeldItemState;
   onSelectSlot: (slotIndex: number) => void;
+  /** Larger slots when pet-care overlay needs iPhone-friendly taps. */
+  touchFriendly?: boolean;
 }
 
-export function GameHotbar({ slots, heldItem, onSelectSlot }: GameHotbarProps) {
+export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = false }: GameHotbarProps) {
   return (
-    <div className="olw-hotbar-tray" role="toolbar" aria-label="Thanh vật phẩm nhanh" data-testid="game-hotbar">
+    <div
+      className={`olw-hotbar-tray ${touchFriendly ? 'olw-hotbar-tray--touch' : ''}`}
+      role="toolbar"
+      aria-label="Thanh vật phẩm nhanh"
+      data-testid="game-hotbar"
+    >
       {Array.from({ length: 6 }, (_, idx) => {
         const slot = slots.find((s) => s.slotIndex === idx);
         const isSelected = heldItem.slotIndex === idx && heldItem.itemKind !== 'none';
@@ -22,6 +29,8 @@ export function GameHotbar({ slots, heldItem, onSelectSlot }: GameHotbarProps) {
             data-testid={`hotbar-slot-${idx + 1}`}
             title={hasItem ? `${slot!.labelVi} (Phím ${idx + 1})` : `Ô trống ${idx + 1}`}
             onClick={() => onSelectSlot(idx)}
+            aria-pressed={isSelected}
+            style={{ touchAction: 'manipulation' }}
           >
             <span
               style={{
