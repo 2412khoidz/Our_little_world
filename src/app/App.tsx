@@ -11,7 +11,7 @@ import { DEFAULT_AVATAR_PARTNER_A } from '../shared/avatar';
 import { getCatalogItem } from '../shared/catalog';
 import { getMapDefinition } from '../shared/maps';
 import { normalizeMapId } from '../shared/world/mapIdCompat';
-import { resolveEnvHookForMapChange } from '../shared/world/envInteractionHooks';
+import { resolveEnvHookForMapChange, resolveEnvHookForTravel } from '../shared/world/envInteractionHooks';
 import type { SharedPetCarePatch } from '../shared/petLiving/petCare/sharedPetCareSession';
 import type { PetCareSessionEventPacket } from '../shared/petLiving/petCare/sharedPetCareTypes';
 import { isPetCareModeActive } from '../shared/petLiving/petCare/petCareModeFlag';
@@ -791,6 +791,17 @@ function MainCoupleApp() {
         }
         return;
       }
+      if (packet.type === 'COUPLE_ENV_TRANSITION') {
+        if (packet.userId !== currentUser.userId) {
+          gameEventBus.emit('cmd:play-partner-env-transition', {
+            userId: packet.userId,
+            mapId: packet.mapId,
+            kind: packet.kind,
+            hookId: packet.hookId,
+          });
+        }
+        return;
+      }
       if (packet.type === 'COUPLE_POSTURE') {
         if (packet.userId !== currentUser.userId) {
           gameEventBus.emit('cmd:sync-remote-posture', {
@@ -1175,12 +1186,28 @@ function MainCoupleApp() {
       localTileRef.current = tile;
     });
 
-    const unsubMapReq = gameEventBus.on('evt:request-map-change', ({ targetMapId, spawnX, spawnY }) => {
+    const unsubMapReq = gameEventBus.on('evt:request-map-change', ({ targetMapId, spawnX, spawnY, portalId }) => {
       setDecorateActive(false);
       setActiveSku(null);
       setSelectedPlacementId(null);
-      const hook = resolveEnvHookForMapChange(currentMapIdRef.current, targetMapId);
-      if (hook) gameEventBus.emit('cmd:env-transition', hook);
+      const fromMapId = currentMapIdRef.current;
+      const hook = resolveEnvHookForTravel(fromMapId, targetMapId, portalId);
+      if (hook) {
+        gameEventBus.emit('cmd:env-transition', hook);
+        const targetWorldId = snapshotRef.current?.world.id;
+        if (targetWorldId && currentUser) {
+          realtimeRef.current?.publishCoupleEvent?.({
+            type: 'COUPLE_ENV_TRANSITION',
+            worldId: targetWorldId,
+            userId: currentUser.userId,
+            mapId: fromMapId,
+            kind: hook.kind,
+            hookId: hook.hookId,
+            toMapId: targetMapId,
+            atMs: Date.now(),
+          });
+        }
+      }
       setCurrentMapId(targetMapId);
       gameEventBus.emit('cmd:set-map', {
         mapId: targetMapId,
@@ -1561,6 +1588,11 @@ function MainCoupleApp() {
     setDecorateActive(false);
     setActiveSku(null);
     setSelectedPlacementId(null);
+    const fromMapId = currentMapIdRef.current;
+    const hook = resolveEnvHookForMapChange(fromMapId, mapId);
+    if (hook) {
+      gameEventBus.emit('cmd:env-transition', hook);
+    }
     setCurrentMapId(mapId);
     const def = getMapDefinition(mapId);
     gameEventBus.emit('cmd:set-map', {

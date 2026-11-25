@@ -139,6 +139,7 @@ export class WorldScene extends Phaser.Scene {
   private tapMarker: Phaser.GameObjects.Graphics | null = null;
   private mailboxBadge: Phaser.GameObjects.Container | null = null;
   private mailboxUnreadCount = 0;
+  private homeDoorGfx: Phaser.GameObjects.Graphics | null = null;
 
   private remoteEntities = new Map<string, RemoteAvatarEntity>();
   private latestPresences: PresencePayload[] = [];
@@ -429,6 +430,9 @@ export class WorldScene extends Phaser.Scene {
       doorPad.lineStyle(1, 0xbd996b, 0.85);
       doorPad.strokeRoundedRect(102, worldH, 52, 42, 6);
       this.mapLayers.push(doorPad);
+      this.homeDoorGfx = doorPad;
+    } else {
+      this.homeDoorGfx = null;
     }
   }
 
@@ -985,6 +989,18 @@ export class WorldScene extends Phaser.Scene {
         this.playEnvTransition(hook);
       }),
 
+      gameEventBus.on('cmd:play-partner-env-transition', ({ userId, mapId, kind, hookId }) => {
+        if (mapId !== this.currentMapId) return;
+        const entity = this.remoteEntities.get(userId);
+        if (!entity) return;
+        this.applyEnvTransitionFx(entity.sprite, {
+          kind,
+          hookId,
+          fromMapId: mapId,
+          toMapId: mapId,
+        }, true);
+      }),
+
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
       }),
@@ -1127,6 +1143,26 @@ export class WorldScene extends Phaser.Scene {
         this.localFacing = cardinalFromFacing8(f8);
         this.game.canvas.dataset.localFacing8 = f8;
         this.playLocalMoveAnim(true);
+      };
+      (globalThis as { __olwDevEnvTransition?: (hookId: string, kind?: EnvInteractionHook['kind']) => void }).__olwDevEnvTransition =
+        (hookId, kind = 'door') => {
+          this.playEnvTransition({
+            kind,
+            hookId,
+            fromMapId: this.currentMapId,
+            toMapId: this.currentMapId,
+          });
+        };
+      (globalThis as { __olwDevTravelPortal?: (portalId: string) => void }).__olwDevTravelPortal = (portalId) => {
+        const def = getMapDefinition(this.currentMapId);
+        const portal = def.portals.find((p) => p.id === portalId);
+        if (!portal) return;
+        gameEventBus.emit('evt:request-map-change', {
+          targetMapId: portal.targetMapId,
+          spawnX: portal.targetSpawnX,
+          spawnY: portal.targetSpawnY,
+          portalId: portal.id,
+        });
       };
     }
   }
@@ -1571,8 +1607,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private playEnvTransition(hook: EnvInteractionHook): void {
-    const sprite = this.localSprite;
-    if (!sprite) return;
+    if (!this.localSprite) return;
+    this.applyEnvTransitionFx(this.localSprite, hook);
+  }
+
+  private applyEnvTransitionFx(
+    sprite: Phaser.GameObjects.Sprite,
+    hook: EnvInteractionHook,
+    mirrorPartner = false,
+  ): void {
     const yFrom = sprite.scaleY;
     const isLadder = hook.kind === 'ladder';
     this.tweens.add({
@@ -1586,7 +1629,20 @@ export class WorldScene extends Phaser.Scene {
         sprite.setScale(sprite.scaleX, yFrom);
       },
     });
-    this.game.canvas.dataset.envTransitionHook = hook.hookId;
+
+    if (!mirrorPartner) {
+      this.game.canvas.dataset.envTransitionHook = hook.hookId;
+      this.game.canvas.dataset.envTransitionKind = hook.kind;
+      if (hook.kind === 'door' && this.homeDoorGfx && hook.hookId.includes('garden_door')) {
+        this.tweens.add({
+          targets: this.homeDoorGfx,
+          scaleX: 0.88,
+          duration: 130,
+          yoyo: true,
+          ease: 'Sine.Out',
+        });
+      }
+    }
   }
 
   private findNearbyInteractable(): NearbyInteractable | null {
@@ -1682,6 +1738,7 @@ export class WorldScene extends Phaser.Scene {
           targetMapId: portal.targetMapId,
           spawnX: portal.targetSpawnX,
           spawnY: portal.targetSpawnY,
+          portalId: portal.id,
         });
         return;
       }
@@ -1714,6 +1771,7 @@ export class WorldScene extends Phaser.Scene {
           targetMapId: portal.targetMapId,
           spawnX: portal.targetSpawnX,
           spawnY: portal.targetSpawnY,
+          portalId: portal.id,
         });
       }
     } else if (near.kind === 'wardrobe') {
