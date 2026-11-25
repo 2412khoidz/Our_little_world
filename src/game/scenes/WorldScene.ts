@@ -1493,7 +1493,14 @@ export class WorldScene extends Phaser.Scene {
 
     if (near.kind === 'portal') {
       const def = getMapDefinition(this.currentMapId);
-      const portal = def.portals[0];
+      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
+      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
+      const portal =
+        def.portals.find((p) => p.labelVi === near.labelVi) ??
+        def.portals.find((p) => {
+          const dist = Math.hypot(tileX - p.tileX, tileY - p.tileY);
+          return dist <= p.radiusTiles + 0.5;
+        });
       if (portal) {
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
@@ -1512,8 +1519,8 @@ export class WorldScene extends Phaser.Scene {
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
     } else if (near.kind === 'npc_talk') {
-      const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
-      const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
+      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
+      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
       const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
       if (npc) {
         gameEventBus.emit('evt:preview-notice', {
