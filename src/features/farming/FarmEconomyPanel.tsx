@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { requireItem } from '../../shared/economy/catalogConfig';
 import { getCropDefinition } from '../../shared/farming/crops';
-import { FARM_SHOP_SEED_SKUS, FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
+import { FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
+import {
+  farmShopMetaForKind,
+  farmShopSkusForKind,
+  type FarmShopKind,
+} from '../../shared/shop/farmShopCatalog';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import type { NuvoraGridCell } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
@@ -10,6 +15,7 @@ import type { FarmWorldClockFarmContext } from '../../shared/farming/farmWorldCl
 import { farmSeedRecommendedThisSeason } from '../../shared/farming/farmWorldClockBridge';
 import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
 import { NuvoraShopSeedRow } from './NuvoraShopSeedRow';
+import { NuvoraShopGrid } from './NuvoraShopGrid';
 import '../inventory/nuvora/nuvoraInventorySkin.css';
 
 export interface FarmEconomyPanelProps {
@@ -18,7 +24,8 @@ export interface FarmEconomyPanelProps {
   busy: boolean;
   farmClockContext?: FarmWorldClockFarmContext | null;
   mode: 'shop' | 'shipping';
-  onBuySeed: (seedSku: string, qty: number) => Promise<void>;
+  shopKind?: FarmShopKind;
+  onBuyStoreItem: (itemSku: string, qty: number) => Promise<void>;
   onShip: (sku: string, qty: number, quality: 'normal' | 'silver' | 'gold') => Promise<void>;
   onClose: () => void;
 }
@@ -49,11 +56,13 @@ export function FarmEconomyPanel({
   busy,
   farmClockContext,
   mode,
-  onBuySeed,
+  shopKind = 'seed',
+  onBuyStoreItem,
   onShip,
   onClose,
 }: FarmEconomyPanelProps) {
-  const title = mode === 'shop' ? 'Gian hạt Bác Hai' : 'Thùng giao hàng';
+  const shopMeta = farmShopMetaForKind(shopKind);
+  const title = mode === 'shop' ? shopMeta.titleVi : 'Thùng giao hàng';
 
   const shippingCells = useMemo((): readonly NuvoraGridCell[] => {
     const rows: { itemSku: string; qty: number; quality: 'normal' | 'silver' | 'gold' }[] = [];
@@ -88,7 +97,14 @@ export function FarmEconomyPanel({
       className={deskClass}
       role="dialog"
       aria-labelledby="farm-economy-title"
-      data-testid={mode === 'shipping' ? 'nuvora-shipping-desk' : 'farm-economy-panel'}
+      data-testid={
+        mode === 'shipping'
+          ? 'nuvora-shipping-desk'
+          : shopKind === 'tool'
+            ? 'farm-tool-shop-panel'
+            : 'farm-economy-panel'
+      }
+      data-shop-kind={mode === 'shop' ? shopKind : undefined}
     >
       <div className={mode === 'shop' ? 'nuvora-desk__title-row' : 'nuvora-desk__title-row'}>
         <h2 id="farm-economy-title" className={mode === 'shop' ? 'nuvora-desk__title' : undefined} style={mode === 'shipping' ? { margin: 0 } : undefined}>
@@ -125,33 +141,56 @@ export function FarmEconomyPanel({
         ) : null}
       </p>
       <div className={mode === 'shop' ? 'nuvora-shop-list' : ''}>
-        {mode === 'shop' &&
-          FARM_SHOP_SEED_SKUS.map((seedSku) => {
-            let price = 0;
-            let nameVi: string = seedSku;
+        {mode === 'shop' && shopMeta.layout === 'row' &&
+          farmShopSkusForKind(shopKind).map((itemSku) => {
+            let def;
             try {
-              const def = requireItem(seedSku);
-              price = def.storeBuy ?? 0;
-              nameVi = def.nameVi;
+              def = requireItem(itemSku);
             } catch {
-              /* skip */
+              return null;
             }
+            const price = def.storeBuy ?? 0;
             if (price <= 0) return null;
+            const nameVi = def.nameVi;
             const inSeason =
+              shopKind !== 'seed' ||
               !farmClockContext ||
-              farmSeedRecommendedThisSeason(seedSku, farmClockContext.season);
+              farmSeedRecommendedThisSeason(itemSku, farmClockContext.season);
             return (
               <NuvoraShopSeedRow
-                key={seedSku}
-                seedSku={seedSku}
+                key={itemSku}
+                seedSku={itemSku}
                 nameVi={nameVi}
                 price={price}
                 inSeason={inSeason}
                 disabled={busy || walletCoins < price}
-                onBuy={() => void onBuySeed(String(seedSku), 1)}
+                onBuy={() => void onBuyStoreItem(itemSku, 1)}
               />
             );
           })}
+        {mode === 'shop' && shopMeta.layout === 'grid' && (
+          <NuvoraShopGrid
+            busy={busy}
+            cells={farmShopSkusForKind(shopKind)
+              .map((itemSku) => {
+                try {
+                  const def = requireItem(itemSku);
+                  const price = def.storeBuy ?? 0;
+                  if (price <= 0) return null;
+                  return {
+                    sku: itemSku,
+                    nameVi: def.nameVi,
+                    price,
+                    disabled: busy || walletCoins < price,
+                  };
+                } catch {
+                  return null;
+                }
+              })
+              .filter((c): c is NonNullable<typeof c> => c !== null)}
+            onBuy={(sku) => void onBuyStoreItem(sku, 1)}
+          />
+        )}
         {mode === 'shipping' && (
           <>
             <p style={{ fontSize: 12, color: '#f5e6c8', margin: 0 }}>

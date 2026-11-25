@@ -207,35 +207,35 @@ export function sellCropLine(
   return { ok: true, walletCoins: walletCoins + coins, items: next };
 }
 
-export function buySeed(
+export function buyStoreItem(
   worldId: string,
   walletCoins: number,
   items: InventoryEntry[],
-  seedSku: string,
+  itemSku: string,
   qty: number,
   nowMs: number,
 ): { ok: true; walletCoins: number; items: InventoryEntry[] } | { ok: false; code: string; messageVi: string } {
   if (qty < 1) return { ok: false, code: 'INVALID_QTY', messageVi: 'Số lượng không hợp lệ.' };
   let def;
   try {
-    def = requireItem(seedSku);
+    def = requireItem(itemSku);
   } catch {
-    return { ok: false, code: 'UNKNOWN_SKU', messageVi: 'Không tìm thấy hạt trong cửa hàng.' };
+    return { ok: false, code: 'UNKNOWN_SKU', messageVi: 'Không tìm thấy vật phẩm trong cửa hàng.' };
   }
   const unit = def.storeBuy ?? 0;
-  if (unit <= 0) return { ok: false, code: 'NOT_FOR_SALE', messageVi: 'Hạt này chưa mở bán.' };
+  if (unit <= 0) return { ok: false, code: 'NOT_FOR_SALE', messageVi: 'Vật phẩm này chưa mở bán.' };
   const total = unit * qty;
   if (walletCoins < total) return { ok: false, code: 'INSUFFICIENT_FUNDS', messageVi: 'Không đủ xu.' };
   const next = items.map((r) => ({ ...r }));
   const idx = next.findIndex(
-    (r) => r.ownerScope === 'shared' && r.itemSku === seedSku && (r.quality ?? 'normal') === 'normal',
+    (r) => r.ownerScope === 'shared' && r.itemSku === itemSku && (r.quality ?? 'normal') === 'normal',
   );
   if (idx >= 0) next[idx] = { ...next[idx]!, qty: next[idx]!.qty + qty };
   else {
     next.push({
       worldId,
       ownerScope: 'shared',
-      itemSku: seedSku,
+      itemSku,
       qty,
       quality: 'normal',
       updatedAt: new Date(nowMs).toISOString(),
@@ -243,6 +243,9 @@ export function buySeed(
   }
   return { ok: true, walletCoins: walletCoins - total, items: next };
 }
+
+/** @deprecated use `buyStoreItem` */
+export const buySeed = buyStoreItem;
 
 export function emptyFarm(seed: number): Farm {
   return createFarm(seed);

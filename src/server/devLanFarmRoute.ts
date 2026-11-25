@@ -248,11 +248,11 @@ export async function tryHandleFarmDevLan(ctx: {
   }
 
   if (req.method === 'POST' && route === '/farm/buy-seed') {
-    const seedSku = String(body.seedSku ?? '');
+    const itemSku = String(body.itemSku ?? body.seedSku ?? '');
     const qty = Number(body.qty ?? 0);
     const items = getInventoryList(worldId);
     const coins = v015.wallets[worldId]?.coins ?? 0;
-    const bought = buySeed(worldId, coins, items, seedSku, qty, nowMs);
+    const bought = buySeed(worldId, coins, items, itemSku, qty, nowMs);
     if (!bought.ok) {
       sendJson(res, 409, { ok: false, code: bought.code, message: bought.messageVi });
       return true;

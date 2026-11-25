@@ -5,6 +5,7 @@
 
 export type ShopRecoveryRoute =
   | 'farm_market_modal'
+  | 'farm_tool_shop_modal'
   | 'shipping_bin_modal'
   | 'portal_barn_shop_deferred'
   | 'portal_cabacos_interior_deferred';
@@ -38,9 +39,9 @@ const ENTRIES: readonly ShopRecoveryEntry[] = [
   },
   {
     targetId: 'cabacos_interior_tool_shop_counter',
-    route: 'farm_market_modal',
+    route: 'farm_tool_shop_modal',
     labelVi: 'Quầy dụng cụ',
-    recoveryNoteVi: 'Nội thất tool_shop Cabacos.',
+    recoveryNoteVi: 'Lưới mồi & tiện ích trong nội thất tool_shop Cabacos.',
   },
   {
     targetId: 'cabacos_player_crop_market_door',
@@ -64,4 +65,9 @@ export function shopRecoveryEntryForTarget(targetId: string): ShopRecoveryEntry 
 export function isRecoveryFarmMarketTarget(targetId: string): boolean {
   const entry = shopRecoveryEntryForTarget(targetId);
   return entry?.route === 'farm_market_modal';
+}
+
+export function isRecoveryFarmToolShopTarget(targetId: string): boolean {
+  const entry = shopRecoveryEntryForTarget(targetId);
+  return entry?.route === 'farm_tool_shop_modal';
 }

@@ -54,6 +54,7 @@ import {
   type TimeOfDayMode,
 } from '../shared/world/worldClock';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import type { FarmShopKind } from '../shared/shop/farmShopCatalog';
 import { farmContextFromWorldClock } from '../shared/farming/farmWorldClockBridge';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
@@ -315,6 +316,7 @@ function MainCoupleApp() {
   const [farmClockAnchor, setFarmClockAnchor] = useState({ serverNowMs: 0, fetchedAtMs: 0 });
   const [farmServerNowMs, setFarmServerNowMs] = useState(0);
   const [farmBusy, setFarmBusy] = useState(false);
+  const [farmShopKind, setFarmShopKind] = useState<FarmShopKind>('seed');
 
   const applyFarmSnapshotToUi = useCallback(
     (
@@ -2031,10 +2033,13 @@ function MainCoupleApp() {
             setFarmBusy(false);
           }
         } : undefined}
-        onOpenFarmMarket={backend.farm ? () => {
-          void refreshFarmWallet();
-          setActiveModal('farm_market');
-        } : undefined}
+        onOpenFarmMarket={backend.farm
+          ? (shopKind) => {
+              void refreshFarmWallet();
+              setFarmShopKind(shopKind ?? 'seed');
+              setActiveModal('farm_market');
+            }
+          : undefined}
         onOpenFarmShipping={backend.farm ? () => {
           void refreshFarmWallet();
           setActiveModal('farm_shipping');
@@ -2353,6 +2358,7 @@ function MainCoupleApp() {
           <div onClick={(e) => e.stopPropagation()}>
             <FarmEconomyPanel
               mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}
+              shopKind={farmShopKind}
               walletCoins={farmWalletCoins}
               inventory={inventorySnapshot}
               busy={farmBusy}
@@ -2380,14 +2386,14 @@ function MainCoupleApp() {
                   setFarmBusy(false);
                 }
               }}
-              onBuySeed={async (seedSku, qty) => {
+              onBuyStoreItem={async (itemSku, qty) => {
                 const targetWorldId = snapshotRef.current?.world.id;
                 if (!targetWorldId) return;
                 setFarmBusy(true);
                 try {
                   const res = await backend.farm!.buySeed({
                     worldId: targetWorldId,
-                    seedSku,
+                    seedSku: itemSku,
                     qty,
                     idempotencyKey: makeIdempotencyKey('farm-buy'),
                   });
@@ -2397,7 +2403,9 @@ function MainCoupleApp() {
                   }
                   setFarmWalletCoins(res.data.walletCoins);
                   await refreshInventorySnapshot(targetWorldId);
-                  showToast('Đã mua hạt giống.');
+                  showToast(
+                    itemSku.startsWith('seed_') ? 'Đã mua hạt giống.' : 'Đã mua vật phẩm.',
+                  );
                   realtimeRef.current?.notifyWorldMutated('inventory');
                 } finally {
                   setFarmBusy(false);

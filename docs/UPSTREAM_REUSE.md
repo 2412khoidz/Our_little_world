@@ -401,6 +401,19 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 | **Proof** | `tests/unit/nuvoraSlotInteraction.test.ts`, `nuvoraPresentationBridge.test.ts` |
 | **Excluded** | `public/hand.js` (Three.js first-person) |
 
+## Worker K — full shop catalog + Cabacos grid UX (`integration/donor-reuse-recovery` @ `b65e432+`)
+
+| Field | Value |
+|-------|--------|
+| **Catalog authority** | `src/shared/shop/farmShopCatalog.ts` (shop JSON) · `src/shared/economy/catalogConfig.ts` (prices) |
+| **Cabacos SHA** | `79e423defc12bd99327cfcc28bf7ec0085996244` — `SeedShopPanel` grid + `ShopRow` rows |
+| **PyDew** | No shop UX (pygame) — crop visuals only § Map transplant |
+| **webfarmville** | `quoteCatalogPurchase` / meadowbrook queue unchanged (C1) |
+| **Hollowmere** | Shipping bin targets `cabacos_player_crop_market_door` — interior art kept |
+| **Fishing Frenzy** | Tool shop sells `bait_shrimp` (Tidefall catalog hook) |
+| **SQL** | `20261125180000_worker_k_farm_store_buy.sql` — `_farm_store_buy_price`, no DB reset |
+| **Proof** | `tests/unit/farmShopCatalog.test.ts` · `tests/e2e/worker-k-economy-two-client.spec.ts` · `NuvoraShopGrid.tsx` |
+
 ## Worker F — Cabacos inventory UI + shop/HUD (`integration/donor-reuse-recovery`)
 
 | Field | Value |

@@ -38,7 +38,7 @@ export interface MainGameInteractionLayerProps {
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
-  onOpenFarmMarket?: () => void;
+  onOpenFarmMarket?: (shopKind?: import('../../shared/shop/farmShopCatalog').FarmShopKind) => void;
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
