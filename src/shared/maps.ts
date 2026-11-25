@@ -7,9 +7,19 @@ import { isOutdoorBlocked, isOutdoorNoPlace } from './world/outdoorCollision';
 import { isExtendedWorldDevEnabled } from './worldIntegration/extendedWorldDevFlag';
 import { isTileBlockedFromParsed, type ParsedTiledPortal } from './world/parseTiledWorldMap';
 import { getParsedTiledWorld } from './world/tiledMapRegistry';
+import farmWorldJson from '../../public/assets/maps/farm.json';
 import type { MapId } from './types';
 
 export const TILE_SIZE = 16;
+
+/** Native Tiled tile width for a zone (PyDew farm uses 64px). */
+export function getMapTilePixelSize(mapId: MapId): number {
+  if (mapId === 'farm') {
+    const tw = (farmWorldJson as { tilewidth?: number }).tilewidth;
+    return typeof tw === 'number' && tw > 0 ? tw : TILE_SIZE;
+  }
+  return TILE_SIZE;
+}
 
 export const MAP_IDS = [
   'home',
@@ -150,7 +160,16 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     '/assets/maps/village.json',
     { tileX: 42, tileY: 31 },
   ),
-  farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', { tileX: 55, tileY: 20 }),
+  farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', {
+    tileX:
+      (farmWorldJson as { properties?: { name: string; value: number }[] }).properties?.find(
+        (p) => p.name === 'olwDefaultSpawnTileX',
+      )?.value ?? 24,
+    tileY:
+      (farmWorldJson as { properties?: { name: string; value: number }[] }).properties?.find(
+        (p) => p.name === 'olwDefaultSpawnTileY',
+      )?.value ?? 27,
+  }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 14, tileY: 32 }),
   beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 1, tileY: 16 }),
   shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 11, tileY: 14 }),

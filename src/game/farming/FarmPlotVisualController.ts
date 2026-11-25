@@ -23,6 +23,7 @@ export class FarmPlotVisualController {
     private readonly tilemap: Phaser.Tilemaps.Tilemap | null,
     private readonly cozyTilesetName: string,
     private readonly pushObject: (obj: Phaser.GameObjects.GameObject) => void,
+    private readonly tilePixelSize: number = TILE_SIZE,
   ) {}
 
   destroy(): void {
@@ -59,8 +60,8 @@ export class FarmPlotVisualController {
 
       const tile = farmPlotTileForIndex(plot.plotId);
       if (!tile) continue;
-      const cx = tile.tileX * TILE_SIZE + TILE_SIZE / 2;
-      const cy = tile.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const cx = tile.tileX * this.tilePixelSize + this.tilePixelSize / 2;
+      const cy = tile.tileY * this.tilePixelSize + this.tilePixelSize / 2;
       const next: PlotVisual = { stage: stageKey };
 
       if (plot.soil === 'tilled' && this.scene.textures.exists('donor-cabacos-soil')) {

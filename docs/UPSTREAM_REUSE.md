@@ -263,6 +263,20 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 
 **Proof:** `petCareJ4lpanBridge.test.ts` · `petShopCareFace.test.ts` · `data-testid="pet-care-j4lpan-portrait"`
 
+## Map transplant — PyDew Valley main farm (`integration/donor-reuse-recovery`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [artemn0va/pydew-valley](https://github.com/artemn0va/pydew-valley) @ `5b33bfda76d54866c648e7e54eff4e4e8a1eec8a` |
+| **Source** | `data/map.tmx`, `data/Tilesets/*.tsx`, `graphics/**` |
+| **OLW paths** | `public/maps/donor/pydew-valley/`, `public/assets/maps/farm.json` |
+| **Scale** | Native **64×64** tiles; `getMapTilePixelSize('farm')` |
+| **Plots** | **184** stable IDs via `Farmable` layer (`farmPlotContract` v1.0.2) — no `OLW_ContractSoil` |
+| **Import** | `npm run import-donor:pydew-farm` |
+| **Proof** | `tests/unit/donorFarmBeachSketch.test.ts`, `farmPlotContract.test.ts`, `scripts/capture-donor-pydew-farm.mjs` |
+
+**Optional (deferred):** [hollowmere](https://github.com/robintrepte/hollowmere.tretu.de) greenhouse — Godot JSON scale mismatch vs Phaser 64px farm; no splice in this PR.
+
 ## Wave 2 — NUVORA inventory depth (stack `6d0e7fd`+)
 
 | Field | Value |
