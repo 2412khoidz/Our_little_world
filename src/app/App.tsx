@@ -53,6 +53,7 @@ import {
   type TimeOfDayMode,
 } from '../shared/world/worldClock';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import { farmContextFromWorldClock } from '../shared/farming/farmWorldClockBridge';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
 import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
@@ -1731,6 +1732,11 @@ function MainCoupleApp() {
     });
   }, [worldSnapshot, worldClockNowMs, timeOfDayMode]);
 
+  const farmClockContext = useMemo(
+    () => (worldClockPresentation ? farmContextFromWorldClock(worldClockPresentation) : null),
+    [worldClockPresentation],
+  );
+
   useEffect(() => {
     if (!worldSnapshot) return;
     const id = window.setInterval(() => setWorldClockNowMs(Date.now()), 1000);
@@ -2288,6 +2294,7 @@ function MainCoupleApp() {
               walletCoins={farmWalletCoins}
               inventory={inventorySnapshot}
               busy={farmBusy}
+              farmClockContext={farmClockContext}
               onClose={() => setActiveModal(null)}
               onShip={async (sku, qty, quality) => {
                 const targetWorldId = snapshotRef.current?.world.id;
