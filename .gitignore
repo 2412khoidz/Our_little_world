@@ -60,6 +60,7 @@ MANIFEST.json
 # Wave 1 farm donor full clones (SHAs in docs/UPSTREAM_REUSE.md; refresh via scripts/vendor-wave1-farm-donors.mjs)
 vendor/farm-rai-larn-na-upstream/
 vendor/farming-simulator-cabacos-upstream/
+vendor/pydew-valley-upstream/
 vendor/tidefall-phaser-upstream/
 vendor/fishing-frenzy-upstream/
 vendor/ai-farm-upstream/
