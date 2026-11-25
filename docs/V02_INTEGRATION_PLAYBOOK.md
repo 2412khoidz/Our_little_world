@@ -3,6 +3,13 @@
 **Canonical roadmap/plan:** [V02_ROADMAP.md](V02_ROADMAP.md) · [V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md)  
 **Contracts:** [handover/PET_CARE_HOTBAR_CONTRACT.md](handover/PET_CARE_HOTBAR_CONTRACT.md) (Composer 1 + 2 shared hotbar)
 
+### Locked shared contracts (2026-11-25)
+
+| Contract | Source PR / SHA | Consumers |
+|----------|-----------------|-----------|
+| Farm plots `1.0.0` | [#12](https://github.com/2412khoidz/Our_little_world/pull/12) @ `c253644` — `docs/handover/FARM_PLOT_CONTRACT.md`, `src/shared/world/farmPlotContract.ts`, `farmPlotContract.v1.json` | **#14** bind RPC; bump version only with #12 announce |
+| Hand-feed RPC | [#10](https://github.com/2412khoidz/Our_little_world/pull/10) + [#13](https://github.com/2412khoidz/Our_little_world/pull/13) — `pet_consume_hand_food` migration `20261125001200` | On integrate: **one** migration file; drop duplicate hunk if both PRs carry it |
+
 ## PR stack (do not auto-merge `main`)
 
 | Order | PR | Owner | Blocks |
