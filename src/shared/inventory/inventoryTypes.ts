@@ -1,6 +1,6 @@
 export type InventoryOwnerScope = 'shared' | `user:${string}`;
 
-export type ItemPurpose = 'pet_food' | 'gift' | 'stationery' | 'keepsake';
+export type ItemPurpose = 'pet_food' | 'gift' | 'stationery' | 'keepsake' | 'seed' | 'crop' | 'fish' | 'dish' | 'ingredient';
 
 export interface InventoryCatalogItem {
   sku: string;
@@ -15,6 +15,7 @@ export interface InventoryEntry {
   worldId: string;
   ownerScope: InventoryOwnerScope;
   itemSku: string;
+  quality?: 'normal' | 'silver' | 'gold';
   qty: number;
   updatedAt: string;
 }
