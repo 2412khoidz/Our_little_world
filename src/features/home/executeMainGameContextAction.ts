@@ -6,6 +6,8 @@ import { plotIdFromInteractableId } from '../../shared/farming/gardenPlotLayout'
 import { PET_KIBBLE_BASIC_SKU } from '../../shared/inventory/inventoryRules';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 import { waterPitcherAfterFill, waterPitcherPourDelta } from '../../shared/interaction/homeBowlPresentation';
+import { farmShopKindForInteractableTarget } from '../../shared/shop/farmShopCatalog';
+import type { FarmShopKind } from '../../shared/shop/farmShopCatalog';
 
 const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
@@ -19,7 +21,7 @@ export interface MainGameActionContext {
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
-  onOpenFarmMarket?: () => void;
+  onOpenFarmMarket?: (shopKind?: FarmShopKind) => void;
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
@@ -283,7 +285,10 @@ export async function executeMainGameContextAction(
     }
   }
   if (code === 'open_farm_market' && ctx.onOpenFarmMarket) {
-    ctx.onOpenFarmMarket();
+    const shopKind = action.targetId
+      ? farmShopKindForInteractableTarget(action.targetId)
+      : 'seed';
+    ctx.onOpenFarmMarket(shopKind);
     return;
   }
   if (code === 'open_shipping_bin' && ctx.onOpenFarmShipping) {
@@ -294,8 +299,8 @@ export async function executeMainGameContextAction(
     ctx.onOpenDonorFishing(action.donorFishingSpotId);
     return;
   }
-  if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorStreamFishing) {
-    ctx.onOpenDonorStreamFishing();
+  if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorFishing) {
+    ctx.onOpenDonorFishing('east_stream');
     return;
   }
   if (code === 'open_donor_workshop' && ctx.onOpenDonorWorkshop) {

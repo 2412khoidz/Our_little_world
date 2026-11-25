@@ -11,6 +11,7 @@ import {
 import { createWallet, inventoryQty } from '../economy/ledgerMath';
 import type { InventoryEntry } from '../inventory/inventoryTypes';
 import type { ItemQuality } from '../economy/types';
+import { farmShopSeedSkus } from '../shop/farmShopCatalog.ts';
 
 export interface FarmShippingMeta {
   soldByGroup: Record<string, number>;
@@ -123,11 +124,7 @@ export function applyFarmShippingBinSale(
   };
 }
 
-export const FARM_SHOP_SEED_SKUS = [
-  'seed_wheat',
-  'seed_carrot',
-  'seed_tomato',
-  'seed_strawberry',
-] as const;
+/** @deprecated import `farmShopSeedSkus` — kept for tests & grep stability. */
+export const FARM_SHOP_SEED_SKUS = farmShopSeedSkus('V0.2.0') as readonly string[];
 
 export const FARM_SELLABLE_CROP_SKUS = ['wheat', 'carrot', 'tomato', 'strawberry', 'sunflower', 'cabbage'] as const;

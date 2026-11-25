@@ -10,6 +10,7 @@ import { setPetCareModeActive } from '../../../shared/petLiving/petCare/petCareM
 import { PetCareSessionGoals } from '../../../shared/petLiving/petCare/petCareSessionGoals';
 import { registerWorldAtlas } from '../../art/worldAtlas';
 import { PetCarePortraitRig } from './PetCarePortraitRig';
+import { PetCareRoomBackdrop } from './PetCareRoomBackdrop';
 
 export interface PetCareSceneData {
   variant: CatCoatVariantId;
@@ -21,6 +22,7 @@ export interface PetCareSceneData {
 
 export class PetCareScene extends Phaser.Scene {
   private rig: PetCarePortraitRig | null = null;
+  private room: PetCareRoomBackdrop | null = null;
   private backdrop: Phaser.GameObjects.Rectangle | null = null;
   private autonomy: PetCareAutonomy | null = null;
   private readonly unsubs: Array<() => void> = [];
@@ -43,10 +45,11 @@ export class PetCareScene extends Phaser.Scene {
     const cx = width / 2;
     const cy = height / 2 - 12;
 
-    this.cameras.main.setBackgroundColor(0x0c0a0e);
+    this.cameras.main.setBackgroundColor(0x120e14);
 
+    this.room = new PetCareRoomBackdrop(this, width, height);
     this.backdrop = this.add
-      .rectangle(cx, cy, width + 8, height + 8, 0x0c0a0e, 0.96)
+      .rectangle(cx, cy, width + 8, height + 8, 0x120e14, 0.12)
       .setScrollFactor(0)
       .setDepth(0);
 
@@ -122,6 +125,7 @@ export class PetCareScene extends Phaser.Scene {
     const cx = cam.width / 2;
     const cy = cam.height / 2 - 12;
     this.rig?.setPosition(cx, cy);
+    this.room?.setPosition(cx, cy);
     this.backdrop?.setPosition(cx, cy);
     this.rig?.update(deltaMs, now);
 
@@ -149,6 +153,8 @@ export class PetCareScene extends Phaser.Scene {
     this.unsubs.length = 0;
     this.rig?.destroy();
     this.rig = null;
+    this.room?.destroy();
+    this.room = null;
     this.backdrop?.destroy();
     this.backdrop = null;
     setPetCareModeActive(false);

@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { propsIconIdForCatalogSku } from '../../src/shared/art/catalogSkuPropsIcon';
 import { buildHotbarSlotsFromInventory } from '../../src/shared/interaction/inventoryHotbarAdapter';
 import type { InventorySnapshot } from '../../src/shared/inventory/inventoryTypes';
 import { PET_KIBBLE_BASIC_SKU } from '../../src/shared/inventory/inventoryRules';
 
 describe('inventoryHotbarAdapter props icons', () => {
+  it('maps economy SKUs to props-manifest ids (adapter surfaces when allowlisted)', () => {
+    expect(propsIconIdForCatalogSku('tool_hoe')).toBe('prop.planter_box');
+    expect(propsIconIdForCatalogSku('seed_wheat')).toBe('prop.corn');
+  });
+
   it('projects catalog propsIconId for farm tools and seeds', () => {
     const snapshot: InventorySnapshot = {
       worldId: 'world-test',

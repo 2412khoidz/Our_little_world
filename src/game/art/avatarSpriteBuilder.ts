@@ -4,9 +4,6 @@ import {
   SKIN_TONE_OPTIONS,
 } from '../../shared/avatar';
 import type { AvatarConfig } from '../../shared/types';
-import type { DiagonalFacing } from '../../shared/movement/facing8';
-import { diagonalPrimaryCardinal, diagonalSecondaryCardinal } from '../../shared/movement/facing8';
-
 const OUTLINE = '#3d2a24';
 
 export function getAvatarTextureKey(config: AvatarConfig): string {
@@ -163,29 +160,10 @@ function drawFrame(
   }
 }
 
-/** Diagonal walk row: primary facing body with stride biased toward secondary cardinal. */
-export function drawDiagonalWalkFrame(
-  ctx: CanvasRenderingContext2D,
-  ox: number,
-  oy: number,
-  diag: DiagonalFacing,
-  stepPhase: 0 | 1 | 2,
-  config: AvatarConfig,
-): void {
-  const primary = diagonalPrimaryCardinal(diag);
-  const secondary = diagonalSecondaryCardinal(diag);
-  drawFrame(ctx, ox, oy, primary, stepPhase, config);
-
-  const biasX = secondary === 'right' ? 1 : -1;
-  const legNudge = stepPhase === 1 ? biasX : stepPhase === 2 ? -biasX : 0;
-  ctx.fillStyle = 'rgba(43, 29, 25, 0.35)';
-  ctx.fillRect(ox + 5 + legNudge + (biasX > 0 ? 1 : 0), oy + 20, 6, 2);
-}
-
 export function buildAvatarSpritesheetCanvas(config: AvatarConfig): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 48; // 3 frames x 16px
-  canvas.height = 192; // 4 cardinals + 4 diagonals x 24px
+  canvas.height = 96; // 4 cardinals x 24px — no diagonal composite rows (gameplay uses Puny 8-dir)
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
 
@@ -196,13 +174,6 @@ export function buildAvatarSpritesheetCanvas(config: AvatarConfig): HTMLCanvasEl
   dirs.forEach((dir, row) => {
     phases.forEach((phase, col) => {
       drawFrame(ctx, col * 16, row * 24, dir, phase, config);
-    });
-  });
-
-  const diags: DiagonalFacing[] = ['down-right', 'down-left', 'up-right', 'up-left'];
-  diags.forEach((diag, row) => {
-    phases.forEach((phase, col) => {
-      drawDiagonalWalkFrame(ctx, col * 16, (row + 4) * 24, diag, phase, config);
     });
   });
 

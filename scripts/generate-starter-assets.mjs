@@ -399,6 +399,22 @@ function buildTileset() {
       c.rect(x + col * 4 + 3, y, 1, 16, PAL.stoneDark);
     }
   }
+  // (8, 3) Sand → water foam shore (autotile-lite)
+  {
+    const [x, y] = tile(8, 3);
+    c.rect(x, y, 16, 10, PAL.stoneLight);
+    c.rect(x, y + 10, 16, 6, PAL.skyMid);
+    c.px(x + 3, y + 9, PAL.cream);
+    c.px(x + 11, y + 11, PAL.skyLight);
+  }
+  // (9, 3) Grass → sand shore
+  {
+    const [x, y] = tile(9, 3);
+    drawGrassTile(c, x, y, 1);
+    c.rect(x, y + 9, 16, 7, PAL.stoneLight);
+    c.px(x + 5, y + 8, PAL.sageMid);
+    c.px(x + 12, y + 10, PAL.stoneMid);
+  }
 
   c.save(path.join(OUT_STARTER, 'tileset-cozy.png'));
 }
@@ -667,6 +683,16 @@ function buildHomeMap() {
   ground[idx(4, 7)] = 3;
   ground[idx(3, 8)] = 3;
   ground[idx(4, 8)] = 2;
+  // Living room rug (cobble accents) + window-side planters (warm read)
+  for (let x = 6; x <= 10; x += 1) {
+    for (let y = 7; y <= 9; y += 1) {
+      ground[idx(x, y)] = (x + y) % 2 === 0 ? 2 : 3;
+    }
+  }
+  decor[idx(2, 3)] = 28;
+  decor[idx(13, 3)] = 28;
+  decor[idx(7, 5)] = 11;
+  decor[idx(8, 5)] = 11;
 
   const map = makeTiledJson('home', w, h, [
     { id: 1, name: 'Ground', type: 'tilelayer', data: ground, height: h, width: w, opacity: 1, visible: true, x: 0, y: 0 },

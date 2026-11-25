@@ -191,7 +191,7 @@ const avatarColors = {
 };
 
 export const rigLayout = { frameWidth: 16, frameHeight: 32, frameCount: 6, directions: ['right', 'up', 'left', 'down'] };
-export const AVATAR_ATLAS_ROW_COUNT = 8;
+export const AVATAR_ATLAS_ROW_COUNT = 3;
 export { avatarColors };
 
 const DIAGONAL_PRIMARY = {
@@ -312,39 +312,6 @@ export function makeRig(hairStyle) {
           frame,
         );
       }
-    }
-  }
-  for (const [dIndex, diag] of DIAGONAL_ORDER.entries()) {
-    const direction = DIAGONAL_PRIMARY[diag];
-    const bias = DIAGONAL_SECONDARY[diag] === 'right' ? 1 : -1;
-    const row = 3 + dIndex;
-    for (const [index, dirKey] of rigLayout.directions.entries()) {
-      if (dirKey !== direction) continue;
-      for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
-        const legNudge = frame === 1 ? bias : frame === 2 ? -bias : 0;
-        paintAvatarFrame(
-          c,
-          (index * rigLayout.frameCount + frame) * rigLayout.frameWidth,
-          row * rigLayout.frameHeight,
-          hairStyle,
-          direction,
-          1,
-          frame,
-          legNudge,
-        );
-      }
-    }
-  }
-  for (const [index, direction] of rigLayout.directions.entries()) {
-    for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
-      paintLieFrame(
-        c,
-        (index * rigLayout.frameCount + frame) * rigLayout.frameWidth,
-        7 * rigLayout.frameHeight,
-        hairStyle,
-        direction,
-        frame,
-      );
     }
   }
   return c;

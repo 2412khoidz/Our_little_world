@@ -15,8 +15,8 @@ import {
 const MAIN: FarmPlotRegion = FARM_PLOT_REGIONS.find((r) => r.id === 'farm_main')!;
 const ANNEX: FarmPlotRegion = FARM_PLOT_REGIONS.find((r) => r.id === 'farm_annex')!;
 
-export const FARM_MAIN_PLOT_COUNT = MAIN.columns * MAIN.rows;
-export const FARM_ANNEX_PLOT_COUNT = ANNEX.columns * ANNEX.rows;
+export const FARM_MAIN_PLOT_COUNT = 120;
+export const FARM_ANNEX_PLOT_COUNT = 64;
 export const FARM_PLOT_COUNT = FARM_MAIN_PLOT_COUNT + FARM_ANNEX_PLOT_COUNT;
 
 const ANCHOR_INDEX_MAP: ReadonlyMap<string, number> = (() => {
@@ -67,6 +67,9 @@ export function isValidFarmPlotIndex(plotIndex: number): boolean {
 }
 
 export function farmPlotTileForIndex(plotIndex: number): { tileX: number; tileY: number } | null {
+  const anchors = enumerateFarmPlotAnchors();
+  const hit = anchors[plotIndex];
+  if (hit) return { tileX: hit.tileX, tileY: hit.tileY };
   const slot = farmPlotRegionAndLocal(plotIndex);
   if (!slot) return null;
   const region = slot.regionId === 'farm_main' ? MAIN : ANNEX;

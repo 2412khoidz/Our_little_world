@@ -29,6 +29,8 @@ interface PetShopCloseUpCatProps {
   vitals: PetVitals;
   careFlashAction?: PetActionType | null;
   careFlashAtMs?: number | null;
+  /** Toy / play beat from PetCareScene (not in PetSnapshot authority). */
+  careFlashPlay?: boolean;
   /** Monotonic ms for cooldown + flash windows (panel tick). */
   nowMs: number;
 }
@@ -40,6 +42,7 @@ export function PetShopCloseUpCat({
   vitals,
   careFlashAction = null,
   careFlashAtMs = null,
+  careFlashPlay = false,
   nowMs,
 }: PetShopCloseUpCatProps) {
   const [blinking, setBlinking] = useState(false);
@@ -99,7 +102,8 @@ export function PetShopCloseUpCat({
     };
   }, []);
 
-  const careMode = resolvePetShopCareMode(careFlashAction ?? null, careFlashAtMs ?? null, nowMs);
+  const flashKind = careFlashPlay ? 'play' : (careFlashAction ?? null);
+  const careMode = resolvePetShopCareMode(flashKind, careFlashAtMs ?? null, nowMs);
   const face = useMemo(
     () =>
       selectPetShopCareFace({

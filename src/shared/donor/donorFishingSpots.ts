@@ -1,7 +1,7 @@
 /** Donor fishing locations — distinct biome tables + minigame engines (no duplicate weak rules). */
 export type DonorFishingSpotId = 'meadow_pond' | 'east_stream' | 'gull_bay';
 
-export type DonorFishingMinigame = 'tidefall_bar' | 'tension_reel';
+export type DonorFishingMinigame = 'tidefall_bar';
 
 export interface DonorFishingSpotDef {
   readonly id: DonorFishingSpotId;
@@ -19,8 +19,8 @@ export const DONOR_FISHING_SPOTS: Record<DonorFishingSpotId, DonorFishingSpotDef
   },
   east_stream: {
     id: 'east_stream',
-    labelVi: 'Suối phía Đông (tension reel)',
-    minigame: 'tension_reel',
+    labelVi: 'Suối phía Đông — câu cá',
+    minigame: 'tidefall_bar',
     biome: 'stream',
   },
   gull_bay: {

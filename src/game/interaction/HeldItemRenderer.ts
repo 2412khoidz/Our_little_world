@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import type { Direction } from '../../shared/types';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
+import {
+  cabacosHeldToolTextureKey,
+  heldSeedCropSprite,
+} from '../../shared/donor/cabacos-79e423d/farmHeldToolPresentation';
 import { ensureLivingItemTextures, LIVING_ITEMS_ATLAS_KEY } from '../pet/petSpriteBuilder';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
 
@@ -20,10 +24,26 @@ export class HeldItemRenderer {
 
   private applyHeldVisual(held: HeldItemState): boolean {
     const scene = this.image.scene;
-    if (held.itemSku === 'tool_hoe' && scene.textures.exists('donor-cabacos-hoe')) {
-      if (this.boundTextureKey !== 'donor-cabacos-hoe' || this.boundFrameKey !== '') {
-        this.image.setTexture('donor-cabacos-hoe');
-        this.boundTextureKey = 'donor-cabacos-hoe';
+    const cabTool = held.itemSku ? cabacosHeldToolTextureKey(held.itemSku) : null;
+    if (cabTool && scene.textures.exists(cabTool)) {
+      if (this.boundTextureKey !== cabTool || this.boundFrameKey !== '') {
+        this.image.setTexture(cabTool);
+        this.boundTextureKey = cabTool;
+        this.boundFrameKey = '';
+      }
+      return true;
+    }
+    const seedSprite = held.itemSku?.startsWith('seed_') ? heldSeedCropSprite(held.itemSku) : null;
+    if (seedSprite && scene.textures.exists(seedSprite.textureKey)) {
+      if (seedSprite.kind === 'spritesheet') {
+        if (this.boundTextureKey !== seedSprite.textureKey || this.boundFrameKey !== `${seedSprite.frame}`) {
+          this.image.setTexture(seedSprite.textureKey, seedSprite.frame);
+          this.boundTextureKey = seedSprite.textureKey;
+          this.boundFrameKey = `${seedSprite.frame}`;
+        }
+      } else if (this.boundTextureKey !== seedSprite.textureKey || this.boundFrameKey !== '') {
+        this.image.setTexture(seedSprite.textureKey);
+        this.boundTextureKey = seedSprite.textureKey;
         this.boundFrameKey = '';
       }
       return true;
@@ -63,7 +83,8 @@ export class HeldItemRenderer {
     }
 
     const toolHeld = held.itemKind === 'tool';
-    this.image.setScale(toolHeld ? 0.55 : 0.75);
+    const seedHeld = Boolean(held.itemSku?.startsWith('seed_'));
+    this.image.setScale(toolHeld ? 0.55 : seedHeld ? 0.2 : 0.75);
 
     const walkBob = moving ? Math.sin(timeMs / 90) * 1.1 : 0;
     const toolSwing =

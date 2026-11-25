@@ -1,18 +1,31 @@
 import { useMemo } from 'react';
 import { requireItem } from '../../shared/economy/catalogConfig';
 import { getCropDefinition } from '../../shared/farming/crops';
-import { FARM_SHOP_SEED_SKUS, FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
+import { FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
+import {
+  farmShopMetaForKind,
+  farmShopSkusForKind,
+  type FarmShopKind,
+} from '../../shared/shop/farmShopCatalog';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import type { NuvoraGridCell } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
+import { formatFarmChainSummaryVi } from '../../shared/farming/farmDonorChainPresentation';
+import type { FarmWorldClockFarmContext } from '../../shared/farming/farmWorldClockBridge';
+import { farmSeedRecommendedThisSeason } from '../../shared/farming/farmWorldClockBridge';
+import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
+import { NuvoraShopSeedRow } from './NuvoraShopSeedRow';
+import { NuvoraShopGrid } from './NuvoraShopGrid';
 import '../inventory/nuvora/nuvoraInventorySkin.css';
 
 export interface FarmEconomyPanelProps {
   walletCoins: number;
   inventory: InventorySnapshot | null;
   busy: boolean;
+  farmClockContext?: FarmWorldClockFarmContext | null;
   mode: 'shop' | 'shipping';
-  onBuySeed: (seedSku: string, qty: number) => Promise<void>;
+  shopKind?: FarmShopKind;
+  onBuyStoreItem: (itemSku: string, qty: number) => Promise<void>;
   onShip: (sku: string, qty: number, quality: 'normal' | 'silver' | 'gold') => Promise<void>;
   onClose: () => void;
 }
@@ -41,12 +54,15 @@ export function FarmEconomyPanel({
   walletCoins,
   inventory,
   busy,
+  farmClockContext,
   mode,
-  onBuySeed,
+  shopKind = 'seed',
+  onBuyStoreItem,
   onShip,
   onClose,
 }: FarmEconomyPanelProps) {
-  const title = mode === 'shop' ? 'Gian hạt Bác Hai' : 'Thùng giao hàng';
+  const shopMeta = farmShopMetaForKind(shopKind);
+  const title = mode === 'shop' ? shopMeta.titleVi : 'Thùng giao hàng';
 
   const shippingCells = useMemo((): readonly NuvoraGridCell[] => {
     const rows: { itemSku: string; qty: number; quality: 'normal' | 'silver' | 'gold' }[] = [];
@@ -74,47 +90,107 @@ export function FarmEconomyPanel({
     return { sku, quality: quality ?? 'normal' };
   };
 
+  const deskClass = mode === 'shipping' ? 'nuvora-ship-desk' : 'nuvora-desk';
+
   return (
     <div
-      className={mode === 'shipping' ? 'nuvora-ship-desk' : 'olw-modal-panel'}
+      className={deskClass}
       role="dialog"
       aria-labelledby="farm-economy-title"
-      data-testid={mode === 'shipping' ? 'nuvora-shipping-desk' : 'farm-economy-panel'}
+      data-testid={
+        mode === 'shipping'
+          ? 'nuvora-shipping-desk'
+          : shopKind === 'tool'
+            ? 'farm-tool-shop-panel'
+            : 'farm-economy-panel'
+      }
+      data-shop-kind={mode === 'shop' ? shopKind : undefined}
     >
-      <div className={mode === 'shipping' ? '' : 'olw-modal-head'}>
-        <h2 id="farm-economy-title">{title}</h2>
-        <button type="button" className={mode === 'shipping' ? 'btn btn--secondary btn--sm' : 'olw-modal-close'} onClick={onClose} aria-label="Đóng">
+      <div className={mode === 'shop' ? 'nuvora-desk__title-row' : 'nuvora-desk__title-row'}>
+        <h2 id="farm-economy-title" className={mode === 'shop' ? 'nuvora-desk__title' : undefined} style={mode === 'shipping' ? { margin: 0 } : undefined}>
+          {title}
+        </h2>
+        <button
+          type="button"
+          className={mode === 'shop' ? 'btn btn--secondary btn--sm' : 'btn btn--secondary btn--sm'}
+          onClick={onClose}
+          aria-label="Đóng"
+        >
           {mode === 'shipping' ? 'Đóng' : '×'}
         </button>
       </div>
-      <p className={mode === 'shipping' ? '' : 'olw-modal-sub'} style={{ fontSize: 13, margin: '0 0 8px' }}>
-        Ví chung: {walletCoins} xu
+      {farmClockContext ? (
+        <p
+          className={mode === 'shop' ? 'nuvora-desk__title' : undefined}
+          data-testid="farm-world-clock-context"
+          style={{ fontSize: 12, margin: '0 0 6px', color: '#f5e6c8', fontWeight: 400 }}
+        >
+          Ngày {farmClockContext.calendarDay} · {farmClockContext.seasonLabelVi} ·{' '}
+          {farmClockContext.weatherLabelVi}
+        </p>
+      ) : null}
+      <p
+        data-testid="farm-economy-wallet"
+        style={{ fontSize: 13, margin: '0 0 8px', color: mode === 'shop' ? '#f5e6c8' : '#f5e6c8' }}
+      >
+        Ví chung: <strong data-testid="farm-wallet-coins">{walletCoins}</strong> xu
+        {mode === 'shop' ? (
+          <small style={{ display: 'block', marginTop: 4, fontSize: 11, opacity: 0.85 }}>
+            Chuỗi: {formatFarmChainSummaryVi()}
+          </small>
+        ) : null}
       </p>
-      <div className={mode === 'shop' ? 'olw-modal-body stack gap-sm' : ''}>
-        {mode === 'shop' &&
-          FARM_SHOP_SEED_SKUS.map((seedSku) => {
-            let price = 0;
-            let nameVi: string = seedSku;
+      <div className={mode === 'shop' ? 'nuvora-shop-list' : ''}>
+        {mode === 'shop' && shopMeta.layout === 'row' &&
+          farmShopSkusForKind(shopKind).map((itemSku) => {
+            let def;
             try {
-              const def = requireItem(seedSku);
-              price = def.storeBuy ?? 0;
-              nameVi = def.nameVi;
+              def = requireItem(itemSku);
             } catch {
-              /* skip */
+              return null;
             }
+            const price = def.storeBuy ?? 0;
             if (price <= 0) return null;
+            const nameVi = def.nameVi;
+            const inSeason =
+              shopKind !== 'seed' ||
+              !farmClockContext ||
+              farmSeedRecommendedThisSeason(itemSku, farmClockContext.season);
             return (
-              <button
-                key={seedSku}
-                type="button"
-                className="olw-btn"
+              <NuvoraShopSeedRow
+                key={itemSku}
+                seedSku={itemSku}
+                nameVi={nameVi}
+                price={price}
+                inSeason={inSeason}
                 disabled={busy || walletCoins < price}
-                onClick={() => onBuySeed(String(seedSku), 1)}
-              >
-                Mua 1 {nameVi} ({price} xu)
-              </button>
+                onBuy={() => void onBuyStoreItem(itemSku, 1)}
+              />
             );
           })}
+        {mode === 'shop' && shopMeta.layout === 'grid' && (
+          <NuvoraShopGrid
+            busy={busy}
+            cells={farmShopSkusForKind(shopKind)
+              .map((itemSku) => {
+                try {
+                  const def = requireItem(itemSku);
+                  const price = def.storeBuy ?? 0;
+                  if (price <= 0) return null;
+                  return {
+                    sku: itemSku,
+                    nameVi: def.nameVi,
+                    price,
+                    disabled: busy || walletCoins < price,
+                  };
+                } catch {
+                  return null;
+                }
+              })
+              .filter((c): c is NonNullable<typeof c> => c !== null)}
+            onBuy={(sku) => void onBuyStoreItem(sku, 1)}
+          />
+        )}
         {mode === 'shipping' && (
           <>
             <p style={{ fontSize: 12, color: '#f5e6c8', margin: 0 }}>
@@ -143,8 +219,8 @@ export function FarmEconomyPanel({
                     >
                       {cell.sku ? (
                         <>
-                          <span className="nuvora-sl__icon" style={{ fontSize: 10, textAlign: 'center', lineHeight: 1.1 }}>
-                            {cell.labelVi.slice(0, 6)}
+                          <span className="nuvora-sl__icon">
+                            <CatalogSkuIcon sku={cell.sku} size={28} />
                           </span>
                           {cell.qty > 1 ? <b className="nuvora-sl__qty">{cell.qty}</b> : null}
                         </>

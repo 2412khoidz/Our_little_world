@@ -12,6 +12,7 @@ import type {
   WorldMember,
 } from '../shared/types';
 import type { SharedPetCareSession } from '../shared/petLiving/petCare/sharedPetCareSession';
+import type { PetCareJ4lpanPortraitPayload } from '../shared/petLiving/petCare/petCareJ4lpanPortraitBus';
 import type { HomeBowlPresentation } from '../shared/interaction/homeBowlPresentation';
 import type { EnvInteractionHook, EnvInteractionHookKind } from '../shared/world/envInteractionHooks';
 
@@ -108,8 +109,9 @@ export interface GameEventMap {
     serverNowMs: number;
     growthTimeScale?: number;
     plots: readonly import('../shared/farming/farmSnapshotTypes').FarmPlotView[];
-    /** Plot index that changed (e.g. after till) for one-shot Cabacos soil pop. */
+    /** Plot index that changed for one-shot farm presentation FX. */
     highlightPlotId?: number;
+    highlightAction?: 'till' | 'water' | 'plant' | 'harvest';
   };
   /** React shell → Phaser presentation-only day/night + weather overlay. */
   'cmd:sync-world-clock': import('../shared/world/worldClock').WorldClockPresentation;
@@ -147,6 +149,8 @@ export interface GameEventMap {
   'evt:pet-care-refuse': { squeak: 'refuse' | 'purr' | 'mrow' | 'chirp' };
   /** Scene autonomy tick — soak / acceptance diversity (no PII). */
   'evt:pet-care-autonomy-cue': { action: string; bubbleVi: string };
+  /** Phaser rig → React j4lpan SVG portrait (PetSnapshot authority unchanged). */
+  'evt:pet-care-j4lpan-portrait': PetCareJ4lpanPortraitPayload;
 
   // Phaser -> React
   'evt:scene-ready': { mapId: MapId };

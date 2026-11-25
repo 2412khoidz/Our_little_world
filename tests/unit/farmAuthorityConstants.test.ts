@@ -3,8 +3,8 @@ import { FARM_STATE_CONTRACT_VERSION, FARM_STATE_PLOT_BINDING } from '../../src/
 import { FARM_PLOT_CONTRACT_VERSION } from '../../src/shared/world/farmPlotContract';
 
 describe('farmAuthorityConstants', () => {
-  it('binds simulation to Composer 3 contract v1.0.1', () => {
-    expect(FARM_STATE_CONTRACT_VERSION).toBe('1.0.1');
+  it('binds simulation to farm plot contract version', () => {
+    expect(FARM_STATE_CONTRACT_VERSION).toBe('1.0.2');
     expect(FARM_PLOT_CONTRACT_VERSION).toBe(FARM_STATE_CONTRACT_VERSION);
     expect(FARM_STATE_PLOT_BINDING).toBe('farm_main:0-119,farm_annex:0-63');
   });

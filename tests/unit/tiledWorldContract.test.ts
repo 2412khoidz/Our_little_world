@@ -94,7 +94,9 @@ describe('Tiled village & farm contract', () => {
     if (isDonorCabacosVillage()) {
       const village = getMapDefinition('village');
       const beach = getMapDefinition('beach');
-      expect(village.portals.some((p) => p.targetMapId === 'shop')).toBe(true);
+      expect(
+        village.portals.some((p) => p.targetMapId === 'shop_seed' || p.targetMapId === 'shop'),
+      ).toBe(true);
       expect(village.portals.some((p) => p.targetMapId === 'garden')).toBe(true);
       expect(village.portals.some((p) => p.targetMapId === 'beach')).toBe(true);
       expect(beach.portals.some((p) => p.targetMapId === 'village')).toBe(true);

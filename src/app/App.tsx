@@ -26,7 +26,8 @@ import type {
 } from '../shared/types';
 import { AvatarModal } from '../features/avatar/AvatarModal';
 import { CoupleEmoteDock } from '../features/couple/CoupleEmoteDock';
-import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
+import { ScrapbookAlbumModal } from '../features/couple/ScrapbookAlbumModal';
+import { applyRemoteStickerToStoredAlbum } from '../features/couple/scrapbookAlbumStorage';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { OutdoorWorldNavSheet } from '../features/home/OutdoorWorldNavSheet';
@@ -53,8 +54,9 @@ import {
   type TimeOfDayMode,
 } from '../shared/world/worldClock';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import type { FarmShopKind } from '../shared/shop/farmShopCatalog';
+import { farmContextFromWorldClock } from '../shared/farming/farmWorldClockBridge';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
-import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
 import { isDonorLanPlayableMode, setDevLanDonorUiActive } from '../shared/donor/donorEconomyUiFlag';
 import type { DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
@@ -298,7 +300,6 @@ function MainCoupleApp() {
     | 'farm_shipping'
     | 'donor_workshop'
     | 'donor_fishing'
-    | 'donor_stream_fishing'
     | 'dev_console'
     | 'v03_proto'
   >(null);
@@ -315,19 +316,27 @@ function MainCoupleApp() {
   const [farmClockAnchor, setFarmClockAnchor] = useState({ serverNowMs: 0, fetchedAtMs: 0 });
   const [farmServerNowMs, setFarmServerNowMs] = useState(0);
   const [farmBusy, setFarmBusy] = useState(false);
+  const [farmShopKind, setFarmShopKind] = useState<FarmShopKind>('seed');
 
-  const applyFarmSnapshotToUi = useCallback((snap: FarmSnapshot, highlightPlotId?: number) => {
-    const fetchedAtMs = Date.now();
-    setFarmClockAnchor({ serverNowMs: snap.serverNowMs, fetchedAtMs });
-    setFarmServerNowMs(snap.serverNowMs);
-    setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
-    gameEventBus.emit('cmd:sync-farm', {
-      plots: snap.plots,
-      serverNowMs: snap.serverNowMs,
-      growthTimeScale: snap.growthTimeScale,
-      highlightPlotId,
-    });
-  }, []);
+  const applyFarmSnapshotToUi = useCallback(
+    (
+      snap: FarmSnapshot,
+      highlight?: { plotId: number; action: 'till' | 'water' | 'plant' | 'harvest' },
+    ) => {
+      const fetchedAtMs = Date.now();
+      setFarmClockAnchor({ serverNowMs: snap.serverNowMs, fetchedAtMs });
+      setFarmServerNowMs(snap.serverNowMs);
+      setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
+      gameEventBus.emit('cmd:sync-farm', {
+        plots: snap.plots,
+        serverNowMs: snap.serverNowMs,
+        growthTimeScale: snap.growthTimeScale,
+        highlightPlotId: highlight?.plotId,
+        highlightAction: highlight?.action,
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (currentMapId !== 'farm' || !backend.farm) return;
@@ -361,6 +370,9 @@ function MainCoupleApp() {
   const [selectedPhotoPresetId, setSelectedPhotoPresetId] = useState<string>(
     STATIC_PHOTO_PRESETS[0]!.id,
   );
+  const [partnerScrapbookPage, setPartnerScrapbookPage] = useState<number | null>(null);
+  const [partnerScrapbookUserId, setPartnerScrapbookUserId] = useState<string | null>(null);
+  const [scrapbookStorageEpoch, setScrapbookStorageEpoch] = useState(0);
   const consumedInviteIdsRef = useRef<Set<string>>(new Set());
   const currentMapIdRef = useRef<MapId>(currentMapId);
   useEffect(() => {
@@ -843,6 +855,23 @@ function MainCoupleApp() {
   const handleCoupleEvent = useCallback(
     (packet: CoupleEventPacket) => {
       if (!currentUser || packet.worldId !== snapshotRef.current?.world.id) return;
+      if (packet.type === 'COUPLE_SCRAPBOOK') {
+        if (packet.userId === currentUser.userId) return;
+        if (packet.action === 'flip' && packet.pageIndex !== undefined) {
+          setPartnerScrapbookUserId(packet.userId);
+          setPartnerScrapbookPage(packet.pageIndex);
+        }
+        if (
+          packet.action === 'sticker' &&
+          packet.pageId &&
+          packet.stickerEmoji &&
+          snapshotRef.current?.world.id
+        ) {
+          applyRemoteStickerToStoredAlbum(snapshotRef.current.world.id, packet);
+          setScrapbookStorageEpoch((n) => n + 1);
+        }
+        return;
+      }
       if (packet.type === 'COUPLE_EMOTE') {
         if (packet.userId !== currentUser.userId) {
           gameEventBus.emit('cmd:spawn-emote', {
@@ -1460,6 +1489,47 @@ function MainCoupleApp() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Dev-only stable camera jumps for Visual Quality Gate capture scripts (`?vqg-capture=1`). */
+  useEffect(() => {
+    if (!import.meta.env.DEV || !worldSnapshot || typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('vqg-capture') !== '1') return;
+    type VqgCaptureApi = {
+      jump: (mapId: MapId, tileX: number, tileY: number) => void;
+      openFishing: (spotId?: DonorFishingSpotId) => void;
+      openFarmMarket: (shopKind?: FarmShopKind) => void;
+      openFarmShipping: () => void;
+    };
+    const w = window as Window & { __OLW_VQG?: VqgCaptureApi };
+    w.__OLW_VQG = {
+      jump(mapId, tileX, tileY) {
+        setDecorateActive(false);
+        setActiveSku(null);
+        setSelectedPlacementId(null);
+        setCurrentMapId(mapId);
+        gameEventBus.emit('cmd:set-map', {
+          mapId,
+          spawnTile: { tileX, tileY },
+        });
+      },
+      openFishing(spotId = 'meadow_pond') {
+        setDonorChillFishingSpot(parseDonorFishingSpot(spotId));
+        setActiveModal('donor_fishing');
+      },
+      openFarmMarket(shopKind = 'seed') {
+        void refreshFarmWallet();
+        setFarmShopKind(shopKind);
+        setActiveModal('farm_market');
+      },
+      openFarmShipping() {
+        void refreshFarmWallet();
+        setActiveModal('farm_shipping');
+      },
+    };
+    return () => {
+      delete w.__OLW_VQG;
+    };
+  }, [worldSnapshot]);
+
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
     async ({
@@ -1731,6 +1801,11 @@ function MainCoupleApp() {
     });
   }, [worldSnapshot, worldClockNowMs, timeOfDayMode]);
 
+  const farmClockContext = useMemo(
+    () => (worldClockPresentation ? farmContextFromWorldClock(worldClockPresentation) : null),
+    [worldClockPresentation],
+  );
+
   useEffect(() => {
     if (!worldSnapshot) return;
     const id = window.setInterval(() => setWorldClockNowMs(Date.now()), 1000);
@@ -1849,6 +1924,7 @@ function MainCoupleApp() {
           presentation={worldClockPresentation}
           mode={timeOfDayMode}
           hidden={petCareMode || isAnyModalOpen || decorateActive}
+          walletCoins={backend.farm ? farmWalletCoins : null}
           onModeChange={handleTimeOfDayModeChange}
         />
       ) : null}
@@ -1882,6 +1958,7 @@ function MainCoupleApp() {
 
       <PetCareTouchOverlay
         active={petCareMode}
+        petSnapshot={petSnapshot}
         onExit={() => gameEventBus.emit('cmd:pet-care-mode', { active: false })}
       />
 
@@ -1951,7 +2028,11 @@ function MainCoupleApp() {
             }
             setFarmWalletCoins(res.data.snapshot.walletCoins);
             farmVersionRef.current = res.data.snapshot.version;
-            applyFarmSnapshotToUi(res.data.snapshot, action === 'till' ? plotIndex : undefined);
+            if (action === 'till' || action === 'water') {
+              applyFarmSnapshotToUi(res.data.snapshot, { plotId: plotIndex, action });
+            } else {
+              applyFarmSnapshotToUi(res.data.snapshot);
+            }
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
               showToast(
@@ -1968,10 +2049,13 @@ function MainCoupleApp() {
             setFarmBusy(false);
           }
         } : undefined}
-        onOpenFarmMarket={backend.farm ? () => {
-          void refreshFarmWallet();
-          setActiveModal('farm_market');
-        } : undefined}
+        onOpenFarmMarket={backend.farm
+          ? (shopKind) => {
+              void refreshFarmWallet();
+              setFarmShopKind(shopKind ?? 'seed');
+              setActiveModal('farm_market');
+            }
+          : undefined}
         onOpenFarmShipping={backend.farm ? () => {
           void refreshFarmWallet();
           setActiveModal('farm_shipping');
@@ -1985,7 +2069,12 @@ function MainCoupleApp() {
             : undefined
         }
         onOpenDonorStreamFishing={
-          donorLanPlayable && worldId ? () => setActiveModal('donor_stream_fishing') : undefined
+          donorLanPlayable && worldId
+            ? () => {
+                setDonorChillFishingSpot('east_stream');
+                setActiveModal('donor_fishing');
+              }
+            : undefined
         }
         onOpenDonorWorkshop={
           donorLanPlayable && worldId
@@ -2241,11 +2330,20 @@ function MainCoupleApp() {
         />
       )}
 
-      {activeModal === 'photo' && (
-        <PhotoFrameModal
+      {activeModal === 'photo' && currentUser && worldSnapshot && (
+        <ScrapbookAlbumModal
+          key={`scrapbook-${scrapbookStorageEpoch}`}
+          worldId={worldSnapshot.world.id}
+          localUserId={currentUser.userId}
+          partnerPageIndex={partnerScrapbookPage}
+          partnerUserId={partnerScrapbookUserId}
           selectedPresetId={selectedPhotoPresetId}
           onSelectPreset={setSelectedPhotoPresetId}
-          onClose={() => setActiveModal(null)}
+          onPublishScrapbook={(packet) => realtimeRef.current?.publishCoupleEvent?.(packet)}
+          onClose={() => {
+            setActiveModal(null);
+            setPartnerScrapbookPage(null);
+          }}
         />
       )}
 
@@ -2270,24 +2368,17 @@ function MainCoupleApp() {
         />
       )}
 
-      {donorLanPlayable && activeModal === 'donor_stream_fishing' && worldId && (
-        <TensionFishingModal
-          worldId={worldId}
-          spotId="east_stream"
-          titleVi="Suối phía Đông"
-          onClose={() => setActiveModal(null)}
-          onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
-        />
-      )}
 
       {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
+        <div className="modal-backdrop nuvora-inv-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
           <div onClick={(e) => e.stopPropagation()}>
             <FarmEconomyPanel
               mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}
+              shopKind={farmShopKind}
               walletCoins={farmWalletCoins}
               inventory={inventorySnapshot}
               busy={farmBusy}
+              farmClockContext={farmClockContext}
               onClose={() => setActiveModal(null)}
               onShip={async (sku, qty, quality) => {
                 const targetWorldId = snapshotRef.current?.world.id;
@@ -2311,14 +2402,14 @@ function MainCoupleApp() {
                   setFarmBusy(false);
                 }
               }}
-              onBuySeed={async (seedSku, qty) => {
+              onBuyStoreItem={async (itemSku, qty) => {
                 const targetWorldId = snapshotRef.current?.world.id;
                 if (!targetWorldId) return;
                 setFarmBusy(true);
                 try {
                   const res = await backend.farm!.buySeed({
                     worldId: targetWorldId,
-                    seedSku,
+                    seedSku: itemSku,
                     qty,
                     idempotencyKey: makeIdempotencyKey('farm-buy'),
                   });
@@ -2328,7 +2419,9 @@ function MainCoupleApp() {
                   }
                   setFarmWalletCoins(res.data.walletCoins);
                   await refreshInventorySnapshot(targetWorldId);
-                  showToast('Đã mua hạt giống.');
+                  showToast(
+                    itemSku.startsWith('seed_') ? 'Đã mua hạt giống.' : 'Đã mua vật phẩm.',
+                  );
                   realtimeRef.current?.notifyWorldMutated('inventory');
                 } finally {
                   setFarmBusy(false);

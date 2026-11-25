@@ -26,11 +26,27 @@
     "assets:pack-demo-e-minimal": "node scripts/pack-demo-e-minimal.mjs",
     "preview:private": "vite preview --outDir dist-private --host 127.0.0.1 --port 4174 --strictPort",
     "assets:import": "node scripts/import-external-assets.mjs",
-    "import-donor:cabacos": "node scripts/import-donor-cabacos.mjs",
+    "vendor-donor:cabacos-characters": "node scripts/vendor-donor-cabacos-characters.mjs",
+    "vendor-donor:cabacos-maps": "node scripts/vendor-donor-cabacos-maps.mjs",
+    "vendor-donor:cabacos-farming-art": "node scripts/vendor-donor-cabacos-farming-art.mjs",
+    "vendor-donor:pydew-farming-art": "node scripts/vendor-donor-pydew-farming-art.mjs",
+    "vendor-donor:pydew-characters": "node scripts/vendor-donor-pydew-characters.mjs",
+    "assets:farming-transplant-sheet": "node scripts/build-farming-transplant-contact-sheet.mjs",
+    "import-donor:cabacos": "node scripts/vendor-donor-cabacos-maps.mjs && node scripts/import-donor-cabacos.mjs",
     "import-donor:cabacos-farm": "node scripts/import-donor-cabacos-farm.mjs",
+    "import-donor:cabacos-ui-inventory": "node scripts/import-donor-cabacos-ui-inventory.mjs",
+    "import-donor:pydew-farm": "node scripts/vendor-donor-pydew-valley.mjs && node scripts/import-donor-pydew-farm.mjs",
     "import-donor:hollowmere-beach": "node scripts/import-donor-hollowmere-beach.mjs",
+    "import-donor:cabacos-beach": "node scripts/import-donor-cabacos-beach.mjs",
     "import-donor:pydew-forest": "node scripts/import-donor-pydew-forest.mjs",
-    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-cabacos-farm.mjs && node scripts/import-donor-hollowmere-beach.mjs && node scripts/import-donor-pydew-forest.mjs",
+    "import-donor:tuxemon-forest": "node scripts/import-donor-tuxemon-forest.mjs",
+    "vendor-donor:tuxemon-forest": "node scripts/vendor-donor-tuxemon-forest.mjs",
+    "vendor-donor:sprout-home-garden": "node scripts/vendor-donor-sprout-home-garden.mjs",
+    "vendor-donor:fishing-frenzy": "node scripts/vendor-donor-fishing-frenzy.mjs",
+    "capture:fishing-recovery": "node scripts/capture-fishing-frenzy-recovery-evidence.mjs",
+    "import-donor:sprout-home-garden": "node scripts/vendor-donor-sprout-home-garden.mjs && node scripts/import-donor-sprout-home-garden.mjs",
+    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-pydew-farm.mjs && node scripts/import-donor-cabacos-beach.mjs && node scripts/import-donor-tuxemon-forest.mjs && node scripts/import-donor-sprout-home-garden.mjs",
+    "import-donor:recovery-world": "OLW_MAP_RECOVERY=1 npm run import-donor:world-zones",
     "spike:video": "node scripts/generate-spike-video.mjs",
     "test:sql": "node scripts/run-local-sql-suite.mjs"
   },
@@ -41,6 +57,7 @@
     "phaser": "^4.2.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-pageflip": "^2.0.3",
     "three": "^0.186.1",
     "workbox-window": "^7.4.1",
     "zod": "^4.6.7"
@@ -66,5 +83,15 @@
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.1.1"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-arm64-msvc": "1.2.19",
+    "@rolldown/binding-win32-x64-msvc": "1.2.19",
+    "@rollup/rollup-win32-arm64-msvc": "4.68.8",
+    "@rollup/rollup-win32-ia32-msvc": "4.68.8",
+    "@rollup/rollup-win32-x64-gnu": "4.68.8",
+    "@rollup/rollup-win32-x64-msvc": "4.68.8",
+    "lightningcss-win32-arm64-msvc": "1.33.0",
+    "lightningcss-win32-x64-msvc": "1.33.0"
   }
 }

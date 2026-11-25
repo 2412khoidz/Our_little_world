@@ -7,6 +7,7 @@ import {
 } from './economyInteractablePolicy';
 import { parseDonorFishingSpot } from '../donor/donorFishingSpots';
 import { farmPlotInspectLabelVi } from '../farming/farmPlotInspect';
+import { shopRecoveryEntryForTarget } from '../world/shopRecoveryCoordination';
 import type { FarmPlotView } from '../farming/farmSnapshotTypes';
 import { plotIndexFromAnchorId } from '../farming/farmPlotIndex';
 import type {
@@ -331,15 +332,16 @@ function actionForTarget(
         };
       }
       if (ECONOMY_FARM_MARKET_TARGET_IDS.has(target.id)) {
+        const recovery = shopRecoveryEntryForTarget(target.id);
         return {
           code: 'open_farm_market',
           keyHint: 'J',
-          labelVi: 'Mua hạt giống · Bác Hai',
+          labelVi: recovery?.labelVi ?? 'Mua hạt giống · Bác Hai',
           targetId: target.id,
           available: target.donorPlayable === true,
           reasonVi:
             target.donorPlayable === true
-              ? undefined
+              ? recovery?.recoveryNoteVi
               : 'Chợ hạt chỉ mở trên bản preview ruộng (Dev LAN).',
         };
       }
@@ -356,9 +358,8 @@ function actionForTarget(
       };
     case 'fishing_spot': {
       const spotId = parseDonorFishingSpot(resolveDonorFishingSpotId(target));
-      const stream = spotId === 'east_stream';
       return {
-        code: stream ? 'open_donor_stream_fishing' : 'open_donor_fishing',
+        code: 'open_donor_fishing',
         keyHint: 'J',
         labelVi: target.labelVi,
         targetId: target.id,

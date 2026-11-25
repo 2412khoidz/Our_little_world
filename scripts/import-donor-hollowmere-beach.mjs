@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const ROOT = path.resolve('public/maps/donor/hollowmere');
 const OUT_MAPS = path.resolve('public/assets/maps');
@@ -322,8 +323,9 @@ class BeachGrid {
   }
 }
 
-/** Cabacos-bar coastal pass: pier planks, palms, shore foam strip. */
+/** Cabacos-bar coastal pass (disabled in map recovery — use Hollowmere ops only). */
 function polishBeachGrid(grid, w, h, mapData) {
+  if (MAP_RECOVERY_MODE) return;
   const pierY = Number(mapData.pierY ?? 16);
   const pierX0 = Math.max(2, Math.floor(w * 0.45));
   const pierX1 = Math.min(w - 3, pierX0 + 8);
@@ -373,7 +375,9 @@ function buildFromHollowmere(mapData) {
     } else if (kind === 'open') {
       grid.openSide(op[1], op[2], op[3], mapData.base ?? 'sand');
     } else if (kind === 'scatter') {
-      grid.scatter(op[1], op[2], op[3], op[4], op[5], op[6], op[7]);
+      if (!MAP_RECOVERY_MODE) {
+        grid.scatter(op[1], op[2], op[3], op[4], op[5], op[6], op[7]);
+      }
     } else if (kind === 'clearpath') {
       grid.clearPathInner();
     }
@@ -517,8 +521,14 @@ function buildFromHollowmere(mapData) {
     [portals, interactables],
     [
       { name: 'hollowmereMusic', type: 'string', value: mapData.music ?? 'beach' },
-      { name: 'olwCoastPolish', type: 'string', value: '2025-11-25-pier-lifebuoy' },
+      { name: 'olwCoastPolish', type: 'string', value: MAP_RECOVERY_MODE ? 'recovery-authored-only' : '2025-11-25-pier-lifebuoy' },
       { name: 'olwHarvestDuoRef', type: 'string', value: 'beach-layout-reference.v1' },
+      ...(MAP_RECOVERY_MODE
+        ? [
+            { name: 'olwRecovery', type: 'string', value: RECOVERY_SLICE },
+            { name: 'olwHollowmereNoScatter', type: 'bool', value: true },
+          ]
+        : []),
     ],
   );
 }

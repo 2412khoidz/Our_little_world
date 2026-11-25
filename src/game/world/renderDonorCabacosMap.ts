@@ -9,7 +9,7 @@ const SKIP_LAYERS = new Set([
   'Portals',
   'Interactables',
   'NPCSpawns',
-  // Not in SKIP: OLW_ContractSoil (cozy plot overlay), Cabacos visual layers
+  'OLW_ContractSoil',
 ]);
 
 /** Cabacos / GameMaker export layer draw order (depth from `gamemaker_depth` when present). */
@@ -50,6 +50,21 @@ export function renderDonorCabacosShopInterior(
   if (!scene.textures.exists('donor-cabacos-house-interior')) return;
   const img = scene.add.image(0, 0, 'donor-cabacos-house-interior').setOrigin(0, 0).setDepth(0);
   pushLayer(img);
+}
+
+export function renderDonorCabacosImageInteriorFromMap(
+  scene: Phaser.Scene,
+  tilemap: Phaser.Tilemaps.Tilemap,
+  pushLayer: (obj: Phaser.GameObjects.GameObject) => void,
+): void {
+  const textureKey = tiledMapPropertyValue(tilemap, 'olwDonorInteriorTextureKey');
+  if (typeof textureKey !== 'string' || !scene.textures.exists(textureKey)) return;
+  const img = scene.add.image(0, 0, textureKey).setOrigin(0, 0).setDepth(0);
+  pushLayer(img);
+}
+
+export function isDonorCabacosImageShop(tilemap: Phaser.Tilemaps.Tilemap): boolean {
+  return isDonorCabacosMap(tilemap) && tiledMapPropertyValue(tilemap, 'olwShopRender') === 'image';
 }
 
 type TiledProperty = { name: string; value: string | number | boolean };

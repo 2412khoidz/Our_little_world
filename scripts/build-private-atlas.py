@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 import sys
 
@@ -460,6 +461,18 @@ def main() -> None:
 
     props_sheet, props_entries = pack_sprites(props_items, 1024)
 
+    repo_root = output.parent.parent.parent
+    farmer_src = repo_root / "public/assets/donor/pydew-characters"
+    farmer_dst = output / "donor-pydew-characters"
+    farmer_dst.mkdir(parents=True, exist_ok=True)
+    gameplay_files: dict[str, str] = {}
+    for name in ("farmer-may-atlas.png", "farmer-nang-atlas.png", "farmer-rose-atlas.png", "CREDITS.md"):
+        src = farmer_src / name
+        if not src.is_file():
+            raise FileNotFoundError(f"Thiếu donor gameplay avatar (PyDew farmer CC0): {src}")
+        shutil.copy2(src, farmer_dst / name)
+        gameplay_files[name] = f"donor-pydew-characters/{name}"
+
     # === 6. Save all outputs cleanly ===
     manifest = {
         "version": 1,
@@ -471,6 +484,34 @@ def main() -> None:
         },
         "entries": world_entries + avatar_entries,
         "upstream": list(used.values()),
+        "avatarGameplay": {
+            "provider": "artemn0va-pydew-valley-cc0",
+            "sourceUrl": "https://github.com/artemn0va/pydew-valley",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "colsPerRow": 16,
+            "framesPerDirection": 4,
+            "rowIndex": {
+                "idle": 0,
+                "walk": 1,
+                "hoe": 2,
+                "water": 3,
+                "harvest": 4,
+            },
+            "facing8Order": [
+                "down",
+                "down-left",
+                "left",
+                "up-left",
+                "up",
+                "up-right",
+                "right",
+                "down-right",
+            ],
+            "posturePolicy": {"sit": "idle-row", "lie": "idle-row", "facing8": "cardinal"},
+            "wardrobeAvatarsPx": {"width": avatars_sheet.width, "height": avatars_sheet.height},
+            "files": gameplay_files,
+        },
     }
     props_manifest = {
         "version": 1,
@@ -478,6 +519,7 @@ def main() -> None:
         "texture": {"file": "world-props.png", "width": props_sheet.width, "height": props_sheet.height},
         "entries": props_entries,
     }
+
     output.mkdir(parents=True, exist_ok=True)
     world_sheet.save(output / "world.png", optimize=True)
     avatars_sheet.save(output / "avatars.png", optimize=True)

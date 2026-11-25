@@ -12,6 +12,8 @@ import {
   type PetAnimState,
   type PetFacing,
 } from '../../shared/petLiving/petVisualTypes';
+import { WORLD_PROPS_KEY } from '../art/worldAtlas';
+import { livingCatLicensedPackReady, stampLivingCatPackDataset } from './livingCatWorldSprite';
 
 const SHEET_COLS = 6;
 export const LIVING_ITEMS_ATLAS_KEY = 'olw-living-items';
@@ -639,6 +641,11 @@ export function ensureLivingCatSpritesheet(
   variant: CatCoatVariantId,
   accessory: CatAccessoryId,
 ): string {
+  if (livingCatLicensedPackReady(scene, variant)) {
+    stampLivingCatPackDataset(scene, true);
+    return WORLD_PROPS_KEY;
+  }
+  stampLivingCatPackDataset(scene, false);
   const key = getLivingCatTextureKey(variant, accessory);
   const spec = CAT_VARIANTS.find((v) => v.id === variant) ?? CAT_VARIANTS[0]!;
 

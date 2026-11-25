@@ -1,11 +1,12 @@
 import type { MapId } from '../types';
+import contractV1 from './farmPlotContract.v1.json';
 
 /**
  * Composer 1 — world anchors only (no farming simulation).
- * Keep object tile positions in sync with `scripts/generate-world-zone-maps.mjs` Interactables layer.
  * Bump `FARM_PLOT_CONTRACT_VERSION` + regenerate `farmPlotContract.v1.json` when anchors change.
  */
-export const FARM_PLOT_CONTRACT_VERSION = '1.0.1';
+export const FARM_PLOT_CONTRACT_VERSION =
+  typeof contractV1.contractVersion === 'string' ? contractV1.contractVersion : '1.0.1';
 
 export const FARM_ZONE_MAP_ID: MapId = 'farm';
 
@@ -45,24 +46,27 @@ export interface FarmPlotRegion {
  * Walkable soil rectangles on the farm map (Ground layer gids 53/54).
  * `plotAnchorId` = `${regionId}_${localIndex}` row-major within the region.
  */
-export const FARM_PLOT_REGIONS: readonly FarmPlotRegion[] = [
-  {
-    id: 'farm_main',
-    labelVi: 'Ruộng chính',
-    originTileX: 16,
-    originTileY: 10,
-    columns: 12,
-    rows: 10,
-  },
-  {
-    id: 'farm_annex',
-    labelVi: 'Ruộng phụ',
-    originTileX: 40,
-    originTileY: 28,
-    columns: 8,
-    rows: 8,
-  },
-] as const;
+export const FARM_PLOT_REGIONS: readonly FarmPlotRegion[] =
+  (contractV1.plotRegions as FarmPlotRegion[] | undefined)?.length === 2
+    ? (contractV1.plotRegions as FarmPlotRegion[])
+    : ([
+        {
+          id: 'farm_main',
+          labelVi: 'Ruộng chính',
+          originTileX: 16,
+          originTileY: 10,
+          columns: 12,
+          rows: 10,
+        },
+        {
+          id: 'farm_annex',
+          labelVi: 'Ruộng phụ',
+          originTileX: 40,
+          originTileY: 28,
+          columns: 8,
+          rows: 8,
+        },
+      ] as const);
 
 export const FARM_PLOT_MIN_WALKABLE_TILES = 160;
 
@@ -82,12 +86,28 @@ export function farmPlotTileFromAnchor(
   return { tileX: region.originTileX + col, tileY: region.originTileY + row };
 }
 
+type PlotAnchorRow = {
+  anchorId: string;
+  regionId: FarmPlotRegion['id'];
+  tileX: number;
+  tileY: number;
+};
+
 export function enumerateFarmPlotAnchors(): ReadonlyArray<{
   anchorId: FarmPlotAnchorId;
   regionId: FarmPlotRegion['id'];
   tileX: number;
   tileY: number;
 }> {
+  const fromJson = contractV1.plotAnchors as PlotAnchorRow[] | undefined;
+  if (fromJson?.length === 184) {
+    return fromJson.map((a) => ({
+      anchorId: a.anchorId as FarmPlotAnchorId,
+      regionId: a.regionId,
+      tileX: a.tileX,
+      tileY: a.tileY,
+    }));
+  }
   const out: Array<{ anchorId: FarmPlotAnchorId; regionId: FarmPlotRegion['id']; tileX: number; tileY: number }> =
     [];
   for (const region of FARM_PLOT_REGIONS) {
@@ -106,14 +126,7 @@ export function enumerateFarmPlotAnchors(): ReadonlyArray<{
 }
 
 export function isFarmSoilTile(tileX: number, tileY: number): boolean {
-  for (const region of FARM_PLOT_REGIONS) {
-    const dx = tileX - region.originTileX;
-    const dy = tileY - region.originTileY;
-    if (dx >= 0 && dx < region.columns && dy >= 0 && dy < region.rows) {
-      return true;
-    }
-  }
-  return false;
+  return enumerateFarmPlotAnchors().some((a) => a.tileX === tileX && a.tileY === tileY);
 }
 
 /** World interactables (HUD / simulation hooks). Tile coords = object origin in Tiled. */
@@ -122,45 +135,44 @@ export const FARM_WORLD_INTERACTABLES = {
     id: 'farm_shipping_bin',
     anchorId: 'farm_shipping_bin',
     kind: 'shipping_bin' as const,
-    tileX: 7,
-    tileY: 7,
+    tileX: 13,
+    tileY: 5,
     labelVi: 'Thùng gom hàng — bán qua đêm (V0.2)',
   },
   pond_water: {
     id: 'farm_pond_water',
     anchorId: 'farm_pond_water',
     kind: 'water_source' as const,
-    tileX: 52,
-    tileY: 11,
+    tileX: 32,
+    tileY: 8,
     labelVi: 'Ao nước — múc nước tưới',
   },
   barn_mill: {
     id: 'farm_barn_mill',
     anchorId: 'farm_barn_mill',
     kind: 'workshop_building' as const,
-    tileX: 9,
-    tileY: 9,
+    tileX: 18,
+    tileY: 22,
     labelVi: 'Xưởng ruộng — cối Meadowbrook',
   },
   barn_door: {
     id: 'farm_barn_door',
     anchorId: 'farm_barn_door',
     kind: 'door' as const,
-    tileX: 10,
-    tileY: 9,
+    tileX: 19,
+    tileY: 22,
     labelVi: 'Vào cửa hàng Bác Hai',
   },
 } as const;
 
-/** Village shop entry (Composer 1 shop UI routes through portal, not economy here). */
-/** Cabacos donor door → `shop` interior when village.json is imported from donor. */
+/** Village seed shop entry (Cabacos donor `village-to-shop-seed` → `shop_seed` interior). */
 export const VILLAGE_SHOP_PORTAL = {
-  portalObjectId: 'player_house_door',
+  portalObjectId: 'village-to-shop-seed',
   mapId: 'village' as MapId,
-  targetMapId: 'shop' as MapId,
-  doorTileX: 41,
-  doorTileY: 29,
-  labelVi: 'Vào nhà Bác Hai (làng)',
+  targetMapId: 'shop_seed' as MapId,
+  doorTileX: 32,
+  doorTileY: 23,
+  labelVi: 'Vào cửa hàng hạt',
 } as const;
 
 export interface FarmPlotContractExport {
@@ -184,8 +196,11 @@ export function buildFarmPlotContractExport(): FarmPlotContractExport {
   return {
     contractVersion: FARM_PLOT_CONTRACT_VERSION,
     mapId: FARM_ZONE_MAP_ID,
-    mapSizeTiles: { width: 64, height: 56 },
-    defaultSpawnTile: { tileX: 55, tileY: 20 },
+    mapSizeTiles: {
+      width: contractV1.mapSizeTiles?.width ?? 64,
+      height: contractV1.mapSizeTiles?.height ?? 56,
+    },
+    defaultSpawnTile: contractV1.defaultSpawnTile ?? { tileX: 55, tileY: 20 },
     tiledJsonPath: '/assets/maps/farm.json',
     tileGids: FARM_TILE_GIDS,
     tileLayerIds: FARM_TILED_LAYER_IDS,

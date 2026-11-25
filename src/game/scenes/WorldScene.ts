@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
 import { getCatalogItem } from '../../shared/catalog';
-import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
+import { getMapDefinition, getMapTilePixelSize } from '../../shared/maps';
 import { MapDebugOverlay } from '../dev/mapDebugOverlay';
 import { renderOutdoorWorld } from '../world/outdoorRenderer';
 import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
@@ -10,8 +10,26 @@ import {
   isDonorCabacosMap,
   isDonorCabacosMapFromCache,
   renderDonorCabacosMapLayers,
+  renderDonorCabacosImageInteriorFromMap,
   renderDonorCabacosShopInterior,
+  isDonorCabacosImageShop,
 } from '../world/renderDonorCabacosMap';
+import {
+  getDonorPydewTilesets,
+  isDonorPydewValleyMap,
+  isDonorPydewValleyMapFromCache,
+  renderDonorPydewMapLayers,
+} from '../world/renderDonorPydewMap';
+import {
+  getDonorTuxemonTilesets,
+  isDonorTuxemonMap,
+  renderDonorTuxemonMapLayers,
+} from '../world/renderDonorTuxemonMap';
+import {
+  getDonorSproutTilesets,
+  isDonorSproutMap,
+  renderDonorSproutMapLayers,
+} from '../world/renderDonorSproutMap';
 import {
   nearestTiledNpc,
   spawnTiledWorldNpcs,
@@ -26,6 +44,7 @@ import {
   validatePlacement,
 } from '../../shared/placement';
 import { isDecorateMapId } from '../../shared/decorate/decorateInteriorPolicy';
+import { decorateGhostAnchorFromFootprint } from '../../shared/decorate/decorateGhostAnchor';
 import { footprintForCatalog } from '../../shared/decorate/decoratePlacementLoop';
 import {
   MovementTxThrottle,
@@ -46,10 +65,11 @@ import type {
   WorldMember,
 } from '../../shared/types';
 import { PetEntity } from '../entities/PetEntity';
-import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
-import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
+import { avatarIdleFrame, ensurePhaserAvatarTexture, isDonorPunyAvatarTexture, playDonorToolUseAnim } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
+import { USE_PRIVATE_ART } from '../art/atlasProfile';
 import { WORLD_ART_KEY, WORLD_PROPS_KEY, worldFurnitureFrame } from '../art/worldAtlas';
+import { isPrivateAtlasReady } from '../world/privateArtCapability';
 import artIds from '../art/worldArtIds.json';
 import extIds from '../art/worldExtendedArtIds.json';
 import {
@@ -81,6 +101,18 @@ import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
+import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
+
+function preferDemoEHomeGarden(
+  scene: Phaser.Scene,
+  mapId: MapId,
+  backgroundFrame: string,
+): boolean {
+  if (mapId !== 'home' && mapId !== 'garden') return false;
+  if (!USE_PRIVATE_ART || !isPrivateAtlasReady(scene)) return false;
+  const art = scene.textures.exists(WORLD_ART_KEY) ? scene.textures.get(WORLD_ART_KEY) : null;
+  return art?.has(backgroundFrame) ?? false;
+}
 import { WorldLightingOverlay } from '../world/WorldLightingOverlay';
 import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
@@ -123,6 +155,10 @@ interface RemoteAvatarEntity {
 }
 
 export class WorldScene extends Phaser.Scene {
+  private tilePx(): number {
+    return getMapTilePixelSize(this.currentMapId);
+  }
+
   private currentMapId: MapId = 'home';
   private tilemap: Phaser.Tilemaps.Tilemap | null = null;
   private mapLayers: Phaser.GameObjects.GameObject[] = [];
@@ -169,6 +205,7 @@ export class WorldScene extends Phaser.Scene {
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
+  private decoratePreviewGhost: Phaser.GameObjects.Image | null = null;
   private decorateState: DecorateStatePayload = {
     active: false,
     activeSku: null,
@@ -201,6 +238,7 @@ export class WorldScene extends Phaser.Scene {
   private mapDebugOverlay: MapDebugOverlay | null = null;
   private movementConnection: number | null = null;
   private heldItem: HeldItemState = EMPTY_HELD_ITEM;
+  private lastHeldToolAction: HeldItemState['temporaryActionState'] = 'none';
   private heldRenderer: HeldItemRenderer | null = null;
   private localMoving = false;
   private farmPlotVisual: FarmPlotVisualController | null = null;
@@ -239,7 +277,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.livingPetSimulationActive = isLivingPetLocalSimulationEnabled();
     if (this.livingPetSimulationActive) {
-      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * TILE_SIZE, 10.2 * TILE_SIZE);
+      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * this.tilePx(), 10.2 * this.tilePx());
       this.petEntity.setLivingDriver(this.livingPetDriver);
     }
     if (import.meta.env.DEV) {
@@ -299,16 +337,19 @@ export class WorldScene extends Phaser.Scene {
     this.localTextureKey = ensurePhaserAvatarTexture(this, config);
 
     const def = getMapDefinition(this.currentMapId);
-    const startX = (def.defaultSpawn.tileX + 0.5) * TILE_SIZE;
-    const startY = (def.defaultSpawn.tileY + 1) * TILE_SIZE;
+    const startX = (def.defaultSpawn.tileX + 0.5) * this.tilePx();
+    const startY = (def.defaultSpawn.tileY + 1) * this.tilePx();
 
     this.localShadow = this.add
       .ellipse(startX, startY - 1, 11, 4.5, 0x22151c, 0.34)
       .setDepth(startY - 1);
     this.localSprite = this.add
-      .sprite(startX, startY, this.localTextureKey, getIdleFrameIndex(this.localFacing))
+      .sprite(startX, startY, this.localTextureKey, avatarIdleFrame(this.localTextureKey, this.localFacing))
       .setOrigin(0.5, 1)
       .setDepth(startY);
+    if (isDonorPunyAvatarTexture(this.localTextureKey)) {
+      this.localSprite.setScale(0.5);
+    }
 
     const tag = this.buildNameTag(startX, startY - 25, nickname, '#8bc4d9');
     this.localLabel = tag.container;
@@ -322,7 +363,7 @@ export class WorldScene extends Phaser.Scene {
     this.localSprite.stop();
     this.localSprite.setTexture(
       this.localTextureKey,
-      getIdleFrameIndex(this.localFacing),
+      avatarIdleFrame(this.localTextureKey, this.localFacing),
     );
     this.updateTagText(this.localLabel, this.localLabelText, me.nickname, '#8bc4d9');
   }
@@ -355,23 +396,41 @@ export class WorldScene extends Phaser.Scene {
     this.farmPlotVisual = null;
 
     const def = getMapDefinition(mapId);
-    const worldW = def.widthTiles * TILE_SIZE;
-    const worldH = def.heightTiles * TILE_SIZE;
+    const worldW = def.widthTiles * this.tilePx();
+    const worldH = def.heightTiles * this.tilePx();
     this.buildScenicSurround(mapId, worldW, worldH);
 
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
-    if (isTiledWorldMapId(mapId)) {
-      if (mapId === 'shop' && this.isDonorCabacosShop()) {
+    const demoEHomeGarden = preferDemoEHomeGarden(this, mapId, background);
+
+    if (demoEHomeGarden && art?.has(background)) {
+      this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
+      if (mapId === 'home') {
+        this.buildHomeDemoEAccents();
+      } else if (mapId === 'garden') {
+        this.buildGardenDemoEAccents(art);
+      }
+    } else if (isTiledWorldMapId(mapId)) {
+      if (mapId === 'shop' && this.isDonorCabacosShop() && !this.isDonorCabacosShopTiled() && !this.isDonorCabacosShopImage()) {
         renderDonorCabacosShopInterior(this, (obj) => this.mapLayers.push(obj));
+        const mapKey = TILED_MAP_PHASER_KEYS[mapId];
+        if (this.cache.tilemap.exists(mapKey)) {
+          this.tilemap = this.make.tilemap({ key: mapKey });
+        }
       } else {
         this.buildTiledWorldMap(mapId);
       }
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
       if (mapId === 'farm' && this.tilemap) {
-        this.farmPlotVisual = new FarmPlotVisualController(this, this.tilemap, 'tileset-cozy', (obj) =>
-          this.mapLayers.push(obj),
+        const farmTilePx = getMapTilePixelSize('farm');
+        this.farmPlotVisual = new FarmPlotVisualController(
+          this,
+          this.tilemap,
+          'tileset-cozy',
+          (obj) => this.mapLayers.push(obj),
+          farmTilePx,
         );
         if (this.farmPlotsCache.length > 0) {
           this.farmPlotVisual.sync(this.farmPlotsCache);
@@ -381,13 +440,6 @@ export class WorldScene extends Phaser.Scene {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
       this.moteBounds = outdoor.moteBounds;
       this.motes = outdoor.motes;
-    } else if (art?.has(background)) {
-      this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
-      if (mapId === 'home') {
-        this.buildHomeDemoEAccents();
-      } else if (mapId === 'garden') {
-        this.buildGardenDemoEAccents(art);
-      }
     } else {
       this.buildStarterMap(mapId);
     }
@@ -397,8 +449,8 @@ export class WorldScene extends Phaser.Scene {
     const spawn = spawnTile ?? def.defaultSpawn;
     const me = this.members.find((m) => m.userId === this.localUserId);
     const partnerOffsetX = !spawnTile && me?.role === 'partner' && !def.isStaticBlocked(spawn.tileX + 1, spawn.tileY) ? 1 : 0;
-    const px = (spawn.tileX + partnerOffsetX + 0.5) * TILE_SIZE;
-    const py = (spawn.tileY + 0.85) * TILE_SIZE;
+    const px = (spawn.tileX + partnerOffsetX + 0.5) * this.tilePx();
+    const py = (spawn.tileY + 0.85) * this.tilePx();
     this.localSprite.setPosition(px, py);
     this.localShadow.setPosition(px, py - 1);
     this.localLabel.setPosition(px, py - 25);
@@ -503,16 +555,16 @@ export class WorldScene extends Phaser.Scene {
   private buildGardenDemoEAccents(art: Phaser.Textures.Texture): void {
     // 1. Pastel Cottage + Sakura trees matching existing static blockers
     const scenery = [
-      { frame: artIds.scenery.cottage, x: 8.5 * TILE_SIZE, y: 3 * TILE_SIZE },
-      { frame: artIds.scenery.blossom, x: 3 * TILE_SIZE, y: 4 * TILE_SIZE },
-      { frame: artIds.scenery.blossom, x: 15 * TILE_SIZE, y: 4 * TILE_SIZE },
+      { frame: artIds.scenery.cottage, x: 8.5 * this.tilePx(), y: 3 * this.tilePx() },
+      { frame: artIds.scenery.blossom, x: 3 * this.tilePx(), y: 4 * this.tilePx() },
+      { frame: artIds.scenery.blossom, x: 15 * this.tilePx(), y: 4 * this.tilePx() },
     ];
     for (const { frame, x, y } of scenery) {
       if (!art.has(frame)) continue;
       this.mapLayers.push(placeSoftShadow(this, x, y - 1, 40, 11, Math.round(y) - 10, 0.5));
       this.mapLayers.push(this.add.image(x, y, WORLD_ART_KEY, frame).setOrigin(0.5, 1).setDepth(Math.round(y)));
     }
-    this.mapLayers.push(placeWarmLight(this, 8.5 * TILE_SIZE, 28, 30, 0xffd284, 0.25, 860));
+    this.mapLayers.push(placeWarmLight(this, 8.5 * this.tilePx(), 28, 30, 0xffd284, 0.25, 860));
 
     // Porch planters & Cozy Lands red mailbox
     this.placeProp(extIds.props.planter_box, 108, 48, 0.5, 1, 48);
@@ -611,8 +663,8 @@ export class WorldScene extends Phaser.Scene {
 
     // 5. Drifting cherry blossom petals (within walkable garden bounds)
     const gardenDef = getMapDefinition('garden');
-    const gW = gardenDef.widthTiles * TILE_SIZE;
-    const gH = gardenDef.heightTiles * TILE_SIZE;
+    const gW = gardenDef.widthTiles * this.tilePx();
+    const gH = gardenDef.heightTiles * this.tilePx();
     this.moteBounds = { x: 8, y: 8, w: gW - 16, h: gH - 16 };
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
   }
@@ -623,12 +675,47 @@ export class WorldScene extends Phaser.Scene {
     return donor === 'cabacos';
   }
 
+  private isDonorCabacosShopTiled(): boolean {
+    const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
+    const mode = raw?.properties?.find((p) => p.name === 'olwShopRender')?.value;
+    return mode === 'tiled';
+  }
+
+  private isDonorCabacosShopImage(): boolean {
+    const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
+    return raw?.properties?.find((p) => p.name === 'olwShopRender')?.value === 'image';
+  }
+
   private buildTiledWorldMap(mapId: MapId): void {
     if (!isTiledWorldMapId(mapId)) return;
     const mapKey = TILED_MAP_PHASER_KEYS[mapId];
     if (!this.cache.tilemap.exists(mapKey)) return;
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
+
+    const donorPydew =
+      isDonorPydewValleyMap(tilemap) || isDonorPydewValleyMapFromCache(this, mapKey);
+    if (donorPydew) {
+      const tilesets = getDonorPydewTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorPydewMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[PyDew] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error('[PyDew] Donor map missing tileset textures', tilemap.tilesets.map((t) => t.name));
+      }
+      return;
+    }
+
+    if (isDonorCabacosImageShop(tilemap)) {
+      renderDonorCabacosImageInteriorFromMap(this, tilemap, (obj) => this.mapLayers.push(obj));
+      return;
+    }
 
     const donorCabacos =
       isDonorCabacosMap(tilemap) || isDonorCabacosMapFromCache(this, mapKey);
@@ -646,6 +733,43 @@ export class WorldScene extends Phaser.Scene {
       } else if (import.meta.env.DEV) {
         console.error(
           '[Cabacos] Donor map detected but no tilesets bound; check BootScene donor textures.',
+          tilemap.tilesets.map((t) => t.name),
+        );
+      }
+      return;
+    }
+
+    if (isDonorSproutMap(tilemap)) {
+      const tilesets = getDonorSproutTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorSproutMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[Sprout] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error('[Sprout] Donor map missing tileset textures', tilemap.tilesets.map((t) => t.name));
+      }
+      return;
+    }
+
+    if (isDonorTuxemonMap(tilemap)) {
+      const tilesets = getDonorTuxemonTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorTuxemonMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[Tuxemon] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error(
+          '[Tuxemon] Donor map detected but no tilesets bound; run vendor-donor-tuxemon-forest + BootScene textures.',
           tilemap.tilesets.map((t) => t.name),
         );
       }
@@ -701,8 +825,8 @@ export class WorldScene extends Phaser.Scene {
       const item = getCatalogItem(placement.sku);
       if (!item) continue;
 
-      const centerX = (placement.tileX + placement.widthTiles / 2) * TILE_SIZE;
-      const footY = (placement.tileY + placement.heightTiles) * TILE_SIZE;
+      const centerX = (placement.tileX + placement.widthTiles / 2) * this.tilePx();
+      const footY = (placement.tileY + placement.heightTiles) * this.tilePx();
       const { key, frame } = worldFurnitureFrame(this, placement.sku);
 
       if (placement.layerSlot === 'object') {
@@ -711,7 +835,7 @@ export class WorldScene extends Phaser.Scene {
             this,
             centerX,
             footY - 2,
-            placement.widthTiles * TILE_SIZE * 0.9,
+            placement.widthTiles * this.tilePx() * 0.9,
             Math.max(5, placement.heightTiles * 4),
             Math.round(footY) - 6,
             0.42,
@@ -749,8 +873,8 @@ export class WorldScene extends Phaser.Scene {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (!this.decorateState.active) return;
       const worldPt = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      const tileX = Math.floor(worldPt.x / TILE_SIZE);
-      const tileY = Math.floor(worldPt.y / TILE_SIZE);
+      const tileX = Math.floor(worldPt.x / this.tilePx());
+      const tileY = Math.floor(worldPt.y / this.tilePx());
       if (!this.hoverTile || this.hoverTile.tileX !== tileX || this.hoverTile.tileY !== tileY) {
         this.hoverTile = { tileX, tileY };
         this.redrawDecoratePreview();
@@ -763,8 +887,8 @@ export class WorldScene extends Phaser.Scene {
       if (pointer.getDistance() > 14) return;
 
       const worldPt = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      const tileX = Math.floor(worldPt.x / TILE_SIZE);
-      const tileY = Math.floor(worldPt.y / TILE_SIZE);
+      const tileX = Math.floor(worldPt.x / this.tilePx());
+      const tileY = Math.floor(worldPt.y / this.tilePx());
       const mapDef = getMapDefinition(this.currentMapId);
       if (tileX < 0 || tileY < 0 || tileX >= mapDef.widthTiles || tileY >= mapDef.heightTiles) {
         return;
@@ -776,8 +900,8 @@ export class WorldScene extends Phaser.Scene {
       }
 
       const startTile = {
-        tileX: Math.floor(this.localSprite.x / TILE_SIZE),
-        tileY: Math.floor((this.localSprite.y - 2) / TILE_SIZE),
+        tileX: Math.floor(this.localSprite.x / this.tilePx()),
+        tileY: Math.floor((this.localSprite.y - 2) / this.tilePx()),
       };
       const path = findTilePath(
         startTile,
@@ -843,8 +967,8 @@ export class WorldScene extends Phaser.Scene {
     this.tapMarker.clear();
     this.tapMarker.lineStyle(1, 0xfff8ef, 0.9);
     this.tapMarker.fillStyle(0xe8a848, 0.35);
-    this.tapMarker.fillRect(tileX * TILE_SIZE + 2, tileY * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-    this.tapMarker.strokeRect(tileX * TILE_SIZE + 2, tileY * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+    this.tapMarker.fillRect(tileX * this.tilePx() + 2, tileY * this.tilePx() + 2, this.tilePx() - 4, this.tilePx() - 4);
+    this.tapMarker.strokeRect(tileX * this.tilePx() + 2, tileY * this.tilePx() + 2, this.tilePx() - 4, this.tilePx() - 4);
   }
 
   private redrawDecorateOverlay(): void {
@@ -852,6 +976,7 @@ export class WorldScene extends Phaser.Scene {
     this.decorateGridGraphics.clear();
     if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) {
       this.decoratePreviewGraphics.clear();
+      this.hideDecoratePreviewGhost();
       return;
     }
 
@@ -859,27 +984,36 @@ export class WorldScene extends Phaser.Scene {
     this.decorateGridGraphics.lineStyle(1, 0xfff8ef, 0.25);
     for (let x = 0; x <= def.widthTiles; x += 1) {
       this.decorateGridGraphics.lineBetween(
-        x * TILE_SIZE,
+        x * this.tilePx(),
         0,
-        x * TILE_SIZE,
-        def.heightTiles * TILE_SIZE,
+        x * this.tilePx(),
+        def.heightTiles * this.tilePx(),
       );
     }
     for (let y = 0; y <= def.heightTiles; y += 1) {
       this.decorateGridGraphics.lineBetween(
         0,
-        y * TILE_SIZE,
-        def.widthTiles * TILE_SIZE,
-        y * TILE_SIZE,
+        y * this.tilePx(),
+        def.widthTiles * this.tilePx(),
+        y * this.tilePx(),
       );
     }
     this.redrawDecoratePreview();
   }
 
+  private hideDecoratePreviewGhost(): void {
+    if (this.decoratePreviewGhost) {
+      this.decoratePreviewGhost.setVisible(false);
+    }
+  }
+
   private redrawDecoratePreview(): void {
     if (!this.decoratePreviewGraphics) return;
     this.decoratePreviewGraphics.clear();
-    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) return;
+    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     if (this.decorateState.selectedPlacementId) {
       const selected = this.placements.find(
@@ -888,15 +1022,18 @@ export class WorldScene extends Phaser.Scene {
       if (selected) {
         this.decoratePreviewGraphics.lineStyle(2, 0xf4c158, 1);
         this.decoratePreviewGraphics.strokeRect(
-          selected.tileX * TILE_SIZE,
-          selected.tileY * TILE_SIZE,
-          selected.widthTiles * TILE_SIZE,
-          selected.heightTiles * TILE_SIZE,
+          selected.tileX * this.tilePx(),
+          selected.tileY * this.tilePx(),
+          selected.widthTiles * this.tilePx(),
+          selected.heightTiles * this.tilePx(),
         );
       }
     }
 
-    if (!this.hoverTile) return;
+    if (!this.hoverTile) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
     let previewSku = this.decorateState.activeSku;
     let ignoreId: string | undefined;
 
@@ -907,10 +1044,16 @@ export class WorldScene extends Phaser.Scene {
         ignoreId = selected.id;
       }
     }
-    if (!previewSku) return;
+    if (!previewSku) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     const item = getCatalogItem(previewSku);
-    if (!item) return;
+    if (!item) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     const selectedPlacement = ignoreId
       ? this.placements.find((p) => p.id === ignoreId)
@@ -938,17 +1081,46 @@ export class WorldScene extends Phaser.Scene {
     this.decoratePreviewGraphics.fillStyle(color, 0.35);
     this.decoratePreviewGraphics.lineStyle(1.5, color, 0.95);
     this.decoratePreviewGraphics.fillRect(
-      this.hoverTile.tileX * TILE_SIZE,
-      this.hoverTile.tileY * TILE_SIZE,
-      footprint.widthTiles * TILE_SIZE,
-      footprint.heightTiles * TILE_SIZE,
+      this.hoverTile.tileX * this.tilePx(),
+      this.hoverTile.tileY * this.tilePx(),
+      footprint.widthTiles * this.tilePx(),
+      footprint.heightTiles * this.tilePx(),
     );
     this.decoratePreviewGraphics.strokeRect(
-      this.hoverTile.tileX * TILE_SIZE,
-      this.hoverTile.tileY * TILE_SIZE,
-      footprint.widthTiles * TILE_SIZE,
-      footprint.heightTiles * TILE_SIZE,
+      this.hoverTile.tileX * this.tilePx(),
+      this.hoverTile.tileY * this.tilePx(),
+      footprint.widthTiles * this.tilePx(),
+      footprint.heightTiles * this.tilePx(),
     );
+
+    const { key, frame } = worldFurnitureFrame(this, previewSku);
+    if (!this.textures.exists(key)) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
+
+    const anchor = decorateGhostAnchorFromFootprint({
+      tileX: this.hoverTile.tileX,
+      tileY: this.hoverTile.tileY,
+      widthTiles: footprint.widthTiles,
+      heightTiles: footprint.heightTiles,
+      tilePx: this.tilePx(),
+      layerSlot: item.layerSlot,
+    });
+
+    if (!this.decoratePreviewGhost) {
+      this.decoratePreviewGhost = this.add
+        .image(anchor.centerX, anchor.footY, key, frame)
+        .setOrigin(0.5, 1)
+        .setDepth(9045);
+    } else {
+      this.decoratePreviewGhost.setTexture(key, frame);
+      this.decoratePreviewGhost.setPosition(anchor.centerX, anchor.footY);
+      this.decoratePreviewGhost.setVisible(true);
+    }
+    this.decoratePreviewGhost.setDepth(9045);
+    this.decoratePreviewGhost.setAlpha(check.ok ? 0.62 : 0.48);
+    this.decoratePreviewGhost.setTint(check.ok ? 0xffffff : 0xffb0b0);
   }
 
   private bindEventBus(): void {
@@ -1066,12 +1238,26 @@ export class WorldScene extends Phaser.Scene {
         this.heldItem = held;
       }),
 
-      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId }) => {
+      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId, highlightAction }) => {
         this.farmPlotsCache = plots;
         if (this.currentMapId === 'farm') {
-          this.farmPlotVisual?.sync(plots, highlightPlotId);
-          if (highlightPlotId != null) {
+          this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
+          if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'hoe');
+            }
+          }
+          if (highlightPlotId != null && highlightAction === 'water') {
+            playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'water');
+            }
+          }
+          if (highlightPlotId != null && highlightAction === 'harvest') {
+            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'harvest');
+            }
           }
         }
       }),
@@ -1119,8 +1305,8 @@ export class WorldScene extends Phaser.Scene {
         if (!desk) return;
         this.pathQueue = [];
         this.tapMarker?.clear();
-        const seatX = (desk.tileX + (seat === 'left' ? 0.5 : 1.5)) * TILE_SIZE;
-        const seatY = (desk.tileY + desk.heightTiles + 0.65) * TILE_SIZE;
+        const seatX = (desk.tileX + (seat === 'left' ? 0.5 : 1.5)) * this.tilePx();
+        const seatY = (desk.tileY + desk.heightTiles + 0.65) * this.tilePx();
         this.localSprite.setPosition(seatX, seatY);
         this.localFacing = 'up';
         this.localPosture = 'sit_study';
@@ -1307,8 +1493,8 @@ export class WorldScene extends Phaser.Scene {
     const def = getMapDefinition(this.currentMapId);
     const width = this.scale.width || 400;
     const height = this.scale.height || 600;
-    const worldW = def.widthTiles * TILE_SIZE;
-    const worldH = def.heightTiles * TILE_SIZE;
+    const worldW = def.widthTiles * this.tilePx();
+    const worldH = def.heightTiles * this.tilePx();
 
     cam.setRoundPixels(true);
     if (this.decorateState.active) {
@@ -1353,8 +1539,8 @@ export class WorldScene extends Phaser.Scene {
     canvas.dataset.camWidth = String(cam.width);
     canvas.dataset.camHeight = String(cam.height);
     if (this.localSprite) {
-      canvas.dataset.playerTileX = String(Math.floor(this.localSprite.x / TILE_SIZE));
-      canvas.dataset.playerTileY = String(Math.floor((this.localSprite.y - 2) / TILE_SIZE));
+      canvas.dataset.playerTileX = String(Math.floor(this.localSprite.x / this.tilePx()));
+      canvas.dataset.playerTileY = String(Math.floor((this.localSprite.y - 2) / this.tilePx()));
     }
   }
 
@@ -1434,7 +1620,7 @@ export class WorldScene extends Phaser.Scene {
   private updateLocalMovement(dtSec: number): boolean {
     if (this.decorateState.active) {
       this.localSprite.stop();
-      this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
+      this.localSprite.setFrame(avatarIdleFrame(this.localTextureKey, this.localFacing));
       return false;
     }
 
@@ -1477,8 +1663,8 @@ export class WorldScene extends Phaser.Scene {
 
     if (this.pathQueue.length > 0) {
       const target = this.pathQueue[0]!;
-      const tx = (target.tileX + 0.5) * TILE_SIZE;
-      const ty = (target.tileY + 0.85) * TILE_SIZE;
+      const tx = (target.tileX + 0.5) * this.tilePx();
+      const ty = (target.tileY + 0.85) * this.tilePx();
       const dx = tx - this.localSprite.x;
       const dy = ty - this.localSprite.y;
       const dist = Math.hypot(dx, dy);
@@ -1534,8 +1720,8 @@ export class WorldScene extends Phaser.Scene {
       { x: px + halfW, y: py - 1 },
     ];
     for (const c of corners) {
-      const tx = Math.floor(c.x / TILE_SIZE);
-      const ty = Math.floor(c.y / TILE_SIZE);
+      const tx = Math.floor(c.x / this.tilePx());
+      const ty = Math.floor(c.y / this.tilePx());
       if (tx < 0 || ty < 0 || tx >= def.widthTiles || ty >= def.heightTiles) {
         return false;
       }
@@ -1728,8 +1914,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private findNearbyInteractable(): NearbyInteractable | null {
-    const tileX = (this.localSprite.x - 8) / TILE_SIZE;
-    const tileY = (this.localSprite.y - 8) / TILE_SIZE;
+    const tileX = (this.localSprite.x - 8) / this.tilePx();
+    const tileY = (this.localSprite.y - 8) / this.tilePx();
     const def = getMapDefinition(this.currentMapId);
 
     const tileXi = Math.floor(tileX);
@@ -1806,15 +1992,19 @@ export class WorldScene extends Phaser.Scene {
   private checkPortalsAndNearbyInteractable(): void {
     const now = Date.now();
     const def = getMapDefinition(this.currentMapId);
-    const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
-    const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
+    const tileX = Math.floor(this.localSprite.x / this.tilePx());
+    const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
 
     if (this.buildingMap || now - this.lastPortalAtMs < 2200) return;
 
     for (const portal of def.portals) {
       if (portal.targetMapId === this.currentMapId) continue;
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-      if (dist <= 0.85) {
+      const dy = Math.abs(tileY - portal.tileY);
+      const onWestGateLane = portal.tileX === 0 && tileX <= 4 && dy <= 1;
+      const onEastGateLane =
+        portal.tileX === def.widthTiles - 1 && tileX >= def.widthTiles - 5 && dy <= 1;
+      if (dist <= 0.85 || onWestGateLane || onEastGateLane) {
         this.lastPortalAtMs = now;
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
@@ -1840,8 +2030,8 @@ export class WorldScene extends Phaser.Scene {
 
     if (near.kind === 'portal') {
       const def = getMapDefinition(this.currentMapId);
-      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
-      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
+      const tileX = Math.floor((this.localSprite.x - 8) / this.tilePx());
+      const tileY = Math.floor((this.localSprite.y - 8) / this.tilePx());
       const portal =
         def.portals.find((p) => p.labelVi === near.labelVi) ??
         def.portals.find((p) => {
@@ -1867,8 +2057,8 @@ export class WorldScene extends Phaser.Scene {
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
     } else if (near.kind === 'npc_talk') {
-      const tileX = Math.floor((this.localSprite.x - 8) / TILE_SIZE);
-      const tileY = Math.floor((this.localSprite.y - 8) / TILE_SIZE);
+      const tileX = Math.floor((this.localSprite.x - 8) / this.tilePx());
+      const tileY = Math.floor((this.localSprite.y - 8) / this.tilePx());
       const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
       if (npc) {
         gameEventBus.emit('evt:preview-notice', {
@@ -1920,11 +2110,11 @@ export class WorldScene extends Phaser.Scene {
     );
     if (!item) return;
 
-    const centerX = (item.tileX + item.widthTiles / 2) * TILE_SIZE;
-    const footY = (item.tileY + item.heightTiles) * TILE_SIZE;
+    const centerX = (item.tileX + item.widthTiles / 2) * this.tilePx();
+    const footY = (item.tileY + item.heightTiles) * this.tilePx();
     const slot0 =
       kind === 'bed_lie'
-        ? { x: centerX - 6, y: (item.tileY + 1.35) * TILE_SIZE }
+        ? { x: centerX - 6, y: (item.tileY + 1.35) * this.tilePx() }
         : kind === 'bench_sit'
           ? { x: centerX - 6, y: footY + 2 }
           : { x: centerX - 8, y: footY - 2 };
@@ -2016,8 +2206,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private emitCurrentTile(force: boolean): void {
-    const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
-    const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
+    const tileX = Math.floor(this.localSprite.x / this.tilePx());
+    const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
     const key = `${this.currentMapId}:${tileX},${tileY}:${this.localFacing}`;
     if (force || key !== this.lastTileEmitKey) {
       this.lastTileEmitKey = key;
@@ -2066,8 +2256,8 @@ export class WorldScene extends Phaser.Scene {
       const latest = this.remoteFilter.getLatestPacket(p.sessionId);
       const position = latest?.userId === p.userId &&
           (latest.mapId === p.mapId || latest.timestampMs > p.updatedAtMs) ? latest : {
-        x: (p.tileX + 0.5) * TILE_SIZE,
-        y: (p.tileY + 0.85) * TILE_SIZE,
+        x: (p.tileX + 0.5) * this.tilePx(),
+        y: (p.tileY + 0.85) * this.tilePx(),
         mapId: p.mapId,
         facing: p.facing,
         anim: 'idle' as const,
@@ -2078,7 +2268,8 @@ export class WorldScene extends Phaser.Scene {
         const { x: px, y: py } = position;
         const shadow = this.add.ellipse(px, py - 1, 11, 4.5, 0x22151c, 0.32);
         const sprite = this.add
-          .sprite(px, py, texKey, getIdleFrameIndex(position.facing))
+          .sprite(px, py, texKey, avatarIdleFrame(texKey, position.facing))
+          .setScale(isDonorPunyAvatarTexture(texKey) ? 0.5 : 1)
           .setOrigin(0.5, 1);
         const tag = this.buildNameTag(px, py - 25, nickname, '#f2a2ba');
 
@@ -2130,7 +2321,7 @@ export class WorldScene extends Phaser.Scene {
       entity.nickname = member.nickname;
       entity.textureKey = ensurePhaserAvatarTexture(this, member.avatarConfig);
       entity.sprite.stop();
-      entity.sprite.setTexture(entity.textureKey, getIdleFrameIndex(entity.facing));
+      entity.sprite.setTexture(entity.textureKey, avatarIdleFrame(entity.textureKey, entity.facing));
       this.updateTagText(entity.label, entity.labelText, member.nickname, '#f2a2ba');
     }
     if (this.latestPresences.length > 0) {
@@ -2237,6 +2428,15 @@ export class WorldScene extends Phaser.Scene {
 
   private syncHeldItemPresentation(timeMs: number): void {
     if (!this.heldRenderer || !this.localSprite) return;
+    if (
+      isDonorPunyAvatarTexture(this.localTextureKey) &&
+      this.heldItem.itemKind === 'tool' &&
+      this.heldItem.temporaryActionState !== 'none' &&
+      this.heldItem.temporaryActionState !== this.lastHeldToolAction
+    ) {
+      playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing);
+    }
+    this.lastHeldToolAction = this.heldItem.temporaryActionState;
     this.heldRenderer.sync(
       this.localSprite.x,
       this.localSprite.y,

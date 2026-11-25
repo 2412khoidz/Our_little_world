@@ -26,6 +26,16 @@ describe('selectPetShopCareFace (pet-shop donor)', () => {
     expect(face.mouth).toBe('grumpy');
   });
 
+  it('shows star eyes on play flash', () => {
+    const face = selectPetShopCareFace({
+      mood: 'happy',
+      vitals: baseVitals,
+      careMode: 'play',
+    });
+    expect(face.eyes).toBe('stars');
+    expect(face.tailWagBoost).toBe(true);
+  });
+
   it('uses tongue mouth during early feed flash', () => {
     const face = selectPetShopCareFace({
       mood: 'happy',

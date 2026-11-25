@@ -24,23 +24,69 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | Track | Branch / PR | Notes |
 |-------|-------------|-------|
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
-| **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
+| **C3 world** | Kaetram forest patterns | Follow-up if needed beyond Tuxemon forest (§ below) |
 
-## P0 avatar rig — 8-dir walk / sit / lie (2026-11-25)
+## P0 avatar — Puny CC0 + private profile sync (recovery @ `8e4454d`)
 
 | Field | Value |
 |-------|--------|
-| **Donor audit (human sheet)** | Cabacos @ `79e423d`: `characters/player/walk/base_walk_strip8.png` — 96×64 flip-X, **not** 8-dir. Farm Rai Larn Na @ `2bbb65c`: `farmer.webp` 144×144 @ 48px — farm overworld only, no sit/lie/tool-on-body. |
-| **OLW decision** | Baked **CC0 unified** `avatars.png` rows 0–7 (idle / walk / sit / 4× diagonal walk / lie); removed runtime `avatarDiagonalWalk.ts` alpha composite. |
-| **Tool carry** | No donor body tool-use sheet @ 16×32; `HeldItemRenderer` keeps props/world-props icons + walk bob; harvest tools from Cabacos stay hotbar icons only. |
-| **Preview nav** | `extendedWorldDevFlag.ts` — preview build ignores stale `localStorage` opt-out (DEV lab banner still opts out). |
+| **Gameplay pack (one)** | [PyDew Valley](https://github.com/artemn0va/pydew-valley) farmer **CC0** · `public/assets/donor/pydew-characters/` |
+| **Private profile** | `build-private-atlas.py` copies farmer atlases → `private-unified/donor-pydew-characters/` (64×64 × 16 cols) |
+| **Wardrobe atlas** | `avatars.png` **384×288** (Demo E idle/run/sit) — public unified + private unified **aligned**; not used for in-world 8-dir walk when Puny loads |
+| **Posture policy** | Sit=hurt lie=death; hoe=stave water/affection=bow harvest/fish=throw; **slash excluded**; diagonal = native 8-dir walk |
+| **Rejected** | Baked 768 procedural atlas (#53); `avatarDiagonalWalk` alpha composite; Cabacos / Farm Rai farmer for **8-dir gameplay** |
+| **Reference vend** | Cabacos `characters/player/*` → `public/assets/donor/cabacos-characters/` (`npm run vendor-donor:cabacos-characters`) — Sunnyside lineage contact sheet only |
+
+### QA (private art)
+
+```bash
+node scripts/vendor-donor-puny-avatar.mjs   # refresh CC0 sheets
+npm run assets:atlas:private                # when asset-candidates present — vend Puny into private-unified
+node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
+```
+
+### Proof (Gate B)
+
+- E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts`
+- Unit: `donorPunyAvatarSheet.test.ts`, `privateArtAvatarPipeline.test.ts`
+
+## Worker G — cozy character recovery @ `integration/donor-reuse-recovery`
+
+| Field | Value |
+|-------|--------|
+| **Upstream** | [artemn0va/pydew-valley](https://github.com/artemn0va/pydew-valley) @ `5b33bfda76d54866c648e7e54eff4e4e8a1eec8a` **CC0** |
+| **Chosen rig** | **PyDew farmer** — cozy farm aesthetic; Facing8 via cardinal clips (no diagonal composite) |
+| **Rejected** | Puny (owner aesthetic), Purple Cat (paid/no redistribute), Cabacos strips (MIT reference only) |
+| **2P sheets** | `farmer-may-atlas.png`, `farmer-nang-atlas.png`, `farmer-rose-atlas.png` |
+| **Vend** | `npm run vendor-donor:pydew-characters` → `public/assets/donor/pydew-characters/` |
+| **Custom OLW** | `pydewFarmerCharacterSheet.ts` · `donorPydewFarmerAvatarTexture.ts` · wardrobe preview |
+| **Evidence** | `python3 scripts/build-worker-g-avatar-evidence.py` → store `media/worker-g-avatar-*.gif` |
+
+## Asset transplant Worker A — characters @ `8fce8af` (2026-11-25)
+
+| Field | Value |
+|-------|--------|
+| **Gameplay 8-dir** | Shade [Puny Characters](https://opengameart.org/content/puny-characters) **CC0** · `src/shared/donor/punyCharacter8dSheet.ts` |
+| **Cabacos reference** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · `public/assets/donor/cabacos-characters/` |
+| **Registry** | `src/shared/assets/olwAssetRegistry.ts` · `public/assets/donor/manifest.v1.json` |
+| **Mây / Nắng** | `character-base` / `mage-cyan` Puny sheets (`donorPunyTextureForConfig`) — soldiers reference-only |
+| **Purple Cat** | Not vendored — Cabacos audit = flipX 4-way; Puny chosen for true diagonals |
+| **Banned** | Procedural diagonal composite rows in `buildAvatarSpritesheetCanvas` / `phaserAvatarTexture` fallback |
+
+### Commands
+
+```bash
+node scripts/vendor-wave1-farm-donors.mjs
+npm run vendor-donor:cabacos-characters
+node scripts/vendor-donor-puny-avatar.mjs
+python3 scripts/build-asset-transplant-a-contact-sheets.py
+```
 
 ### Proof
 
-- `scripts/vendor-wave1-farm-donors.mjs` (fresh clone in `vendor/*-upstream/`)
-- `node scripts/build-unified-atlas.mjs` → `public/assets/unified/avatars.png` 384×768
-- E2E: `phase-ii-diagonal-walk.spec.ts`, `phase-ii-furniture-posture.spec.ts` (Chromium desktop)
-- Captures: `test-results/vqg-phase-ii-diagonal-walk.png`, `vqg-phase-ii-furniture-sit.png`, `vqg-phase-ii-furniture-bed.png`
+- Store: `media/asset-transplant-a-donor-cabacos-characters.png`, `media/asset-transplant-a-olw-puny-8dir.png`, `media/asset-transplant-a-diagonal-walk.gif`
+- Unit: `donorCabacosCharacterSheet.test.ts`, `avatarGameplayPolicy.test.ts`, `mayNangAvatarIdentity.test.ts`
+- E2E: `phase-ii-diagonal-walk.spec.ts` (unchanged — Puny native diagonals)
 
 ## Wave 1 C1 — farm presentation + donor clone area (2026-11-25)
 
@@ -89,6 +135,46 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 
 **Proof:** `cabacosCropVisual.test.ts`, `tidefallFishCatalog.test.ts`
 
+## OLWH Asset Worker D — fishing-frenzy presentation @ `f3939a3`
+
+| Field | Value |
+|-------|--------|
+| **Upstream URL** | [kofkdk/fishing-frenzy](https://github.com/kofkdk/fishing-frenzy) |
+| **Upstream SHA** | `f3939a3f9855104abd55fdf9f465acd52da65c79` |
+| **License** | Public demo repo (verify before redistribution; sprites vendored for OLW dev presentation) |
+| **Vendor** | `npm run vendor-donor:fishing-frenzy` → `public/assets/donor/fishing-frenzy/sprites/` |
+
+### Kept vs adapted
+
+| Kept (authority) | Tidefall FSM `tidefallFishingFsm.ts`, Dev LAN `POST /donor/fishing/*`, Meadowbrook resolve |
+| Adapted (presentation) | `FishRenderer` card pattern → `ChillFishingModal` catch reveal + catalog thumbs; fisher cast/reel/idle on canvas; bobber accent |
+
+| Upstream | OLW path |
+|----------|----------|
+| `src/assets/sprites/*.png` | `public/assets/donor/fishing-frenzy/sprites/` |
+| `FishRenderer.js` rarity borders | `fishingFrenzyRarityUi.ts`, `CatchRevealCard` |
+| `sprites.js` phase fisher | `fishingFrenzyArt.ts`, `drawFishingFrenzyScene.ts` |
+| `fishing-minigame.js` (reference only) | Logic **not** ported — Tidefall bar FSM remains |
+
+### Proof
+
+- `tests/unit/fishingFrenzySpriteMap.test.ts`
+- `npm run vendor-donor:fishing-frenzy` + `node scripts/capture-fishing-frenzy-contact-sheet.mjs`
+- In-game: `data-testid` `fishing-frenzy-catch-reveal`, `tidefall-fishing-canvas` (fisher overlay)
+
+## Full sprint Worker C — farming art transplant (2026-11-25)
+
+| Donor | OLW path | Consumer |
+|-------|----------|----------|
+| Cabacos `tools/*.png`, `farming/indicators/*` | `public/assets/donor/cabacos-plantation/` | `BootScene`, `HeldItemRenderer`, `FarmPlotVisualController` |
+| Cabacos `plantation/crops/*` | `public/assets/donor/cabacos-plantation/crops/` | `farmCropVisualResolver` |
+| PyDew `graphics/soil_water/*`, `fruit/tomato/*` | `public/assets/donor/pydew-farming/` | `FarmPlotVisualController`, `pydewCropVisualRegistry.ts` |
+| Cabacos `tools/rod.png` | `public/assets/donor/cabacos-plantation/tools/rod.png` | `rod_basic` held item (Hollowmere fishing hook) |
+
+**Excluded:** Inventory SVG/icons as map crop sprites; duplicate farming authority.
+
+**Proof:** `farmCropVisualResolver.test.ts`, `farmHeldToolPresentation.test.ts`, `npm run assets:farming-transplant-sheet`
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`
@@ -111,22 +197,32 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | `public/assets/tilemap/Cabacos_map.tmj` | `public/maps/donor/cabacos/Cabacos_map.tmj` (canonical) |
 | (import script) | `public/assets/maps/village.json` |
 | `ts_map.png`, `ts_forest.png` | `public/maps/donor/cabacos/` |
-| `Casa_player.tmj` + `house_interior_sem_fundo.png` | `public/maps/donor/cabacos/` |
-| (import script) | `public/assets/maps/shop.json` (collision + portal; image via `renderDonorCabacosShopInterior`) |
+| `Seed_shop.tmj`, `tool_shop.tmj`, `Crop_market.tmj`, `Town_hall.tmj` + interior PNGs | `public/maps/donor/cabacos/` |
+| (import `OLW_MAP_RECOVERY=1`) | `shop_seed.json`, `shop_tool.json`, `shop_crop_market.json`, `shop_town_hall.json`, `shop.json` (alias seed) |
+| `scripts/vendor-donor-cabacos-maps.mjs` | Copies tilemaps/graphics from `vendor/farming-simulator-cabacos-upstream/` |
 | `LICENSE` | `public/maps/donor/cabacos/UPSTREAM-LICENSE.txt` |
+
+**Not used as shop:** `Casa_player.tmj` / `house_interior_sem_fundo.png` (player house portal → `home`).
 
 ### Kept vs adapted
 
-- **Kept:** Tile layers, `Collision`, door `Interactions` geometry; Sunnyside-style tileset PNGs vendored for dev attribution (not remapped to Demo E atlas in this slice — follow-up remap in `scripts/import-donor-cabacos.mjs`).
-- **Adapted:** OLW `Portals` / `Interactables` object groups; garden/farm warp targets; Phaser 4 loader keys `donor-cabacos-*`; interior drawn as image layer + baked object collision grid.
+- **Kept:** Cabacos overworld tile layers + native `ts_map`/`ts_forest`; donor shop **image interiors** with object-layer collision; counters from donor `Interactions`.
+- **Adapted:** OLW `Portals` at village shop doors; C1 economy anchors on interior `Interactables`; Phaser `olwShopRender=image` + `renderDonorCabacosImageInteriorFromMap`.
 
 ### Reproduce
 
 ```bash
-node scripts/import-donor-cabacos.mjs
+node scripts/vendor-wave1-farm-donors.mjs
+OLW_MAP_RECOVERY=1 npm run import-donor:cabacos
 VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
-# Garden → portal làng → explore; door house → interior shop map
+# Garden → làng Cabacos; cửa hạt/dụng cụ/chợ/tòa thị chính → nội thất donor; nhà player → home
 ```
+
+### Proof (map transplant village @ 2026-11-25)
+
+- Store: `internal/map-transplant-village.md`
+- Screenshots: `media/map-transplant-village-olw.png`, `map-transplant-village-shop-seed-olw.png`, donor refs `map-transplant-village-donor-*.png`
+- Tests: `donorCabacosShopInteriors.test.ts`, `npm run test`
 
 ### Donors evaluated (not transplanted)
 
@@ -135,8 +231,39 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 | [clear-code-projects/PyDew](https://github.com/clear-code-projects/PyDew) | `HEAD` | CC0 pygame Tiled 48px — wrong engine/scale for OLW Phaser 16px |
 | [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) | `HEAD` | **Transplanted:** `gull_bay` → `beach.json` (§ Hollowmere below) |
 | [Intelisgod/harvest-duo](https://github.com/Intelisgod/harvest-duo) | `HEAD` | **Surveyed:** `public/maps/donor/harvest-duo/` area graph + beach pier ref → Hollowmere coast polish |
-| [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | — | GPL — pattern only, no asset vendoring |
-| Kaetram | — | Not cloned this slice — reserved for forest candidate |
+| [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | `4e63c45b` | **Transplanted:** forest — § Tuxemon forest below |
+| Kaetram | — | Collision-layer pattern reference only |
+
+---
+
+## Tuxemon forest (`tt_forest_route1` @ `4e63c45b`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) @ `4e63c45b436d372daae9f802bb5efa44232fe151` |
+| **Donor maps** | `mods/tuxemon/maps/tt_forest_route1.tmx` (selected), alt `dryadsgrove.tmx` |
+| **Tilesets** | `core_outdoor`, `core_outdoor_water`, `core_outdoor_nature`, `prototyping_outdoor` under `public/maps/donor/tuxemon/gfx/tilesets/` |
+| **License** | GPL-3.0-or-later — `public/maps/donor/tuxemon/UPSTREAM-LICENSE.txt` |
+| **OLW output** | `public/assets/maps/forest.json` — layers `Ground`, `Vegetation`, `Water`, `Above Player`, `Collision` (object bake), `Portals` |
+
+### Reproduce
+
+```bash
+node scripts/vendor-donor-tuxemon-forest.mjs
+node scripts/capture-donor-tuxemon-forest-compare.mjs
+node scripts/import-donor-tuxemon-forest.mjs
+```
+
+### Proof
+
+- Compare stills: store `media/map-transplant-forest-tuxemon-*.png`
+- In-game: store `media/map-transplant-forest-olw-ingame.png`
+- Unit: `tests/unit/mapRecoveryImport.test.ts` (Tuxemon layer stack)
+
+### Excluded
+
+- Tuxemon battle/events/NPC object layers (not OLW gameplay)
+- GPL engine/runtime code (maps + tileset PNGs only)
 
 ---
 
@@ -169,6 +296,53 @@ npm run import-donor:world-zones
 VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 # Village east exit → Gull Bay; west shore → về làng Cabacos
 ```
+
+---
+
+## OLWH-40 — Sprout Lands home + garden (`cbb0c9f`)
+
+| Field | Value |
+|-------|--------|
+| **Sprout repo** | [Maaack/Sprout-Lands-Tilemap](https://github.com/Maaack/Sprout-Lands-Tilemap) @ `47ddc077797d504b77ca96d602428e2ba3ba21f5` |
+| **Farmland ref** | [Adrigarsu/farmland](https://github.com/Adrigarsu/farmland) @ `c1e08bc410466c143bf17d52caf052514d89cff3` (`large_house.tscn` interior walls) |
+| **Maps** | `harvest_hill_example.tscn` → `garden.json`; Farmland house layout → `home.json` |
+| **Vendor** | `public/maps/donor/sprout-lands/` |
+| **Import** | `npm run import-donor:sprout-home-garden` |
+| **Private profile** | `olwPrivateArtPrefer=demo-e` — `VITE_OLW_PRIVATE_ART=1` keeps Demo E atlas when `private-unified` is on disk |
+
+### Reproduce
+
+```bash
+OLW_MAP_RECOVERY=1 npm run import-donor:sprout-home-garden
+npm run test -- tests/unit/donorSproutHomeGarden.test.ts
+node scripts/capture-donor-sprout-garden-donor.mjs
+OUT=/cursor/stores/.../media/map-transplant-home-olw.png node scripts/capture-donor-home-garden-olw.mjs
+```
+
+Evidence: store `internal/map-transplant-home.md`, `media/map-transplant-home-*`, `media/map-transplant-garden-*`.
+
+---
+
+## OLWH-40 — Cabacos east-coast beach (map transplant @ `769347f`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [goncalojbsousa/Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) |
+| **Commit** | `79e423defc12bd99327cfcc28bf7ec0085996244` |
+| **Map** | `public/assets/tilemap/Cabacos_map.tmj` → vendored `public/maps/donor/cabacos/Cabacos_map.tmj` |
+| **Crop** | `38,10,48,34` — east coast (sand, sea, pier, cliffs) |
+| **Script** | `scripts/import-donor-cabacos-beach.mjs` → `public/assets/maps/beach.json` |
+| **Replaces** | Hollowmere cozy rebuild in `import-donor:world-zones` (recovery path) |
+
+### Reproduce
+
+```bash
+OLW_MAP_RECOVERY=1 npm run import-donor:cabacos-beach
+node scripts/capture-donor-cabacos-beach-donor.mjs
+OUT=media/map-transplant-beach-olw.png node scripts/capture-donor-beach-olw.mjs
+```
+
+Evidence: project store `internal/map-transplant-beach.md`, `media/map-transplant-beach-*.png`.
 
 ---
 
@@ -206,6 +380,29 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 **Kept / adapted:** Presentation-only; vitals/mood authority unchanged.  
 **Excluded:** Desktop tray locomotion, multi-pet AI, Tauri shell.
 
+### Recovery @ `8e4454d` (PetCareScene default)
+
+| Upstream path | OLW path |
+|---------------|----------|
+| `selectFace` + blink loops | `PetCarePortraitRig` → `evt:pet-care-j4lpan-portrait` → `PetCareJ4lpanPortrait` |
+| — | `petCareJ4lpanPortraitFlag.ts` — default on; `?pet-care-procedural=1` for legacy painter |
+
+**Proof:** `petCareJ4lpanBridge.test.ts` · `petShopCareFace.test.ts` · `data-testid="pet-care-j4lpan-portrait"`
+
+## Map transplant — PyDew Valley main farm (`integration/donor-reuse-recovery`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [artemn0va/pydew-valley](https://github.com/artemn0va/pydew-valley) @ `5b33bfda76d54866c648e7e54eff4e4e8a1eec8a` |
+| **Source** | `data/map.tmx`, `data/Tilesets/*.tsx`, `graphics/**` |
+| **OLW paths** | `public/maps/donor/pydew-valley/`, `public/assets/maps/farm.json` |
+| **Scale** | Native **64×64** tiles; `getMapTilePixelSize('farm')` |
+| **Plots** | **184** stable IDs via `Farmable` layer (`farmPlotContract` v1.0.2) — no `OLW_ContractSoil` |
+| **Import** | `npm run import-donor:pydew-farm` |
+| **Proof** | `tests/unit/donorFarmBeachSketch.test.ts`, `farmPlotContract.test.ts`, `scripts/capture-donor-pydew-farm.mjs` |
+
+**Optional (deferred):** [hollowmere](https://github.com/robintrepte/hollowmere.tretu.de) greenhouse — Godot JSON scale mismatch vs Phaser 64px farm; no splice in this PR.
+
 ## Wave 2 — NUVORA inventory depth (stack `6d0e7fd`+)
 
 | Field | Value |
@@ -215,3 +412,27 @@ npm run test -- tests/unit/petShopCareFace.test.ts tests/unit/petShopCareAnimLoo
 | **OLW targets** | `nuvoraSlotInteraction.ts`, `NuvoraInteractiveTray.tsx`, `NuvoraCraftDesk.tsx`, `FarmEconomyPanel` shipping desk |
 | **Proof** | `tests/unit/nuvoraSlotInteraction.test.ts`, `nuvoraPresentationBridge.test.ts` |
 | **Excluded** | `public/hand.js` (Three.js first-person) |
+
+## Worker K — full shop catalog + Cabacos grid UX (`integration/donor-reuse-recovery` @ `b65e432+`)
+
+| Field | Value |
+|-------|--------|
+| **Catalog authority** | `src/shared/shop/farmShopCatalog.ts` (shop JSON) · `src/shared/economy/catalogConfig.ts` (prices) |
+| **Cabacos SHA** | `79e423defc12bd99327cfcc28bf7ec0085996244` — `SeedShopPanel` grid + `ShopRow` rows |
+| **PyDew** | No shop UX (pygame) — crop visuals only § Map transplant |
+| **webfarmville** | `quoteCatalogPurchase` / meadowbrook queue unchanged (C1) |
+| **Hollowmere** | Shipping bin targets `cabacos_player_crop_market_door` — interior art kept |
+| **Fishing Frenzy** | Tool shop sells `bait_shrimp` (Tidefall catalog hook) |
+| **SQL** | `20261125180000_worker_k_farm_store_buy.sql` — `_farm_store_buy_price`, no DB reset |
+| **Proof** | `tests/unit/farmShopCatalog.test.ts` · `tests/e2e/worker-k-economy-two-client.spec.ts` · `NuvoraShopGrid.tsx` |
+
+## Worker F — Cabacos inventory UI + shop/HUD (`integration/donor-reuse-recovery`)
+
+| Field | Value |
+|-------|--------|
+| **Cabacos** | `src/game/ui/{ShopRow,GameHud,SeedShopPanel}.ts` @ `79e423d` — layout reference only |
+| **Assets** | `npm run import-donor:cabacos-ui-inventory` → `public/assets/donor/cabacos-ui/` (`uiInventoryRegistry.ts`) |
+| **Kept NUVORA** | `NuvoraInteractiveTray`, `GameHotbar` `--nuvora`, wooden desk modals |
+| **Catalog images** | `CatalogSkuIcon` → `CatalogPropsIcon` / props-manifest (not text labels) on shop rows + ship grid |
+| **Wallet HUD** | `WorldClockHud` coin pill when `backend.farm` active |
+| **Proof** | `tests/unit/catalogSkuIcon.test.ts`, `farmEconomyShopCatalog.test.ts` |

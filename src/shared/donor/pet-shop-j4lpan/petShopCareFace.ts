@@ -3,7 +3,7 @@ import type { PetActionType, PetMood, PetVitals } from '../../pet/petTypes';
 /** Eye / mouth tokens from j4lpan/pet-shop `selectFace()` (MIT). */
 export type PetShopEyeStyle = 'normal' | 'wide' | 'hearts' | 'stars' | 'happy' | 'angry';
 export type PetShopMouthStyle = 'normal' | 'smile' | 'grumpy' | 'tongue' | 'shy' | 'pursed';
-export type PetShopCarePanelMode = 'idle' | 'pet' | 'feed' | 'water';
+export type PetShopCarePanelMode = 'idle' | 'pet' | 'feed' | 'water' | 'play';
 
 export const PET_SHOP_CARE_FLASH_MS = 2_400;
 
@@ -46,6 +46,10 @@ export function selectPetShopCareFace(input: PetShopCareFaceInput): PetShopCareF
     eyes = 'happy';
     mouth = 'pursed';
     tailWagBoost = true;
+  } else if (input.careMode === 'play') {
+    eyes = 'stars';
+    mouth = 'smile';
+    tailWagBoost = true;
   } else {
     if (input.mood === 'happy') {
       mouth = 'smile';
@@ -68,11 +72,12 @@ export function selectPetShopCareFace(input: PetShopCareFaceInput): PetShopCareF
 }
 
 export function resolvePetShopCareMode(
-  flashAction: PetActionType | null,
+  flashAction: PetActionType | 'play' | null,
   flashAtMs: number | null,
   nowMs: number,
 ): PetShopCarePanelMode {
   if (flashAction && flashAtMs !== null && nowMs - flashAtMs < PET_SHOP_CARE_FLASH_MS) {
+    if (flashAction === 'play') return 'play';
     return flashAction;
   }
   return 'idle';

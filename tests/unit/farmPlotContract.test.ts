@@ -35,6 +35,10 @@ describe('farmPlotContract', () => {
       expect(spawn!.tileY).toBe(def.tileY);
       expect(spawn!.kind).toBe(def.kind);
     }
+    const door = parsed.interactableSpawns.find((s) => s.id === 'farm_barn_door');
+    if (door) {
+      expect(door.kind).toBe('door');
+    }
   });
 
   it('≥160 plot region tiles are walkable on parsed collision', () => {
@@ -59,7 +63,7 @@ describe('farmPlotContract', () => {
   it('village shop portal exists for shop door routing', () => {
     const village = getParsedTiledWorld('village')!;
     const portal = village.portals.find((p) => p.id === VILLAGE_SHOP_PORTAL.portalObjectId);
-    expect(portal?.targetMapId).toBe('shop');
+    expect(portal?.targetMapId).toBe('shop_seed');
     expect(portal?.tileX).toBe(VILLAGE_SHOP_PORTAL.doorTileX);
     expect(portal?.tileY).toBe(VILLAGE_SHOP_PORTAL.doorTileY);
   });

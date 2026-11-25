@@ -30,7 +30,8 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | Upstream | OLW path |
 | --- | --- |
 | `FishingSystem.js` cast/wait/bite/minigame flow + `Constants.js` `FISHING.*` | `tidefall-phaser/tidefallFishingFsm.ts`, `tidefallFishingConstants.ts` |
-| `FishingSystem.js#createMinigameUI` / `minigamePress` | `features/donor/tidefallFishingCanvas.ts` + `ChillFishingModal.tsx` (pond spots) |
+| `public/assets/sprites/**` (beach, bobber, ripple, UI, terrain) | `public/assets/donor/tidefall-phaser/sprites/**` + `UPSTREAM-LICENSE.txt` |
+| `FishingSystem.js#createMinigameUI` / `minigamePress` | `tidefallFishingArt.ts` (9-slice), `tidefallFishingCanvas.ts`, `ChillFishingModal.tsx` (pond spots) |
 | `public/assets/data/fish.json` (44 species) | `scripts/vendor-tidefall-fish-catalog.mjs` → `tidefallFishCatalog.v1.json`, `tidefallFishCatalog.ts` |
 
 **Spot:** `meadow_pond`, `gull_bay` → tidefall bar minigame (economy still `olwDonorAuthority` meadowbrook resolve).
@@ -50,7 +51,7 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `src/games/fishing/systems/FishingSystem.ts#updateReeling` | `canvas-games-fishing/tensionReelSim.ts` |
 | `src/games/fishing/data/fish.ts` (trout/salmon/bass excerpt) | `canvas-games-fishing/streamFishSpecies.ts` |
 
-**Spot:** `east_stream` → tension reel (not meadowbrook table).
+**Spot:** `east_stream` → economy via `pickCanvasStreamFish`; presentation unified on Tidefall bar (`tidefall_bar`).
 
 ## Dropped weaker duplicate
 
@@ -88,5 +89,16 @@ Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview
 **Persist:** place/move/rotate via existing furniture RPC + dev LAN (`/furniture/rotate`).
 
 **Art:** Modern Interiors / `public/assets/starter/furniture-cozy.png` — no ToffeeCraft / cocoworking tinyhouse PNGs in build.
+
+## PyDew Valley @ vendored SHA — environment FX (Worker E)
+
+| Upstream | OLW path |
+| --- | --- |
+| `graphics/rain/drops/*.png` | `src/shared/donor/pydew/pydewRainPresentation.ts`, `WorldLightingOverlay.ts` |
+| Farm water / environment tilesets | `public/maps/donor/pydew-valley/`, `renderDonorPydewMap.ts` |
+
+Registry: `src/shared/art/furnitureEnvFxTransplantRegistry.ts`. Evidence: `src/donors/pydew-valley/UPSTREAM_REUSE.md`.
+
+**RPG pixel pack (JaiGod):** not vendored in recovery — fire/water/windmill stay on Demo E `world-props` sheets unless a future selective import wins contact-sheet review.
 
 **Beach nav:** `OutdoorWorldNavSheet` + village `→ Gull Bay` discoverability marker (Cabacos portal bar).

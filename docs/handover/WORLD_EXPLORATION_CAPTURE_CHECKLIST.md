@@ -14,7 +14,15 @@
 | 6 | 7–9 | Nam → **garden** → **home** (rug/bếp peek) → về làng | home interior flash |
 | 7 | 9–10 | Farm ↔ village ↔ shop — không màn trống; 2 tab nếu có DEV LAN | two-client optional |
 
-**Artifacts:** lưu PNG/MP4 dưới `/opt/cursor/artifacts/` hoặc PR comment.
+### Optional glam frames (64×56 map — zoom không đổi contract)
+
+| Frame | Cách lấy | File gợi ý |
+| --- | --- | --- |
+| Barn + shipping bin | Farm spawn → đi tây-bắc tới chuồng **(9,9)** + thùng **(7,7)** | `04d-04b-farm-barn-shipping.png` |
+| Pond nước | Đông-bắc ao **(52,11)** (J = múc nước preview) | `04d-04c-farm-pond.png` |
+| Nhà bắc “đa dạng” | *Layout* porch/hẹp/rộng khác nhau; sprite tileset chưa đổi — ghi trong caption | `04d-02-village-houses-pond.png` |
+
+**Artifacts:** lưu PNG dưới `/cursor/stores/self/media/` và mirror `/opt/cursor/artifacts/`.
 
 **Contract:** `farmPlotContract` **1.0.1** — không bump trừ khi đổi plot/shop anchor tiles.
 
