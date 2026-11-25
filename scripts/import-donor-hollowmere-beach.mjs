@@ -322,6 +322,33 @@ class BeachGrid {
   }
 }
 
+/** Cabacos-bar coastal pass: pier planks, palms, shore foam strip. */
+function polishBeachGrid(grid, w, h, mapData) {
+  const pierY = Number(mapData.pierY ?? 16);
+  const pierX0 = Math.max(2, Math.floor(w * 0.45));
+  const pierX1 = Math.min(w - 3, pierX0 + 8);
+  for (let x = pierX0; x <= pierX1; x += 1) {
+    grid.put(x, pierY, 'path');
+    grid.put(x, pierY + 1, 'wood');
+    grid.collision[idx(w, x, pierY)] = 0;
+    grid.collision[idx(w, x, pierY + 1)] = 0;
+  }
+  for (let x = 2; x < w - 2; x += 1) {
+    if (grid.ground[idx(w, x, 1)] === T.sandA || grid.ground[idx(w, x, 1)] === T.sandB) {
+      grid.water[idx(w, x, 0)] = T.shoreGrass;
+    }
+  }
+  const palms = [
+    [6, 5],
+    [w - 8, 6],
+    [w - 5, 12],
+  ];
+  for (const [px, py] of palms) {
+    grid.put(px, py, 'palm');
+    grid.put(px + 1, py, 'tallgrass');
+  }
+}
+
 function buildFromHollowmere(mapData) {
   const w = mapData.w;
   const h = mapData.h;
@@ -383,6 +410,8 @@ function buildFromHollowmere(mapData) {
   grid.collision[idx(w, spawnX, spawnY)] = 0;
   grid.vegetation[idx(w, spawnX, spawnY)] = 0;
 
+  polishBeachGrid(grid, w, h, mapData);
+
   const portals = {
     id: 10,
     name: 'Portals',
@@ -411,6 +440,48 @@ function buildFromHollowmere(mapData) {
     ],
   };
 
+  const interactables = {
+    id: 11,
+    name: 'Interactables',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: [
+      {
+        id: 20,
+        name: 'beach_gull_bay_sign',
+        type: 'interactable',
+        x: 8 * TW,
+        y: 4 * TW,
+        width: TW * 3,
+        height: TW,
+        properties: [
+          { name: 'kind', type: 'string', value: 'bench' },
+          { name: 'labelVi', type: 'string', value: 'Gull Bay — bãi donor Hollowmere' },
+          { name: 'maxRadiusPx', type: 'int', value: 52 },
+        ],
+      },
+      {
+        id: 21,
+        name: 'beach_pier_fishing',
+        type: 'interactable',
+        x: Math.min(w - 6, 34) * TW,
+        y: 16 * TW,
+        width: TW * 2,
+        height: TW * 2,
+        properties: [
+          { name: 'kind', type: 'string', value: 'fishing_spot' },
+          { name: 'labelVi', type: 'string', value: 'Cầu câu Gull Bay (donor)' },
+          { name: 'maxRadiusPx', type: 'int', value: 56 },
+          { name: 'donorPlayable', type: 'bool', value: true },
+        ],
+      },
+    ],
+  };
+
   return makeTiledMap(
     'beach',
     w,
@@ -423,8 +494,11 @@ function buildFromHollowmere(mapData) {
       tileLayer('Vegetation', 5, grid.vegetation, w, h),
       tileLayer('Collision', 6, grid.collision, w, h),
     ],
-    [portals],
-    [{ name: 'hollowmereMusic', type: 'string', value: mapData.music ?? 'beach' }],
+    [portals, interactables],
+    [
+      { name: 'hollowmereMusic', type: 'string', value: mapData.music ?? 'beach' },
+      { name: 'olwCoastPolish', type: 'string', value: '2025-11-25-pier-sign' },
+    ],
   );
 }
 
