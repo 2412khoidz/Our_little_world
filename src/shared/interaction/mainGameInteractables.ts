@@ -18,10 +18,11 @@ export interface MainGameInteractableInput {
   mailboxUnread: number;
   /** Presentation-only bowl hints until Mission 02 authoritative state. */
   bowlPresentation?: { foodEmpty: boolean; foodFull: boolean; waterEmpty: boolean; waterFull: boolean };
+  donorEconomyDev?: boolean;
 }
 
 export function buildMainGameInteractables(input: MainGameInteractableInput): InteractableTarget[] {
-  const { mapId, placements, petWorldPosition, petVisible, mailboxUnread, bowlPresentation } = input;
+  const { mapId, placements, petWorldPosition, petVisible, mailboxUnread, bowlPresentation, donorEconomyDev } = input;
   const targets: InteractableTarget[] = [];
   const def = getMapDefinition(mapId);
 
@@ -118,10 +119,11 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
     targets.push({
       id: 'outdoor_fishing',
       kind: 'fishing_spot',
-      labelVi: 'Cầu câu — chưa mở fishing V0.2',
+      labelVi: donorEconomyDev ? 'Cầu câu ao (donor preview)' : 'Cầu câu — chưa mở fishing V0.2',
       x: anchors.pondDockPx.x,
       y: anchors.pondDockPx.y,
       maxRadiusPx: 52,
+      donorPlayable: donorEconomyDev === true,
     });
     targets.push({
       id: 'outdoor_market',
@@ -180,6 +182,17 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
       maxRadiusPx: 44,
     });
+    if (donorEconomyDev) {
+      targets.push({
+        id: 'farm_barn_mill',
+        kind: 'workshop_building',
+        labelVi: 'Cối xay chuồng (Meadowbrook)',
+        x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
+        y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
+        maxRadiusPx: 48,
+        donorPlayable: true,
+      });
+    }
   }
 
   for (const p of placements) {

@@ -1913,6 +1913,7 @@ export class WorldScene extends Phaser.Scene {
         waterEmpty: true,
         waterFull: false,
       },
+      donorEconomyDev: import.meta.env.DEV,
     });
     for (const npc of this.tiledNpcs) {
       interactables.push({

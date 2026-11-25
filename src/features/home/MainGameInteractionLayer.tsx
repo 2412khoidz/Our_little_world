@@ -36,6 +36,8 @@ export interface MainGameInteractionLayerProps {
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
+  onOpenDonorFishing?: () => void;
+  onOpenDonorWorkshop?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
 }
 
@@ -57,6 +59,8 @@ export function MainGameInteractionLayer({
   onFarmApply,
   onOpenFarmMarket,
   onOpenFarmShipping,
+  onOpenDonorFishing,
+  onOpenDonorWorkshop,
   onNotice,
 }: MainGameInteractionLayerProps) {
   const hotbarSlots = useMemo(
@@ -109,6 +113,8 @@ export function MainGameInteractionLayer({
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorWorkshop,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
         else {
@@ -129,6 +135,8 @@ export function MainGameInteractionLayer({
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorWorkshop,
       onNotice,
     ],
   );
