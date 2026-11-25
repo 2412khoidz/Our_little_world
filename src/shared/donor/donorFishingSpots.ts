@@ -1,7 +1,7 @@
 /** Donor fishing locations — distinct biome tables + minigame engines (no duplicate weak rules). */
 export type DonorFishingSpotId = 'meadow_pond' | 'east_stream' | 'gull_bay';
 
-export type DonorFishingMinigame = 'tidefall_bar' | 'tension_reel';
+export type DonorFishingMinigame = 'tidefall_bar';
 
 export interface DonorFishingSpotDef {
   readonly id: DonorFishingSpotId;

@@ -25,6 +25,7 @@ import { fishingFrenzySpritePathForFish } from '../../shared/donor/fishing-frenz
 import { tidefallFishNameVi } from '../../shared/donor/fishing-frenzy/fishingFrenzyFishVi';
 import { FISHING_FRENZY_RARITY_BORDER, fishingFrenzyRarityGlow } from '../../shared/donor/fishing-frenzy/fishingFrenzyRarityUi';
 import { drawTidefallFishingScene } from './tidefallFishingCanvas';
+import { TidefallFishingFirstRun } from './TidefallFishingFirstRun';
 import {
   matchTidefallCatalogByPreviewName,
   tidefallFishForDonorSpot,
@@ -393,6 +394,7 @@ export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, on
             <X size={16} />
           </button>
         </div>
+        <TidefallFishingFirstRun spotLabel={spotDef.labelVi.replace(/ \(.*\)/, '')} />
         {error && (
           <div className="cozy-alert" style={{ fontSize: 13 }} role="alert">
             {error}
