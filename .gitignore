@@ -14,6 +14,7 @@ dist-private/
 *.pfx
 *.jks
 .dev-lan-state.json
+.dev-lan-state-pw-*.json
 
 # Licensed third-party assets (never redistribute paid packs to git)
 public/assets/local-licensed/
