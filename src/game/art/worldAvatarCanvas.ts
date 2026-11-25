@@ -3,6 +3,7 @@ import type { AvatarConfig, Direction } from '../../shared/types';
 import { AVATAR_ATLAS_URL, USE_PRIVATE_ART } from './atlasProfile';
 import { buildRampLookup, drawFrameAccessories, RIG_RAMPS, selectRigForHairStyle } from './avatarPalette';
 import rig from './avatarRig.json';
+import { AVATAR_ATLAS_ROW_COUNT } from './avatarAtlasLayout';
 import { renderAvatarPreviewCanvas } from './avatarSpriteBuilder';
 
 export const AVATAR_FRAME_WIDTH = rig.frameWidth;
@@ -10,7 +11,7 @@ export const AVATAR_FRAME_HEIGHT = rig.frameHeight;
 export const AVATAR_FRAME_COUNT = rig.frameCount;
 export const AVATAR_DIRECTIONS: readonly Direction[] = ['right', 'up', 'left', 'down'];
 const stripWidth = AVATAR_FRAME_WIDTH * AVATAR_FRAME_COUNT * AVATAR_DIRECTIONS.length;
-const rigHeight = AVATAR_FRAME_HEIGHT * 3;
+const rigHeight = AVATAR_FRAME_HEIGHT * AVATAR_ATLAS_ROW_COUNT;
 
 export function buildWorldAvatarCanvas(
   source: CanvasImageSource,
