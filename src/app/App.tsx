@@ -116,11 +116,23 @@ const DevCombinedExperienceDemo = import.meta.env.DEV
   ? lazy(() => import('../features/sandboxes/CombinedExperienceDemo').then((m) => ({ default: m.CombinedExperienceDemo })))
   : null;
 
-const DevDonorPetThreeCare = import.meta.env.DEV
+const donorPetCarePreview =
+  import.meta.env.DEV ||
+  import.meta.env.VITE_OLW_DONOR_PET_CARE === '1' ||
+  import.meta.env.VITE_OLW_DONOR_PET_CARE === 'true';
+
+const DevDonorPetThreeCare = donorPetCarePreview
   ? lazy(() => import('../features/sandboxes/DonorPetThreeCare').then((m) => ({ default: m.DonorPetThreeCare })))
   : null;
 
-type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo' | 'donor-pet-three';
+type DevSandboxKind =
+  | 'pet-art'
+  | 'ui-sandbox'
+  | 'world-sandbox'
+  | 'pet-lab'
+  | 'experience-demo'
+  | 'donor-pet-three'
+  | 'donor-pet-care';
 
 function readDevSandboxKind(): DevSandboxKind | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
@@ -130,7 +142,7 @@ function readDevSandboxKind(): DevSandboxKind | null {
   if (q.has('world-sandbox')) return 'world-sandbox';
   if (q.has('pet-lab')) return 'pet-lab';
   if (q.has('experience-demo')) return 'experience-demo';
-  if (q.has('donor-pet-three')) return 'donor-pet-three';
+  if (q.has('donor-pet-three') || q.has('donor-pet-care')) return 'donor-pet-three';
   return null;
 }
 

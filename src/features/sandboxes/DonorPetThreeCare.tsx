@@ -8,10 +8,19 @@ import { reactToCareStroke } from '../../shared/petLiving/petCare/petCareReactio
 import type { PetCareZone } from '../../shared/petLiving/petCare/petCareTypes';
 import {
   createAdoptionState,
-  createInitialPhysicalCareState,
   interactPetGently,
   type PhysicalCarePetState,
 } from '../../shared/petLiving/petPhysicalCare';
+import {
+  createDonorPetAutonomyState,
+  donorAutonomyTickMs,
+  donorCarePhysicalSeed,
+  donorHandFeedCat,
+  tickDonorPetAutonomy,
+  type CarePartnerId,
+  type DonorPetAutonomyState,
+} from '../../shared/petLiving/donor/donorPetCareAutonomy';
+import { stepLicensedCatFrame } from '../../shared/petLiving/donor/donorLicensedCatFrameStep';
 import type { PetCareReactionContext } from '../../shared/petLiving/petCare/petCareTypes';
 import type { HotbarSlot } from '../../shared/interaction/interactionTypes';
 import { licensedCatFrameSeriesForState } from '../../shared/petLiving/petCare/petCareLicensedCatMaps';
@@ -47,15 +56,25 @@ function buildCatFrameTexture(img: HTMLImageElement, frameIndex: number): THREE.
 export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const brainRef = useRef(new OlwCatStrokeBrain());
-  const [_care, setCare] = useState<PhysicalCarePetState>(() => createInitialPhysicalCareState());
+  const [care, setCare] = useState<PhysicalCarePetState>(() => donorCarePhysicalSeed());
+  const [autonomy, setAutonomy] = useState<DonorPetAutonomyState>(() => createDonorPetAutonomyState());
+  const [partner, setPartner] = useState<CarePartnerId>('partner-a');
   const [adoption] = useState(() => createAdoptionState({ id: 'donor-quyt', name: 'Quýt' }));
   const petDisplayName = adoption.adoptedName ?? 'Quýt';
   const [bubble, setBubble] = useState('...Quýt?');
   const [anim, setAnim] = useState<PetAnimState>('sit_south');
+  const animRef = useRef<PetAnimState>('sit_south');
   const [mode, setMode] = useState<'normal' | 'brush'>('normal');
   const [sessionMs, setSessionMs] = useState(0);
   const frameIndexRef = useRef(48);
+  const frameCursorRef = useRef(0);
+  const frameAccumRef = useRef(0);
+  const atlasImgRef = useRef<HTMLImageElement | null>(null);
   const catMatRef = useRef<THREE.SpriteMaterial | null>(null);
+  const catSpriteRef = useRef<THREE.Sprite | null>(null);
+  const toySpriteRef = useRef<THREE.Sprite | null>(null);
+  const autonomyPostureRef = useRef(autonomy.posture);
+  const autonomyRef = useRef(autonomy);
   const strokeIndexRef = useRef(0);
   const reactionCtx = useMemo<PetCareReactionContext>(
     () => ({
@@ -77,8 +96,31 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
   const advanceFrame = useCallback((state: PetAnimState) => {
     const series = licensedCatFrameSeriesForState(state);
     frameIndexRef.current = series[0] ?? 48;
+    frameCursorRef.current = 0;
+    frameAccumRef.current = 0;
     setAnim(state);
+    animRef.current = state;
   }, []);
+
+  useEffect(() => {
+    autonomyRef.current = autonomy;
+    autonomyPostureRef.current = autonomy.posture;
+  }, [autonomy]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      setCare((physical) => {
+        const tick = tickDonorPetAutonomy(physical, autonomyRef.current, now, donorAutonomyTickMs());
+        autonomyRef.current = tick.autonomy;
+        setAutonomy(tick.autonomy);
+        if (tick.bubbleVi) setBubble(tick.bubbleVi);
+        advanceFrame(tick.anim);
+        return tick.physical;
+      });
+    }, donorAutonomyTickMs());
+    return () => window.clearInterval(id);
+  }, [advanceFrame]);
 
   const applyStroke = useCallback(
     (zone: PetCareZone) => {
@@ -124,13 +166,21 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       if (disposed) return;
+      atlasImgRef.current = img;
       const tex = buildCatFrameTexture(img, frameIndexRef.current);
       const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
       catMatRef.current = mat;
       catSprite = new THREE.Sprite(mat);
       catSprite.scale.set(2.4, 2.4, 1);
       catSprite.position.set(0, 0.15, 0);
+      catSpriteRef.current = catSprite;
       scene.add(catSprite);
+      const toyMat = new THREE.SpriteMaterial({ color: 0xf5c74d });
+      const toy = new THREE.Sprite(toyMat);
+      toy.scale.set(0.25, 0.25, 1);
+      toy.position.set(0.9, -0.1, 0.1);
+      toySpriteRef.current = toy;
+      scene.add(toy);
     };
     img.src = `${ATLAS_BASE}/world-props.png`;
 
@@ -167,14 +217,34 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     renderer.domElement.style.touchAction = 'none';
 
     const start = performance.now();
+    let lastFrame = start;
     const tick = () => {
       if (disposed) return;
-      setSessionMs(Math.floor(performance.now() - start));
-      if (catSprite) catSprite.position.y = 0.15 + Math.sin(performance.now() / 900) * 0.03;
+      const now = performance.now();
+      const dt = now - lastFrame;
+      lastFrame = now;
+      setSessionMs(Math.floor(now - start));
+      const stepped = stepLicensedCatFrame(animRef.current, frameCursorRef.current, 130, dt, frameAccumRef.current);
+      frameCursorRef.current = stepped.nextCursor;
+      frameAccumRef.current = stepped.nextAccum;
+      if (stepped.frameIndex !== frameIndexRef.current && atlasImgRef.current && catMatRef.current) {
+        frameIndexRef.current = stepped.frameIndex;
+        if (catMatRef.current.map) catMatRef.current.map.dispose();
+        catMatRef.current.map = buildCatFrameTexture(atlasImgRef.current, stepped.frameIndex);
+        catMatRef.current.needsUpdate = true;
+      }
+      if (catSprite) {
+        catSprite.position.y = 0.15 + Math.sin(now / 900) * 0.03;
+        if (autonomyPostureRef.current === 'chase_toy' && toySpriteRef.current) {
+          catSprite.position.x += (toySpriteRef.current.position.x - catSprite.position.x) * 0.04;
+        } else {
+          catSprite.position.x += (0 - catSprite.position.x) * 0.06;
+        }
+      }
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
-  tick();
+    tick();
 
     return () => {
       disposed = true;
@@ -205,8 +275,15 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     <main className="donor-pet-three" data-testid="donor-pet-three-care" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#120e10' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', color: '#ffe8c7', fontSize: 14 }}>
         <span>
-          C2 donor · Three.js · {Math.floor(sessionMs / 1000)}s
+          C2 multi-donor · ~{Math.floor((autonomy.simulatedSessionMs || sessionMs) / 1000)}s · {partner}
         </span>
+        <button
+          type="button"
+          className="btn btn--secondary btn--sm"
+          onClick={() => setPartner((p) => (p === 'partner-a' ? 'partner-b' : 'partner-a'))}
+        >
+          Đổi người chăm
+        </button>
         <button type="button" className="btn btn--secondary btn--sm" onClick={onExit}>
           Thoát
         </button>
@@ -233,15 +310,26 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
         <button type="button" className="btn btn--primary" style={{ minHeight: 48 }} onClick={() => { setBubble('Slurp~'); setCare((p) => ({ ...p, thirst: Math.min(100, p.thirst + 12) })); advanceFrame('eat'); }}>
           Nước
         </button>
-        <button type="button" className="btn btn--primary" style={{ minHeight: 48 }} onClick={() => { setBubble('Mlem!'); setCare((p) => ({ ...p, hunger: Math.max(0, p.hunger - 15), fun: Math.min(100, p.fun + 6) })); advanceFrame('eat'); }}>
-          Cho ăn
+        <button
+          type="button"
+          className="btn btn--primary"
+          style={{ minHeight: 48 }}
+          onClick={() => {
+            const feed = donorHandFeedCat(care, 'pet_kibble_basic', 'normal', partner, performance.now());
+            setCare(feed.physical);
+            setAutonomy({ ...autonomyRef.current, lastPartner: partner, posture: feed.autonomy.posture });
+            setBubble(feed.bubbleVi || 'Mlem!');
+            advanceFrame(feed.anim);
+          }}
+        >
+          Cho ăn (2P)
         </button>
       </div>
       <div style={{ padding: '0 12px 12px' }}>
         <GameHotbar slots={DEMO_SLOTS} heldItem={EMPTY_HELD_ITEM} onSelectSlot={() => {}} touchFriendly />
       </div>
       <p style={{ fontSize: 11, color: '#8a7870', textAlign: 'center', paddingBottom: 8 }}>
-        Vuốt màn hình để chăm · cat-orange licensed · không dùng chó donor
+        Đói {Math.round(care.hunger)} · Vui {Math.round(care.fun)} · {autonomy.posture} · một bé, hai người
       </p>
     </main>
   );
