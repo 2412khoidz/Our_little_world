@@ -28,9 +28,17 @@ export class BootScene extends Phaser.Scene {
     this.load.tilemapTiledJSON('map-forest', '/assets/maps/forest.json');
     this.load.tilemapTiledJSON('map-beach', '/assets/maps/beach.json');
     this.load.tilemapTiledJSON('map-shop', '/assets/maps/shop.json');
+    this.load.tilemapTiledJSON('map-shop-seed', '/assets/maps/shop_seed.json');
+    this.load.tilemapTiledJSON('map-shop-tool', '/assets/maps/shop_tool.json');
+    this.load.tilemapTiledJSON('map-shop-crop-market', '/assets/maps/shop_crop_market.json');
+    this.load.tilemapTiledJSON('map-shop-town-hall', '/assets/maps/shop_town_hall.json');
     this.load.image('donor-cabacos-ts_map', '/maps/donor/cabacos/ts_map.png');
     this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
     this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
+    this.load.image('donor-cabacos-seed-shop', '/maps/donor/cabacos/seed_shop_sunnyside_style_384x288.png');
+    this.load.image('donor-cabacos-tool-shop', '/maps/donor/cabacos/tool_shop_sunnyside_style_384x288.png');
+    this.load.image('donor-cabacos-crop-market', '/maps/donor/cabacos/crop_market_sem_fundo.png');
+    this.load.image('donor-cabacos-town-hall', '/maps/donor/cabacos/town_hall_sem_fundo.png');
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
     this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
     const cropSheets: [string, string, number, number][] = [
@@ -64,6 +72,10 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-ts_map',
       'donor-cabacos-ts_forest',
       'donor-cabacos-house-interior',
+      'donor-cabacos-seed-shop',
+      'donor-cabacos-tool-shop',
+      'donor-cabacos-crop-market',
+      'donor-cabacos-town-hall',
       'donor-cabacos-soil',
       'donor-cabacos-hoe',
       'donor-cabacos-wheat',

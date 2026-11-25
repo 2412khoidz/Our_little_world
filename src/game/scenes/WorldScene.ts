@@ -10,7 +10,9 @@ import {
   isDonorCabacosMap,
   isDonorCabacosMapFromCache,
   renderDonorCabacosMapLayers,
+  renderDonorCabacosImageInteriorFromMap,
   renderDonorCabacosShopInterior,
+  isDonorCabacosImageShop,
 } from '../world/renderDonorCabacosMap';
 import {
   nearestTiledNpc,
@@ -363,8 +365,12 @@ export class WorldScene extends Phaser.Scene {
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
-      if (mapId === 'shop' && this.isDonorCabacosShop() && !this.isDonorCabacosShopTiled()) {
+      if (mapId === 'shop' && this.isDonorCabacosShop() && !this.isDonorCabacosShopTiled() && !this.isDonorCabacosShopImage()) {
         renderDonorCabacosShopInterior(this, (obj) => this.mapLayers.push(obj));
+        const mapKey = TILED_MAP_PHASER_KEYS[mapId];
+        if (this.cache.tilemap.exists(mapKey)) {
+          this.tilemap = this.make.tilemap({ key: mapKey });
+        }
       } else {
         this.buildTiledWorldMap(mapId);
       }
@@ -629,12 +635,22 @@ export class WorldScene extends Phaser.Scene {
     return mode === 'tiled';
   }
 
+  private isDonorCabacosShopImage(): boolean {
+    const raw = this.cache.tilemap.get('map-shop')?.data as { properties?: { name?: string; value?: string }[] } | undefined;
+    return raw?.properties?.find((p) => p.name === 'olwShopRender')?.value === 'image';
+  }
+
   private buildTiledWorldMap(mapId: MapId): void {
     if (!isTiledWorldMapId(mapId)) return;
     const mapKey = TILED_MAP_PHASER_KEYS[mapId];
     if (!this.cache.tilemap.exists(mapKey)) return;
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
+
+    if (isDonorCabacosImageShop(tilemap)) {
+      renderDonorCabacosImageInteriorFromMap(this, tilemap, (obj) => this.mapLayers.push(obj));
+      return;
+    }
 
     const donorCabacos =
       isDonorCabacosMap(tilemap) || isDonorCabacosMapFromCache(this, mapKey);

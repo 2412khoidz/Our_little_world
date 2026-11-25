@@ -91483,22 +91483,22 @@
             {
               "name": "targetMapId",
               "type": "string",
-              "value": "shop"
+              "value": "home"
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Cửa nhà — vào bên trong (E)"
+              "value": "Về nhà"
             },
             {
               "name": "spawnX",
               "type": "int",
-              "value": 12
+              "value": 8
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 14
+              "value": 9
             }
           ]
         },
@@ -91548,6 +91548,11 @@
               "value": "forest"
             },
             {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào rừng (PyDew slice)"
+            },
+            {
               "name": "spawnX",
               "type": "int",
               "value": 2
@@ -91556,11 +91561,130 @@
               "name": "spawnY",
               "type": "int",
               "value": 22
+            }
+          ]
+        },
+        {
+          "id": 9110,
+          "name": "village-to-shop-seed",
+          "type": "portal",
+          "x": 523,
+          "y": 383.5,
+          "width": 27.5,
+          "height": 12,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_seed"
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Vào rừng (PyDew slice)"
+              "value": "Vào cửa hàng hạt"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9111,
+          "name": "village-to-shop-tool",
+          "type": "portal",
+          "x": 437.5,
+          "y": 575.5,
+          "width": 14.5,
+          "height": 34,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_tool"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào cửa hàng dụng cụ"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9112,
+          "name": "village-to-shop-crop-market",
+          "type": "portal",
+          "x": 240.5,
+          "y": 512.5,
+          "width": 37,
+          "height": 13,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_crop_market"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào chợ nông sản"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "id": 9113,
+          "name": "village-to-shop-town-hall",
+          "type": "portal",
+          "x": 535.5,
+          "y": 207,
+          "width": 31,
+          "height": 16.5,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "shop_town_hall"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào tòa thị chính"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 11
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 16
             }
           ]
         }
@@ -91593,7 +91717,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Cửa nhà — vào bên trong (E)"
+              "value": "Cửa nhà — về nhà"
             },
             {
               "name": "maxRadiusPx",
@@ -91609,99 +91733,6 @@
         },
         {
           "id": 9202,
-          "name": "cabacos_player_crop_market_door",
-          "type": "interactable",
-          "x": 240.5,
-          "y": 512.5,
-          "width": 37,
-          "height": 13,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Chợ nông sản Cabacos"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_crop_market_door"
-            }
-          ]
-        },
-        {
-          "id": 9203,
-          "name": "cabacos_player_seed_shop_door",
-          "type": "interactable",
-          "x": 523,
-          "y": 383.5,
-          "width": 27.5,
-          "height": 12,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Hạt giống & dụng cụ"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_seed_shop_door"
-            }
-          ]
-        },
-        {
-          "id": 9204,
-          "name": "cabacos_player_town_hall_door",
-          "type": "interactable",
-          "x": 535.5,
-          "y": 207,
-          "width": 31,
-          "height": 16.5,
-          "properties": [
-            {
-              "name": "kind",
-              "type": "string",
-              "value": "shop_npc"
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Tòa thị chính — chưa mở"
-            },
-            {
-              "name": "maxRadiusPx",
-              "type": "int",
-              "value": 56
-            },
-            {
-              "name": "anchorId",
-              "type": "string",
-              "value": "player_town_hall_door"
-            }
-          ]
-        },
-        {
-          "id": 9205,
           "name": "cabacos_sign_farm_gate",
           "type": "interactable",
           "x": 1280,
@@ -91727,7 +91758,7 @@
           ]
         },
         {
-          "id": 9206,
+          "id": 9203,
           "name": "cabacos_sign_beach",
           "type": "interactable",
           "x": 1344,
@@ -91758,7 +91789,7 @@
           ]
         },
         {
-          "id": 9207,
+          "id": 9204,
           "name": "cabacos_village_hollow_bakery",
           "type": "interactable",
           "x": 288,
@@ -91794,7 +91825,7 @@
           ]
         },
         {
-          "id": 9208,
+          "id": 9205,
           "name": "cabacos_village_hollow_coop",
           "type": "interactable",
           "x": 352,
@@ -91830,7 +91861,7 @@
           ]
         },
         {
-          "id": 9209,
+          "id": 9206,
           "name": "cabacos_plaza_well",
           "type": "interactable",
           "x": 480,

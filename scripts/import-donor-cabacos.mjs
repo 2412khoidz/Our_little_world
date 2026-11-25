@@ -125,10 +125,10 @@ function exportVillage() {
         width: 30,
         height: 14,
         properties: [
-          { name: 'targetMapId', type: 'string', value: 'shop' },
-          { name: 'labelVi', type: 'string', value: 'Cửa nhà — vào bên trong (E)' },
-          { name: 'spawnX', type: 'int', value: 12 },
-          { name: 'spawnY', type: 'int', value: 14 },
+          { name: 'targetMapId', type: 'string', value: 'home' },
+          { name: 'labelVi', type: 'string', value: 'Về nhà' },
+          { name: 'spawnX', type: 'int', value: 8 },
+          { name: 'spawnY', type: 'int', value: 9 },
         ],
       },
       {
@@ -146,17 +146,99 @@ function exportVillage() {
           { name: 'spawnY', type: 'int', value: 16 },
         ],
       },
+      ...(MAP_RECOVERY_MODE
+        ? [
+            {
+              id: 9106,
+              name: 'village-to-forest',
+              type: 'portal',
+              x: 84 * TW,
+              y: 20 * TW,
+              width: TW,
+              height: TW * 2,
+              properties: [
+                { name: 'targetMapId', type: 'string', value: 'forest' },
+                { name: 'labelVi', type: 'string', value: 'Vào rừng (PyDew slice)' },
+                { name: 'spawnX', type: 'int', value: 2 },
+                { name: 'spawnY', type: 'int', value: 22 },
+              ],
+            },
+          ]
+        : []),
     ],
   };
 
-  const donorDoorLabels = {
-    player_house_door: 'Cửa nhà — vào bên trong (E)',
-    player_crop_market_door: 'Chợ nông sản Cabacos',
-    player_seed_shop_door: 'Hạt giống & dụng cụ',
-    player_town_hall_door: 'Tòa thị chính — chưa mở',
-  };
+  const VILLAGE_SHOP_PORTALS = MAP_RECOVERY_MODE
+    ? [
+        {
+          id: 9110,
+          name: 'village-to-shop-seed',
+          door: 'player_seed_shop_door',
+          targetMapId: 'shop_seed',
+          labelVi: 'Vào cửa hàng hạt',
+          spawnInterior: { tileX: 11, tileY: 16 },
+        },
+        {
+          id: 9111,
+          name: 'village-to-shop-tool',
+          door: 'player_tool_shop_door',
+          targetMapId: 'shop_tool',
+          labelVi: 'Vào cửa hàng dụng cụ',
+          spawnInterior: { tileX: 11, tileY: 16 },
+        },
+        {
+          id: 9112,
+          name: 'village-to-shop-crop-market',
+          door: 'player_crop_market_door',
+          targetMapId: 'shop_crop_market',
+          labelVi: 'Vào chợ nông sản',
+          spawnInterior: { tileX: 11, tileY: 16 },
+        },
+        {
+          id: 9113,
+          name: 'village-to-shop-town-hall',
+          door: 'player_town_hall_door',
+          targetMapId: 'shop_town_hall',
+          labelVi: 'Vào tòa thị chính',
+          spawnInterior: { tileX: 11, tileY: 16 },
+        },
+      ]
+    : [];
 
   const interactionLayer = src.layers.find((l) => l.name === 'Interactions' && l.type === 'objectgroup');
+
+  const donorDoorLabels = MAP_RECOVERY_MODE
+    ? {
+        player_house_door: 'Cửa nhà — về nhà',
+      }
+    : {
+        player_house_door: 'Cửa nhà — vào bên trong (E)',
+        player_crop_market_door: 'Chợ nông sản Cabacos',
+        player_seed_shop_door: 'Hạt giống & dụng cụ',
+        player_town_hall_door: 'Tòa thị chính — chưa mở',
+      };
+
+  const doorByName = new Map((interactionLayer?.objects ?? []).map((o) => [o.name, o]));
+  for (const spec of VILLAGE_SHOP_PORTALS) {
+    const door = doorByName.get(spec.door);
+    if (!door) continue;
+    portals.objects.push({
+      id: spec.id,
+      name: spec.name,
+      type: 'portal',
+      x: door.x,
+      y: door.y,
+      width: door.width ?? TW,
+      height: door.height ?? TW,
+      properties: [
+        { name: 'targetMapId', type: 'string', value: spec.targetMapId },
+        { name: 'labelVi', type: 'string', value: spec.labelVi },
+        { name: 'spawnX', type: 'int', value: spec.spawnInterior.tileX },
+        { name: 'spawnY', type: 'int', value: spec.spawnInterior.tileY },
+      ],
+    });
+  }
+
   const cabacosInteractables = [];
   let nextId = 9201;
   for (const obj of interactionLayer?.objects ?? []) {
@@ -520,9 +602,251 @@ function exportShopInteriorCasaPlayer() {
   console.log('Wrote shop.json (Casa_player collision + image ref)');
 }
 
+const INTERIOR_SPECS = [
+  {
+    donorFile: 'Seed_shop.tmj',
+    outFile: 'shop_seed.json',
+    mapId: 'shop_seed',
+    imageFile: 'seed_shop_sunnyside_style_384x288.png',
+    textureKey: 'donor-cabacos-seed-shop',
+    villageDoor: 'player_seed_shop_door',
+    exitName: 'player_seed_shop_exit',
+    counterName: 'seed_shop',
+    counterTargetId: 'cabacos_player_seed_shop_door',
+    counterKind: 'shop_npc',
+    counterLabel: 'Quầy hạt giống — Bác Hai',
+    portalExitId: 'shop-seed-to-village',
+    portalEnterId: 'village-to-shop-seed',
+  },
+  {
+    donorFile: 'tool_shop.tmj',
+    outFile: 'shop_tool.json',
+    mapId: 'shop_tool',
+    imageFile: 'tool_shop_sunnyside_style_384x288.png',
+    textureKey: 'donor-cabacos-tool-shop',
+    villageDoor: 'player_tool_shop_door',
+    exitName: 'player_tool_shop_exit',
+    counterName: 'tool_shop',
+    counterTargetId: 'cabacos_interior_tool_shop_counter',
+    counterKind: 'shop_npc',
+    counterLabel: 'Quầy dụng cụ',
+    portalExitId: 'shop-tool-to-village',
+    portalEnterId: 'village-to-shop-tool',
+  },
+  {
+    donorFile: 'Crop_market.tmj',
+    outFile: 'shop_crop_market.json',
+    mapId: 'shop_crop_market',
+    imageFile: 'crop_market_sem_fundo.png',
+    textureKey: 'donor-cabacos-crop-market',
+    villageDoor: 'player_crop_market_door',
+    exitName: 'player_crop_market_exit',
+    counterName: 'crop_market',
+    counterTargetId: 'cabacos_player_crop_market_door',
+    counterKind: 'shop_npc',
+    counterLabel: 'Quầy chợ nông sản',
+    portalExitId: 'shop-crop-market-to-village',
+    portalEnterId: 'village-to-shop-crop-market',
+  },
+  {
+    donorFile: 'Town_hall.tmj',
+    outFile: 'shop_town_hall.json',
+    mapId: 'shop_town_hall',
+    imageFile: 'town_hall_sem_fundo.png',
+    textureKey: 'donor-cabacos-town-hall',
+    villageDoor: 'player_town_hall_door',
+    exitName: 'player_town_hall_exit',
+    counterName: 'town_hall_buy_farms',
+    counterTargetId: 'cabacos_interior_town_hall_counter',
+    counterKind: 'bench',
+    counterLabel: 'Bản đồ mua ruộng — chưa mở',
+    portalExitId: 'shop-town-hall-to-village',
+    portalEnterId: 'village-to-shop-town-hall',
+  },
+];
+
+const VILLAGE_DOOR_SPAWN = {
+  player_seed_shop_door: { tileX: 32, tileY: 25 },
+  player_tool_shop_door: { tileX: 27, tileY: 37 },
+  player_crop_market_door: { tileX: 15, tileY: 33 },
+  player_town_hall_door: { tileX: 33, tileY: 14 },
+};
+
+function findInteractionObject(interior, name) {
+  const layer = interior.layers.find((l) => l.name === 'Interactions' && l.type === 'objectgroup');
+  return layer?.objects?.find((o) => o.name === name);
+}
+
+function exportCabacosImageInterior(spec) {
+  const interior = loadJson(spec.donorFile);
+  const w = interior.width ?? 24;
+  const h = interior.height ?? 18;
+  const blocked = bakeObjectCollision(interior, ['Collision']);
+  const exitObj = findInteractionObject(interior, spec.exitName);
+  const counterObj = findInteractionObject(interior, spec.counterName);
+  if (exitObj) {
+    const x0 = Math.floor(exitObj.x / TW);
+    const y0 = Math.floor(exitObj.y / TW);
+    const x1 = Math.ceil((exitObj.x + exitObj.width) / TW);
+    const y1 = Math.ceil((exitObj.y + exitObj.height) / TW);
+    for (let ty = y0; ty < y1; ty += 1) {
+      for (let tx = x0; tx < x1; tx += 1) {
+        blocked.delete(`${tx},${ty}`);
+      }
+    }
+  }
+  const collision = new Array(w * h).fill(0);
+  for (const key of blocked) {
+    const [tx, ty] = key.split(',').map(Number);
+    if (tx < w && ty < h) collision[ty * w + tx] = 1;
+  }
+  const villageSpawn = VILLAGE_DOOR_SPAWN[spec.villageDoor] ?? { tileX: 32, tileY: 25 };
+  const interiorSpawn = exitObj
+    ? {
+        tileX: Math.min(w - 2, Math.max(1, Math.floor((exitObj.x + exitObj.width / 2) / TW))),
+        tileY: Math.min(h - 2, Math.max(1, Math.floor(exitObj.y / TW) - 1)),
+      }
+    : { tileX: 11, tileY: 16 };
+
+  const portalObjects = [
+    {
+      id: 1,
+      name: spec.portalExitId,
+      type: 'portal',
+      x: exitObj?.x ?? (w - 3) * TW,
+      y: exitObj?.y ?? (h - 2) * TW,
+      width: exitObj?.width ?? TW * 2,
+      height: exitObj?.height ?? TW,
+      properties: [
+        { name: 'targetMapId', type: 'string', value: 'village' },
+        { name: 'labelVi', type: 'string', value: 'Ra làng' },
+        { name: 'spawnX', type: 'int', value: villageSpawn.tileX },
+        { name: 'spawnY', type: 'int', value: villageSpawn.tileY },
+      ],
+    },
+  ];
+  const interactables = [];
+  if (counterObj) {
+    interactables.push({
+      id: 2,
+      name: spec.counterTargetId,
+      type: 'interactable',
+      x: counterObj.x,
+      y: counterObj.y,
+      width: counterObj.width ?? TW * 4,
+      height: counterObj.height ?? TW * 2,
+      properties: [
+        { name: 'kind', type: 'string', value: spec.counterKind },
+        { name: 'labelVi', type: 'string', value: spec.counterLabel },
+        { name: 'maxRadiusPx', type: 'int', value: 72 },
+        { name: 'donorPlayable', type: 'bool', value: spec.counterKind === 'shop_npc' },
+        { name: 'anchorId', type: 'string', value: spec.counterName },
+      ],
+    });
+  }
+
+  const imagelayer = interior.layers.find((l) => l.type === 'imagelayer');
+  const out = {
+    compressionlevel: -1,
+    height: h,
+    width: w,
+    infinite: false,
+    layers: [
+      {
+        id: 1,
+        name: 'Collision',
+        type: 'tilelayer',
+        data: collision,
+        width: w,
+        height: h,
+        opacity: 1,
+        visible: false,
+        x: 0,
+        y: 0,
+      },
+      {
+        id: 2,
+        name: 'Portals',
+        type: 'objectgroup',
+        visible: true,
+        opacity: 1,
+        draworder: 'topdown',
+        x: 0,
+        y: 0,
+        objects: portalObjects,
+      },
+      {
+        id: 3,
+        name: 'Interactables',
+        type: 'objectgroup',
+        visible: true,
+        opacity: 1,
+        draworder: 'topdown',
+        x: 0,
+        y: 0,
+        objects: interactables,
+      },
+    ],
+    nextlayerid: 5,
+    nextobjectid: 10,
+    orientation: 'orthogonal',
+    properties: [
+      { name: 'mapId', type: 'string', value: spec.mapId },
+      { name: 'olwDonor', type: 'string', value: 'cabacos' },
+      { name: 'olwDonorInterior', type: 'string', value: spec.donorFile },
+      { name: 'olwDonorSha', type: 'string', value: '79e423defc12bd99327cfcc28bf7ec0085996244' },
+      { name: 'olwShopRender', type: 'string', value: 'image' },
+      { name: 'olwDonorInteriorTextureKey', type: 'string', value: spec.textureKey },
+      { name: 'olwDonorInteriorImage', type: 'string', value: `/maps/donor/cabacos/${spec.imageFile}` },
+      { name: 'olwRecovery', type: 'string', value: RECOVERY_SLICE },
+      { name: 'olwDefaultSpawnTileX', type: 'int', value: interiorSpawn.tileX },
+      { name: 'olwDefaultSpawnTileY', type: 'int', value: interiorSpawn.tileY },
+    ],
+    renderorder: 'right-down',
+    tiledversion: '1.10.2',
+    tileheight: TW,
+    tilesets: [
+      {
+        columns: 1,
+        firstgid: 1,
+        image: '/maps/donor/cabacos/ts_map.png',
+        imageheight: 16,
+        imagewidth: 16,
+        margin: 0,
+        name: 'olw_collision_stub',
+        spacing: 0,
+        tilecount: 1,
+        tileheight: TW,
+        tilewidth: TW,
+      },
+    ],
+    tilewidth: TW,
+    type: 'map',
+    version: '1.10',
+  };
+  if (imagelayer) {
+    out.properties.push({ name: 'olwDonorImageLayer', type: 'string', value: path.basename(imagelayer.image) });
+  }
+  writeJson(spec.outFile, out);
+  console.log(`Wrote ${spec.outFile} ← ${spec.donorFile} (image interior, ${w}×${h})`);
+}
+
+function exportAllCabacosShopInteriors() {
+  for (const spec of INTERIOR_SPECS) {
+    exportCabacosImageInterior(spec);
+  }
+  const seed = JSON.parse(fs.readFileSync(path.join(OUT_MAPS, 'shop_seed.json'), 'utf8'));
+  const shopLegacy = structuredClone(seed);
+  shopLegacy.properties = shopLegacy.properties.map((p) =>
+    p.name === 'mapId' ? { ...p, value: 'shop' } : p,
+  );
+  writeJson('shop.json', shopLegacy);
+  console.log('Wrote shop.json (alias of shop_seed for barn route)');
+}
+
 function exportShopInterior() {
   if (MAP_RECOVERY_MODE) {
-    exportShopFromSeedsMarket();
+    exportAllCabacosShopInteriors();
     return;
   }
   exportShopInteriorCasaPlayer();

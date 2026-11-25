@@ -118,22 +118,32 @@ node scripts/qa-private-art-avatar.mjs      # asserts 384×288 + avatarGameplay
 | `public/assets/tilemap/Cabacos_map.tmj` | `public/maps/donor/cabacos/Cabacos_map.tmj` (canonical) |
 | (import script) | `public/assets/maps/village.json` |
 | `ts_map.png`, `ts_forest.png` | `public/maps/donor/cabacos/` |
-| `Casa_player.tmj` + `house_interior_sem_fundo.png` | `public/maps/donor/cabacos/` |
-| (import script) | `public/assets/maps/shop.json` (collision + portal; image via `renderDonorCabacosShopInterior`) |
+| `Seed_shop.tmj`, `tool_shop.tmj`, `Crop_market.tmj`, `Town_hall.tmj` + interior PNGs | `public/maps/donor/cabacos/` |
+| (import `OLW_MAP_RECOVERY=1`) | `shop_seed.json`, `shop_tool.json`, `shop_crop_market.json`, `shop_town_hall.json`, `shop.json` (alias seed) |
+| `scripts/vendor-donor-cabacos-maps.mjs` | Copies tilemaps/graphics from `vendor/farming-simulator-cabacos-upstream/` |
 | `LICENSE` | `public/maps/donor/cabacos/UPSTREAM-LICENSE.txt` |
+
+**Not used as shop:** `Casa_player.tmj` / `house_interior_sem_fundo.png` (player house portal → `home`).
 
 ### Kept vs adapted
 
-- **Kept:** Tile layers, `Collision`, door `Interactions` geometry; Sunnyside-style tileset PNGs vendored for dev attribution (not remapped to Demo E atlas in this slice — follow-up remap in `scripts/import-donor-cabacos.mjs`).
-- **Adapted:** OLW `Portals` / `Interactables` object groups; garden/farm warp targets; Phaser 4 loader keys `donor-cabacos-*`; interior drawn as image layer + baked object collision grid.
+- **Kept:** Cabacos overworld tile layers + native `ts_map`/`ts_forest`; donor shop **image interiors** with object-layer collision; counters from donor `Interactions`.
+- **Adapted:** OLW `Portals` at village shop doors; C1 economy anchors on interior `Interactables`; Phaser `olwShopRender=image` + `renderDonorCabacosImageInteriorFromMap`.
 
 ### Reproduce
 
 ```bash
-node scripts/import-donor-cabacos.mjs
+node scripts/vendor-wave1-farm-donors.mjs
+OLW_MAP_RECOVERY=1 npm run import-donor:cabacos
 VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
-# Garden → portal làng → explore; door house → interior shop map
+# Garden → làng Cabacos; cửa hạt/dụng cụ/chợ/tòa thị chính → nội thất donor; nhà player → home
 ```
+
+### Proof (map transplant village @ 2026-11-25)
+
+- Store: `internal/map-transplant-village.md`
+- Screenshots: `media/map-transplant-village-olw.png`, `map-transplant-village-shop-seed-olw.png`, donor refs `map-transplant-village-donor-*.png`
+- Tests: `donorCabacosShopInteriors.test.ts`, `npm run test`
 
 ### Donors evaluated (not transplanted)
 

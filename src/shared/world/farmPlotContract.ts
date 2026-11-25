@@ -152,15 +152,14 @@ export const FARM_WORLD_INTERACTABLES = {
   },
 } as const;
 
-/** Village shop entry (Composer 1 shop UI routes through portal, not economy here). */
-/** Cabacos donor door → `shop` interior when village.json is imported from donor. */
+/** Village seed shop entry (Cabacos donor `village-to-shop-seed` → `shop_seed` interior). */
 export const VILLAGE_SHOP_PORTAL = {
-  portalObjectId: 'player_house_door',
+  portalObjectId: 'village-to-shop-seed',
   mapId: 'village' as MapId,
-  targetMapId: 'shop' as MapId,
-  doorTileX: 41,
-  doorTileY: 29,
-  labelVi: 'Vào nhà Bác Hai (làng)',
+  targetMapId: 'shop_seed' as MapId,
+  doorTileX: 32,
+  doorTileY: 23,
+  labelVi: 'Vào cửa hàng hạt',
 } as const;
 
 export interface FarmPlotContractExport {

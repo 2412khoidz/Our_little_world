@@ -11,6 +11,8 @@ describe('donor Cabacos village transplant', () => {
     expect(parsed.heightTiles).toBe(48);
     expect(parsed.blockedTiles.size).toBeGreaterThan(100);
     expect(parsed.portals.some((p) => p.targetMapId === 'garden')).toBe(true);
-    expect(parsed.portals.some((p) => p.targetMapId === 'shop')).toBe(true);
+    expect(
+      parsed.portals.some((p) => p.targetMapId === 'shop_seed' || p.targetMapId === 'shop'),
+    ).toBe(true);
   });
 });

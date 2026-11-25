@@ -14,7 +14,11 @@ export function normalizeMapId(raw: string | null | undefined): MapId | null {
     raw === 'farm' ||
     raw === 'forest' ||
     raw === 'beach' ||
-    raw === 'shop'
+    raw === 'shop' ||
+    raw === 'shop_seed' ||
+    raw === 'shop_tool' ||
+    raw === 'shop_crop_market' ||
+    raw === 'shop_town_hall'
   ) {
     return raw;
   }

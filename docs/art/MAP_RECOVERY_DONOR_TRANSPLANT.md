@@ -18,7 +18,7 @@ Owner directive: **ship authored donor maps**, not cozy overlays, procedural gla
 | **farm** | Cabacos `Cabacos_map.tmj` crop | `OLW_ContractSoil` cozy overlay | Native `farm`/`farm3` tiles; **184 plot IDs** unchanged (`farmPlotContract.v1.json`) |
 | **forest** | PyDew `data/maps/main.tmx` (pending vend) | `pydewGladeTilemap` procedural | Real TMX transplant + portal slice |
 | **beach** | Hollowmere `gull_bay.json` | `scatter` ops + post `polishBeachGrid` | rects / pier / buildings only |
-| **shop** | Cabacos overworld `seeds_market` slice | `Casa_player.tmj` + `house_interior_sem_fundo.png` | Tiled `shop.json` `olwShopRender=tiled` |
+| **shop** | `Seed_shop` / `tool_shop` / `Crop_market` / `Town_hall` `.tmj` + PNGs | `Casa_player.tmj` as shop | `shop_*.json` `olwShopRender=image` |
 
 ## Runtime
 

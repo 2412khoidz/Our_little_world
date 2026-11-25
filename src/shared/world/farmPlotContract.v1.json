@@ -1188,11 +1188,11 @@
     }
   },
   "villageShopPortal": {
-    "portalObjectId": "player_house_door",
+    "portalObjectId": "village-to-shop-seed",
     "mapId": "village",
-    "targetMapId": "shop",
-    "doorTileX": 41,
-    "doorTileY": 29,
-    "labelVi": "Vào nhà Bác Hai (làng)"
+    "targetMapId": "shop_seed",
+    "doorTileX": 32,
+    "doorTileY": 23,
+    "labelVi": "Vào cửa hàng hạt"
   }
 }
