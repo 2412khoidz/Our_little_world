@@ -1,11 +1,30 @@
 /**
- * [PRE-INTEGRATION ADAPTER FIXTURE]
- * Defines the contract documented in docs/pet/PET_AI_PRIMITIVES_HANDOVER.md.
- * Replace this local deterministic adapter with imports from DeepSeek's
- * src/shared/petAdvanced/primitives at the Integration Milestone without modifying callers.
+ * Bridge from Neon Living Pet layer → DeepSeek `petAdvanced/primitives`.
+ * Replaces the former PRE-INTEGRATION ADAPTER FIXTURE (same public API for callers).
  */
 
-export type ResponseCurveName = 'linear' | 'power' | 'smoothstep' | 'inverseSmoothstep' | 'logistic';
+import {
+  filterAffordances,
+  type AffordanceCandidate as PrimitiveAffordance,
+} from '../petAdvanced/primitives/affordances';
+import {
+  appendMemoryEvent,
+  createMemoryState,
+  deserializeMemory,
+  scorePreferenceByCaregiver,
+  serializeMemory,
+  type MemoryEvent,
+  type MemoryState,
+} from '../petAdvanced/primitives/memory';
+import {
+  clamp01,
+  deterministicTieBreak,
+  needUrgency,
+  scoreAction,
+  type ResponseCurveName,
+} from '../petAdvanced/primitives/utilityMath';
+
+export type { ResponseCurveName };
 
 export interface NeedUrgencyParams {
   value: number;
@@ -21,67 +40,33 @@ export interface UtilityContribution {
   weight: number;
 }
 
-export interface PetMemoryEvent {
-  id: string;
-  kind: 'fed' | 'played' | 'petted' | 'ignored' | 'slept' | 'explored';
-  atMs: number;
-  caregiverId: string;
-  weight?: number;
-  tags?: string[];
-}
+/** Neon event shape (caregiver required in lab; primitives allow null). */
+export type PetMemoryEvent = MemoryEvent;
 
-export interface AffordanceCandidate {
-  id: string;
-  targetId: string;
-  action: string;
-  available: boolean;
-  reachable: boolean;
-  distance: number;
-  occupied: boolean;
-  cooldownUntilMs: number;
-  estimatedCostMs: number;
-  tags?: string[];
+/** Lab/world affordance: primitive fields + anchor position for movement intent. */
+export interface AffordanceCandidate extends PrimitiveAffordance {
   x: number;
   y: number;
 }
 
-export function clamp01(v: number): number {
-  if (!Number.isFinite(v)) return 0;
-  return Math.max(0, Math.min(1, v));
-}
+export const PET_MEMORY_PERSIST_CAP = 24;
 
-export function applyResponseCurve(t: number, curve: ResponseCurveName): number {
-  const x = clamp01(t);
-  switch (curve) {
-    case 'power':
-      return x * x;
-    case 'smoothstep':
-      return x * x * (3 - 2 * x);
-    case 'inverseSmoothstep':
-      return clamp01(x + (x - x * x * (3 - 2 * x)));
-    case 'logistic': {
-      const e = Math.exp(-8 * (x - 0.5));
-      return clamp01(1 / (1 + e));
-    }
-    default:
-      return x;
-  }
-}
+export { clamp01 };
 
 export function computeNeedUrgency(p: NeedUrgencyParams): number {
-  if (!Number.isFinite(p.value)) return 0;
-  if (p.value >= p.target) return 0;
-  const span = Math.max(1, p.target - p.criticalThreshold);
-  const raw = clamp01((p.target - p.value) / span);
-  return clamp01(applyResponseCurve(raw, p.curve) * p.weight);
+  return needUrgency({
+    value: p.value,
+    target: p.target,
+    criticalThreshold: p.criticalThreshold,
+    curve: p.curve,
+    weight: p.weight,
+  });
 }
 
 export function combineUtilityScore(items: readonly UtilityContribution[]): number {
-  const valid = items.filter((i) => Number.isFinite(i.weight) && i.weight > 0);
-  if (valid.length === 0) return 0;
-  const totalW = valid.reduce((s, i) => s + i.weight, 0);
-  const weighted = valid.reduce((s, i) => s + clamp01(i.value01) * i.weight, 0);
-  return clamp01(weighted / totalW);
+  return scoreAction(
+    items.map((i) => ({ key: i.key, value01: i.value01, weight: i.weight })),
+  ).score01;
 }
 
 export function deterministicCandidateBreak<T>(
@@ -89,43 +74,50 @@ export function deterministicCandidateBreak<T>(
   scoreOf: (item: T) => number,
   keyOf: (item: T) => string,
 ): T[] {
-  return [...list].sort((a, b) => scoreOf(b) - scoreOf(a) || keyOf(a).localeCompare(keyOf(b)));
+  const decorated = list.map((item) => ({
+    item,
+    score01: scoreOf(item),
+    key: keyOf(item),
+  }));
+  return deterministicTieBreak(decorated, (entry) => entry.key).map((entry) => entry.item);
 }
-
-export const PET_MEMORY_PERSIST_CAP = 24;
 
 export function appendBoundedMemory(
   events: readonly PetMemoryEvent[],
   next: PetMemoryEvent,
   capacity = PET_MEMORY_PERSIST_CAP,
 ): PetMemoryEvent[] {
-  if (events.some((e) => e.id === next.id)) return [...events];
-  const merged = [...events, next].sort(
-    (a, b) => a.atMs - b.atMs || a.id.localeCompare(b.id),
-  );
-  if (merged.length <= capacity) return merged;
-  return merged.slice(merged.length - capacity);
+  let state = createMemoryState(capacity);
+  for (const event of events) {
+    state = appendMemoryEvent(state, event);
+  }
+  state = appendMemoryEvent(state, next);
+  return [...state.events];
 }
 
 /**
- * Per-caregiver familiarity without any cross-caregiver ranking helper.
+ * Per-caregiver familiarity without cross-caregiver ranking (DeepSeek contract).
  */
 export function computeCaregiverFamiliarity(
   events: readonly PetMemoryEvent[],
   caregiverIds: readonly string[],
   nowMs: number,
 ): Record<string, number> {
+  const map = scorePreferenceByCaregiver(events, caregiverIds, {
+    nowMs,
+    halfLifeMs: 48 * 3600 * 1000,
+    kindWeights: {
+      fed: 1,
+      played: 0.9,
+      petted: 1,
+      ignored: 0.3,
+      slept: 0.5,
+      explored: 0.7,
+    },
+  });
   const out: Record<string, number> = {};
-  const halfLifeMs = 48 * 3600 * 1000;
-  for (const cid of caregiverIds) {
-    const mine = events.filter((e) => e.caregiverId === cid);
-    const total = mine.reduce((sum, e) => {
-      const age = Math.max(0, nowMs - e.atMs);
-      const decay = Math.pow(0.5, age / halfLifeMs);
-      const kindBonus = e.kind === 'ignored' ? -0.2 : (e.weight ?? 1);
-      return sum + Math.max(0, kindBonus * decay);
-    }, 0);
-    out[cid] = clamp01(total / 8);
+  for (const id of caregiverIds) {
+    out[id] = map[id] ?? 0;
   }
   return out;
 }
@@ -135,13 +127,29 @@ export function filterValidAffordances(
   nowMs: number,
   maxDistance = 420,
 ): AffordanceCandidate[] {
-  return candidates.filter(
-    (c) =>
-      c.available &&
-      c.reachable &&
-      !c.occupied &&
-      Number.isFinite(c.distance) &&
-      c.distance <= maxDistance &&
-      nowMs >= c.cooldownUntilMs,
+  const byId = new Map(candidates.map((c) => [c.id, c]));
+  const stripped: PrimitiveAffordance[] = candidates.map(
+    ({ x: _x, y: _y, ...rest }) => rest,
   );
+  const filtered = filterAffordances(stripped, {
+    nowMs,
+    maxDistance,
+    requireReachable: true,
+    allowOccupied: false,
+  });
+  return filtered.map((c) => {
+    const full = byId.get(c.id);
+    return {
+      ...c,
+      x: full?.x ?? 0,
+      y: full?.y ?? 0,
+    };
+  });
 }
+
+export {
+  createMemoryState,
+  serializeMemory,
+  deserializeMemory,
+  type MemoryState,
+};

@@ -3,20 +3,25 @@ import {
   applyNonLethal8NeedsCatchup,
   createDefault8Needs,
   derive9Emotion,
-  scoreAffordanceAction,
-  type ActionScoreBreakdown,
   type DecisionContext,
-  type Pet9Emotion,
   type PetPersonalityTraits,
 } from './petIntelligenceConfig';
 import {
   PET_MEMORY_PERSIST_CAP,
-  appendBoundedMemory,
-  deterministicCandidateBreak,
-  filterValidAffordances,
   type AffordanceCandidate,
-  type PetMemoryEvent,
 } from './petPrimitivesAdapter';
+import {
+  buildBrainDebugTrace,
+  createPetBrainState,
+  evaluateLivingPetStep,
+  snapshotToInput,
+  tickPetBrain,
+  type PetBrainState,
+} from './petAutonomousController';
+
+export type { ActionScoreBreakdown } from './petIntelligenceConfig';
+
+export { evaluateLivingPetStep, buildBrainDebugTrace, createPetBrainState };
 
 export interface PetLabScenarioPreset {
   id: string;
@@ -56,47 +61,41 @@ export function buildLabAffordances(targetMovedId?: string): AffordanceCandidate
     { id: 'cardboard_box', targetId: 'cardboard_box', action: 'hide_in_box', available: true, reachable: true, distance: 72, occupied: false, cooldownUntilMs: 0, estimatedCostMs: 8000, x: 148, y: 130 },
     { id: 'scratching_post', targetId: 'scratching_post', action: 'scratch_stretch', available: true, reachable: true, distance: 56, occupied: false, cooldownUntilMs: 0, estimatedCostMs: 4000, x: 230, y: 144 },
     { id: 'sunny_window', targetId: 'sunny_window', action: 'sunbathe', available: true, reachable: true, distance: 80, occupied: false, cooldownUntilMs: 0, estimatedCostMs: 7000, x: 40, y: 46 },
+    { id: 'lie_rug', targetId: 'rug', action: 'lie_idle', available: true, reachable: true, distance: 38, occupied: false, cooldownUntilMs: 0, estimatedCostMs: 5000, x: 176, y: 152 },
   ];
-  return list.map((a) => (a.targetId === targetMovedId ? { ...a, reachable: false, available: false } : a));
+  return list.map((a) =>
+    a.targetId === targetMovedId ? { ...a, reachable: false, available: false } : a,
+  );
 }
 
 export interface SimulationStepResult {
-  chosen: ActionScoreBreakdown | null;
-  candidates: ActionScoreBreakdown[];
-  emotion: Pet9Emotion;
+  chosen: import('./petIntelligenceConfig').ActionScoreBreakdown | null;
+  candidates: import('./petIntelligenceConfig').ActionScoreBreakdown[];
+  emotion: import('./petIntelligenceConfig').Pet9Emotion;
   switchReason: string;
 }
 
-export function evaluateLivingPetStep(
+/** @deprecated use `evaluateLivingPetStep` from petAutonomousController */
+export type { SimulationStepResult as LegacySimulationStepResult };
+
+function applyCompletionNeeds(
   ctx: DecisionContext,
-  affordances: readonly AffordanceCandidate[],
-  currentAction: { action: string; score01: number; commitmentUntilMs: number } | null,
-): SimulationStepResult {
-  const emotion = derive9Emotion(ctx.needs, ctx.traits);
-  const eligible = filterValidAffordances(affordances, ctx.nowMs);
-  const scored = eligible.map((c) => scoreAffordanceAction(c, { ...ctx, emotion }));
-  const ranked = deterministicCandidateBreak(scored, (s) => s.score01, (s) => `${s.action}:${s.targetId}`);
-  const top = ranked[0] ?? null;
-
-  if (!top) {
-    return { chosen: null, candidates: ranked, emotion, switchReason: 'Không có đích hợp lệ — giữ idle an toàn' };
+  actionId: string | undefined,
+): DecisionContext {
+  if (!actionId) return ctx;
+  if (actionId === 'eat_bowl') {
+    return { ...ctx, needs: { ...ctx.needs, hunger: Math.min(100, ctx.needs.hunger + 22) } };
   }
-
-  // Hysteresis + Commitment protection prevents decision ping-pong/oscillation
-  if (currentAction && ctx.nowMs < currentAction.commitmentUntilMs) {
-    const held = ranked.find((r) => r.action === currentAction.action);
-    if (held) {
-      return { chosen: held, candidates: ranked, emotion, switchReason: 'Đang trong commitment window — giữ hành động ổn định' };
-    }
+  if (actionId === 'drink_bowl') {
+    return { ...ctx, needs: { ...ctx.needs, thirst: Math.min(100, ctx.needs.thirst + 22) } };
   }
-  if (currentAction) {
-    const held = ranked.find((r) => r.action === currentAction.action);
-    if (held && top.action !== held.action && top.score01 - held.score01 < 0.18) {
-      return { chosen: held, candidates: ranked, emotion, switchReason: 'Chênh lệch < hysteresis 0.18 — không giật trạng thái' };
-    }
+  if (actionId === 'sleep_cushion' || actionId === 'nap_on_sofa' || actionId === 'sunbathe') {
+    return { ...ctx, needs: { ...ctx.needs, energy: Math.min(100, ctx.needs.energy + 12) } };
   }
-
-  return { chosen: top, candidates: ranked, emotion, switchReason: top.reasonVi };
+  if (actionId === 'play_yarn' || actionId === 'chase_ball') {
+    return { ...ctx, needs: { ...ctx.needs, fun: Math.min(100, ctx.needs.fun + 14), energy: Math.max(25, ctx.needs.energy - 6) } };
+  }
+  return ctx;
 }
 
 export function runPetLabVerificationTrace(params: {
@@ -106,7 +105,7 @@ export function runPetLabVerificationTrace(params: {
   stepMs?: number;
 }) {
   const stepMs = params.stepMs ?? 4000;
-  const totalSteps = params.steps ?? 20; // 80s trace
+  const totalSteps = params.steps ?? 20;
   const scenario = PET_LAB_SCENARIOS.find((s) => s.id === params.presetId) ?? PET_LAB_SCENARIOS[0]!;
   let ctx: DecisionContext = scenario.setup({
     needs: createDefault8Needs(),
@@ -121,41 +120,30 @@ export function runPetLabVerificationTrace(params: {
     nowMs: 1_000_000,
   });
 
-  let currentAction: { action: string; score01: number; commitmentUntilMs: number } | null = null;
-  let memory: PetMemoryEvent[] = [];
+  let brain: PetBrainState = createPetBrainState();
   let switches = 0;
   const actionsChosen: string[] = [];
+  let lastAction = '';
 
   for (let i = 0; i < totalSteps; i += 1) {
     const nowMs = 1_000_000 + i * stepMs;
-    ctx = { ...ctx, nowMs };
-    const affordances = buildLabAffordances(params.presetId === 'target_moved' && i >= 2 ? 'pet_bed' : undefined);
-    const res = evaluateLivingPetStep(ctx, affordances, currentAction);
-
-    if (res.chosen) {
-      if (currentAction && currentAction.action !== res.chosen.action) {
-        switches += 1;
-      }
-      if (!currentAction || currentAction.action !== res.chosen.action) {
-        currentAction = {
-          action: res.chosen.action,
-          score01: res.chosen.score01,
-          commitmentUntilMs: nowMs + 8000,
-        };
-      }
-      actionsChosen.push(res.chosen.action);
-      memory = appendBoundedMemory(
-        memory,
-        { id: `ev-${i}`, kind: res.chosen.action === 'eat_bowl' ? 'fed' : res.chosen.action === 'play_yarn' ? 'played' : 'explored', atMs: nowMs, caregiverId: 'partner-a' },
-        PET_MEMORY_PERSIST_CAP,
-      );
-      if (res.chosen.action === 'eat_bowl') {
-        ctx = { ...ctx, needs: { ...ctx.needs, hunger: Math.min(100, ctx.needs.hunger + 25) } };
-      } else if (res.chosen.action === 'drink_bowl') {
-        ctx = { ...ctx, needs: { ...ctx.needs, thirst: Math.min(100, ctx.needs.thirst + 25) } };
-      } else if (res.chosen.action === 'sleep_cushion') {
-        ctx = { ...ctx, needs: { ...ctx.needs, energy: Math.min(100, ctx.needs.energy + 10) } };
-      }
+    ctx = { ...ctx, nowMs, emotion: derive9Emotion(ctx.needs, ctx.traits) };
+    const affordances = buildLabAffordances(
+      params.presetId === 'target_moved' && i >= 2 ? 'pet_bed' : undefined,
+    );
+    const tick = tickPetBrain(
+      brain,
+      snapshotToInput(ctx, affordances, ['partner-a', 'partner-b']),
+    );
+    brain = tick.state;
+    const intent = tick.output.currentIntent?.actionId;
+    if (intent && intent !== lastAction) {
+      if (lastAction) switches += 1;
+      lastAction = intent;
+      actionsChosen.push(intent);
+    }
+    for (const done of tick.output.completions) {
+      ctx = applyCompletionNeeds(ctx, done.intent.actionId);
     }
   }
 
@@ -164,8 +152,24 @@ export function runPetLabVerificationTrace(params: {
     switches,
     finalNeeds: ctx.needs,
     finalEmotion: derive9Emotion(ctx.needs, ctx.traits),
-    memoryCount: memory.length,
+    memoryCount: brain.memory.events.length,
+    debug: buildBrainDebugTrace(brain),
   };
 }
 
-export { PET_PERSONALITY_PRESETS };
+export function runPetLabSessionTrace(params: {
+  presetId: string;
+  traits: PetPersonalityTraits;
+  durationMs: number;
+  stepMs?: number;
+}) {
+  const steps = Math.max(1, Math.floor(params.durationMs / (params.stepMs ?? 2500)));
+  return runPetLabVerificationTrace({
+    presetId: params.presetId,
+    traits: params.traits,
+    steps,
+    stepMs: params.stepMs ?? 2500,
+  });
+}
+
+export { PET_PERSONALITY_PRESETS, PET_MEMORY_PERSIST_CAP };
