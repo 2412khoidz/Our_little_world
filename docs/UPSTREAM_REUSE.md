@@ -133,3 +133,13 @@ npm run import-donor:world-zones
 VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 # Village east exit → Gull Bay; west shore → về làng Cabacos
 ```
+
+## Wave 2 — NUVORA inventory depth (stack `6d0e7fd`+)
+
+| Field | Value |
+|-------|--------|
+| **Upstream** | [DarTGTtfd/NUVORA](https://github.com/DarTGTtfd/NUVORA) `public/ui.js` click/desk/craft |
+| **Authority** | `inventoryHotbarAdapter.ts`, `farmShipping`, donor workshop Dev LAN RPC |
+| **OLW targets** | `nuvoraSlotInteraction.ts`, `NuvoraInteractiveTray.tsx`, `NuvoraCraftDesk.tsx`, `FarmEconomyPanel` shipping desk |
+| **Proof** | `tests/unit/nuvoraSlotInteraction.test.ts`, `nuvoraPresentationBridge.test.ts` |
+| **Excluded** | `public/hand.js` (Three.js first-person) |

@@ -31,6 +31,12 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
     });
   }, []);
 
+  useEffect(() => {
+    return gameEventBus.on('cmd:select-hotbar-slot', ({ slotIndex }) => {
+      setHeldAnchor((cur) => selectHotbarSlot(slots, cur, slotIndex));
+    });
+  }, [slots]);
+
   const selectSlot = (index: number) => {
     setHeldAnchor((cur) => selectHotbarSlot(slots, cur, index));
   };

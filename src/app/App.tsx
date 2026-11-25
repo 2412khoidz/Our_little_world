@@ -56,6 +56,7 @@ import type { DonorWorkshopFocus } from '../shared/donor/donorWorkshopFocus';
 import { getCropDefinition } from '../shared/farming/crops';
 import type { FarmPlotView, FarmSnapshot } from '../shared/farming/farmSnapshotTypes';
 import { InventoryModal } from '../features/inventory/InventoryModal';
+import { buildHotbarSlotsFromInventory } from '../shared/interaction/inventoryHotbarAdapter';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
 import { InviteModal } from '../features/pairing/InviteModal';
 import { PetPanel } from '../features/pets/PetPanel';
@@ -296,6 +297,11 @@ function MainCoupleApp() {
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
+  const inventoryHotbarSlots = useMemo(
+    () => buildHotbarSlotsFromInventory(inventorySnapshot, currentUser?.userId),
+    [inventorySnapshot, currentUser?.userId],
+  );
   const [farmWalletCoins, setFarmWalletCoins] = useState(0);
   const farmVersionRef = useRef(0);
   const [farmPlotByIndex, setFarmPlotByIndex] = useState<ReadonlyMap<number, FarmPlotView>>(new Map());
@@ -761,6 +767,14 @@ function MainCoupleApp() {
 
   useEffect(
     () => gameEventBus.on('evt:pet-care-mode', ({ active }) => setPetCareMode(active)),
+    [],
+  );
+
+  useEffect(
+    () =>
+      gameEventBus.on('cmd:sync-held-item', (held) => {
+        setHeldHotbarIndex(held.itemKind === 'none' ? null : held.slotIndex);
+      }),
     [],
   );
 
@@ -2128,10 +2142,12 @@ function MainCoupleApp() {
 
       {activeModal === 'pwa' && <IosInstallModal onClose={() => setActiveModal(null)} />}
 
-      {activeModal === 'inventory' && backend.inventory && (
+      {activeModal === 'inventory' && backend.inventory && currentUser && (
         <InventoryModal
           snapshot={inventorySnapshot}
           localUserId={currentUser.userId}
+          hotbarSlots={inventoryHotbarSlots}
+          heldHotbarIndex={heldHotbarIndex}
           loading={inventoryLoading}
           onClaimFreeKibble={handleClaimFreeKibble}
           onRefresh={() => refreshInventorySnapshot()}
