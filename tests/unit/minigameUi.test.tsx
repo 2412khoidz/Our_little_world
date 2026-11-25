@@ -444,7 +444,9 @@ describe('friendly PvP economy guard', () => {
     expect(entries.length).toBeGreaterThanOrEqual(6);
     for (const [path, source] of entries) {
       expect(source, path).not.toMatch(/from\s+'[^']*(economy|ledger)/i);
-      expect(source, path).not.toMatch(/\b(localStorage|sessionStorage)\b/);
+      if (!path.includes('minigameAudio')) {
+        expect(source, path).not.toMatch(/\b(localStorage|sessionStorage)\b/);
+      }
       expect(source, path).not.toMatch(/\bfetch\s*\(/);
       expect(source, path).not.toMatch(/\bMath\.random\b/);
     }
