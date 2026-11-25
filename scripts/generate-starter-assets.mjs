@@ -399,6 +399,22 @@ function buildTileset() {
       c.rect(x + col * 4 + 3, y, 1, 16, PAL.stoneDark);
     }
   }
+  // (8, 3) Sand → water foam shore (autotile-lite)
+  {
+    const [x, y] = tile(8, 3);
+    c.rect(x, y, 16, 10, PAL.stoneLight);
+    c.rect(x, y + 10, 16, 6, PAL.skyMid);
+    c.px(x + 3, y + 9, PAL.cream);
+    c.px(x + 11, y + 11, PAL.skyLight);
+  }
+  // (9, 3) Grass → sand shore
+  {
+    const [x, y] = tile(9, 3);
+    drawGrassTile(c, x, y, 1);
+    c.rect(x, y + 9, 16, 7, PAL.stoneLight);
+    c.px(x + 5, y + 8, PAL.sageMid);
+    c.px(x + 12, y + 10, PAL.stoneMid);
+  }
 
   c.save(path.join(OUT_STARTER, 'tileset-cozy.png'));
 }

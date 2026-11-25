@@ -41,6 +41,8 @@ const T = {
   waterDeep: 51,
   shoreGrass: 52,
   forestFloor: 55,
+  sandShore: 57,
+  grassShore: 58,
 };
 
 function makeTiledMap(mapId, width, height, layers, objectLayers = []) {
@@ -117,7 +119,17 @@ function paintFarmSoilField(ground, w, originX, originY, cols, rows) {
 
 function paintSandGrassBlend(ground, w, y, x0, x1) {
   for (let x = x0; x <= x1; x += 1) {
-    ground[idx(w, x, y)] = x % 3 === 0 ? T.shoreGrass : (x + y) % 2 === 0 ? T.sandA : T.sandB;
+    ground[idx(w, x, y)] = x % 3 === 0 ? T.grassShore : (x + y) % 2 === 0 ? T.sandA : T.sandB;
+  }
+}
+
+/** One-tile shoreline ring between walkable ground and deep water (no contract anchor changes). */
+function paintWaterShoreRing(ground, w, x0, x1, yLand, yFoam) {
+  for (let x = x0; x <= x1; x += 1) {
+    ground[idx(w, x, yLand)] = x % 2 === 0 ? T.sandShore : T.shoreGrass;
+    if (yFoam !== yLand) {
+      ground[idx(w, x, yFoam)] = T.grassShore;
+    }
   }
 }
 
@@ -225,7 +237,12 @@ function buildVillageMap() {
         water[idx(w, x, y)] = T.waterDeep;
         collision[idx(w, x, y)] = 1;
       } else if (d2 <= 28) {
-        ground[idx(w, x, y)] = T.shoreGrass;
+        const edgeBand = d2 > 20;
+        ground[idx(w, x, y)] = edgeBand
+          ? (x + y) % 2 === 0
+            ? T.grassShore
+            : T.sandShore
+          : T.shoreGrass;
         vegetation[idx(w, x, y)] = y === 28 || y === 34 ? T.flower : 0;
       }
     }
@@ -517,7 +534,12 @@ function buildFarmMap() {
         water[idx(w, x, y)] = T.waterDeep;
         collision[idx(w, x, y)] = 1;
       } else if ((x - 52) ** 2 + (y - 9) ** 2 <= 30) {
-        ground[idx(w, x, y)] = T.shoreGrass;
+        const ring = (x - 52) ** 2 + (y - 9) ** 2 > 18;
+        ground[idx(w, x, y)] = ring
+          ? (x + y) % 2 === 0
+            ? T.grassShore
+            : T.sandShore
+          : T.shoreGrass;
       }
     }
   }
@@ -913,6 +935,7 @@ function buildBeachMap() {
       collision[idx(w, x, y)] = 1;
     }
   }
+  paintWaterShoreRing(ground, w, 0, w - 1, 26, 27);
   for (let y = 26; y <= 27; y += 1) {
     for (let x = 0; x < w; x += 1) {
       water[idx(w, x, y)] = 0;
