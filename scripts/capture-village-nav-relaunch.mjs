@@ -27,7 +27,10 @@ async function main() {
   const srv = spawn(
     process.execPath,
     [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', PORT, '--strictPort'],
-    { stdio: 'ignore', env: { ...process.env, VITE_OLW_EXTENDED_WORLD: '1' } },
+    {
+      stdio: 'ignore',
+      env: { ...process.env, VITE_OLW_PRIVATE_ART: '1', VITE_OLW_EXTENDED_WORLD: '1' },
+    },
   );
   try {
     await waitServer();
