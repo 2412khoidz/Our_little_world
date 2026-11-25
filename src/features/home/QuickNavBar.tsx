@@ -1,4 +1,5 @@
-import { Armchair, Home, Menu, Shirt, Trees } from 'lucide-react';
+import { Armchair, Compass, Home, Menu, Shirt, Trees } from 'lucide-react';
+import { isOutdoorMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
 interface QuickNavBarProps {
@@ -18,6 +19,7 @@ export function QuickNavBar({
   onOpenAvatar,
   onOpenMenu,
 }: QuickNavBarProps) {
+  const outdoorUnlocked = isOutdoorMapUnlocked();
   return (
     <nav className="quick-nav" aria-label="Điều hướng nhanh">
       <button
@@ -39,6 +41,18 @@ export function QuickNavBar({
         <Trees size={19} />
         <span>Vườn</span>
       </button>
+
+      {outdoorUnlocked && (
+        <button
+          type="button"
+          className={`nav-btn ${(currentMapId === 'village' || currentMapId === 'farm') && !decorateActive ? 'nav-btn--active' : ''}`}
+          data-testid="nav-outdoor"
+          onClick={() => onSelectMap('village')}
+        >
+          <Compass size={19} />
+          <span>Làng</span>
+        </button>
+      )}
 
       <button
         type="button"

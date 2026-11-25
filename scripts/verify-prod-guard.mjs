@@ -31,6 +31,10 @@ const FORBIDDEN_PROD_MARKERS = [
   'ui-variant-sandbox',
   'world-expansion-sandbox',
   'combined-experience-demo',
+  'living-pet-local-sim',
+  'living-pet=1',
+  'extended-world-dev-preview',
+  'extended-world=1',
 ];
 
 const jsFiles = fs.readdirSync(distAssets).filter((f) => f.endsWith('.js'));

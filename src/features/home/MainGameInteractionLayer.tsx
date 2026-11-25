@@ -15,6 +15,7 @@ import { GameHotbar } from '../../ui/components/GameHotbar';
 import { executeMainGameContextAction } from './executeMainGameContextAction';
 import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
+import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
@@ -87,12 +88,15 @@ export function MainGameInteractionLayer({
 
   const showHud = enabled && !decorateActive && !modalOpen;
 
+  const livingPetSim = isLivingPetLocalSimulationEnabled();
+
   const actionCtx = useMemo(
     () => ({
       mapId: currentMapId,
       heldItem,
       hasPet: Boolean(petSnapshot),
       petCanFeed,
+      livingPetLocalSimulation: livingPetSim,
       onOpenInventory,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
@@ -109,6 +113,7 @@ export function MainGameInteractionLayer({
       heldItem,
       petSnapshot,
       petCanFeed,
+      livingPetSim,
       onOpenInventory,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
