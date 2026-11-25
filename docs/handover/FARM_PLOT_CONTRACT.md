@@ -1,13 +1,17 @@
 # Farm plot integration contract (Composer 1 ↔ Composer 3)
 
+**Contract version:** `1.0.0` (PR #12 @ `b9aebca` — anchors unchanged on re-verify)  
 **Owner:** Composer 3 (PR #12) — map anchors & presentation only.  
 **Consumer:** Composer 1 (PR #14) — planting, growth, shipping RPC; **do not** duplicate rects in economy code.
+
+Breaking anchor changes → bump `FARM_PLOT_CONTRACT_VERSION` in `farmPlotContract.ts`, regenerate JSON, comment on **#12 and #14**.
 
 ## Source files
 
 | File | Purpose |
 | --- | --- |
 | `src/shared/world/farmPlotContract.ts` | Plot regions, tile gids, named interactable anchors |
+| `src/shared/world/farmPlotContract.v1.json` | Machine-readable export (`buildFarmPlotContractExport()`) |
 | `public/assets/maps/farm.json` | Authoritative collision + ground art (regen via script) |
 | `scripts/generate-world-zone-maps.mjs` | Generator — **Interactables** object layer must match contract tiles |
 
@@ -15,6 +19,7 @@ Regenerate after map edits:
 
 ```bash
 node scripts/generate-world-zone-maps.mjs
+node scripts/export-farm-plot-contract.mjs
 ```
 
 ## Map identity

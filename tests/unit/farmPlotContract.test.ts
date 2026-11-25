@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildFarmPlotContractExport,
   enumerateFarmPlotAnchors,
+  FARM_PLOT_CONTRACT_VERSION,
   FARM_PLOT_MIN_WALKABLE_TILES,
   FARM_PLOT_REGIONS,
   FARM_WORLD_INTERACTABLES,
   VILLAGE_SHOP_PORTAL,
 } from '../../src/shared/world/farmPlotContract';
+import farmPlotContractJson from '../../src/shared/world/farmPlotContract.v1.json';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import { isTileBlockedFromParsed } from '../../src/shared/world/parseTiledWorldMap';
 
 describe('farmPlotContract', () => {
+  it('v1 JSON export matches TS contract document', () => {
+    expect(farmPlotContractJson.contractVersion).toBe(FARM_PLOT_CONTRACT_VERSION);
+    expect(farmPlotContractJson).toEqual(buildFarmPlotContractExport());
+  });
+
   it('defines 184 plot anchors across main + annex', () => {
     const anchors = enumerateFarmPlotAnchors();
     expect(anchors.length).toBe(120 + 64);
