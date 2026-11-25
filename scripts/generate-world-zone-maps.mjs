@@ -88,6 +88,32 @@ function idx(w, x, y) {
   return y * w + x;
 }
 
+function stampTree2x2(vegetation, collision, w, tx, ty) {
+  vegetation[idx(w, tx, ty)] = T.treeTL;
+  vegetation[idx(w, tx + 1, ty)] = T.treeTR;
+  vegetation[idx(w, tx, ty + 1)] = T.treeBL;
+  vegetation[idx(w, tx + 1, ty + 1)] = T.treeBR;
+  collision[idx(w, tx, ty + 1)] = 1;
+  collision[idx(w, tx + 1, ty + 1)] = 1;
+}
+
+function stampBeachHut(buildings, vegetation, collision, w, tx, ty) {
+  buildings[idx(w, tx, ty)] = T.roofL;
+  buildings[idx(w, tx + 1, ty)] = T.roofM;
+  buildings[idx(w, tx + 2, ty)] = T.roofR;
+  collision[idx(w, tx, ty)] = 1;
+  collision[idx(w, tx + 1, ty)] = 1;
+  collision[idx(w, tx + 2, ty)] = 1;
+  buildings[idx(w, tx, ty + 1)] = T.wallL;
+  buildings[idx(w, tx + 1, ty + 1)] = T.door;
+  buildings[idx(w, tx + 2, ty + 1)] = T.wallR;
+  collision[idx(w, tx, ty + 1)] = 1;
+  collision[idx(w, tx + 1, ty + 1)] = 1;
+  collision[idx(w, tx + 2, ty + 1)] = 1;
+  vegetation[idx(w, tx, ty + 2)] = T.flower;
+  vegetation[idx(w, tx + 2, ty + 2)] = T.flower;
+}
+
 function fillGrass(layer, w, h) {
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
@@ -1001,12 +1027,35 @@ function buildBeachMap() {
     ground[idx(w, x, 26)] = 0;
   }
 
-  vegetation[idx(w, 8, 12)] = T.treeTL;
-  vegetation[idx(w, 9, 12)] = T.treeTR;
-  vegetation[idx(w, 8, 13)] = T.treeBL;
-  vegetation[idx(w, 9, 13)] = T.treeBR;
-  collision[idx(w, 8, 13)] = 1;
-  collision[idx(w, 9, 13)] = 1;
+  stampTree2x2(vegetation, collision, w, 8, 12);
+
+  // North dune cozy landmarks (starter atlas props only)
+  carvePath(paths, w, 1, 18, 12, 14);
+  carvePath(paths, w, 12, 14, 26, 10);
+  for (let x = 20; x <= 28; x += 1) {
+    paths[idx(w, x, 6)] = T.woodPlank;
+    ground[idx(w, x, 6)] = 0;
+  }
+  for (let x = 21; x <= 27; x += 1) {
+    paths[idx(w, x, 7)] = T.woodPlank;
+    ground[idx(w, x, 7)] = 0;
+  }
+  for (let x = 19; x <= 29; x += 2) {
+    vegetation[idx(w, x, 5)] = T.flower;
+    vegetation[idx(w, x, 8)] = T.hedge;
+  }
+  vegetation[idx(w, 18, 7)] = T.fenceP;
+  vegetation[idx(w, 30, 7)] = T.fenceP;
+  for (const fx of [10, 16, 22, 28, 34, 40, 46]) {
+    vegetation[idx(w, fx, 9)] = T.fenceV;
+  }
+  stampTree2x2(vegetation, collision, w, 14, 3);
+  stampTree2x2(vegetation, collision, w, 36, 4);
+  stampTree2x2(vegetation, collision, w, 46, 5);
+  stampTree2x2(vegetation, collision, w, 16, 8);
+  stampBeachHut(buildings, vegetation, collision, w, 42, 11);
+  carvePath(paths, w, 26, 10, 28, 24);
+
   paths[idx(w, 14, 20)] = T.woodPlank;
   paths[idx(w, 15, 20)] = T.woodPlank;
   vegetation[idx(w, 13, 19)] = T.flower;
@@ -1027,6 +1076,33 @@ function buildBeachMap() {
   collision[idx(w, 0, 18)] = 0;
   collision[idx(w, 0, 19)] = 0;
   paths[idx(w, 1, 18)] = T.pathA;
+
+  const beachLandmarks = {
+    id: 11,
+    name: 'Interactables',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: [
+      {
+        id: 3,
+        name: 'beach_dune_picnic',
+        type: 'interactable',
+        x: 24 * 16,
+        y: 6 * 16,
+        width: 16,
+        height: 16,
+        properties: [
+          { name: 'kind', type: 'string', value: 'bench' },
+          { name: 'labelVi', type: 'string', value: 'Gió biển — picnic trên cồn cát' },
+          { name: 'maxRadiusPx', type: 'int', value: 52 },
+        ],
+      },
+    ],
+  };
 
   const portals = {
     id: 10,
@@ -1068,7 +1144,7 @@ function buildBeachMap() {
       tileLayer('Vegetation', 5, vegetation, w, h),
       tileLayer('Collision', 6, collision, w, h),
     ],
-    [portals],
+    [portals, beachLandmarks],
   );
 }
 

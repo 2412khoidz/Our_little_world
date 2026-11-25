@@ -21,6 +21,7 @@ const SHOTS = [
   { file: 'vqg-home-interior', mapId: 'home', tileX: 8, tileY: 8 },
   { file: 'vqg-secret-spring', mapId: 'forest', tileX: 35, tileY: 34 },
   { file: 'vqg-shoreline', mapId: 'beach', tileX: 28, tileY: 26 },
+  { file: 'vqg-beach-dune-north', mapId: 'beach', tileX: 24, tileY: 6 },
   { file: 'vqg-portal-west-gate', mapId: 'village', tileX: 2, tileY: 21 },
   { file: 'vqg-portal-farm-entry', mapId: 'farm', tileX: 56, tileY: 20 },
 ];
