@@ -17,7 +17,7 @@ async function main() {
   fs.mkdirSync(path.dirname(outArg), { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 402, height: 874 } });
-  await page.goto(base);
+  await page.goto(`${base}/?extended-world=1`);
   const reset = await page.request.post(`${base}/api/dev-lan/reset`, { data: {} });
   if (!reset.ok()) throw new Error(`dev-lan reset failed: ${reset.status()}`);
   await page.reload();
@@ -25,8 +25,6 @@ async function main() {
   await page.getByTestId('preset-partner-a').click();
   await page.getByTestId('game-canvas-host').locator('canvas').waitFor({ state: 'visible', timeout: 60_000 });
 
-  await page.getByTestId('nav-farm').click();
-  await page.waitForTimeout(1200);
   await page.getByTestId('nav-menu').click();
   await page.getByTestId('menu-inventory').click();
   await page.getByTestId('inventory-modal').waitFor({ state: 'visible' });
