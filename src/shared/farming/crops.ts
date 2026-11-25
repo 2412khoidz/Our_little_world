@@ -253,6 +253,34 @@ export function createFarm(seed: number): Farm {
   return { seed: normalizedSeed, plots };
 }
 
+export interface TillInput {
+  readonly plotIndex: number;
+}
+
+export type TillResult = FarmingResult<{ readonly farm: Farm }>;
+
+/** Hoe untilled fallow soil (`empty` → `tilled`). */
+export function till(farm: Farm, input: TillInput): TillResult {
+  const { plotIndex } = input;
+  if (!isValidPlotIndex(plotIndex)) {
+    return farmingError('INVALID_PLOT');
+  }
+  const current = farm.plots[plotIndex];
+  if (!current) {
+    return farmingError('INVALID_PLOT');
+  }
+  if (current.soil === 'planted') {
+    return farmingError('PLOT_OCCUPIED');
+  }
+  if (current.soil === 'tilled') {
+    return farmingError('ALREADY_TILLED');
+  }
+  return {
+    ok: true,
+    farm: replacePlot(farm, plotIndex, { plotId: plotIndex, soil: 'tilled' }),
+  };
+}
+
 function replacePlot(farm: Farm, plotIndex: number, plot: PlotState): Farm {
   const plots = farm.plots.slice();
   plots[plotIndex] = plot;
@@ -290,8 +318,8 @@ export function plant(farm: Farm, input: PlantInput): PlantResult {
   if (!current) {
     return farmingError('INVALID_PLOT');
   }
-  if (current.soil !== 'empty') {
-    return farmingError('PLOT_OCCUPIED');
+  if (current.soil !== 'tilled') {
+    return farmingError(current.soil === 'planted' ? 'PLOT_OCCUPIED' : 'SOIL_NOT_TILLED');
   }
   const crop: PlantedCrop = {
     cropSku: definition.cropSku,

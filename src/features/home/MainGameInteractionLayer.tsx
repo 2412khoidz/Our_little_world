@@ -32,6 +32,8 @@ export interface MainGameInteractionLayerProps {
   onCloseTopModal: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
+  onOpenFarmMarket?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
 }
 
@@ -50,6 +52,8 @@ export function MainGameInteractionLayer({
   onCloseTopModal,
   onFeedPetAuthoritative,
   onPetPetAuthoritative,
+  onFarmApply,
+  onOpenFarmMarket,
   onNotice,
 }: MainGameInteractionLayerProps) {
   const hotbarSlots = useMemo(
@@ -96,6 +100,8 @@ export function MainGameInteractionLayer({
       onOpenInventory,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onFarmApply,
+      onOpenFarmMarket,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
         else {
@@ -112,6 +118,8 @@ export function MainGameInteractionLayer({
       onOpenInventory,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onFarmApply,
+      onOpenFarmMarket,
       onNotice,
     ],
   );

@@ -21,6 +21,12 @@ const EMPTY_SLOT: Omit<HotbarSlot, 'slotIndex'> = {
  */
 export const MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST = [
   PET_KIBBLE_BASIC_SKU,
+  'tool_hoe',
+  'tool_watering_can',
+  'water_pitcher',
+  'seed_wheat',
+  'seed_carrot',
+  'seed_tomato',
   'fish_salmon_bite',
   'fish_carp_grilled',
   'cat_broth_warm',
@@ -59,6 +65,8 @@ function skuToHeldKind(sku: string): HeldItemKind {
   if (food) return 'food';
   if (sku === 'water_pitcher') return 'water_pitcher';
   if (sku.startsWith('toy_')) return 'toy';
+  if (sku.startsWith('tool_')) return 'tool';
+  if (sku.startsWith('seed_')) return 'tool';
   return 'tool';
 }
 

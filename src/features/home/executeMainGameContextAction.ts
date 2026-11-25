@@ -2,6 +2,7 @@ import { gameEventBus } from '../../game/eventBus';
 import { getMapDefinition } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 import type { ContextualAction, HeldItemState, InteractionActionCode } from '../../shared/interaction/interactionTypes';
+import { plotIdFromInteractableId } from '../../shared/farming/gardenPlotLayout';
 import { PET_KIBBLE_BASIC_SKU } from '../../shared/inventory/inventoryRules';
 
 const MISSION02_PENDING_VI =
@@ -15,6 +16,8 @@ export interface MainGameActionContext {
   onOpenInventory: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
+  onOpenFarmMarket?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
 }
 
@@ -117,6 +120,30 @@ export async function executeMainGameContextAction(
   }
 
   if (emitDiegeticOpen(code)) return;
+
+  const plotId = plotIdFromInteractableId(action.targetId);
+  if (plotId != null && ctx.onFarmApply) {
+    if (code === 'till_plot') {
+      await ctx.onFarmApply(plotId, 'till');
+      return;
+    }
+    if (code === 'plant_crop') {
+      await ctx.onFarmApply(plotId, 'plant', ctx.heldItem.itemSku);
+      return;
+    }
+    if (code === 'water_crop') {
+      await ctx.onFarmApply(plotId, 'water');
+      return;
+    }
+    if (code === 'harvest_crop') {
+      await ctx.onFarmApply(plotId, 'harvest');
+      return;
+    }
+  }
+  if (code === 'open_farm_market' && ctx.onOpenFarmMarket) {
+    ctx.onOpenFarmMarket();
+    return;
+  }
 
   if (code === 'inspect_prop') {
     ctx.onNotice(action.labelVi);

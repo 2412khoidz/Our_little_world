@@ -51,6 +51,10 @@ export const V015_CATALOG = [
     stackLimit: 10,
     tradeable: false,
   },
+  { sku: 'tool_hoe', nameVi: 'Cuốc gỗ', descriptionVi: 'Cuốc đất vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'tool_watering_can', nameVi: 'Bình tưới', descriptionVi: 'Tưới cây ngoài vườn.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'water_pitcher', nameVi: 'Bình nước', descriptionVi: 'Múc nước từ hồ.', purpose: 'ingredient', stackLimit: 1, tradeable: false },
+  { sku: 'seed_wheat', nameVi: 'Hạt lúa mì', descriptionVi: 'Gieo nhanh, vụ đầu dễ.', purpose: 'seed', stackLimit: 99, tradeable: false },
 ];
 
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
@@ -294,8 +298,30 @@ export async function handleV015Route({
   sendJson,
   saveDb,
   broadcastEvent,
+  tryHandleFarmDevLan = null,
 }) {
   const v015 = ensureV015Db(db);
+
+  const routeWorldId = String(body.worldId ?? reqUrl.searchParams.get('worldId') ?? '').trim();
+  if (tryHandleFarmDevLan && (route.startsWith('/farm') || route === '/farm')) {
+    const handled = await tryHandleFarmDevLan({
+      req,
+      res,
+      route,
+      body,
+      userId,
+      worldId: routeWorldId,
+      v015,
+      isWorldMember,
+      sendJson,
+      getInventoryList: (worldId) => getWorldInventoryList(v015, worldId),
+      setInventoryList: (worldId, items) => {
+        v015.inventory[worldId] = items;
+      },
+      saveDb,
+    });
+    if (handled) return true;
+  }
 
   if (
     await handleSharedLifeRoute({

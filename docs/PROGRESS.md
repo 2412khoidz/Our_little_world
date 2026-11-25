@@ -135,3 +135,10 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ## 11. Mission 02.5 — nhánh tích hợp thử
 
 Đã review snapshot PR #4 `700d1af` và thử tích hợp riêng: 474 Vitest, Playwright 19 pass / 1 skip, PostgreSQL fixture fresh/upgrade và public/private guards pass. Đã thêm bản sửa thử cho identity/quality hotbar, concurrent input và Escape. Luồng `pet_interact('feed')` cũ vẫn vượt qua gate physical care; catalog, quality gift/transfer và server authority chưa hoàn tất. Chưa đủ điều kiện merge hoặc deploy; Supabase thật và iPhone thật chưa được kiểm. [Bàn giao Mission 04](research/MISSION_04_TECHNICAL_HANDOVER.md)
+
+## 12. Mission 05 — Farming vertical slice (checkpoint)
+
+- **Branch:** `cursor/mission-05-farming-slice-d77e` — vòng lặp Dev LAN trong game chính: cuốc → gieo → tưới → thu hoạch → bán/mua hạt (`docs/handover/MISSION_05_FARMING_PLAYABLE.md`).
+- **Đã kiểm:** Vitest 520 pass (gồm `till` + farming), typecheck/lint/build; thử tay 1 client Chromium trên Dev LAN (chưa 2 tab Playwright / Supabase).
+- **Chưa kiểm:** Hai client đồng thời tránh duplicate harvest; migration Supabase `farm_apply` + SQL regression; plot sprite trên map (Composer 3); icon hotbar farming (Composer 2).
+- **PR #10:** readiness + Composer 2 authority trong `docs/handover/PR10_INTEGRATION_COMPOSER2.md` (pet branch riêng).

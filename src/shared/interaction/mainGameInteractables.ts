@@ -1,6 +1,7 @@
 import { getCatalogItem } from '../catalog';
 import { getMapDefinition, TILE_SIZE } from '../maps';
 import type { FurniturePlacement, MapId } from '../types';
+import { GARDEN_PLOT_ANCHORS } from '../farming/gardenPlotLayout';
 import { MAIN_GAME_WORLD_ANCHORS, portalCenterPx } from './mainGameWorldAnchors';
 import type { InteractableTarget } from './interactionTypes';
 
@@ -100,6 +101,24 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       x: anchors.mailboxPx.x,
       y: anchors.mailboxPx.y,
       maxRadiusPx: 40,
+    });
+    for (const plot of GARDEN_PLOT_ANCHORS) {
+      targets.push({
+        id: `garden-plot-${plot.plotId}`,
+        kind: 'crop_plot',
+        labelVi: `Luống đất #${plot.plotId + 1}`,
+        x: plot.centerPxX,
+        y: plot.centerPxY,
+        maxRadiusPx: 22,
+      });
+    }
+    targets.push({
+      id: 'garden_seed_shop',
+      kind: 'shop_npc',
+      labelVi: 'Gian hạt Bác Hai',
+      x: anchors.mailboxPx.x - 32,
+      y: anchors.mailboxPx.y + 48,
+      maxRadiusPx: 44,
     });
   }
 

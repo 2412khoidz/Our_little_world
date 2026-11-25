@@ -40,6 +40,7 @@ export {
   isReady,
   minutesToMs,
   plant,
+  till,
   water,
 } from './crops';
 export type {
@@ -47,6 +48,8 @@ export type {
   HarvestResult,
   PlantInput,
   PlantResult,
+  TillInput,
+  TillResult,
   WaterInput,
   WaterResult,
 } from './crops';

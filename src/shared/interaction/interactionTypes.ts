@@ -83,6 +83,11 @@ export type InteractionActionCode =
   | 'enter_home'
   | 'exit_home'
   | 'use_portal'
+  | 'till_plot'
+  | 'plant_crop'
+  | 'water_crop'
+  | 'harvest_crop'
+  | 'open_farm_market'
   | 'inspect_prop'
   | 'put_away_held';
 
