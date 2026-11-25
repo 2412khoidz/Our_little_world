@@ -5,7 +5,7 @@ import type { MapId } from '../types';
  * Keep object tile positions in sync with `scripts/generate-world-zone-maps.mjs` Interactables layer.
  * Bump `FARM_PLOT_CONTRACT_VERSION` + regenerate `farmPlotContract.v1.json` when anchors change.
  */
-export const FARM_PLOT_CONTRACT_VERSION = '1.0.0';
+export const FARM_PLOT_CONTRACT_VERSION = '1.0.1';
 
 export const FARM_ZONE_MAP_ID: MapId = 'farm';
 
@@ -150,7 +150,7 @@ export const VILLAGE_SHOP_PORTAL = {
   mapId: 'village' as MapId,
   targetMapId: 'shop' as MapId,
   doorTileX: 38,
-  doorTileY: 14,
+  doorTileY: 13,
   labelVi: 'Vào cửa hàng Bác Hai',
 } as const;
 

@@ -11710,7 +11710,7 @@
           "name": "village-to-shop",
           "type": "portal",
           "x": 608,
-          "y": 224,
+          "y": 208,
           "width": 16,
           "height": 16,
           "properties": [
@@ -11727,7 +11727,7 @@
             {
               "name": "spawnY",
               "type": "int",
-              "value": 6
+              "value": 7
             },
             {
               "name": "labelVi",
@@ -11752,8 +11752,8 @@
           "id": 3,
           "name": "bac_hai",
           "type": "npc",
-          "x": 608,
-          "y": 224,
+          "x": 560,
+          "y": 240,
           "width": 16,
           "height": 16,
           "properties": [
@@ -11765,7 +11765,7 @@
             {
               "name": "dialogueVi",
               "type": "string",
-              "value": "Chào con — Bác bán hàng tạm. Mở đủ V0.2."
+              "value": "Cửa bên kia — bước vào là thấy quầy. V0.2 mới bán thật nhé."
             },
             {
               "name": "labelVi",

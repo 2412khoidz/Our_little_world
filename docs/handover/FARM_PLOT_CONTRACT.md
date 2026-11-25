@@ -1,6 +1,6 @@
 # Farm plot integration contract (Composer 1 ↔ Composer 3)
 
-**Contract version:** `1.0.0` (PR #12 @ `b9aebca` — anchors unchanged on re-verify)  
+**Contract version:** `1.0.1` — plot anchors unchanged; `village-to-shop` door tile **(38,13)** aligned to shop door art  
 **Owner:** Composer 3 (PR #12) — map anchors & presentation only.  
 **Consumer:** Composer 1 (PR #14) — planting, growth, shipping RPC; **do not** duplicate rects in economy code.
 

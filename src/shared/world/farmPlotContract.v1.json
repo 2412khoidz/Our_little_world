@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.0.1",
   "mapId": "farm",
   "mapSizeTiles": {
     "width": 64,
@@ -1184,7 +1184,7 @@
     "mapId": "village",
     "targetMapId": "shop",
     "doorTileX": 38,
-    "doorTileY": 14,
+    "doorTileY": 13,
     "labelVi": "Vào cửa hàng Bác Hai"
   }
 }

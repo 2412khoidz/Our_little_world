@@ -95,6 +95,32 @@ function fillGrass(layer, w, h) {
   }
 }
 
+/** Checker soil + shore ring (autotile-lite) for Composer 1 plot rects. */
+function paintFarmSoilField(ground, w, originX, originY, cols, rows) {
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const x = originX + col;
+      const y = originY + row;
+      const edge =
+        row === 0 ||
+        row === rows - 1 ||
+        col === 0 ||
+        col === cols - 1;
+      if (edge) {
+        ground[idx(w, x, y)] = T.shoreGrass;
+      } else {
+        ground[idx(w, x, y)] = (col + row) % 2 === 0 ? T.soil : T.soilWet;
+      }
+    }
+  }
+}
+
+function paintSandGrassBlend(ground, w, y, x0, x1) {
+  for (let x = x0; x <= x1; x += 1) {
+    ground[idx(w, x, y)] = x % 3 === 0 ? T.shoreGrass : (x + y) % 2 === 0 ? T.sandA : T.sandB;
+  }
+}
+
 function tileLayer(name, id, data, w, h) {
   return {
     id,
@@ -306,13 +332,13 @@ function buildVillageMap() {
         name: 'village-to-shop',
         type: 'portal',
         x: 38 * 16,
-        y: 14 * 16,
+        y: 13 * 16,
         width: 16,
         height: 16,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'shop' },
           { name: 'spawnX', type: 'int', value: 5 },
-          { name: 'spawnY', type: 'int', value: 6 },
+          { name: 'spawnY', type: 'int', value: 7 },
           { name: 'labelVi', type: 'string', value: 'Vào cửa hàng Bác Hai' },
         ],
       },
@@ -333,13 +359,13 @@ function buildVillageMap() {
         id: 3,
         name: 'bac_hai',
         type: 'npc',
-        x: 38 * 16,
-        y: 14 * 16,
+        x: 35 * 16,
+        y: 15 * 16,
         width: 16,
         height: 16,
         properties: [
           { name: 'role', type: 'string', value: 'market_preview' },
-          { name: 'dialogueVi', type: 'string', value: 'Chào con — Bác bán hàng tạm. Mở đủ V0.2.' },
+          { name: 'dialogueVi', type: 'string', value: 'Cửa bên kia — bước vào là thấy quầy. V0.2 mới bán thật nhé.' },
           { name: 'labelVi', type: 'string', value: 'Bác Hai' },
         ],
       },
@@ -426,22 +452,9 @@ function buildFarmMap() {
     }
   }
 
-  // Ruộng chính 12×10 = 120 ô (16,10)–(27,19)
-  for (let row = 0; row < 10; row += 1) {
-    for (let col = 0; col < 12; col += 1) {
-      const x = 16 + col;
-      const y = 10 + row;
-      ground[idx(w, x, y)] = (col + row) % 2 === 0 ? T.soil : T.soilWet;
-    }
-  }
-  // Ruộng phụ 8×8 = 64 ô (40,10)–(47,17) → tổng 184 > 160 nếu tính cả lối; giữ 12×8 + 8×8 = 160 plots walkable centers
-  for (let row = 0; row < 8; row += 1) {
-    for (let col = 0; col < 8; col += 1) {
-      const x = 40 + col;
-      const y = 28 + row;
-      ground[idx(w, x, y)] = (col + row) % 3 === 0 ? T.soilWet : T.soil;
-    }
-  }
+  // Ruộng chính 12×10 + ruộng phụ 8×8 (contract: farm_main / farm_annex @ 40,28)
+  paintFarmSoilField(ground, w, 16, 10, 12, 10);
+  paintFarmSoilField(ground, w, 40, 28, 8, 8);
 
   // Hàng rào ruộng
   for (let col = 15; col <= 28; col += 1) {
@@ -795,11 +808,14 @@ function buildBeachMap() {
         ground[idx(w, x, y)] = T.shoreGrass;
       } else if (y >= 11) {
         ground[idx(w, x, y)] = (x + y) % 2 === 0 ? T.sandA : T.sandB;
+      } else if (y >= 9) {
+        ground[idx(w, x, y)] = (x + y) % 3 === 0 ? T.shoreGrass : T.g2;
       } else {
         ground[idx(w, x, y)] = (x + y) % 3 === 0 ? T.forestFloor : T.g2;
       }
     }
   }
+  paintSandGrassBlend(ground, w, 10, 4, w - 5);
 
   for (let y = 28; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
@@ -899,33 +915,36 @@ function buildShopInteriorMap() {
 
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
-      ground[idx(w, x, y)] = (x + y) % 2 === 0 ? 2 : 3;
+      const wood = (x + y) % 2 === 0 ? T.woodPlank : T.pathB;
+      ground[idx(w, x, y)] = y >= 2 ? wood : 0;
     }
   }
   for (let x = 1; x < w - 1; x += 1) {
-    paths[idx(w, x, 4)] = T.pathA;
-    paths[idx(w, x, 5)] = T.pathB;
+    paths[idx(w, x, 3)] = T.pathA;
+    paths[idx(w, x, 4)] = T.pathB;
     paths[idx(w, x, h - 2)] = T.pathA;
     ground[idx(w, x, h - 2)] = 0;
   }
-  for (let x = 2; x < w - 2; x += 1) {
-    buildings[idx(w, x, 1)] = 4;
-    buildings[idx(w, x, 0)] = 5;
-    vegetation[idx(w, x, 6)] = T.hedge;
-    collision[idx(w, x, 0)] = 1;
+  for (let x = 2; x < w - 5; x += 1) {
+    buildings[idx(w, x, 1)] = T.wallL;
+    vegetation[idx(w, x, 6)] = T.fenceH;
     collision[idx(w, x, 1)] = 1;
   }
-  for (let x = 0; x < w; x += 1) {
+  for (let x = 2; x < w - 2; x += 1) {
     buildings[idx(w, x, 0)] = T.roofM;
-    buildings[idx(w, x, 1)] = T.wallL;
     collision[idx(w, x, 0)] = 1;
-    collision[idx(w, x, 1)] = 1;
   }
   buildings[idx(w, 2, 2)] = T.wallL;
   buildings[idx(w, 3, 2)] = T.wallL;
   buildings[idx(w, 4, 2)] = T.door;
+  buildings[idx(w, 7, 2)] = T.wallL;
+  buildings[idx(w, 8, 2)] = T.wallR;
+  vegetation[idx(w, 9, 3)] = T.flower;
+  vegetation[idx(w, 10, 3)] = T.flower;
   collision[idx(w, 2, 2)] = 1;
   collision[idx(w, 3, 2)] = 1;
+  collision[idx(w, 7, 2)] = 1;
+  collision[idx(w, 8, 2)] = 1;
 
   const portals = {
     id: 10,
@@ -947,8 +966,8 @@ function buildShopInteriorMap() {
         height: 16,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'village' },
-          { name: 'spawnX', type: 'int', value: 37 },
-          { name: 'spawnY', type: 'int', value: 14 },
+          { name: 'spawnX', type: 'int', value: 38 },
+          { name: 'spawnY', type: 'int', value: 13 },
           { name: 'labelVi', type: 'string', value: 'Ra ngoài' },
         ],
       },
