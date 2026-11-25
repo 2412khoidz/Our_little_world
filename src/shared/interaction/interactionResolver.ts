@@ -1,4 +1,8 @@
 import type { Direction } from '../types';
+import {
+  ECONOMY_SHOP_TARGET_IDS,
+  shouldOmitEconomyTargetFromResolve,
+} from './economyInteractablePolicy';
 import type {
   ContextualAction,
   ContextualResolution,
@@ -228,9 +232,30 @@ function actionForTarget(
       if (target.id.startsWith('npc:')) {
         return { code: 'talk_npc', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
       }
+      if (ECONOMY_SHOP_TARGET_IDS.has(target.id)) {
+        return {
+          code: 'open_farm_market',
+          keyHint: 'J',
+          labelVi: 'Mua hạt giống · Bác Hai',
+          targetId: target.id,
+          available: target.donorPlayable === true,
+          reasonVi:
+            target.donorPlayable === true
+              ? undefined
+              : 'Chợ hạt chỉ mở trên bản preview ruộng (Dev LAN).',
+        };
+      }
       return { code: 'open_farm_market', keyHint: 'J', labelVi: 'Cửa hàng hạt giống', targetId: target.id, available: true };
     case 'shipping_bin':
-      return { code: 'open_shipping_bin', keyHint: 'J', labelVi: 'Gửi nông sản', targetId: target.id, available: true };
+      return {
+        code: 'open_shipping_bin',
+        keyHint: 'J',
+        labelVi: target.labelVi || 'Gửi nông sản',
+        targetId: target.id,
+        available: target.donorPlayable === true,
+        reasonVi:
+          target.donorPlayable === true ? undefined : 'Thùng gom chỉ mở trên bản preview ruộng.',
+      };
     case 'fishing_spot': {
       const stream = target.id.includes('stream');
       return {
@@ -257,7 +282,7 @@ function actionForTarget(
 }
 
 export function resolveContextualActions(input: InteractionResolveInput): ContextualResolution {
-  const { playerX, playerY, facing, heldItem, interactables } = input;
+  const { playerX, playerY, facing, heldItem, interactables, economyPlayable = true } = input;
   const fVec = facingVector(facing);
 
   const scored: Array<{ target: InteractableTarget; action: ContextualAction; score: number }> = [];
@@ -268,6 +293,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     if (dist > t.maxRadiusPx) continue;
 
     const action = actionForTarget(t, heldItem);
+    if (shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;
     const nx = dist > 0.01 ? dx / dist : 0;
     const ny = dist > 0.01 ? dy / dist : 0;
     const facingDot = nx * fVec.x + ny * fVec.y;

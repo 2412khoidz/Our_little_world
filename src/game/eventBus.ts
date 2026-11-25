@@ -48,6 +48,7 @@ export interface InteractionFramePayload {
   playerY: number;
   facing: Direction;
   interactables: readonly InteractableTarget[];
+  economyPlayable?: boolean;
 }
 
 export interface GameDiagnosticsSnapshot {

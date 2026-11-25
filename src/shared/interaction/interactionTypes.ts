@@ -139,4 +139,6 @@ export interface InteractionResolveInput {
   facing: Direction;
   heldItem: HeldItemState;
   interactables: readonly InteractableTarget[];
+  /** Donor-reuse / dev-lan economy preview — false hides dead economy J prompts. */
+  economyPlayable?: boolean;
 }
