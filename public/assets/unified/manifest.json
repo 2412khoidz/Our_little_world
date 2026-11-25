@@ -10,7 +10,7 @@
     "avatars": {
       "file": "avatars.png",
       "width": 384,
-      "height": 768
+      "height": 288
     }
   },
   "entries": [
@@ -419,7 +419,7 @@
         "x": 0,
         "y": 0,
         "w": 384,
-        "h": 256
+        "h": 96
       },
       "anchor": {
         "ox": 0.5,
@@ -438,9 +438,9 @@
       "texture": "avatars",
       "rect": {
         "x": 0,
-        "y": 256,
+        "y": 96,
         "w": 384,
-        "h": 256
+        "h": 96
       },
       "anchor": {
         "ox": 0.5,
@@ -459,9 +459,9 @@
       "texture": "avatars",
       "rect": {
         "x": 0,
-        "y": 512,
+        "y": 192,
         "w": 384,
-        "h": 256
+        "h": 96
       },
       "anchor": {
         "ox": 0.5,

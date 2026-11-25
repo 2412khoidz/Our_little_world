@@ -80,8 +80,8 @@ export function registerDonorPunyAvatarAnims(scene: Phaser.Scene, textureKey: st
     if (!scene.anims.exists(sitKey)) {
       scene.anims.create({
         key: sitKey,
-        frames: frameTriplet(textureKey, rows.hurt, dir),
-        frameRate: 5,
+        frames: frameTriplet(textureKey, rows.idle, dir),
+        frameRate: 4,
         repeat: -1,
       });
     }
@@ -90,8 +90,8 @@ export function registerDonorPunyAvatarAnims(scene: Phaser.Scene, textureKey: st
     if (!scene.anims.exists(lieKey)) {
       scene.anims.create({
         key: lieKey,
-        frames: frameTriplet(textureKey, rows.death, dir),
-        frameRate: 4,
+        frames: frameTriplet(textureKey, rows.idle, dir),
+        frameRate: 3,
         repeat: -1,
       });
     }
