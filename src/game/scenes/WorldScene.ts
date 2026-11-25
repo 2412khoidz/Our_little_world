@@ -12,6 +12,9 @@ import {
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
 import { applyTiledZoneAccents } from '../world/tiledZoneAccents';
+import { renderDemoEWorldZone } from '../world/demoEZoneRenderer';
+import { privateArtBlockedReason, shouldRenderDemoEWorldZone } from '../world/privateArtCapability';
+import { USE_PRIVATE_ART } from '../art/atlasProfile';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
@@ -314,8 +317,22 @@ export class WorldScene extends Phaser.Scene {
     const background =
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     if (isTiledWorldMapId(mapId)) {
-      this.buildTiledWorldMap(mapId);
-      applyTiledZoneAccents(mapId, this.placeProp.bind(this), (obj) => this.mapLayers.push(obj), this);
+      if (shouldRenderDemoEWorldZone(this, mapId)) {
+        renderDemoEWorldZone(this, mapId, this.placeProp.bind(this), (obj) => this.mapLayers.push(obj));
+      } else {
+        this.buildTiledWorldMap(mapId);
+        if (!USE_PRIVATE_ART) {
+          applyTiledZoneAccents(mapId, this.placeProp.bind(this), (obj) => this.mapLayers.push(obj), this);
+        }
+        const blocked = privateArtBlockedReason(this);
+        if (blocked) {
+          gameEventBus.emit('evt:preview-notice', {
+            title: 'Private art chưa sẵn sàng',
+            version: 'Demo E · cloud',
+            body: blocked,
+          });
+        }
+      }
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));

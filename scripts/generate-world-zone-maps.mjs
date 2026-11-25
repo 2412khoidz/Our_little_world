@@ -175,6 +175,19 @@ function carvePath(paths, w, x0, y0, x1, y1) {
 /**
  * @param {'standard' | 'wide' | 'narrow' | 'porch'} style
  */
+/** 3×2 cottage collision aligned with Demo E `prop.side_cottage` placements. */
+function stampCottageFootprint(collision, paths, w, hx, hy, doorDx = 1) {
+  for (let dx = 0; dx < 3; dx += 1) {
+    for (let dy = 0; dy < 2; dy += 1) {
+      collision[idx(w, hx + dx, hy + dy)] = 1;
+    }
+    if (dx === doorDx) {
+      collision[idx(w, hx + dx, hy + 1)] = 0;
+      paths[idx(w, hx + dx, hy + 2)] = paths[idx(w, hx + dx, hy + 2)] || T.woodPlank;
+    }
+  }
+}
+
 function stampVillageHouse(buildings, collision, paths, vegetation, w, hx, hy, style) {
   const doorCol = (() => {
     if (style === 'wide') return 2;
@@ -240,10 +253,18 @@ function buildVillageMap() {
 
   fillGrass(ground, w, h);
 
-  // Quảng trường cobble (12,14)-(36,26)
+  // Quảng trường oval (trung tâm 24,20) — lối đi vòng quanh giếng / picnic
+  const plazaCx = 24;
+  const plazaCy = 20;
+  const plazaRx = 12;
+  const plazaRy = 7;
   for (let y = 14; y <= 26; y += 1) {
     for (let x = 12; x <= 36; x += 1) {
-      paths[idx(w, x, y)] = (x + y) % 2 === 0 ? T.pathA : T.pathB;
+      const nx = (x - plazaCx) / plazaRx;
+      const ny = (y - plazaCy) / plazaRy;
+      if (nx * nx + ny * ny <= 1.08) {
+        paths[idx(w, x, y)] = (x + y) % 2 === 0 ? T.pathA : T.pathB;
+      }
     }
   }
 
@@ -286,65 +307,54 @@ function buildVillageMap() {
   vegetation[idx(w, 11, 28)] = T.flower;
   vegetation[idx(w, 13, 28)] = T.flower;
 
-  // Dãy nhà phía bắc — kiến trúc khác nhau
-  const northHouses = [
-    { x: 14, y: 6, style: 'porch' },
-    { x: 20, y: 6, style: 'narrow' },
-    { x: 27, y: 6, style: 'standard' },
-    { x: 33, y: 6, style: 'wide' },
+  // Dân cư vòng cung (khớp Demo E side_cottage) + sân chợ đông mở
+  const cottageHomes = [
+    { x: 13, y: 6, style: 'standard', doorCol: 1 },
+    { x: 27, y: 6, style: 'standard', doorCol: 1 },
+    { x: 5, y: 16, style: 'porch', doorCol: 1 },
+    { x: 35, y: 10, style: 'narrow', doorCol: 0 },
   ];
-  for (const house of northHouses) {
+  for (const house of cottageHomes) {
     stampVillageHouse(buildings, collision, paths, vegetation, w, house.x, house.y, house.style);
+    stampCottageFootprint(collision, paths, w, house.x, house.y, house.doorCol);
   }
-  // Nhà phía tây / đông (ngoài quảng trường)
-  stampVillageHouse(buildings, collision, paths, vegetation, w, 6, 18, 'porch');
-  stampVillageHouse(buildings, collision, paths, vegetation, w, 42, 26, 'narrow');
-  paths[idx(w, 8, 19)] = T.pathB;
-  paths[idx(w, 41, 27)] = T.pathA;
-
-  // Cửa hàng Bác Hai (đông)
-  const sx = 36;
-  const sy = 12;
-  buildings[idx(w, sx, sy)] = T.roofL;
-  buildings[idx(w, sx + 1, sy)] = T.roofM;
-  buildings[idx(w, sx + 2, sy)] = T.roofR;
-  buildings[idx(w, sx + 3, sy)] = T.roofR;
-  buildings[idx(w, sx, sy + 1)] = T.wallL;
-  buildings[idx(w, sx + 1, sy + 1)] = T.wallL;
-  buildings[idx(w, sx + 2, sy + 1)] = T.door;
-  buildings[idx(w, sx + 3, sy + 1)] = T.wallR;
-  for (let dx = 0; dx < 4; dx += 1) {
-    collision[idx(w, sx + dx, sy)] = 1;
-    if (dx !== 2) collision[idx(w, sx + dx, sy + 1)] = 1;
+  for (let x = 34; x <= 40; x += 1) {
+    for (let y = 12; y <= 14; y += 1) {
+      paths[idx(w, x, y)] = (x + y) % 2 === 0 ? T.pathA : T.pathB;
+    }
   }
+  vegetation[idx(w, 39, 11)] = T.fenceP;
+  vegetation[idx(w, 41, 11)] = T.fenceP;
+  paths[idx(w, 8, 18)] = T.pathB;
+  paths[idx(w, 9, 19)] = T.pathC;
 
-  // Cây quanh quảng trường
+  // Cây bóng mát quanh oval (starter — ẩn khi private atlas vẽ prop.oak_tree)
   const trees = [
-    [10, 16],
-    [38, 16],
-    [10, 24],
-    [38, 24],
-    [16, 28],
-    [34, 28],
+    [9, 15],
+    [38, 15],
+    [9, 25],
+    [38, 25],
+    [16, 27],
+    [33, 27],
   ];
   for (const [tx, ty] of trees) {
     stampTree2x2(vegetation, collision, w, tx, ty);
   }
 
-  // Quảng trường — giếng + bồn hoa + ghế gỗ (không đổi footprint)
+  // Quảng trường — giếng + picnic ring (khớp prop.picnic_* ở 23–25,18–20)
   for (let x = 23; x <= 25; x += 1) {
     for (let y = 19; y <= 21; y += 1) {
       vegetation[idx(w, x, y)] = T.flower;
-      paths[idx(w, x, y)] = 0;
+      paths[idx(w, x, y)] = (x + y) % 2 === 0 ? T.pathA : T.pathB;
     }
   }
   water[idx(w, 24, 20)] = T.waterDeep;
   collision[idx(w, 24, 20)] = 1;
   for (const [bx, by] of [
-    [22, 17],
-    [26, 17],
-    [22, 23],
-    [26, 23],
+    [21, 17],
+    [27, 17],
+    [21, 23],
+    [27, 23],
   ]) {
     paths[idx(w, bx, by)] = T.woodPlank;
     vegetation[idx(w, bx, by === 17 ? by - 1 : by + 1)] = T.fenceP;
@@ -491,11 +501,11 @@ function buildVillageMap() {
     x: 0,
     y: 0,
     objects: [
-      ...northHouses.map((house, i) => ({
+      ...cottageHomes.map((house, i) => ({
         id: 20 + i,
         name: `village_home_${i}`,
         type: 'interactable',
-        x: (house.x + (house.style === 'narrow' ? 0 : 1)) * 16,
+        x: (house.x + house.doorCol) * 16,
         y: (house.y + 1) * 16,
         width: 16,
         height: 16,
@@ -523,7 +533,7 @@ function buildVillageMap() {
         id: 31,
         name: 'village_plaza_bench',
         type: 'interactable',
-        x: 22 * 16,
+        x: 21 * 16,
         y: 17 * 16,
         width: 16,
         height: 16,
@@ -550,8 +560,8 @@ function buildVillageMap() {
         id: 3,
         name: 'bac_hai',
         type: 'npc',
-        x: 35 * 16,
-        y: 15 * 16,
+        x: 37 * 16,
+        y: 13 * 16,
         width: 16,
         height: 16,
         properties: [
@@ -564,8 +574,8 @@ function buildVillageMap() {
         id: 4,
         name: 'co_lan',
         type: 'npc',
-        x: 20 * 16,
-        y: 22 * 16,
+        x: 23 * 16,
+        y: 19 * 16,
         width: 16,
         height: 16,
         properties: [
@@ -579,7 +589,7 @@ function buildVillageMap() {
         name: 'ong_minh',
         type: 'npc',
         x: 30 * 16,
-        y: 18 * 16,
+        y: 20 * 16,
         width: 16,
         height: 16,
         properties: [
