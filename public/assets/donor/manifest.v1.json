@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "slice": "asset-transplant-a",
+  "policy": {
+    "avatarDiagonalAlphaCompositeBanned": true
+  },
+  "entries": [
+    {
+      "id": "avatar.walk.8dir",
+      "provider": "shade-puny-characters-cc0",
+      "files": [
+        "cc0-puny-8d/character-base.png",
+        "cc0-puny-8d/soldier-blue.png",
+        "cc0-puny-8d/soldier-red.png"
+      ],
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "consumers": ["donor-puny-character-base", "donor-puny-soldier-blue", "donor-puny-soldier-red"]
+    },
+    {
+      "id": "avatar.reference.cabacos-sunnyside",
+      "provider": "goncalojbsousa/Farming-Simulator-Cabacos",
+      "sha": "79e423defc12bd99327cfcc28bf7ec0085996244",
+      "files": [
+        "cabacos-characters/base_waiting_strip9.png",
+        "cabacos-characters/base_walk_strip8.png"
+      ],
+      "frameWidth": 96,
+      "frameHeight": 64,
+      "role": "reference"
+    }
+  ]
+}

@@ -94,3 +94,14 @@ export function parseAvatarConfig(input: unknown, fallback: AvatarConfig = DEFAU
   const parsed = avatarConfigSchema.safeParse(input);
   return parsed.success ? parsed.data : fallback;
 }
+
+export function avatarConfigsEqual(a: AvatarConfig, b: AvatarConfig): boolean {
+  return (
+    a.skinTone === b.skinTone &&
+    a.hairStyle === b.hairStyle &&
+    a.hairColor === b.hairColor &&
+    a.outfitStyle === b.outfitStyle &&
+    a.outfitColor === b.outfitColor &&
+    a.accessory === b.accessory
+  );
+}
