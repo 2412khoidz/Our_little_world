@@ -1,0 +1,19 @@
+{
+  "id": "pydew-forest-glade",
+  "widthTiles": 48,
+  "heightTiles": 48,
+  "theme": "forest_glade",
+  "spawnDefault": { "tileX": 8, "tileY": 26 },
+  "portals": {
+    "village": {
+      "villageEdgeTile": { "tileX": 84, "tileY": 20 },
+      "forestSpawnTile": { "tileX": 2, "tileY": 22 },
+      "labelVi": "Vào rừng (PyDew slice)"
+    },
+    "returnToVillage": {
+      "forestEdgeTile": { "tileX": 0, "tileY": 22 },
+      "villageSpawnTile": { "tileX": 84, "tileY": 20 },
+      "labelVi": "Về làng Cabacos"
+    }
+  }
+}

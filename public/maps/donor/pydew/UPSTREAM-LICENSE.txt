@@ -1,0 +1,8 @@
+PyDew (clear-code-projects/PyDew)
+Survey reference for OLW forest slice — CC0 public domain.
+
+OLW vendored in this folder: MANIFEST.json + forest-glade-slice.json (layout metadata only).
+No PyDew tile sprites ship in this slice; forest.json art remains cozy procedural.
+
+Upstream: https://github.com/clear-code-projects/PyDew
+Pinned ref: see MANIFEST.json
