@@ -27,6 +27,8 @@ export interface DecorateStatePayload {
   active: boolean;
   activeSku: string | null;
   selectedPlacementId: string | null;
+  /** Flip footprint before place (cozy-space `isFlipped` / cocoworking `R`). */
+  previewRotated: boolean;
 }
 
 export interface NearbyInteractable {
@@ -158,9 +160,17 @@ export interface GameEventMap {
     targetId?: string;
   };
   'evt:preview-notice': { title: string; body: string; version: string };
-  'evt:decorate-place': { mapId: MapId; sku: string; tileX: number; tileY: number };
+  'evt:decorate-place': {
+    mapId: MapId;
+    sku: string;
+    tileX: number;
+    tileY: number;
+    rotated?: boolean;
+  };
   'evt:decorate-move': { placementId: string; tileX: number; tileY: number };
   'evt:decorate-select': { placementId: string | null };
+  'evt:decorate-rotate-preview': { rotated: boolean };
+  'evt:decorate-rotate-placement': { placementId: string };
   'evt:nearby-interactable': NearbyInteractable | null;
   'evt:interaction-frame': InteractionFramePayload;
   'evt:diagnostics': GameDiagnosticsSnapshot;

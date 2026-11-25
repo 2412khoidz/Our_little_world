@@ -52,6 +52,9 @@ export interface ValidatePlacementInput {
   tileY: number;
   placements: readonly FurniturePlacement[];
   ignorePlacementId?: string;
+  /** When set, overrides catalog footprint (decorate rotate / persisted layout). */
+  footprintWidth?: number;
+  footprintHeight?: number;
 }
 
 export type ValidatePlacementResult =
@@ -94,12 +97,9 @@ export function validatePlacement(input: ValidatePlacementInput): ValidatePlacem
   }
 
   const mapDef = getMapDefinition(input.mapId);
-  const footprint = getFootprintTiles(
-    input.tileX,
-    input.tileY,
-    catalogItem.widthTiles,
-    catalogItem.heightTiles,
-  );
+  const widthTiles = input.footprintWidth ?? catalogItem.widthTiles;
+  const heightTiles = input.footprintHeight ?? catalogItem.heightTiles;
+  const footprint = getFootprintTiles(input.tileX, input.tileY, widthTiles, heightTiles);
 
   for (const tile of footprint) {
     if (

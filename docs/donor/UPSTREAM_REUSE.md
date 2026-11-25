@@ -72,3 +72,18 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `donorMeadowbrookWorkshop.test.ts`, `donorHollowBakery.test.ts`, `donorHollowCoop.test.ts`, `donorTensionFishing.test.ts`, `donorReelMinigame.test.ts`, `donorTidefallFishingFsm.test.ts`, `donorMeadowbrookCatch.test.ts` | `tests/e2e/donor-economy-two-client.spec.ts` |
 
 Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview`.
+
+## Wave 2 C3 — Interior decorate loop (cocoworking + cozy-space)
+
+| Donor | Commit | OLW |
+| --- | --- | --- |
+| [cocolocow/cocoworking](https://github.com/cocolocow/cocoworking) | `947494f` | `src/shared/decorate/decoratePlacementLoop.ts`, `src/donors/cocoworking-947494f/*` |
+| [adrien04hz/cozy-space-game](https://github.com/adrien04hz/cozy-space-game) | `7b8cb1e` | Flip/preview pattern only; `src/donors/cozy-space-7b8cb1e/UPSTREAM_REUSE.md` |
+
+**Replaced:** full-map decorate grid on Cabacos/village/beach — decorate mode now **home + garden only** (`decorateInteriorPolicy.ts`).
+
+**Persist:** place/move/rotate via existing furniture RPC + dev LAN (`/furniture/rotate`).
+
+**Art:** Modern Interiors / `public/assets/starter/furniture-cozy.png` — no ToffeeCraft / cocoworking tinyhouse PNGs in build.
+
+**Beach nav:** `OutdoorWorldNavSheet` + village `→ Gull Bay` discoverability marker (Cabacos portal bar).

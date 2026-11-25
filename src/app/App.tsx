@@ -29,6 +29,13 @@ import { CoupleEmoteDock } from '../features/couple/CoupleEmoteDock';
 import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
+import { OutdoorWorldNavSheet } from '../features/home/OutdoorWorldNavSheet';
+import {
+  defaultDecorateMapId,
+  isDecorateMapId,
+  type DecorateMapId,
+} from '../shared/decorate/decorateInteriorPolicy';
+import { footprintForCatalog } from '../shared/decorate/decoratePlacementLoop';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
 import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
 import { ExtendedWorldDevBanner } from '../features/home/ExtendedWorldDevBanner';
@@ -261,6 +268,8 @@ function MainCoupleApp() {
   const [decorateActive, setDecorateActive] = useState(false);
   const [activeSku, setActiveSku] = useState<string | null>(null);
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
+  const [decoratePreviewRotated, setDecoratePreviewRotated] = useState(false);
+  const [outdoorNavOpen, setOutdoorNavOpen] = useState(false);
   const [mutationBusy, setMutationBusy] = useState(false);
 
   // Modals & settings
@@ -1402,15 +1411,32 @@ function MainCoupleApp() {
 
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
-    async ({ mapId, sku, tileX, tileY }: { mapId: MapId; sku: string; tileX: number; tileY: number }) => {
+    async ({
+      mapId,
+      sku,
+      tileX,
+      tileY,
+      rotated,
+    }: {
+      mapId: MapId;
+      sku: string;
+      tileX: number;
+      tileY: number;
+      rotated?: boolean;
+    }) => {
       const snap = snapshotRef.current;
       if (!snap || !currentUser || mutationBusy) return;
+      if (!isDecorateMapId(mapId)) {
+        showToast('Chỉ có thể trang trí trong nhà hoặc khu vườn.', true);
+        return;
+      }
       if (connectionStatus === 'offline') {
         showToast('Đang ngoại tuyến — không thể lưu trang trí lúc này.', true);
         return;
       }
       const item = getCatalogItem(sku);
       if (!item) return;
+      const footprint = footprintForCatalog(item, rotated === true);
 
       const prevSnap = snap;
       const optimisticItem: FurniturePlacement = {
@@ -1421,8 +1447,8 @@ function MainCoupleApp() {
         layerSlot: item.layerSlot,
         tileX,
         tileY,
-        widthTiles: item.widthTiles,
-        heightTiles: item.heightTiles,
+        widthTiles: footprint.widthTiles,
+        heightTiles: footprint.heightTiles,
         updatedBy: currentUser.userId,
         updatedAt: new Date().toISOString(),
       };
@@ -1439,6 +1465,7 @@ function MainCoupleApp() {
         sku,
         tileX,
         tileY,
+        rotated: rotated === true,
         expectedLayoutVersion: snap.world.layoutVersion,
         idempotencyKey: makeIdempotencyKey('place'),
       });
@@ -1466,9 +1493,64 @@ function MainCoupleApp() {
       });
       realtimeRef.current?.notifyWorldMutated('furniture');
       setActiveSku(null);
+      setDecoratePreviewRotated(false);
       showToast(`Đã đặt ${item.nameVi}`);
     },
     [backend, connectionStatus, currentUser, mutationBusy, refreshWorldSnapshot, showToast],
+  );
+
+  const handleRotatePlacement = useCallback(
+    async (placementId: string) => {
+      const snap = snapshotRef.current;
+      if (!snap || mutationBusy) return;
+      if (connectionStatus === 'offline') {
+        showToast('Đang ngoại tuyến — không thể xoay đồ lúc này.', true);
+        return;
+      }
+      const existing = snap.placements.find((p) => p.id === placementId);
+      if (!existing) return;
+
+      const prevSnap = snap;
+      const rotated: FurniturePlacement = {
+        ...existing,
+        widthTiles: existing.heightTiles,
+        heightTiles: existing.widthTiles,
+      };
+      setMutationBusy(true);
+      setWorldSnapshot({
+        ...snap,
+        placements: snap.placements.map((p) => (p.id === placementId ? rotated : p)),
+      });
+
+      const res = await backend.rotateFurniture({
+        worldId: snap.world.id,
+        placementId,
+        expectedLayoutVersion: snap.world.layoutVersion,
+        idempotencyKey: makeIdempotencyKey('rotate'),
+      });
+      setMutationBusy(false);
+
+      if (!res.ok) {
+        setWorldSnapshot(prevSnap);
+        showToast(res.message, true);
+        if (res.code === 'VERSION_CONFLICT' || res.code === 'TILE_OCCUPIED') {
+          await refreshWorldSnapshot();
+        }
+        return;
+      }
+
+      setWorldSnapshot((cur) => {
+        if (!cur) return cur;
+        return {
+          ...cur,
+          world: { ...cur.world, layoutVersion: res.data.layoutVersion },
+          placements: cur.placements.map((p) => (p.id === placementId ? res.data.placement : p)),
+        };
+      });
+      realtimeRef.current?.notifyWorldMutated('furniture');
+      showToast('Đã xoay món đồ');
+    },
+    [backend, connectionStatus, mutationBusy, refreshWorldSnapshot, showToast],
   );
 
   const handleMoveRequest = useCallback(
@@ -1726,6 +1808,7 @@ function MainCoupleApp() {
         decorateActive={decorateActive}
         activeSku={activeSku}
         selectedPlacementId={selectedPlacementId}
+        decoratePreviewRotated={decoratePreviewRotated}
         showJoystick={showJoystick}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
@@ -1854,17 +1937,31 @@ function MainCoupleApp() {
           placements={worldSnapshot.placements}
           activeSku={activeSku}
           selectedPlacementId={selectedPlacementId}
+          previewRotated={decoratePreviewRotated}
           busy={mutationBusy}
+          onSelectDecorateMap={(mapId: DecorateMapId) => {
+            if (currentMapId !== mapId) handleSelectMap(mapId);
+          }}
           onSelectSku={(sku) => {
             setSelectedPlacementId(null);
             setActiveSku(sku);
+            setDecoratePreviewRotated(false);
           }}
           onRemovePlacement={(id) => void handleRemovePlacement(id)}
           onClearSelection={() => setSelectedPlacementId(null)}
+          onRotatePreview={() => {
+            setDecoratePreviewRotated((prev) => {
+              const next = !prev;
+              gameEventBus.emit('evt:decorate-rotate-preview', { rotated: next });
+              return next;
+            });
+          }}
+          onRotatePlacement={(id) => void handleRotatePlacement(id)}
           onExit={() => {
             setDecorateActive(false);
             setActiveSku(null);
             setSelectedPlacementId(null);
+            setDecoratePreviewRotated(false);
           }}
         />
       ) : (
@@ -1873,15 +1970,30 @@ function MainCoupleApp() {
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}
+          onOpenOutdoorNav={() => setOutdoorNavOpen(true)}
           onToggleDecorate={() => {
+            const target = defaultDecorateMapId(currentMapId);
             setDecorateActive(true);
             setActiveSku(null);
             setSelectedPlacementId(null);
+            setDecoratePreviewRotated(false);
+            if (currentMapId !== target) {
+              setCurrentMapId(target);
+              const def = getMapDefinition(target);
+              gameEventBus.emit('cmd:set-map', { mapId: target, spawnTile: def.defaultSpawn });
+            }
           }}
           onOpenAvatar={() => setActiveModal('avatar')}
           onOpenMenu={() => setActiveModal('menu')}
         />
       )}
+
+      <OutdoorWorldNavSheet
+        open={outdoorNavOpen}
+        currentMapId={currentMapId}
+        onClose={() => setOutdoorNavOpen(false)}
+        onSelectMap={handleSelectMap}
+      />
 
       {activeModal === 'invite' && (
         <InviteModal

@@ -71,6 +71,29 @@ export function buildDiscoverabilityMarkerSpecs(
       glyph: 'Cabacos',
       tint: 0xfff8ef,
     });
+    const beachPortal = interactables.find((t) => t.id === 'village-to-beach' || t.id.includes('beach'));
+    if (beachPortal) {
+      specs.push({
+        id: 'marker-gull-bay-beach',
+        x: beachPortal.x,
+        y: beachPortal.y - TILE_SIZE * 1.2,
+        glyph: '→ Gull Bay',
+        tint: 0xb8ddf8,
+      });
+    }
+  }
+
+  if (mapId === 'beach') {
+    const pier = interactables.find((t) => t.kind === 'fishing_spot' || t.id.includes('pier'));
+    if (pier) {
+      specs.push({
+        id: 'marker-beach-gull-bay',
+        x: pier.x,
+        y: pier.y - TILE_SIZE * 1.1,
+        glyph: 'Gull Bay',
+        tint: 0xfff8ef,
+      });
+    }
   }
 
   const capped = specs.slice(0, 32);

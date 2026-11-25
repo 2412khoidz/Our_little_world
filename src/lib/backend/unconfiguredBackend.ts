@@ -49,6 +49,9 @@ export function createUnconfiguredBackend(): WorldBackend {
     async moveFurniture() {
       return unconfiguredError();
     },
+    async rotateFurniture() {
+      return unconfiguredError();
+    },
     async removeFurniture() {
       return unconfiguredError();
     },
