@@ -110,6 +110,8 @@ export interface GameEventMap {
     plots: readonly import('../shared/farming/farmSnapshotTypes').FarmPlotView[];
     /** Plot index that changed (e.g. after till) for one-shot Cabacos soil pop. */
     highlightPlotId?: number;
+    /** Presentation-only tool swing on farm map when donor has no sprite frames. */
+    highlightFarmAction?: 'till' | 'water' | 'harvest';
   };
   /** React shell → Phaser presentation-only day/night + weather overlay. */
   'cmd:sync-world-clock': import('../shared/world/worldClock').WorldClockPresentation;

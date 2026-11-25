@@ -89,6 +89,23 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 
 **Proof:** `cabacosCropVisual.test.ts`, `tidefallFishCatalog.test.ts`
 
+## Wave 3–4 IF — Rai Larna seed shop UI + farm tool swings @ 8e4454d
+
+| Field | Value |
+|-------|--------|
+| **Base** | `integration/donor-reuse-preview` @ `8e4454d` |
+| **Farm Rai SHA** | `2bbb65c8c7bcafeae0f70623ea57a2c86b4bb9ba` |
+| **Cabacos SHA** | `79e423defc12bd99327cfcc28bf7ec0085996244` |
+
+| Upstream | OLW path |
+|----------|----------|
+| `presentation/shops.ts` (trader merchant) | `farmRaiShopPresentation.ts`, `FarmEconomyPanel.tsx`, `farmRaiShopSkin.css` |
+| `public/art/trader.webp`, `docs/readme/icons/crop-*.webp` | `scripts/vendor-farm-rai-shop-art.mjs` → `public/assets/donor/farm-rai-larn-na/shop/` |
+| Farm map NPC pin | `FarmRaiShopNpcMarker.ts` (trader portrait @ seed-shop tile) |
+| Cabacos `tools/watering_can.png`, `sickle.png` | `FarmToolSwingFx.ts` (tween swings — **no** donor swing spritesheets; only `idle`/`walk` strips in Cabacos) |
+
+**Proof:** `farmRaiShopPresentation.test.ts`, `farmToolSwingFx.test.ts`
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`

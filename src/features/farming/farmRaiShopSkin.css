@@ -1,0 +1,103 @@
+.farm-rai-shop {
+  max-width: min(96vw, 420px);
+  background: linear-gradient(180deg, #2a1f14 0%, #1a1209 100%);
+  border: 3px solid #6b4a2a;
+  box-shadow: 0 8px 0 #0006, inset 0 0 0 2px #c9a66b;
+  border-radius: 8px;
+  padding: 14px 14px 16px;
+  color: #f5e6c8;
+}
+
+.farm-rai-shop__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.farm-rai-shop__portrait {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 0 #0008);
+}
+
+.farm-rai-shop__npc-meta strong {
+  display: block;
+  font-size: 15px;
+  color: #ffe8b0;
+}
+
+.farm-rai-shop__npc-meta span {
+  font-size: 12px;
+  color: #c9b896;
+}
+
+.farm-rai-shop__greeting {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.farm-rai-shop__wallet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+
+.farm-rai-shop__wallet img {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+}
+
+.farm-rai-shop__sku-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.farm-rai-shop__sku-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: #3d2b1a;
+  border: 2px solid #5c4128;
+  border-radius: 6px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.farm-rai-shop__sku-row:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.farm-rai-shop__sku-row:not(:disabled):hover {
+  border-color: #c9a66b;
+  background: #4a3520;
+}
+
+.farm-rai-shop__sku-row img {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.farm-rai-shop__sku-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+.farm-rai-shop__sku-price {
+  font-size: 13px;
+  color: #ffe0a0;
+  white-space: nowrap;
+}

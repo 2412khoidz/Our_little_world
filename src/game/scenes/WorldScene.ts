@@ -80,7 +80,8 @@ import type { InteractableTarget } from '../../shared/interaction/interactionTyp
 import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
-import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
+import { playFarmToolSwingFx, type FarmToolSwingKind } from '../farming/FarmToolSwingFx';
+import { ensureFarmRaiShopNpcMarker } from '../farming/FarmRaiShopNpcMarker';
 import { WorldLightingOverlay } from '../world/WorldLightingOverlay';
 import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
@@ -376,6 +377,7 @@ export class WorldScene extends Phaser.Scene {
         if (this.farmPlotsCache.length > 0) {
           this.farmPlotVisual.sync(this.farmPlotsCache);
         }
+        ensureFarmRaiShopNpcMarker(this, (obj) => this.mapLayers.push(obj));
       }
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
@@ -1066,12 +1068,17 @@ export class WorldScene extends Phaser.Scene {
         this.heldItem = held;
       }),
 
-      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId }) => {
+      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId, highlightFarmAction }) => {
         this.farmPlotsCache = plots;
         if (this.currentMapId === 'farm') {
           this.farmPlotVisual?.sync(plots, highlightPlotId);
-          if (highlightPlotId != null) {
-            playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
+          if (highlightPlotId != null && highlightFarmAction) {
+            playFarmToolSwingFx(
+              this,
+              highlightPlotId,
+              highlightFarmAction as FarmToolSwingKind,
+              (obj) => this.mapLayers.push(obj),
+            );
           }
         }
       }),
