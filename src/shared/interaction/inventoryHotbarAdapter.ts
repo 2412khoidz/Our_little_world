@@ -1,11 +1,21 @@
 import { getCatalogItem } from '../catalog';
-import { PET_KIBBLE_BASIC_SKU } from '../inventory/inventoryRules';
 import type { InventorySnapshot } from '../inventory/inventoryTypes';
 import { PET_FOOD_CATALOG } from '../petLiving/petFoodCatalog';
+import {
+  MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST,
+  hotbarSkuToHeldKind,
+} from './hotbarContract';
 import { type HotbarStackKey } from './heldItemIdentity';
-import type { HeldItemKind, HotbarSlot } from './interactionTypes';
+import type { HotbarSlot } from './interactionTypes';
 
 export type { HotbarStackKey, ItemQualityTier } from './heldItemIdentity';
+export {
+  FARM_TOOL_HOTBAR_SKUS,
+  MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST,
+  PET_CARE_HOTBAR_SKUS,
+  hotbarSkuToHeldKind,
+  isPetHandFeedSku,
+} from './hotbarContract';
 
 const EMPTY_SLOT: Omit<HotbarSlot, 'slotIndex'> = {
   itemSku: null,
@@ -15,27 +25,7 @@ const EMPTY_SLOT: Omit<HotbarSlot, 'slotIndex'> = {
   qty: 0,
 };
 
-/**
- * Initial hotbar allowlist for V0.1.5 main game — **not** a generic full-inventory hotbar.
- * Mission 02 Unified Catalog must replace this projection with `HotbarStackKey` rows (ownerScope + sku + quality).
- */
-export const MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST = [
-  PET_KIBBLE_BASIC_SKU,
-  'tool_hoe',
-  'tool_watering_can',
-  'water_pitcher',
-  'seed_wheat',
-  'seed_carrot',
-  'seed_tomato',
-  'fish_salmon_bite',
-  'fish_carp_grilled',
-  'cat_broth_warm',
-  'chicken_pumpkin_mash',
-  'toy_yarn',
-  'toy_cardboard_box',
-] as const;
-
-/** @deprecated Use MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST — name kept for call sites until Mission 02. */
+/** @deprecated Use MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST from hotbarContract — alias for legacy imports. */
 export const MAIN_GAME_HOTBAR_SKU_ORDER = MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST;
 
 function stackKeyString(key: HotbarStackKey): string {
@@ -60,16 +50,6 @@ export function aggregateSharedStacksV015(snapshot: InventorySnapshot): Map<stri
     map.set(id, { key, qty: (prev?.qty ?? 0) + row.qty });
   }
   return map;
-}
-
-function skuToHeldKind(sku: string): HeldItemKind {
-  const food = PET_FOOD_CATALOG.find((f) => f.sku === sku);
-  if (food) return 'food';
-  if (sku === 'water_pitcher') return 'water_pitcher';
-  if (sku.startsWith('toy_')) return 'toy';
-  if (sku.startsWith('tool_')) return 'tool';
-  if (sku.startsWith('seed_')) return 'tool';
-  return 'tool';
 }
 
 function labelForSku(sku: string, snapshot: InventorySnapshot): string {
@@ -128,7 +108,7 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
       slotIndex,
       ownerScope: stack.key.ownerScope,
       itemSku: sku,
-      itemKind: skuToHeldKind(sku),
+      itemKind: hotbarSkuToHeldKind(sku),
       iconId: iconForSku(sku),
       labelVi: labelForSku(sku, snapshot),
       qty: stack.qty,

@@ -16,6 +16,7 @@ import { executeMainGameContextAction } from './executeMainGameContextAction';
 import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
+import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
@@ -37,6 +38,8 @@ export interface MainGameInteractionLayerProps {
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
+  /** Keeps hotbar + touch J above pet-care vignette. */
+  petCareOverlayActive?: boolean;
 }
 
 export function MainGameInteractionLayer({
@@ -58,6 +61,7 @@ export function MainGameInteractionLayer({
   onOpenFarmMarket,
   onOpenFarmShipping,
   onNotice,
+  petCareOverlayActive = false,
 }: MainGameInteractionLayerProps) {
   const hotbarSlots = useMemo(
     () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId),
@@ -92,7 +96,9 @@ export function MainGameInteractionLayer({
     gameEventBus.emit('cmd:sync-held-item', heldItem);
   }, [heldItem]);
 
+  const petCareHud = petCareOverlayActive || isPetCareModeActive();
   const showHud = enabled && !decorateActive && !modalOpen;
+  const touchActions = showJoystick && !petCareHud;
 
   const livingPetSim = isLivingPetLocalSimulationEnabled();
 
@@ -241,8 +247,11 @@ export function MainGameInteractionLayer({
 
   return (
     <>
-      {showJoystick && (
-        <div className="main-game-touch-actions" data-testid="main-game-touch-actions">
+      {touchActions && (
+        <div
+          className={`main-game-touch-actions ${petCareHud ? 'main-game-touch-actions--pet-care' : ''}`}
+          data-testid="main-game-touch-actions"
+        >
           <button
             type="button"
             className="olw-bookmark-tab main-game-touch-btn"
@@ -266,17 +275,23 @@ export function MainGameInteractionLayer({
         </div>
       )}
 
-      <div className="main-game-interaction-stack" data-testid="main-game-interaction-hud">
-        <ContextualPromptBadge
-          resolution={resolution}
-          unavailableToast={noticeText}
-          onPrimary={() => void executePrimary()}
-          onSecondary={() => void executeSecondary()}
-        />
+      <div
+        className={`main-game-interaction-stack ${petCareHud ? 'main-game-interaction-stack--pet-care' : ''}`}
+        data-testid="main-game-interaction-hud"
+      >
+        {!petCareHud ? (
+          <ContextualPromptBadge
+            resolution={resolution}
+            unavailableToast={noticeText}
+            onPrimary={() => void executePrimary()}
+            onSecondary={() => void executeSecondary()}
+          />
+        ) : null}
         <GameHotbar
           slots={hotbarSlots}
           heldItem={heldItem}
           onSelectSlot={selectSlot}
+          touchFriendly={petCareHud}
         />
       </div>
     </>

@@ -3,6 +3,7 @@ import { isOutdoorMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
 interface QuickNavBarProps {
+  hidden?: boolean;
   currentMapId: MapId;
   decorateActive: boolean;
   onSelectMap: (mapId: MapId) => void;
@@ -12,6 +13,7 @@ interface QuickNavBarProps {
 }
 
 export function QuickNavBar({
+  hidden = false,
   currentMapId,
   decorateActive,
   onSelectMap,
@@ -19,6 +21,7 @@ export function QuickNavBar({
   onOpenAvatar,
   onOpenMenu,
 }: QuickNavBarProps) {
+  if (hidden) return null;
   const outdoorUnlocked = isOutdoorMapUnlocked();
   return (
     <nav className="quick-nav" aria-label="Điều hướng nhanh">

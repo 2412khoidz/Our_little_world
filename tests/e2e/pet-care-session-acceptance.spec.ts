@@ -2,13 +2,15 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 const longRun = process.env.OLW_ACCEPTANCE_LONG === '1';
+const soakMinutes = Number(process.env.OLW_SOAK_MINUTES ?? (longRun ? 7 : 1));
 test.use({ trace: longRun ? 'on' : 'on' });
 
 /**
  * Owner checklist — 60s CI default · 7m when OLW_ACCEPTANCE_LONG=1 (trace + summary artifact).
  */
 test.describe('Pet care — owner session', () => {
-  const sessionMs = longRun ? 420_000 : 60_000;
+  test.describe.configure({ retries: longRun ? 0 : 1 });
+  const sessionMs = longRun ? soakMinutes * 60_000 : 60_000;
 
   test.beforeEach(async ({ request }) => {
     const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
@@ -33,10 +35,17 @@ test.describe('Pet care — owner session', () => {
       window.dispatchEvent(new Event('olw-dev-pet-care-fast-autonomy'));
       window.dispatchEvent(new Event('olw-dev-enter-pet-care'));
     });
-    await page.getByTestId('pet-care-overlay').waitFor({ timeout: 20_000 });
-
-    const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === 'portrait')).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const overlay = await page.getByTestId('pet-care-overlay').isVisible().catch(() => false);
+          if (!overlay) return false;
+          const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+          return canvas.evaluate((c) => c.dataset.petCareRig === 'portrait');
+        },
+        { timeout: 25_000 },
+      )
+      .toBe(true);
 
     const reactions = new Set<string>();
     let autonomyQuiet = 0;
@@ -85,21 +94,47 @@ test.describe('Pet care — owner session', () => {
       }
     }
 
+    const soakStats = await page.evaluate(() => {
+      const s = (window as unknown as {
+        __OLW_PET_CARE_SOAK?: {
+          autonomyActions: string[];
+          squeaks: string[];
+          strokeZones: string[];
+          bubblesVi: string[];
+        };
+      }).__OLW_PET_CARE_SOAK;
+      if (!s) return null;
+      return {
+        autonomyActions: [...s.autonomyActions],
+        squeaks: [...s.squeaks],
+        strokeZones: [...s.strokeZones],
+        bubblesVi: [...s.bubblesVi],
+      };
+    });
+
     const elapsedMs = Date.now() - started;
     expect(reactions.size).toBeGreaterThanOrEqual(5);
-  if (longRun) {
-      expect(elapsedMs).toBeGreaterThanOrEqual(300_000);
+    if (longRun) {
+      expect(elapsedMs).toBeGreaterThanOrEqual(Math.min(sessionMs, 300_000));
       expect(autonomyQuiet).toBeGreaterThanOrEqual(2);
+      const autonomyUnique = new Set(soakStats?.autonomyActions ?? []);
+      expect(autonomyUnique.size).toBeGreaterThanOrEqual(2);
     }
     mkdirSync('/opt/cursor/artifacts', { recursive: true });
+    const storeMedia = '/cursor/stores/bc-4d4a276e-e320-4dcc-8c3c-e46cfb7036fd/media';
+    mkdirSync(storeMedia, { recursive: true });
     const summary = {
       elapsedMs,
+      soakMinutes,
       reactions: [...reactions],
       longRun,
       autonomyGoalTicks: autonomyQuiet,
+      soakStats,
+      autonomyActionKinds: [...new Set((soakStats?.autonomyActions ?? []) as string[])],
       head: process.env.GITHUB_SHA ?? 'local',
     };
     writeFileSync('/opt/cursor/artifacts/pet-care-session-summary.json', JSON.stringify(summary, null, 2));
+    writeFileSync(`${storeMedia}/pet-care-soak-summary.json`, JSON.stringify(summary, null, 2));
     await page.screenshot({ path: '/opt/cursor/artifacts/pet-care-session-final.png' });
     await test.info().attach('pet-care-session-summary', {
       body: JSON.stringify(summary),

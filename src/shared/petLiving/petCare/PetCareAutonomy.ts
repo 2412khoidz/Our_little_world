@@ -32,8 +32,19 @@ export class PetCareAutonomy {
 
     if (playerQuietMs < 3500) return { kind: 'idle' };
 
+    if (playerQuietMs > 48_000 && Math.random() < 0.55) {
+      return {
+        kind: 'proactive',
+        action: playerQuietMs > 72_000 ? 'call' : 'observe',
+        bubbleVi: playerQuietMs > 72_000 ? '…sao im lặng thế?' : '…ngồi đợi bạn nè',
+      };
+    }
+
     if (nowMs < this.refuseBackoffUntil) {
-      return { kind: 'proactive', action: 'observe', bubbleVi: '…cần một chút yên tĩnh' };
+      if (playerQuietMs < 8_000) {
+        return { kind: 'proactive', action: 'observe', bubbleVi: '…cần một chút yên tĩnh' };
+      }
+      return { kind: 'proactive', action: 'call', bubbleVi: '…mrow?' };
     }
 
     this.idleRolls += 1;

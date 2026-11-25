@@ -114,7 +114,11 @@ const DevCombinedExperienceDemo = import.meta.env.DEV
   ? lazy(() => import('../features/sandboxes/CombinedExperienceDemo').then((m) => ({ default: m.CombinedExperienceDemo })))
   : null;
 
-type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo';
+const DevDonorPetThreeCare = import.meta.env.DEV
+  ? lazy(() => import('../features/sandboxes/DonorPetThreeCare').then((m) => ({ default: m.DonorPetThreeCare })))
+  : null;
+
+type DevSandboxKind = 'pet-art' | 'ui-sandbox' | 'world-sandbox' | 'pet-lab' | 'experience-demo' | 'donor-pet-three';
 
 function readDevSandboxKind(): DevSandboxKind | null {
   if (!import.meta.env.DEV || typeof window === 'undefined') return null;
@@ -124,6 +128,7 @@ function readDevSandboxKind(): DevSandboxKind | null {
   if (q.has('world-sandbox')) return 'world-sandbox';
   if (q.has('pet-lab')) return 'pet-lab';
   if (q.has('experience-demo')) return 'experience-demo';
+  if (q.has('donor-pet-three')) return 'donor-pet-three';
   return null;
 }
 
@@ -190,6 +195,7 @@ export function App() {
         {initialSandbox === 'world-sandbox' && DevWorldExpansionSandbox && <DevWorldExpansionSandbox onExit={exitToHome} />}
         {initialSandbox === 'pet-lab' && DevPetLabSandbox && <DevPetLabSandbox onClose={exitToHome} />}
         {initialSandbox === 'experience-demo' && DevCombinedExperienceDemo && <DevCombinedExperienceDemo onExit={exitToHome} />}
+        {initialSandbox === 'donor-pet-three' && DevDonorPetThreeCare && <DevDonorPetThreeCare onExit={exitToHome} />}
       </Suspense>
     );
   }
@@ -1495,8 +1501,8 @@ function MainCoupleApp() {
         </button>
       )}
 
-      <LivingPetDevBanner />
-      <ExtendedWorldDevBanner />
+      {!petCareMode && <LivingPetDevBanner />}
+      {!petCareMode && <ExtendedWorldDevBanner />}
 
       <PetCareTouchOverlay
         active={petCareMode}
@@ -1524,6 +1530,7 @@ function MainCoupleApp() {
       <MainGameInteractionLayer
         localUserId={currentUser.userId}
         key={currentMapId}
+        petCareOverlayActive={petCareMode}
         enabled={Boolean(backend.inventory)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}
@@ -1636,6 +1643,7 @@ function MainCoupleApp() {
         />
       ) : (
         <QuickNavBar
+          hidden={petCareMode}
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}

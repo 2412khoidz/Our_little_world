@@ -8,7 +8,8 @@ Sync với [V02_ROADMAP.md](V02_ROADMAP.md). Cập nhật khi PR merge hoặc ow
 | V02-11 | C2 | Open PR #11 | Living overworld DEV-only |
 | V02-12 | C3 | Open PR #12 | 64×64 world + farm plot anchors |
 | V02-14 | C1 | Open PR #14 | Dev LAN farm loop on plots |
-| V02-13 | C2 | **Slice 4** on PR #13 @ `c9bb12d` | PetCare + 7m session e2e (`OLW_ACCEPTANCE_LONG=1`) + autonomy refuse |
-| V02-INT | Project Agent | **Ready — owner playtest** | `integration/playtest-all` (full stack); local gate + key E2E |
+| V02-13 | C2 | **PR #20** | Pet atlas regression + nintendogs-threejs DEV slice |
+| V02-21 | C3 | **PR #21** | Cabacos overworld donor (pending merge) |
+| V02-INT | Project Agent | **donor-reuse-preview** | Frozen `playtest-all` @ `c01d291` |
 
 **Acceptance (milestone):** hai client cùng world — vuốt mèo, mua/gieo/thu hoạch, khám phá làng; reload ổn định; không prod stub feed.
