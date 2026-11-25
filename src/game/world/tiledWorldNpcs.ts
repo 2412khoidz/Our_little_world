@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
+import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
 import { TILE_SIZE } from '../../shared/maps';
-import type { MapId } from '../../shared/types';
+import type { AvatarConfig, MapId } from '../../shared/types';
 import { getParsedTiledWorld } from '../../shared/world/tiledMapRegistry';
 
 export interface TiledWorldNpcEntity {
@@ -10,7 +12,7 @@ export interface TiledWorldNpcEntity {
   role: string;
   tileX: number;
   tileY: number;
-  body: Phaser.GameObjects.Arc;
+  body: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Ellipse;
   label: Phaser.GameObjects.Text;
   homeX: number;
@@ -18,10 +20,45 @@ export interface TiledWorldNpcEntity {
   phase: number;
 }
 
-function npcBodyColor(role: string): number {
-  if (role === 'market_preview') return 0xd4a574;
-  if (role === 'idle') return 0x7eb89a;
-  return 0x89a7d9;
+const NPC_AVATAR_BY_ID: Record<string, AvatarConfig> = {
+  bac_hai: {
+    skinTone: 'warm',
+    hairStyle: 'short',
+    hairColor: 'chestnut',
+    outfitStyle: 'overall',
+    outfitColor: 'cream',
+    accessory: 'none',
+  },
+  co_lan: {
+    skinTone: 'fair',
+    hairStyle: 'bob',
+    hairColor: 'sakura',
+    outfitStyle: 'cardigan',
+    outfitColor: 'rose',
+    accessory: 'ribbon',
+  },
+  ong_minh: {
+    skinTone: 'tan',
+    hairStyle: 'short',
+    hairColor: 'espresso',
+    outfitStyle: 'sweater',
+    outfitColor: 'sky',
+    accessory: 'glasses',
+  },
+};
+
+function npcAvatarForSpawn(id: string, role: string): AvatarConfig {
+  if (NPC_AVATAR_BY_ID[id]) return NPC_AVATAR_BY_ID[id]!;
+  return role === 'market_preview'
+    ? NPC_AVATAR_BY_ID.bac_hai!
+    : {
+        skinTone: 'warm',
+        hairStyle: 'bob',
+        hairColor: 'honey',
+        outfitStyle: 'sweater',
+        outfitColor: 'sage',
+        accessory: 'none',
+      };
 }
 
 export function spawnTiledWorldNpcs(
@@ -37,15 +74,17 @@ export function spawnTiledWorldNpcs(
     const px = (spawn.tileX + 0.5) * TILE_SIZE;
     const py = (spawn.tileY + 0.85) * TILE_SIZE;
     const depth = Math.round(py);
-    const shadow = scene.add.ellipse(px, py + 5, 14, 6, 0x2a3350, 0.22);
+    const shadow = scene.add.ellipse(px, py + 2, 16, 6, 0x2a3350, 0.22);
     shadow.setDepth(depth - 1);
+    const avatar = npcAvatarForSpawn(spawn.id, spawn.role);
+    const texKey = ensurePhaserAvatarTexture(scene, avatar);
     const body = scene.add
-      .circle(px, py, 7, npcBodyColor(spawn.role), 1)
-      .setStrokeStyle(2, 0x3a4a6e);
-    body.setDepth(depth);
+      .sprite(px, py, texKey, getIdleFrameIndex('down'))
+      .setOrigin(0.5, 1)
+      .setDepth(depth);
     const labelText = spawn.labelVi ?? spawn.id;
     const label = scene.add
-      .text(px, py - 22, labelText, {
+      .text(px, py - 30, labelText, {
         fontFamily: 'Nunito, sans-serif',
         fontSize: '10px',
         color: '#2a3350',
@@ -84,7 +123,7 @@ export function tickTiledWorldNpcs(npcs: readonly TiledWorldNpcEntity[], timeMs:
     const ny = npc.homeY + dy;
     npc.body.setPosition(nx, ny);
     npc.shadow.setPosition(nx, ny + 5);
-    npc.label.setPosition(nx, ny - 22);
+    npc.label.setPosition(nx, ny - 30);
   }
 }
 
