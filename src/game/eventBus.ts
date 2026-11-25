@@ -140,6 +140,7 @@ export interface GameEventMap {
   };
   'evt:request-couple-posture': {
     kind: 'sofa_sit' | 'bench_sit' | 'bed_lie';
+    targetId?: string;
   };
   'evt:preview-notice': { title: string; body: string; version: string };
   'evt:decorate-place': { mapId: MapId; sku: string; tileX: number; tileY: number };

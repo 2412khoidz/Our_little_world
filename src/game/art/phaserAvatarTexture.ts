@@ -67,6 +67,15 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
         repeat: -1,
       });
     }
+    const lieAnimKey = key + ':lie-' + direction;
+    if (!scene.anims.exists(lieAnimKey)) {
+      scene.anims.create({
+        key: lieAnimKey,
+        frames: sitFrames.slice(0, Math.min(3, sitFrames.length)).map((frame) => ({ key, frame })),
+        frameRate: 3,
+        repeat: -1,
+      });
+    }
   }
 
   return key;
