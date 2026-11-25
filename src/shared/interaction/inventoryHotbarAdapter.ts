@@ -1,3 +1,4 @@
+import { propsIconIdForCatalogSku } from '../art/catalogSkuPropsIcon';
 import { getCatalogItem } from '../catalog';
 import { PET_KIBBLE_BASIC_SKU } from '../inventory/inventoryRules';
 import type { InventorySnapshot } from '../inventory/inventoryTypes';
@@ -11,6 +12,7 @@ const EMPTY_SLOT: Omit<HotbarSlot, 'slotIndex'> = {
   itemSku: null,
   itemKind: 'none',
   iconId: null,
+  propsIconId: null,
   labelVi: 'Trống',
   qty: 0,
 };
@@ -79,9 +81,13 @@ function labelForSku(sku: string, snapshot: InventorySnapshot): string {
   return furn?.nameVi ?? sku;
 }
 
-function iconForSku(sku: string): HotbarSlot['iconId'] {
+function hotbarVisualForSku(sku: string): Pick<HotbarSlot, 'iconId' | 'propsIconId'> {
   const food = PET_FOOD_CATALOG.find((f) => f.sku === sku);
-  return food?.iconId ?? (sku === 'water_pitcher' ? 'water_pitcher_full' : 'food_kibble');
+  if (food) return { iconId: food.iconId, propsIconId: null };
+  if (sku === 'water_pitcher') return { iconId: 'water_pitcher_full', propsIconId: null };
+  const propsIconId = propsIconIdForCatalogSku(sku);
+  if (propsIconId) return { iconId: null, propsIconId };
+  return { iconId: null, propsIconId: null };
 }
 
 /**
@@ -118,12 +124,14 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
   );
   for (const [slotIndex, stack] of ordered.slice(0, base.length).entries()) {
     const sku = stack.key.itemSku;
+    const visual = hotbarVisualForSku(sku);
     base[slotIndex] = {
       slotIndex,
       ownerScope: stack.key.ownerScope,
       itemSku: sku,
       itemKind: skuToHeldKind(sku),
-      iconId: iconForSku(sku),
+      iconId: visual.iconId,
+      propsIconId: visual.propsIconId,
       labelVi: labelForSku(sku, snapshot),
       qty: stack.qty,
       quality: stack.key.quality,

@@ -12,6 +12,8 @@ export interface HotbarSlot {
   itemSku: string | null;
   itemKind: HeldItemKind;
   iconId: LivingItemIconId | null;
+  /** props-manifest entry id when catalog SKU maps to world-props atlas slice */
+  propsIconId?: string | null;
   labelVi: string;
   qty: number;
   waterFillLevel?: number;
@@ -24,6 +26,7 @@ export interface HeldItemState {
   itemSku: string | null;
   itemKind: HeldItemKind;
   iconId: LivingItemIconId | null;
+  propsIconId?: string | null;
   labelVi: string;
   waterFillLevel: number;
   quality: 'normal' | 'silver' | 'gold';

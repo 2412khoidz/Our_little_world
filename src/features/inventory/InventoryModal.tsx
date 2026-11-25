@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Backpack, Gift, Sparkles, X } from 'lucide-react';
+import { propsIconIdForCatalogSku } from '../../shared/art/catalogSkuPropsIcon';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import { PET_FOOD_CATALOG } from '../../shared/petLiving/petFoodCatalog';
+import { CatalogPropsIcon } from '../../ui/components/CatalogPropsIcon';
+import { ItemArtSvg } from '../../ui/designSystem/GameIcons';
 
 interface InventoryModalProps {
   snapshot: InventorySnapshot | null;
@@ -107,6 +111,8 @@ export function InventoryModal({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {shown.map((entry) => {
               const info = catalogMap.get(entry.itemSku);
+              const propsIconId = propsIconIdForCatalogSku(entry.itemSku);
+              const petFood = PET_FOOD_CATALOG.find((f) => f.sku === entry.itemSku);
               return (
                 <div
                   key={`${entry.ownerScope}-${entry.itemSku}`}
@@ -122,7 +128,12 @@ export function InventoryModal({
                     border: '1px solid var(--border-honey)',
                   }}
                 >
-                  <div>
+                  {propsIconId ? (
+                    <CatalogPropsIcon iconId={propsIconId} size={28} testId={`inv-icon-${entry.itemSku}`} />
+                  ) : petFood ? (
+                    <ItemArtSvg iconId={petFood.iconId} size={28} />
+                  ) : null}
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13.5 }}>
                       {info?.nameVi ?? entry.itemSku}
                     </div>

@@ -47,6 +47,7 @@ export function selectHotbarSlot(
     itemSku: slot.itemSku,
     itemKind: slot.itemKind,
     iconId: slot.iconId,
+    propsIconId: slot.propsIconId ?? null,
     labelVi: slot.labelVi,
     waterFillLevel: slot.waterFillLevel ?? (slot.itemKind === 'water_pitcher' ? 0 : 0),
     quality: slot.quality ?? 'normal',
