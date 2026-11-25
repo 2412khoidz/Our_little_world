@@ -22,7 +22,8 @@ import type {
 } from '../shared/types';
 import { AvatarModal } from '../features/avatar/AvatarModal';
 import { CoupleActionBar } from '../features/couple/CoupleActionBar';
-import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
+import { ScrapbookAlbumModal } from '../features/couple/ScrapbookAlbumModal';
+import { applyRemoteStickerToStoredAlbum } from '../features/couple/scrapbookAlbumStorage';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
@@ -252,6 +253,9 @@ function MainCoupleApp() {
   const [selectedPhotoPresetId, setSelectedPhotoPresetId] = useState<string>(
     STATIC_PHOTO_PRESETS[0]!.id,
   );
+  const [partnerScrapbookPage, setPartnerScrapbookPage] = useState<number | null>(null);
+  const [partnerScrapbookUserId, setPartnerScrapbookUserId] = useState<string | null>(null);
+  const [scrapbookStorageEpoch, setScrapbookStorageEpoch] = useState(0);
   const consumedInviteIdsRef = useRef<Set<string>>(new Set());
   const currentMapIdRef = useRef<MapId>(currentMapId);
   useEffect(() => {
@@ -681,6 +685,23 @@ function MainCoupleApp() {
   const handleCoupleEvent = useCallback(
     (packet: CoupleEventPacket) => {
       if (!currentUser || packet.worldId !== snapshotRef.current?.world.id) return;
+      if (packet.type === 'COUPLE_SCRAPBOOK') {
+        if (packet.userId === currentUser.userId) return;
+        if (packet.action === 'flip' && packet.pageIndex !== undefined) {
+          setPartnerScrapbookUserId(packet.userId);
+          setPartnerScrapbookPage(packet.pageIndex);
+        }
+        if (
+          packet.action === 'sticker' &&
+          packet.pageId &&
+          packet.stickerEmoji &&
+          snapshotRef.current?.world.id
+        ) {
+          applyRemoteStickerToStoredAlbum(snapshotRef.current.world.id, packet);
+          setScrapbookStorageEpoch((n) => n + 1);
+        }
+        return;
+      }
       if (packet.type === 'COUPLE_EMOTE') {
         if (packet.userId !== currentUser.userId) {
           gameEventBus.emit('cmd:spawn-emote', {
@@ -1750,11 +1771,20 @@ function MainCoupleApp() {
         />
       )}
 
-      {activeModal === 'photo' && (
-        <PhotoFrameModal
+      {activeModal === 'photo' && currentUser && worldSnapshot && (
+        <ScrapbookAlbumModal
+          key={`scrapbook-${scrapbookStorageEpoch}`}
+          worldId={worldSnapshot.world.id}
+          localUserId={currentUser.userId}
+          partnerPageIndex={partnerScrapbookPage}
+          partnerUserId={partnerScrapbookUserId}
           selectedPresetId={selectedPhotoPresetId}
           onSelectPreset={setSelectedPhotoPresetId}
-          onClose={() => setActiveModal(null)}
+          onPublishScrapbook={(packet) => realtimeRef.current?.publishCoupleEvent?.(packet)}
+          onClose={() => {
+            setActiveModal(null);
+            setPartnerScrapbookPage(null);
+          }}
         />
       )}
 

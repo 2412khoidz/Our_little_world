@@ -80,13 +80,27 @@ export interface CouplePosturePayload {
   facing: Direction;
 }
 
+export interface CoupleScrapbookPayload {
+  type: 'COUPLE_SCRAPBOOK';
+  worldId: string;
+  userId: string;
+  atMs: number;
+  action: 'flip' | 'sticker';
+  pageIndex?: number;
+  pageId?: string;
+  stickerEmoji?: string;
+  xPct?: number;
+  yPct?: number;
+}
+
 export type CoupleEventPacket =
   | CoupleInvitePayload
   | CoupleAcceptPayload
   | CoupleDeclinePayload
   | CoupleEndPayload
   | CoupleEmotePayload
-  | CouplePosturePayload;
+  | CouplePosturePayload
+  | CoupleScrapbookPayload;
 
 export interface PhotoFramePreset {
   id: string;
