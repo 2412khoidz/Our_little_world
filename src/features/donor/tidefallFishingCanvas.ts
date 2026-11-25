@@ -1,3 +1,6 @@
+import type { FishingFrenzyArtBundle } from '../../shared/donor/fishing-frenzy/fishingFrenzyArt';
+import { drawFishingFrenzyOverlays } from '../../shared/donor/fishing-frenzy/drawFishingFrenzyScene';
+import type { TidefallFishEntry } from '../../shared/donor/tidefall-phaser/tidefallFishCatalog';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
 import type { TidefallFishingState } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
 import { isPointerInTidefallZone } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
@@ -43,6 +46,8 @@ export function drawTidefallFishingScene(
   previewName: string | null,
   art: TidefallFishingArtBundle,
   spotId: DonorFishingSpotId,
+  frenzy?: FishingFrenzyArtBundle | null,
+  catchFish?: TidefallFishEntry | null,
 ) {
   ctx.imageSmoothingEnabled = false;
   drawBiomeBackdrop(ctx, w, h, art, spotId);
@@ -76,12 +81,6 @@ export function drawTidefallFishingScene(
     ctx.stroke();
   }
 
-  if (previewName && state.phase !== 'idle') {
-    ctx.fillStyle = '#1d3557';
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`Mồi: ${previewName}`, w / 2, 16);
-  }
 
   if (state.phase === 'minigame' || state.phase === 'landed' || state.phase === 'escaped') {
     const barPad = 12;
@@ -112,5 +111,9 @@ export function drawTidefallFishingScene(
 
     const progW = Math.max(4, state.progress * barW);
     drawStretchedSlice(ctx, art.ui, TIDEFALL_UI_SLICES.barFill, barX, barY + 14, progW, 6);
+  }
+
+  if (frenzy) {
+    drawFishingFrenzyOverlays(ctx, w, h, state, frenzy, waterTop, bobberX, bobberY, catchFish ?? null, previewName);
   }
 }
