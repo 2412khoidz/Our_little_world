@@ -5,6 +5,7 @@
 export const CATALOG_SKU_TO_PROPS_ICON_ID = {
   tool_hoe: 'prop.planter_box',
   tool_watering_can: 'prop.pet_bowl_water',
+  rod_basic: 'prop.water_reed_b',
 
   seed_wheat: 'prop.corn',
   seed_carrot: 'prop.radish',

@@ -395,6 +395,42 @@
   pointer-events: auto;
 }
 
+.farm-fish-tutorial {
+  position: relative;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 10px 12px 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 252, 245, 0.96);
+  border: 1px solid rgba(120, 90, 50, 0.35);
+  box-shadow: 0 6px 18px rgba(40, 30, 10, 0.12);
+  font-size: 12px;
+  line-height: 1.45;
+  color: #3d2f1f;
+  pointer-events: auto;
+}
+
+.farm-fish-tutorial__title {
+  margin: 0 24px 6px 0;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.farm-fish-tutorial__steps {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.farm-fish-tutorial__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  color: #6b5340;
+}
+
 .main-game-interaction-stack--pet-care {
   z-index: 29;
   bottom: calc(96px + var(--safe-bottom));

@@ -38,6 +38,7 @@ import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
 import { TensionFishingModal } from '../features/donor/TensionFishingModal';
 import { DonorWorkshopModal } from '../features/donor/DonorWorkshopModal';
+import { isDonorLanPlayableMode, setDevLanDonorUiActive } from '../shared/donor/donorEconomyUiFlag';
 import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
@@ -221,6 +222,11 @@ export function App() {
 function MainCoupleApp() {
   const backend = useMemo(() => getWorldBackend(), []);
   const sessionId = useMemo(() => makeSessionId(), []);
+  const donorLanPlayable = isDonorLanPlayableMode(backend.mode);
+
+  useEffect(() => {
+    setDevLanDonorUiActive(backend.mode === 'dev-lan');
+  }, [backend.mode]);
 
   const [authReady, setAuthReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
@@ -391,6 +397,12 @@ function MainCoupleApp() {
       void refreshFarmWallet();
     }
   }, [currentMapId, backend.farm, refreshFarmWallet]);
+
+  useEffect(() => {
+    const wid = worldSnapshot?.world.id;
+    if (!wid || !backend.farm) return;
+    void refreshFarmWallet();
+  }, [worldSnapshot?.world.id, backend.farm, refreshFarmWallet]);
 
   const handleClaimFreeKibble = useCallback(async () => {
     const targetWorldId = snapshotRef.current?.world.id;
@@ -1650,20 +1662,15 @@ function MainCoupleApp() {
           setActiveModal('farm_shipping');
         } : undefined}
         onOpenDonorFishing={
-          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
-            ? () => setActiveModal('donor_fishing')
-            : undefined
+          donorLanPlayable && worldId ? () => setActiveModal('donor_fishing') : undefined
         }
         onOpenDonorStreamFishing={
-          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
-            ? () => setActiveModal('donor_stream_fishing')
-            : undefined
+          donorLanPlayable && worldId ? () => setActiveModal('donor_stream_fishing') : undefined
         }
         onOpenDonorWorkshop={
-          import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
-            ? () => setActiveModal('donor_workshop')
-            : undefined
+          donorLanPlayable && worldId ? () => setActiveModal('donor_workshop') : undefined
         }
+        donorLanPlayable={donorLanPlayable}
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
@@ -1884,7 +1891,7 @@ function MainCoupleApp() {
         />
       )}
 
-      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_workshop' && worldId && (
+      {donorLanPlayable && activeModal === 'donor_workshop' && worldId && (
         <DonorWorkshopModal
           worldId={worldId}
           onClose={() => setActiveModal(null)}
@@ -1892,7 +1899,7 @@ function MainCoupleApp() {
         />
       )}
 
-      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_fishing' && worldId && (
+      {donorLanPlayable && activeModal === 'donor_fishing' && worldId && (
         <ChillFishingModal
           worldId={worldId}
           onClose={() => setActiveModal(null)}
@@ -1900,7 +1907,7 @@ function MainCoupleApp() {
         />
       )}
 
-      {import.meta.env.DEV && backend.mode === 'dev-lan' && activeModal === 'donor_stream_fishing' && worldId && (
+      {donorLanPlayable && activeModal === 'donor_stream_fishing' && worldId && (
         <TensionFishingModal
           worldId={worldId}
           spotId="east_stream"

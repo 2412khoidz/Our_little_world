@@ -16,13 +16,27 @@ export const PET_CARE_HOTBAR_SKUS = [
   'water_pitcher',
 ] as const;
 
-/** Frozen playtest-all @ c01d291 farm/hotbar SKUs — extend via donor C1 slice later. */
+/** Farm/fish starter row for donor-reuse preview (order mirrored in hotbar adapter). */
 export const FARM_TOOL_HOTBAR_SKUS = [
   'tool_hoe',
   'tool_watering_can',
   'seed_wheat',
   'seed_carrot',
   'seed_tomato',
+  'rod_basic',
+  'bait_free_worm',
+] as const;
+
+/** Preferred slot order when projecting inventory → 8 HUD cells. */
+export const MAIN_GAME_HOTBAR_SLOT_PRIORITY = [
+  'tool_hoe',
+  'tool_watering_can',
+  'seed_wheat',
+  'seed_carrot',
+  'seed_tomato',
+  'rod_basic',
+  'bait_free_worm',
+  ...PET_CARE_HOTBAR_SKUS,
 ] as const;
 
 export const MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST = [

@@ -24,7 +24,7 @@ export function buildFarmSlicePlotInteractables(): InteractableTarget[] {
   return buildAllFarmPlotInteractableCenters().map(({ plotIndex, anchorId, tileX, tileY }) => ({
     id: anchorId,
     kind: 'crop_plot' as const,
-    labelVi: `Luống đất #${plotIndex + 1}`,
+    labelVi: `Luống #${plotIndex + 1} — J khi cầm cuốc/hạt/tưới`,
     x: tileX * TILE_SIZE + TILE_SIZE / 2,
     y: tileY * TILE_SIZE + TILE_SIZE / 2,
     maxRadiusPx: 22,

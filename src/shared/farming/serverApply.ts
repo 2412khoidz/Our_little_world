@@ -18,8 +18,9 @@ import type { FarmApplyParams, FarmApplyResult, FarmPlotView, FarmSnapshot } fro
 const TOOL_HOE = 'tool_hoe';
 const TOOL_WATERING_CAN = 'tool_watering_can';
 
-export const FARM_STARTER_TOOLS = [TOOL_HOE, TOOL_WATERING_CAN, 'water_pitcher'] as const;
+export const FARM_STARTER_TOOLS = [TOOL_HOE, TOOL_WATERING_CAN, 'water_pitcher', 'rod_basic'] as const;
 export const FARM_STARTER_SEED_QTY = 5;
+export const FARM_STARTER_BAIT_QTY = 10;
 export const FARM_STARTER_COINS = 50;
 
 function cropSkuFromSeedSku(seedSku: string): CropSku | null {

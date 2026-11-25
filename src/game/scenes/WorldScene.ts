@@ -75,6 +75,7 @@ import {
   spawnDiscoverabilityMarkers,
 } from '../world/discoverabilityMarkers';
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
+import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
@@ -1962,7 +1963,7 @@ export class WorldScene extends Phaser.Scene {
         waterEmpty: true,
         waterFull: false,
       },
-      donorEconomyDev: import.meta.env.DEV,
+      donorEconomyDev: isDonorEconomyUiEnabled(),
     });
     for (const npc of this.tiledNpcs) {
       interactables.push({

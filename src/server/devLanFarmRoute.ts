@@ -9,6 +9,7 @@ import {
   buySeed,
   emptyFarm,
   FARM_STARTER_COINS,
+  FARM_STARTER_BAIT_QTY,
   FARM_STARTER_SEED_QTY,
   FARM_STARTER_TOOLS,
   sellCropLine,
@@ -44,6 +45,7 @@ export function seedStarterFarmPack(
   for (const sku of FARM_STARTER_TOOLS) inventoryAdjust('shared', sku, 1, 'normal');
   inventoryAdjust('shared', 'seed_wheat', FARM_STARTER_SEED_QTY, 'normal');
   inventoryAdjust('shared', 'seed_carrot', 2, 'normal');
+  inventoryAdjust('shared', 'bait_free_worm', FARM_STARTER_BAIT_QTY, 'normal');
 }
 
 function shippingMeta(v015: DevLanFarmDb, worldId: string, nowMs: number): FarmShippingMeta {
