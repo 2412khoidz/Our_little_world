@@ -27,6 +27,8 @@ import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLa
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
+import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import { getCropDefinition } from '../shared/farming/crops';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
 import { InviteModal } from '../features/pairing/InviteModal';
@@ -209,10 +211,13 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'dev_console' | 'v03_proto'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'farm_shipping' | 'farm_pantry' | 'dev_console' | 'v03_proto'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [farmWalletCoins, setFarmWalletCoins] = useState(0);
+  const farmVersionRef = useRef(0);
+  const [farmBusy, setFarmBusy] = useState(false);
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
   const [petSnapshot, setPetSnapshot] = useState<PetSnapshot | null>(null);
@@ -290,6 +295,23 @@ function MainCoupleApp() {
     },
     [backend, showToast],
   );
+
+  const refreshFarmWallet = useCallback(async () => {
+    const targetWorldId = snapshotRef.current?.world.id;
+    if (!targetWorldId || !backend.farm) return;
+    const res = await backend.farm.getFarmSnapshot(targetWorldId);
+    if (res.ok && res.data) {
+      setFarmWalletCoins(res.data.walletCoins);
+      farmVersionRef.current = res.data.version;
+      if (backend.inventory) await refreshInventorySnapshot(targetWorldId);
+    }
+  }, [backend.farm, backend.inventory, refreshInventorySnapshot]);
+
+  useEffect(() => {
+    if ((currentMapId === 'farm' || currentMapId === 'garden') && backend.farm) {
+      void refreshFarmWallet();
+    }
+  }, [currentMapId, backend.farm, refreshFarmWallet]);
 
   const handleClaimFreeKibble = useCallback(async () => {
     const targetWorldId = snapshotRef.current?.world.id;
@@ -888,6 +910,9 @@ function MainCoupleApp() {
             void refreshStudySnapshot(worldId);
           } else if (reason === 'mailbox') {
             void refreshMailboxSnapshot(worldId);
+          } else if (reason === 'farm') {
+            void refreshFarmWallet();
+            void refreshInventorySnapshot(worldId);
           } else {
             void refreshWorldSnapshot();
           }
@@ -1421,7 +1446,7 @@ function MainCoupleApp() {
         modalOpen={isAnyModalOpen}
         showJoystick={showJoystick}
         petCanFeed={petCanFeed}
-        interactionMutationBusy={petBusy}
+        interactionMutationBusy={petBusy || farmBusy}
         onOpenInventory={() => {
           setActiveModal('inventory');
           void refreshInventorySnapshot();
@@ -1436,6 +1461,53 @@ function MainCoupleApp() {
         onPetPetAuthoritative={async () => {
           await handleInteractPet('pet');
         }}
+        onFarmApply={backend.farm ? async (plotIndex, action, seedSku) => {
+          const targetWorldId = snapshotRef.current?.world.id;
+          if (!targetWorldId) return;
+          setFarmBusy(true);
+          try {
+            const res = await backend.farm!.applyFarm({
+              worldId: targetWorldId,
+              plotIndex,
+              action,
+              seedSku,
+              farmVersion: farmVersionRef.current,
+              idempotencyKey: makeIdempotencyKey(`farm-${action}-${plotIndex}`),
+            });
+            if (!res.ok) {
+              showToast(res.message ?? 'Không thực hiện được.', true);
+              if (res.code === 'VERSION_CONFLICT') await refreshFarmWallet();
+              return;
+            }
+            setFarmWalletCoins(res.data.snapshot.walletCoins);
+            farmVersionRef.current = res.data.snapshot.version;
+            await refreshInventorySnapshot();
+            if (res.data.harvested?.length) {
+              showToast(
+                `Thu hoạch: ${res.data.harvested
+                  .map((h) => getCropDefinition(h.sku)?.nameVi ?? h.sku)
+                  .join(', ')}`,
+              );
+            } else {
+              showToast(action === 'till' ? 'Đã cuốc xong.' : action === 'plant' ? 'Đã gieo hạt.' : action === 'water' ? 'Đã tưới.' : 'Xong.');
+            }
+            realtimeRef.current?.notifyWorldMutated('farm');
+            realtimeRef.current?.notifyWorldMutated('inventory');
+          } finally {
+            setFarmBusy(false);
+          }
+        } : undefined}
+        onOpenFarmMarket={backend.farm ? () => {
+          void refreshFarmWallet();
+          setActiveModal('farm_market');
+        } : undefined}
+        onOpenFarmShipping={backend.farm ? () => {
+          void refreshFarmWallet();
+          setActiveModal('farm_shipping');
+        } : undefined}
+        onOpenFarmPantry={backend.farm ? () => {
+          setActiveModal('farm_pantry');
+        } : undefined}
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
@@ -1643,6 +1715,93 @@ function MainCoupleApp() {
           onSelectPreset={setSelectedPhotoPresetId}
           onClose={() => setActiveModal(null)}
         />
+      )}
+
+      {(activeModal === 'farm_market' || activeModal === 'farm_shipping' || activeModal === 'farm_pantry') &&
+        backend.farm && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <FarmEconomyPanel
+              mode={
+                activeModal === 'farm_market'
+                  ? 'shop'
+                  : activeModal === 'farm_pantry'
+                    ? 'pantry'
+                    : 'shipping'
+              }
+              walletCoins={farmWalletCoins}
+              inventory={inventorySnapshot}
+              busy={farmBusy}
+              onClose={() => setActiveModal(null)}
+              onProcess={async (outputSku) => {
+                const targetWorldId = snapshotRef.current?.world.id;
+                if (!targetWorldId) return;
+                setFarmBusy(true);
+                try {
+                  const res = await backend.farm!.processPantry({
+                    worldId: targetWorldId,
+                    outputSku,
+                    idempotencyKey: makeIdempotencyKey('farm-process'),
+                  });
+                  if (!res.ok) {
+                    showToast(res.message, true);
+                    return;
+                  }
+                  await refreshInventorySnapshot(targetWorldId);
+                  showToast(`Đã chế biến ${outputSku === 'flour' ? 'bột mì' : outputSku === 'strawberry_jam' ? 'mứt dâu' : 'súp cà rốt'}.`);
+                  realtimeRef.current?.notifyWorldMutated('inventory');
+                } finally {
+                  setFarmBusy(false);
+                }
+              }}
+              onShip={async (sku, qty, quality) => {
+                const targetWorldId = snapshotRef.current?.world.id;
+                if (!targetWorldId) return;
+                setFarmBusy(true);
+                try {
+                  const res = await backend.farm!.shipToBin({
+                    worldId: targetWorldId,
+                    lines: [{ sku, qty, quality }],
+                    idempotencyKey: makeIdempotencyKey('farm-ship'),
+                  });
+                  if (!res.ok) {
+                    showToast(res.message, true);
+                    return;
+                  }
+                  setFarmWalletCoins(res.data.walletCoins);
+                  await refreshInventorySnapshot(targetWorldId);
+                  showToast(`Đã gửi nông sản (+${res.data.totalCoins} xu).`);
+                  realtimeRef.current?.notifyWorldMutated('farm');
+                } finally {
+                  setFarmBusy(false);
+                }
+              }}
+              onBuySeed={async (seedSku, qty) => {
+                const targetWorldId = snapshotRef.current?.world.id;
+                if (!targetWorldId) return;
+                setFarmBusy(true);
+                try {
+                  const res = await backend.farm!.buySeed({
+                    worldId: targetWorldId,
+                    seedSku,
+                    qty,
+                    idempotencyKey: makeIdempotencyKey('farm-buy'),
+                  });
+                  if (!res.ok) {
+                    showToast(res.message, true);
+                    return;
+                  }
+                  setFarmWalletCoins(res.data.walletCoins);
+                  await refreshInventorySnapshot(targetWorldId);
+                  showToast('Đã mua hạt giống.');
+                  realtimeRef.current?.notifyWorldMutated('inventory');
+                } finally {
+                  setFarmBusy(false);
+                }
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {activeModal === 'mailbox' && backend.mailbox && (

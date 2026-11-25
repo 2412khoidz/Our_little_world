@@ -9,7 +9,11 @@
  *
  * Requires Node >= 22.18 (native TypeScript type stripping). No extra dependency.
  *
- * Flags: --seed=N --sessions=N --days=N --batch-profile=v020|v021|v022|v030 --json
+ * Flags: --seed=N --sessions=N --days=N --batch-profile=v020|v021|v022|v030 --json --smoke
+ *         --plots=12|184|contract|sample:N
+ *
+ * --smoke: 50 sessions × 7 days (quick gate; same sim plotCount as full run).
+ * Farming gameplay plot count vs sim: docs/handover/MISSION_05_ECONOMY_SIM_VS_184_GRID.md
  */
 
 import { analyzeArbitrage } from '../src/shared/economy/arbitrage.ts';
@@ -32,6 +36,12 @@ import {
   type ProfileReport,
   type SimReportBundle,
 } from '../src/shared/economy/sim/report.ts';
+import {
+  applyPlotCountOverride,
+  DEFAULT_SIM_FARM_PLOT_COUNT,
+  FARM_CONTRACT_PLOT_COUNT,
+  parseSimPlotsArg,
+} from '../src/shared/economy/sim/plotCount.ts';
 import type { ProfileId } from '../src/shared/economy/sim/types.ts';
 
 function readArg(name: string, fallback: string): string {
@@ -45,16 +55,28 @@ function parsePositiveInt(raw: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+const smoke = process.argv.includes('--smoke');
 const seed = parsePositiveInt(readArg('seed', '20261125'), 20261125);
-const sessions = parsePositiveInt(readArg('sessions', '1000'), 1000);
-const days = parsePositiveInt(readArg('days', '180'), 180);
+const sessions = smoke ? 50 : parsePositiveInt(readArg('sessions', '1000'), 1000);
+const days = smoke ? 7 : parsePositiveInt(readArg('days', '180'), 180);
 const batchProfile = readArg('batch-profile', 'v020') as ProfileId;
 const asJson = process.argv.includes('--json');
+const plotCountOverride = parseSimPlotsArg(readArg('plots', ''));
 const startedAt = Date.now();
+
+if (!asJson) {
+  const simPlots =
+    plotCountOverride ?? DEFAULT_SIM_FARM_PLOT_COUNT;
+  console.log(
+    `Farm contract plots: ${FARM_CONTRACT_PLOT_COUNT} | sim farming plotCount: ${simPlots}${plotCountOverride == null ? ' (profile default)' : ' (--plots override)'}`,
+  );
+  console.log('Docs: docs/handover/MISSION_06_ECONOMY_BALANCE_184.md');
+  if (smoke) console.log(`Smoke mode: ${sessions} sessions, ${days} days`);
+}
 
 const profiles: ProfileReport[] = PROFILES.map((profile) => {
   const results = PERSONAS.map((persona) =>
-    runSimulation({ seed, profileId: profile.id, personaId: persona.id, days }),
+    runSimulation({ seed, profileId: profile.id, personaId: persona.id, days, plotCountOverride }),
   );
   const recovery = PERSONAS.map((persona) =>
     measureZeroWalletRecovery(profile.id, persona.id, seed),
@@ -66,19 +88,27 @@ const profiles: ProfileReport[] = PROFILES.map((profile) => {
           personaId: 'coop',
           seed,
           days: Math.min(days, 30),
+          plotCountOverride,
         }),
       ]
     : [];
+  const reportProfile = applyPlotCountOverride(profile, plotCountOverride);
   return {
     profileId: profile.id,
-    labelVi: profile.labelVi,
+    labelVi: reportProfile.labelVi,
     results,
     recovery,
     strategies,
   };
 });
 
-const batch = runBatch({ sessions, profileId: batchProfile, baseSeed: seed, days });
+const batch = runBatch({
+  sessions,
+  profileId: batchProfile,
+  baseSeed: seed,
+  days,
+  plotCountOverride,
+});
 
 const bundle: SimReportBundle = {
   seed,

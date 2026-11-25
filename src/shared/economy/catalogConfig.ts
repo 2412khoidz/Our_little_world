@@ -138,9 +138,10 @@ export const ITEM_CATALOG: readonly ItemDefinition[] = [
   // the sapling SKU is still missing — see the NO_ACQUISITION_PATH warning.
   item({ sku: 'peach', nameVi: 'Đào', group: 'fruit', milestone: 'V0.2.1', sellPrice: 18, laborMilli: 1_000, depreciation: 9, batchQty: 3, standardValueBp: 46_700, batchDurationMs: 10_800_000, orderMultiplierBp: 14_500, qualityTiers: ALL_QUALITIES, sellChannels: MARKET_CROP, stackLimit: 999 }),
 
-  // --- Pantry (V0.3.0 shop seasonings) -----------------------------------
+  // --- Pantry (V0.3.0 shop seasonings + V0.2.1 farm jam) --------------------
   item({ sku: 'sugar_pack', nameVi: 'Gói đường', group: 'pantry', milestone: 'V0.3.0', storeBuy: 6, sellPrice: 3, standardValueBp: 60_000, stackLimit: 999, sellChannels: ['shipping_bin'] }),
   item({ sku: 'spice', nameVi: 'Gia vị', group: 'pantry', milestone: 'V0.3.0', storeBuy: 10, sellPrice: 5, standardValueBp: 100_000, stackLimit: 999, sellChannels: ['shipping_bin'] }),
+  item({ sku: 'strawberry_jam', nameVi: 'Mứt dâu', group: 'pantry', milestone: 'V0.3.0', sellPrice: 32, laborMilli: 900, depreciation: 1, standardValueBp: 415_000, inputs: [{ sku: 'strawberry', qty: 2 }, { sku: 'sugar_pack', qty: 1 }], batchDurationMs: 45_000, orderMultiplierBp: 14_500, sellChannels: ['shipping_bin', 'npc_general'] }),
   item({ sku: 'ribbon', nameVi: 'Ruy băng', group: 'pantry', milestone: 'V0.3.0', storeBuy: 6, sellPrice: 3, standardValueBp: 60_000, stackLimit: 999, sellChannels: ['shipping_bin'] }),
 
   // --- Cooking (V0.3.0) ---------------------------------------------------

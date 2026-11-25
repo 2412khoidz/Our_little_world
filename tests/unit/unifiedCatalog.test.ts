@@ -4,7 +4,7 @@ import { buildUnifiedCatalogRows, CANONICAL_K5_STARTER_CATALOG } from '../../src
 
 describe('buildUnifiedCatalogRows', () => {
   it('keeps economy fingerprint and merges starter SKUs without duplicates', () => {
-    expect(catalogFingerprint()).toBe('7076075b');
+    expect(catalogFingerprint()).toBe('71f9ecca');
     const rows = buildUnifiedCatalogRows();
     const skus = new Set(rows.map((r) => r.sku));
     expect(skus.size).toBe(rows.length);

@@ -154,6 +154,46 @@ export interface MailboxBackend {
   ): Promise<MutationResult<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
 }
 
+export interface FarmBackend {
+  getFarmSnapshot(worldId: string): Promise<MutationResult<import('../../shared/farming/farmSnapshotTypes').FarmSnapshot>>;
+  applyFarm(params: {
+    worldId: string;
+    plotIndex: number;
+    action: 'till' | 'plant' | 'water' | 'harvest';
+    seedSku?: string | null;
+    farmVersion?: number;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      snapshot: import('../../shared/farming/farmSnapshotTypes').FarmSnapshot;
+      harvested?: { sku: string; qty: number; quality: string }[];
+    }>
+  >;
+  sellCrop(params: {
+    worldId: string;
+    sku: string;
+    qty: number;
+    quality?: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number }>>;
+  buySeed(params: {
+    worldId: string;
+    seedSku: string;
+    qty: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number }>>;
+  shipToBin(params: {
+    worldId: string;
+    lines: { sku: string; qty: number; quality?: 'normal' | 'silver' | 'gold' }[];
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number; totalCoins: number }>>;
+  processPantry(params: {
+    worldId: string;
+    outputSku: string;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ outputSku: string }>>;
+}
+
 export interface DevConsoleBackend {
   spawnItem(params: {
     worldId: string;
@@ -251,6 +291,7 @@ export interface WorldBackend {
   createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus;
 
   readonly inventory?: InventoryBackend;
+  readonly farm?: FarmBackend;
   readonly pet?: PetBackend;
   readonly study?: StudyBackend;
   readonly mailbox?: MailboxBackend;

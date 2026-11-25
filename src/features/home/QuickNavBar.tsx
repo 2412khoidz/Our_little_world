@@ -32,12 +32,12 @@ export function QuickNavBar({
 
       <button
         type="button"
-        className={`nav-btn ${currentMapId === 'garden' && !decorateActive ? 'nav-btn--active' : ''}`}
-        data-testid="nav-garden"
-        onClick={() => onSelectMap('garden')}
+        className={`nav-btn ${(currentMapId === 'farm' || currentMapId === 'garden') && !decorateActive ? 'nav-btn--active' : ''}`}
+        data-testid="nav-farm"
+        onClick={() => onSelectMap('farm')}
       >
         <Trees size={19} />
-        <span>Vườn</span>
+        <span>Ruộng</span>
       </button>
 
       <button

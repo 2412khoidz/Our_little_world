@@ -53,9 +53,15 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ['STACK_FULL', 'STACK_FULL', 'Ngăn túi chứa món đồ này đã đầy rồi.'],
     ['ALREADY_OPENED', 'ALREADY_OPENED', 'Lá thư hoặc món quà này đã được mở trước đó.'],
     ['INSUFFICIENT_ITEMS', 'INSUFFICIENT_ITEMS', 'Trong túi không đủ vật phẩm cần dùng.'],
+    ['INSUFFICIENT_FUNDS', 'VALIDATION_ERROR', 'Không đủ xu để mua hạt.'],
+    ['TOOL_REQUIRED', 'INSUFFICIENT_ITEMS', 'Cần công cụ hoặc vật phẩm trong kho chung.'],
+    ['NOT_FOR_SALE', 'VALIDATION_ERROR', 'Hạt này chưa mở bán.'],
+    ['NOT_SELLABLE', 'VALIDATION_ERROR', 'Món này không bán được.'],
+    ['EMPTY_SALE', 'VALIDATION_ERROR', 'Chưa chọn nông sản để gửi.'],
     ['IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'Yêu cầu bị trùng khóa nhưng khác nội dung.'],
     ['NOT_FOUND', 'NOT_FOUND', 'Không tìm thấy dữ liệu được yêu cầu.'],
     ['VALIDATION_ERROR', 'VALIDATION_ERROR', 'Dữ liệu nhập chưa hợp lệ.'],
+    ['INVALID_PLOT', 'VALIDATION_ERROR', 'Ô đất không hợp lệ — chỉ ruộng 0–183 (ruộng chính + phụ).'],
     [
       'SERVER_AUTHORITY_REQUIRED',
       'SERVER_AUTHORITY_REQUIRED',
@@ -638,6 +644,106 @@ export function createSupabaseBackend(): WorldBackend {
           ok: true,
           data: data as { openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot },
         };
+      },
+    },
+
+    farm: {
+      async getFarmSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('farm_get_snapshot', { p_world_id: worldId });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as Record<string, unknown>;
+        return {
+          ok: true,
+          data: {
+            worldId: String(raw.worldId ?? worldId),
+            version: Number(raw.version ?? 1),
+            serverNowMs: Number(raw.serverNowMs ?? Date.now()),
+            farm: raw.farm as import('../../shared/farming/types').Farm,
+            plots: (raw.plots as import('../../shared/farming/farmSnapshotTypes').FarmPlotView[]) ?? [],
+            walletCoins: Number(raw.walletCoins ?? 0),
+          },
+        };
+      },
+      async applyFarm(params) {
+        const { data, error } = await supabase.rpc('farm_apply', {
+          p_world_id: params.worldId,
+          p_plot_index: params.plotIndex,
+          p_action: params.action,
+          p_seed_sku: params.seedSku ?? null,
+          p_farm_version: params.farmVersion ?? null,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as {
+          snapshot: Record<string, unknown>;
+          harvested?: { sku: string; qty: number; quality: string }[];
+        };
+        const snap = raw.snapshot;
+        return {
+          ok: true,
+          data: {
+            snapshot: {
+              worldId: String(snap.worldId ?? params.worldId),
+              version: Number(snap.version ?? 1),
+              serverNowMs: Number(snap.serverNowMs ?? Date.now()),
+              farm: snap.farm as import('../../shared/farming/types').Farm,
+              plots: (snap.plots as import('../../shared/farming/farmSnapshotTypes').FarmPlotView[]) ?? [],
+              walletCoins: Number(snap.walletCoins ?? 0),
+            },
+            harvested: raw.harvested,
+          },
+        };
+      },
+      async sellCrop(params) {
+        const { data, error } = await supabase.rpc('farm_sell_crop', {
+          p_world_id: params.worldId,
+          p_sku: params.sku,
+          p_qty: params.qty,
+          p_quality: params.quality ?? 'normal',
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { walletCoins: number } };
+      },
+      async buySeed(params) {
+        const { data, error } = await supabase.rpc('farm_buy_seed', {
+          p_world_id: params.worldId,
+          p_seed_sku: params.seedSku,
+          p_qty: params.qty,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { walletCoins: number } };
+      },
+      async shipToBin(params) {
+        const { data, error } = await supabase.rpc('farm_ship_to_bin', {
+          p_world_id: params.worldId,
+          p_lines: params.lines,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { walletCoins: number; totalCoins: number } };
+      },
+      async processPantry(params) {
+        const { data, error } = await supabase.rpc('farm_process_pantry', {
+          p_world_id: params.worldId,
+          p_output_sku: params.outputSku,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { outputSku: string } };
       },
     },
   };

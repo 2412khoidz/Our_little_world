@@ -243,6 +243,7 @@ async function readJsonBody(req) {
 
 export function createDevLanHandler({
   stateFilePath = path.join(process.cwd(), '.dev-lan-state.json'),
+  getTryHandleFarmDevLan = () => null,
 } = {}) {
   let db = createInitialDb();
   try {
@@ -882,6 +883,7 @@ export function createDevLanHandler({
         sendJson,
         saveDb,
         broadcastEvent,
+        tryHandleFarmDevLan: getTryHandleFarmDevLan(),
       });
       if (handledV015) return;
 
@@ -949,8 +951,18 @@ export function devLanServerPlugin(options = {}) {
     name: 'olw-dev-lan-server',
     apply: 'serve',
     configureServer(server) {
+      let tryHandleFarmDevLan = null;
+      server
+        .ssrLoadModule('/src/server/devLanFarmRoute.ts')
+        .then((mod) => {
+          tryHandleFarmDevLan = mod.tryHandleFarmDevLan;
+        })
+        .catch((err) => {
+          console.warn('[dev-lan] farm routes unavailable:', err?.message ?? err);
+        });
       const handler = createDevLanHandler({
         stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+        getTryHandleFarmDevLan: () => tryHandleFarmDevLan,
       });
       const assetCandidates = createAssetCandidatesMiddleware();
       server.middlewares.use(assetCandidates);

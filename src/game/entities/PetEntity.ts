@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../../shared/maps';
 import type { PetActionType, PetSnapshot } from '../../shared/pet/petTypes';
+import type { MapId } from '../../shared/types';
 import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../shared/petLiving/petVisualTypes';
 import {
   createLocomotionSnapshot,
@@ -106,7 +107,7 @@ export class PetEntity {
     }
   }
 
-  syncSnapshot(pet: PetSnapshot | null, currentMapId: 'home' | 'garden'): void {
+  syncSnapshot(pet: PetSnapshot | null, currentMapId: MapId): void {
     this.petSnapshot = pet;
     const show = currentMapId === 'home';
     this.nameTag.setText(pet ? pet.name : 'Mèo con');

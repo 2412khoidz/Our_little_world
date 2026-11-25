@@ -52,6 +52,9 @@ import { findTilePath, type GridPoint } from '../systems/pathfinding';
 import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import { buildMainGameInteractables } from '../../shared/interaction/mainGameInteractables';
+import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
+import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
+import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 
 interface RemoteAvatarEntity {
@@ -267,8 +270,11 @@ export class WorldScene extends Phaser.Scene {
     this.buildScenicSurround(mapId, worldW, worldH);
 
     const art = this.textures.exists(WORLD_ART_KEY) ? this.textures.get(WORLD_ART_KEY) : null;
-    const background = artIds.background[mapId];
-    if (art?.has(background)) {
+    const background =
+      mapId === 'home' || mapId === 'garden' ? artIds.background[mapId] : undefined;
+    if (isTiledWorldMapId(mapId)) {
+      this.buildTiledWorldMap(mapId);
+    } else if (background && art?.has(background)) {
       this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
       if (mapId === 'home') {
         this.buildHomeDemoEAccents();
@@ -313,6 +319,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildScenicSurround(mapId: MapId, worldW: number, worldH: number): void {
+    if (isTiledWorldMapId(mapId)) return;
+
     const propsTex = this.textures.exists(WORLD_PROPS_KEY) ? this.textures.get(WORLD_PROPS_KEY) : null;
     if (!propsTex || !propsTex.has(extIds.props.meadow_tile)) return;
 
@@ -557,6 +565,19 @@ export class WorldScene extends Phaser.Scene {
     // 5. Drifting cherry blossom petals
     this.moteBounds = { x: -24, y: 0, w: 336, h: 240 };
     this.motes = createAmbientMotes(this, this.moteBounds, 'petal', 14);
+  }
+
+  private buildTiledWorldMap(mapId: MapId): void {
+    if (!isTiledWorldMapId(mapId)) return;
+    const mapKey = TILED_MAP_PHASER_KEYS[mapId];
+    if (!this.cache.tilemap.exists(mapKey)) return;
+    const tilemap = this.make.tilemap({ key: mapKey });
+    this.tilemap = tilemap;
+
+    const tileset = tilemap.addTilesetImage('tileset-cozy', 'tileset-cozy', 16, 16, 0, 0);
+    if (tileset) {
+      renderTiledWorldMapLayers(this, tilemap, tileset, (obj) => this.mapLayers.push(obj));
+    }
   }
 
   private buildStarterMap(mapId: MapId): void {
@@ -1797,6 +1818,7 @@ export class WorldScene extends Phaser.Scene {
         waterFull: false,
       },
     });
+    interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId));
 
     gameEventBus.emit('evt:interaction-frame', {
       mapId: this.currentMapId,
