@@ -60,6 +60,13 @@ test.describe('Donor C1 — mill + pond + hollow + stream (two-client Dev LAN)',
     });
     expect(fishStart.ok()).toBeTruthy();
 
+    const fishSessionB = await request.get(`${DEV_LAN}/donor/fishing/session?worldId=${w}`, { headers: nangHeaders });
+    expect(fishSessionB.ok()).toBeTruthy();
+    const sessJson = (await fishSessionB.json()) as { data?: { spotId?: string; phase?: string; previewName?: string } };
+    expect(sessJson.data?.spotId).toBe('meadow_pond');
+    expect(sessJson.data?.phase).toBe('casting');
+    expect(sessJson.data?.previewName).toBeTruthy();
+
     const fishResolve = await request.post(`${DEV_LAN}/donor/fishing/resolve?worldId=${w}`, {
       headers: mayHeaders,
       data: { worldId: w, reelProgressPermille: 850 },

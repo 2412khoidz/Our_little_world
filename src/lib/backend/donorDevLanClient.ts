@@ -1,4 +1,6 @@
+import type { DonorFishSessionView } from '../../shared/donor/donorFishSessionTypes';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
+import type { TidefallFishingPhase } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
 
 export type { DonorFishingSpotId };
 
@@ -7,8 +9,13 @@ async function donorDevLanJson<T>(path: string, init?: RequestInit): Promise<T> 
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
-  const json = (await res.json()) as { ok: boolean; data?: T; message?: string };
-  if (!json.ok) throw new Error(json.message ?? 'Donor API lỗi');
+  let json: { ok: boolean; data?: T; message?: string };
+  try {
+    json = (await res.json()) as { ok: boolean; data?: T; message?: string };
+  } catch {
+    throw new Error('Máy chủ câu cá không phản hồi — thử lại sau.');
+  }
+  if (!json.ok) throw new Error(json.message ?? 'Không thực hiện được thao tác câu cá.');
   return json.data as T;
 }
 
@@ -64,13 +71,32 @@ export function postDonorWorkshopCollect(worldId: string) {
 }
 
 export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId) {
-  return donorDevLanJson<{ preview: { name: string }; spotId: DonorFishingSpotId }>(
+  return donorDevLanJson<{ seed: number; preview: { name: string }; spotId: DonorFishingSpotId }>(
     `/donor/fishing/start?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',
       body: JSON.stringify({ worldId, spotId }),
     },
   );
+}
+
+export function fetchDonorFishingSession(worldId: string) {
+  return donorDevLanJson<DonorFishSessionView | null>(`/donor/fishing/session?worldId=${encodeURIComponent(worldId)}`);
+}
+
+export function postDonorFishingSync(
+  worldId: string,
+  patch: {
+    spotId: DonorFishingSpotId;
+    phase: TidefallFishingPhase;
+    progressPermille: number;
+    pointerNorm: number;
+  },
+) {
+  return donorDevLanJson<DonorFishSessionView>(`/donor/fishing/sync?worldId=${encodeURIComponent(worldId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ worldId, ...patch }),
+  });
 }
 
 export function postDonorFishingResolve(worldId: string, reelProgressPermille: number) {

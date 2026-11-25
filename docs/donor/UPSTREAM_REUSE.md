@@ -11,7 +11,7 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `shared/src/features/nature.ts` | `meadowbrookNatureCatch.ts`, `content/meadowbrookNatureCritters.ts` |
 | Mill recipes | `olwMeadowbrookMill.ts` |
 
-**Spot:** `meadow_pond` → chill reel minigame.
+**Spot:** `meadow_pond` → ~~chill reel~~ tidefall bar (see Tidefall row).
 
 ## KrasimirKralev/harvest-hollow @ `9b23e1a1fe2b19e117a3005efce21417052ded97`
 
@@ -25,11 +25,20 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 
 **Playable:** bakery queue (`donor_bread`, `chicken_feed`), coop feed/collect (`donor_egg`).
 
-## cristianjeffries/chill-fishing (MIT, main)
+## stateloop-connected/source-tidefall-phaser @ `6a77169d198757413ccd92d310bf655d2f177506` (MIT)
 
 | Upstream | OLW path |
 | --- | --- |
-| `game.js` (`updateReel` / `startReel`) | `chill-fishing/reelMinigame.ts` |
+| `FishingSystem.js` cast/wait/bite/minigame flow + `Constants.js` `FISHING.*` | `tidefall-phaser/tidefallFishingFsm.ts`, `tidefallFishingConstants.ts` |
+| `FishingSystem.js#createMinigameUI` / `minigamePress` | `features/donor/tidefallFishingCanvas.ts` + `ChillFishingModal.tsx` (pond spots) |
+
+**Spot:** `meadow_pond`, `gull_bay` → tidefall bar minigame (economy still `olwDonorAuthority` meadowbrook resolve).
+
+## cristianjeffries/chill-fishing (MIT, main) — legacy reel
+
+| Upstream | OLW path |
+| --- | --- |
+| `game.js` (`updateReel` / `startReel`) | `chill-fishing/reelMinigame.ts` (unit tests only; pond UI superseded by Tidefall) |
 
 ## forinda/canvas-games @ `main` (`tutorials/48-fishing`)
 
@@ -52,12 +61,14 @@ Copied source files only. Single inventory authority: `src/shared/donor/adapter/
 | `GET/POST /donor/workshop/*` | Meadowbrook mill |
 | `POST /donor/bakery/*` | Hollow bakery + feed mill |
 | `POST /donor/coop/*` | Chicken feed/collect |
-| `POST /donor/fishing/*` | `spotId`: `meadow_pond` \| `east_stream` |
+| `GET /donor/fishing/session` | Couple observe same spot (2P sync) |
+| `POST /donor/fishing/sync` | Phase + bar state broadcast |
+| `POST /donor/fishing/*` | `spotId`: `meadow_pond` \| `east_stream` \| `gull_bay` |
 
 ## Tests
 
 | Vitest | E2E |
 | --- | --- |
-| `donorMeadowbrookWorkshop.test.ts`, `donorHollowBakery.test.ts`, `donorHollowCoop.test.ts`, `donorTensionFishing.test.ts`, `donorReelMinigame.test.ts`, `donorMeadowbrookCatch.test.ts` | `tests/e2e/donor-economy-two-client.spec.ts` |
+| `donorMeadowbrookWorkshop.test.ts`, `donorHollowBakery.test.ts`, `donorHollowCoop.test.ts`, `donorTensionFishing.test.ts`, `donorReelMinigame.test.ts`, `donorTidefallFishingFsm.test.ts`, `donorMeadowbrookCatch.test.ts` | `tests/e2e/donor-economy-two-client.spec.ts` |
 
 Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview`.

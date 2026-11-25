@@ -12,12 +12,44 @@ import {
   type DonorWorkshopWorldState,
 } from '../shared/donor/adapter/olwDonorAuthority';
 import { emptyHollowCoopState } from '../shared/donor/harvest-hollow-9b23e1a/hollowCoopCycle';
-import { parseDonorFishingSpot } from '../shared/donor/donorFishingSpots';
+import type { DonorFishSessionView } from '../shared/donor/donorFishSessionTypes';
+import { parseDonorFishingSpot, type DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
+import type { TidefallFishingPhase } from '../shared/donor/tidefall-phaser/tidefallFishingFsm';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
+
+export interface DonorFishSessionRecord {
+  seed: number;
+  startedAtMs: number;
+  spotId: DonorFishingSpotId;
+  previewName: string;
+  phase: TidefallFishingPhase;
+  progressPermille: number;
+  pointerNorm: number;
+  anglerUserId: string;
+  updatedAtMs: number;
+}
 
 export interface DevLanDonorDb {
   donorWorkshop?: Record<string, DonorWorkshopWorldState>;
-  donorFishSession?: Record<string, { seed: number; startedAtMs: number; spotId: ReturnType<typeof parseDonorFishingSpot> }>;
+  donorFishSession?: Record<string, DonorFishSessionRecord>;
+}
+
+function donorFishSessionView(row: DonorFishSessionRecord): DonorFishSessionView {
+  return {
+    spotId: row.spotId,
+    previewName: row.previewName,
+    phase: row.phase,
+    progressPermille: row.progressPermille,
+    pointerNorm: row.pointerNorm,
+    anglerUserId: row.anglerUserId,
+    updatedAtMs: row.updatedAtMs,
+  };
+}
+
+function parseTidefallPhase(raw: unknown): TidefallFishingPhase {
+  const p = String(raw ?? 'idle');
+  const allowed: TidefallFishingPhase[] = ['idle', 'casting', 'waiting', 'bite', 'minigame', 'landed', 'escaped'];
+  return allowed.includes(p as TidefallFishingPhase) ? (p as TidefallFishingPhase) : 'idle';
 }
 
 function donorRow(db: DevLanDonorDb, worldId: string): DonorWorkshopWorldState {
@@ -153,13 +185,47 @@ export async function tryHandleDonorDevLan(ctx: {
     return true;
   }
 
+  if (req.method === 'GET' && route === '/donor/fishing/session') {
+    v015.donorFishSession ??= {};
+    const row = v015.donorFishSession[worldId];
+    sendJson(res, 200, { ok: true, data: row ? donorFishSessionView(row) : null });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/donor/fishing/sync') {
+    v015.donorFishSession ??= {};
+    const row = v015.donorFishSession[worldId];
+    if (!row) {
+      sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa có phiên câu — hãy quăng cần trước.' });
+      return true;
+    }
+    const phase = parseTidefallPhase(body.phase);
+    row.phase = phase;
+    row.progressPermille = Math.max(0, Math.min(1000, Math.round(Number(body.progressPermille ?? row.progressPermille))));
+    row.pointerNorm = Math.max(0, Math.min(1, Number(body.pointerNorm ?? row.pointerNorm)));
+    row.updatedAtMs = nowMs;
+    saveDb();
+    sendJson(res, 200, { ok: true, data: donorFishSessionView(row) });
+    return true;
+  }
+
   if (req.method === 'POST' && route === '/donor/fishing/start') {
     v015.donorFishSession ??= {};
     const spotId = parseDonorFishingSpot(body.spotId);
     const seed = Math.floor(Math.random() * 0xffff_ffff);
-    v015.donorFishSession[worldId] = { seed, startedAtMs: nowMs, spotId };
     const hour = new Date(nowMs).getHours();
     const preview = donorFishingPreview(seed, nowMs, hour, spotId);
+    v015.donorFishSession[worldId] = {
+      seed,
+      startedAtMs: nowMs,
+      spotId: preview.spotId,
+      previewName: preview.name,
+      phase: 'casting',
+      progressPermille: 0,
+      pointerNorm: 0.12,
+      anglerUserId: userId,
+      updatedAtMs: nowMs,
+    };
     saveDb();
     sendJson(res, 200, { ok: true, data: { seed, spotId: preview.spotId, preview: { name: preview.name, critterId: preview.critterId } } });
     return true;
@@ -175,7 +241,9 @@ export async function tryHandleDonorDevLan(ctx: {
     const progress = Number(body.reelProgressPermille ?? 0);
     const hour = new Date(nowMs).getHours();
     const resolved = donorFishingResolve(session.seed, nowMs, hour, progress, session.spotId);
-    delete v015.donorFishSession[worldId];
+    session.phase = resolved.escaped ? 'escaped' : 'landed';
+    session.progressPermille = progress;
+    session.updatedAtMs = nowMs;
     let items = getInventoryList(worldId);
     if (!resolved.escaped && resolved.itemSku) {
       items = creditSharedSku(worldId, items, resolved.itemSku, 1, nowMs);
