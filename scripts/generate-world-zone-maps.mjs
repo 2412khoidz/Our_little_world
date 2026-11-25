@@ -126,9 +126,9 @@ function paintSandGrassBlend(ground, w, y, x0, x1) {
 /** One-tile shoreline ring between walkable ground and deep water (no contract anchor changes). */
 function paintWaterShoreRing(ground, w, x0, x1, yLand, yFoam) {
   for (let x = x0; x <= x1; x += 1) {
-    ground[idx(w, x, yLand)] = x % 2 === 0 ? T.sandShore : T.shoreGrass;
+    ground[idx(w, x, yLand)] = T.sandShore;
     if (yFoam !== yLand) {
-      ground[idx(w, x, yFoam)] = T.grassShore;
+      ground[idx(w, x, yFoam)] = x % 4 === 0 ? T.shoreGrass : T.grassShore;
     }
   }
 }
@@ -967,7 +967,7 @@ function buildBeachMap() {
       } else if (y >= 26) {
         ground[idx(w, x, y)] = T.shoreGrass;
       } else if (y >= 11) {
-        ground[idx(w, x, y)] = (x + y) % 2 === 0 ? T.sandA : T.sandB;
+        ground[idx(w, x, y)] = (x * 5 + y * 7) % 6 === 0 ? T.sandA : T.sandB;
       } else if (y >= 9) {
         ground[idx(w, x, y)] = (x + y) % 3 === 0 ? T.shoreGrass : T.g2;
       } else {
@@ -1010,6 +1010,11 @@ function buildBeachMap() {
   paths[idx(w, 14, 20)] = T.woodPlank;
   paths[idx(w, 15, 20)] = T.woodPlank;
   vegetation[idx(w, 13, 19)] = T.flower;
+  paths[idx(w, 11, 22)] = T.woodPlank;
+  paths[idx(w, 12, 22)] = T.woodPlank;
+  paths[idx(w, 38, 24)] = T.woodPlank;
+  paths[idx(w, 39, 23)] = T.woodPlank;
+  paths[idx(w, 40, 23)] = T.woodPlank;
 
   for (let x = 0; x < w; x += 1) {
     collision[idx(w, x, 0)] = 1;
@@ -1079,8 +1084,8 @@ function buildShopInteriorMap() {
 
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
-      const wood = (x + y) % 2 === 0 ? T.woodPlank : T.pathB;
-      ground[idx(w, x, y)] = y >= 2 ? wood : 0;
+      ground[idx(w, x, y)] =
+        y >= 2 ? ((x + y) % 5 === 0 ? T.pathB : T.woodPlank) : 0;
     }
   }
   for (let x = 1; x < w - 1; x += 1) {

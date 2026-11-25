@@ -1115,6 +1115,31 @@ function MainCoupleApp() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Dev-only stable camera jumps for Visual Quality Gate capture scripts (`?vqg-capture=1`). */
+  useEffect(() => {
+    if (!import.meta.env.DEV || !worldSnapshot || typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('vqg-capture') !== '1') return;
+    type VqgCaptureApi = {
+      jump: (mapId: MapId, tileX: number, tileY: number) => void;
+    };
+    const w = window as Window & { __OLW_VQG?: VqgCaptureApi };
+    w.__OLW_VQG = {
+      jump(mapId, tileX, tileY) {
+        setDecorateActive(false);
+        setActiveSku(null);
+        setSelectedPlacementId(null);
+        setCurrentMapId(mapId);
+        gameEventBus.emit('cmd:set-map', {
+          mapId,
+          spawnTile: { tileX, tileY },
+        });
+      },
+    };
+    return () => {
+      delete w.__OLW_VQG;
+    };
+  }, [worldSnapshot]);
+
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
     async ({ mapId, sku, tileX, tileY }: { mapId: MapId; sku: string; tileX: number; tileY: number }) => {
