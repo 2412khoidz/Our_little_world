@@ -111,6 +111,17 @@ describe('Mission 04A — pet brain controller', () => {
     expect(back.phase).toBe('idle');
   });
 
+  it('restores v2 moving/performing without lastIntent as idle', () => {
+    const brain = createPetBrainState();
+    const blob = serializePetBrain({
+      ...brain,
+      phase: 'moving',
+      lastIntent: null,
+    });
+    const back = deserializePetBrain(blob);
+    expect(back.phase).toBe('idle');
+  });
+
   it('personality QA profiles diverge in the same explore scenario', () => {
     const results = PET_BRAIN_QA_PROFILE_IDS.map((id) =>
       runPetLabVerificationTrace({

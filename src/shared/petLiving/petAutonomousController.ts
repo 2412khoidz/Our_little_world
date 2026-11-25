@@ -41,6 +41,7 @@ import {
 } from './petPrimitivesAdapter';
 
 export const PET_BRAIN_DECISION_CADENCE_MS = 2000;
+const PET_BRAIN_COMPLETED_INSTANCE_CAP = 64;
 
 export interface PetBrainAux {
   selectionLog: SelectionLogState;
@@ -499,6 +500,11 @@ export function tickPetBrain(
       pushCompletion(completions, 'completed', state.lastIntent, input.nowMs);
       const done = new Set(state.completedInstanceIds);
       done.add(state.lastIntent.instanceId);
+      while (done.size > PET_BRAIN_COMPLETED_INSTANCE_CAP) {
+        const oldest = done.values().next().value;
+        if (oldest === undefined) break;
+        done.delete(oldest);
+      }
       state = { ...resetActive(state), completedInstanceIds: done };
       switchReason = 'Hoàn thành (chờ xác nhận authoritative)';
     }
@@ -592,9 +598,13 @@ export function deserializePetBrain(
   );
 
   if (blob.version === 1) {
+    let v1Phase = blob.phase;
+    if (v1Phase === 'completing' || v1Phase === 'moving' || v1Phase === 'performing') {
+      v1Phase = 'idle';
+    }
     return {
       ...base,
-      phase: blob.phase === 'completing' ? 'idle' : blob.phase,
+      phase: v1Phase,
       active: blob.activeJson ? safeParseJson(blob.activeJson, null) : null,
       travelCompleteAtMs: blob.travelCompleteAtMs,
     };
@@ -604,7 +614,10 @@ export function deserializePetBrain(
     ? safeParseJson<PetActionIntent | null>(blob.lastIntentJson, null)
     : null;
   let phase = blob.phase;
-  if (phase === 'completing' && !lastIntent) {
+  if (
+    (phase === 'completing' || phase === 'moving' || phase === 'performing') &&
+    !lastIntent
+  ) {
     phase = 'idle';
   }
 
