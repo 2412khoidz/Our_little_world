@@ -1496,6 +1496,8 @@ function MainCoupleApp() {
     type VqgCaptureApi = {
       jump: (mapId: MapId, tileX: number, tileY: number) => void;
       openFishing: (spotId?: DonorFishingSpotId) => void;
+      openFarmMarket: (shopKind?: FarmShopKind) => void;
+      openFarmShipping: () => void;
     };
     const w = window as Window & { __OLW_VQG?: VqgCaptureApi };
     w.__OLW_VQG = {
@@ -1512,6 +1514,15 @@ function MainCoupleApp() {
       openFishing(spotId = 'meadow_pond') {
         setDonorChillFishingSpot(parseDonorFishingSpot(spotId));
         setActiveModal('donor_fishing');
+      },
+      openFarmMarket(shopKind = 'seed') {
+        void refreshFarmWallet();
+        setFarmShopKind(shopKind);
+        setActiveModal('farm_market');
+      },
+      openFarmShipping() {
+        void refreshFarmWallet();
+        setActiveModal('farm_shipping');
       },
     };
     return () => {
