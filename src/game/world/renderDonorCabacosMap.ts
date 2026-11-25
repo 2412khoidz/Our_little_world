@@ -51,22 +51,46 @@ export function renderDonorCabacosShopInterior(
   pushLayer(img);
 }
 
-export function isDonorCabacosMap(tilemap: Phaser.Tilemaps.Tilemap): boolean {
-  const props = tilemap.properties as Record<string, unknown> | undefined;
-  if (props?.olwDonor === 'cabacos') return true;
-  const list = (tilemap as Phaser.Tilemaps.Tilemap & { data?: { properties?: { name: string; value: string }[] } }).data
-    ?.properties;
-  return list?.some((p) => p.name === 'olwDonor' && p.value === 'cabacos') ?? false;
+type TiledProperty = { name: string; value: string | number | boolean };
+
+/** Tiled stores map `properties` as an array; Phaser assigns that to `tilemap.properties`. */
+export function tiledMapPropertyValue(
+  tilemap: Phaser.Tilemaps.Tilemap,
+  propertyName: string,
+): string | number | boolean | undefined {
+  const props = tilemap.properties as TiledProperty[] | Record<string, unknown> | undefined;
+  if (!props) return undefined;
+  if (Array.isArray(props)) {
+    const hit = props.find((p) => p.name === propertyName);
+    return hit?.value;
+  }
+  return props[propertyName] as string | number | boolean | undefined;
 }
+
+export function isDonorCabacosMapFromCache(scene: Phaser.Scene, mapKey: string): boolean {
+  const raw = scene.cache.tilemap.get(mapKey)?.data as { properties?: TiledProperty[] } | undefined;
+  return raw?.properties?.some((p) => p.name === 'olwDonor' && p.value === 'cabacos') ?? false;
+}
+
+export function isDonorCabacosMap(tilemap: Phaser.Tilemaps.Tilemap): boolean {
+  return tiledMapPropertyValue(tilemap, 'olwDonor') === 'cabacos';
+}
+
+const DONOR_TEXTURE_ALIASES: Record<string, string> = {
+  ts_map: 'donor-cabacos-ts_map',
+  ts_forest: 'donor-cabacos-ts_forest',
+};
 
 export function getDonorCabacosTilesets(
   tilemap: Phaser.Tilemaps.Tilemap,
 ): Phaser.Tilemaps.Tileset[] {
   const out: Phaser.Tilemaps.Tileset[] = [];
   for (const ts of tilemap.tilesets) {
-    const key = `donor-cabacos-${ts.name}`;
-    if (!sceneHasTexture(tilemap.scene, key)) continue;
-    const added = tilemap.addTilesetImage(ts.name, key, ts.tileWidth ?? TILE_SIZE, ts.tileHeight ?? TILE_SIZE);
+    const textureKey = DONOR_TEXTURE_ALIASES[ts.name] ?? `donor-cabacos-${ts.name}`;
+    if (!sceneHasTexture(tilemap.scene, textureKey)) continue;
+    const tw = ts.tileWidth ?? TILE_SIZE;
+    const th = ts.tileHeight ?? TILE_SIZE;
+    const added = tilemap.addTilesetImage(ts.name, textureKey, tw, th);
     if (added) out.push(added);
   }
   return out;

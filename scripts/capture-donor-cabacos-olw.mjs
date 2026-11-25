@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
+import { assertCanvasPixelVariance } from './lib/assertScreenshotMapVariance.mjs';
 
 const PORT = process.env.OLW_PORT || '4181';
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -37,13 +38,20 @@ async function main() {
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
     await canvas.waitFor({ state: 'visible', timeout: 20000 });
     await page.waitForTimeout(1500);
-    if (page.url().includes('extended-world')) {
-      await page.evaluate(() => window.__OLW_VQG?.jump?.('village', 42, 31));
-      await page.waitForTimeout(800);
+    await page.evaluate(() => window.__OLW_VQG?.jump?.('village', 42, 31));
+    for (let i = 0; i < 40; i += 1) {
+      const id = await canvas.getAttribute('data-map-id');
+      if (id === 'village') break;
+      await page.waitForTimeout(250);
     }
+    const mapId = await canvas.getAttribute('data-map-id');
+    if (mapId !== 'village') throw new Error(`Expected village map, got ${mapId}`);
+    await page.waitForTimeout(1200);
     await page.screenshot({ path: OUT, fullPage: false });
+    const { assertScreenshotCenterVariance } = await import('./lib/assertScreenshotMapVariance.mjs');
+    const unique = assertScreenshotCenterVariance(OUT, { minUnique: 28 });
     await browser.close();
-    console.log('Wrote', OUT);
+    console.log('Wrote', OUT, 'uniqueColors', unique);
   } finally {
     srv.kill('SIGTERM');
   }
