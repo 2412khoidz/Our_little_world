@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildHotbarSlotsFromInventory } from '../../src/shared/interaction/inventoryHotbarAdapter';
+import {
+  INVENTORY_HOTBAR_ADAPTER_IMPLEMENTATION,
+  MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST,
+  buildHotbarSlotsFromInventory,
+} from '../../src/shared/interaction/inventoryHotbarAdapter';
 import type { InventorySnapshot } from '../../src/shared/inventory/inventoryTypes';
 
 const snapshotBase: InventorySnapshot = {
@@ -32,5 +36,10 @@ describe('inventoryHotbarAdapter', () => {
   it('returns empty slots when snapshot missing', () => {
     const slots = buildHotbarSlotsFromInventory(null);
     expect(slots.every((s) => s.qty === 0)).toBe(true);
+  });
+
+  it('documents v015 adapter and initial allowlist length', () => {
+    expect(INVENTORY_HOTBAR_ADAPTER_IMPLEMENTATION).toBe('v015-shared-sku-projection');
+    expect(MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST).toHaveLength(5);
   });
 });

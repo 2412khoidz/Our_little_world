@@ -1366,6 +1366,7 @@ function MainCoupleApp() {
         modalOpen={isAnyModalOpen}
         showJoystick={showJoystick}
         petCanFeed={petCanFeed}
+        interactionMutationBusy={petBusy}
         onOpenInventory={() => {
           setActiveModal('inventory');
           void refreshInventorySnapshot();

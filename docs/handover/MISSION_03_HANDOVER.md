@@ -17,6 +17,14 @@ Game chính tại `/` có **hotbar từ inventory thật**, **J/K contextual act
 | Vuốt ve bằng J (không cầm đồ) | `interactPet('pet')` |
 | Mobile J/K buttons | Chỉ `max-width: 768px`; không D-pad thừa desktop |
 
+## Independent review remediation (post-implementation)
+
+| ID | Nội dung |
+|---|---|
+| P0 | Held item identity: `reconcileHeldItemWithHotbar` theo `HotbarStackKey` (ownerScope + sku + quality); slot compaction + depletion |
+| P1 | `validateActionAgainstLatestFrame` + `interactionMutationBusy` / local action gate — không J/K stale hoặc trùng mutation |
+| P2 | `INVENTORY_HOTBAR_ADAPTER_IMPLEMENTATION=v015-shared-sku-projection`; allowlist **5 SKU** ban đầu — không dùng nguyên trạng khi quality tiers ship |
+
 ## Phụ thuộc Mission 02 (chưa authoritative)
 
 - Đổ bát / rót nước / bình nước / đồ chơi / thức ăn ngoài hạt cơ bản → toast *Mission 02 pending*
@@ -56,7 +64,7 @@ Thay `buildHotbarSlotsFromInventory` bằng implementation v2 khi Codex ship cat
 | Check | Kết quả |
 |---|---|
 | lint / typecheck | Pass |
-| Vitest | **462** pass (+2 adapter/interactables) |
+| Vitest | **468** pass (+held identity, action gate) |
 | `npm run build` + prod guard | Pass |
 | `npm run test:e2e` | Pass (20+; v01 cập nhật `btn-context-primary`) |
 | `npm run test:e2e:pwa` | Pass |

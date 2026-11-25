@@ -1,21 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../../ui/designSystem/gameUiTokens.css';
-import { gameEventBus } from '../../game/eventBus';
+import { gameEventBus, type InteractionFramePayload } from '../../game/eventBus';
 import {
-  EMPTY_HELD_ITEM,
   isEditableInputTarget,
   resolveContextualActions,
-  selectHotbarSlot,
 } from '../../shared/interaction/interactionResolver';
 import { buildHotbarSlotsFromInventory } from '../../shared/interaction/inventoryHotbarAdapter';
-import type { ContextualResolution, HeldItemState } from '../../shared/interaction/interactionTypes';
+import type { ContextualResolution } from '../../shared/interaction/interactionTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type { MapId } from '../../shared/types';
 import { ContextualPromptBadge } from '../../ui/components/ContextualPromptBadge';
 import { GameHotbar } from '../../ui/components/GameHotbar';
 import { executeMainGameContextAction } from './executeMainGameContextAction';
-import type { InteractionFramePayload } from '../../game/eventBus';
+import { validateActionAgainstLatestFrame } from './interactionActionGate';
+import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
@@ -26,6 +25,8 @@ export interface MainGameInteractionLayerProps {
   modalOpen: boolean;
   showJoystick: boolean;
   petCanFeed: boolean;
+  /** True while authoritative pet/inventory mutation is in flight (blocks duplicate J/K). */
+  interactionMutationBusy: boolean;
   onOpenInventory: () => void;
   onCloseTopModal: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
@@ -42,6 +43,7 @@ export function MainGameInteractionLayer({
   modalOpen,
   showJoystick,
   petCanFeed,
+  interactionMutationBusy,
   onOpenInventory,
   onCloseTopModal,
   onFeedPetAuthoritative,
@@ -52,20 +54,28 @@ export function MainGameInteractionLayer({
     () => buildHotbarSlotsFromInventory(inventorySnapshot),
     [inventorySnapshot],
   );
-  const [heldSelection, setHeldSelection] = useState<HeldItemState>(EMPTY_HELD_ITEM);
-  const heldItem = useMemo(() => {
-    if (!heldSelection.itemSku || heldSelection.slotIndex === null) return EMPTY_HELD_ITEM;
-    const slot = hotbarSlots.find((s) => s.slotIndex === heldSelection.slotIndex);
-    if (!slot || slot.qty <= 0) return EMPTY_HELD_ITEM;
-    return heldSelection;
-  }, [heldSelection, hotbarSlots]);
+  const { heldItem, selectSlot, clearHeld } = useHeldItemFromHotbar(hotbarSlots);
+
   const [resolution, setResolution] = useState<ContextualResolution>({
     targetId: null,
     primary: null,
     secondary: null,
   });
   const [noticeText, setNoticeText] = useState<string | null>(null);
+
   const heldRef = useRef(heldItem);
+  const lastFrameRef = useRef<InteractionFramePayload | null>(null);
+  const mapIdRef = useRef(currentMapId);
+  const [localActionBusy, setLocalActionBusy] = useState(false);
+  const resolutionRef = useRef(resolution);
+
+  useEffect(() => {
+    mapIdRef.current = currentMapId;
+  }, [currentMapId]);
+
+  useEffect(() => {
+    resolutionRef.current = resolution;
+  }, [resolution]);
 
   useEffect(() => {
     heldRef.current = heldItem;
@@ -103,23 +113,50 @@ export function MainGameInteractionLayer({
     ],
   );
 
-  const executePrimary = useCallback(async () => {
-    if (!resolution.primary) return;
-    await executeMainGameContextAction(resolution.primary, actionCtx);
-  }, [resolution.primary, actionCtx]);
+  const runGatedAction = useCallback(
+    async (which: 'primary' | 'secondary') => {
+      if (!showHud || interactionMutationBusy || localActionBusy) return;
 
-  const executeSecondary = useCallback(async () => {
-    if (resolution.secondary?.code === 'put_away_held') {
-      setHeldSelection(EMPTY_HELD_ITEM);
-      return;
-    }
-    if (resolution.secondary) {
-      await executeMainGameContextAction(resolution.secondary, actionCtx);
-    }
-  }, [resolution.secondary, actionCtx]);
+      const snap = resolutionRef.current;
+      const action = which === 'primary' ? snap.primary : snap.secondary;
+      if (!action) return;
+
+      if (
+        !validateActionAgainstLatestFrame(
+          snap,
+          lastFrameRef.current,
+          mapIdRef.current,
+          heldRef.current,
+          which,
+        )
+      ) {
+        return;
+      }
+
+      setLocalActionBusy(true);
+      try {
+        if (which === 'secondary' && action.code === 'put_away_held') {
+          clearHeld();
+          return;
+        }
+        await executeMainGameContextAction(action, actionCtx);
+      } finally {
+        setLocalActionBusy(false);
+      }
+    },
+    [showHud, interactionMutationBusy, localActionBusy, actionCtx, clearHeld],
+  );
+
+  const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
+  const executeSecondary = useCallback(() => void runGatedAction('secondary'), [runGatedAction]);
 
   useEffect(() => {
     const onFrame = (frame: InteractionFramePayload) => {
+      lastFrameRef.current = frame;
+      if (frame.mapId !== mapIdRef.current) {
+        setResolution({ targetId: null, primary: null, secondary: null });
+        return;
+      }
       const next = resolveContextualActions({
         playerX: frame.playerX,
         playerY: frame.playerY,
@@ -136,7 +173,7 @@ export function MainGameInteractionLayer({
           : next,
       );
     };
-  return gameEventBus.on('evt:interaction-frame', onFrame);
+    return gameEventBus.on('evt:interaction-frame', onFrame);
   }, []);
 
   useEffect(() => {
@@ -148,7 +185,7 @@ export function MainGameInteractionLayer({
 
       if (e.code === 'Escape') {
         onCloseTopModal();
-        setHeldSelection(EMPTY_HELD_ITEM);
+        clearHeld();
         return;
       }
       if (e.code === 'KeyI') {
@@ -169,15 +206,17 @@ export function MainGameInteractionLayer({
       const num = Number(e.key);
       if (Number.isInteger(num) && num >= 1 && num <= 8) {
         e.preventDefault();
-        setHeldSelection((cur) => selectHotbarSlot(hotbarSlots, cur, num - 1));
+        selectSlot(num - 1);
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showHud, executePrimary, executeSecondary, hotbarSlots, onOpenInventory, onCloseTopModal]);
+  }, [showHud, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld]);
 
   if (!showHud) return null;
+
+  const inputsLocked = interactionMutationBusy || localActionBusy;
 
   return (
     <>
@@ -188,6 +227,7 @@ export function MainGameInteractionLayer({
             className="olw-bookmark-tab main-game-touch-btn"
             data-testid="btn-touch-primary"
             aria-label="Hành động chính"
+            disabled={inputsLocked}
             onClick={() => void executePrimary()}
           >
             J
@@ -197,6 +237,7 @@ export function MainGameInteractionLayer({
             className="olw-bookmark-tab main-game-touch-btn"
             data-testid="btn-touch-secondary"
             aria-label="Hành động phụ"
+            disabled={inputsLocked}
             onClick={() => void executeSecondary()}
           >
             K
@@ -214,7 +255,7 @@ export function MainGameInteractionLayer({
         <GameHotbar
           slots={hotbarSlots}
           heldItem={heldItem}
-          onSelectSlot={(idx) => setHeldSelection((cur) => selectHotbarSlot(hotbarSlots, cur, idx))}
+          onSelectSlot={selectSlot}
         />
       </div>
     </>
