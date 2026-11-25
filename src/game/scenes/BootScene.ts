@@ -30,6 +30,15 @@ export class BootScene extends Phaser.Scene {
     this.load.tilemapTiledJSON('map-shop', '/assets/maps/shop.json');
     this.load.image('donor-cabacos-ts_map', '/maps/donor/cabacos/ts_map.png');
     this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
+    const tuxemonTilesets = [
+      'core_outdoor',
+      'core_outdoor_water',
+      'core_outdoor_nature',
+      'prototyping_outdoor',
+    ];
+    for (const name of tuxemonTilesets) {
+      this.load.image(`donor-tuxemon-${name}`, `/maps/donor/tuxemon/gfx/tilesets/${name}.png`);
+    }
     this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
     this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
@@ -61,6 +70,10 @@ export class BootScene extends Phaser.Scene {
 
     registerWorldAtlas(this);
     for (const key of [
+      'donor-tuxemon-core_outdoor',
+      'donor-tuxemon-core_outdoor_water',
+      'donor-tuxemon-core_outdoor_nature',
+      'donor-tuxemon-prototyping_outdoor',
       'donor-cabacos-ts_map',
       'donor-cabacos-ts_forest',
       'donor-cabacos-house-interior',

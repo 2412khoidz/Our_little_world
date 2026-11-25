@@ -13,6 +13,11 @@ import {
   renderDonorCabacosShopInterior,
 } from '../world/renderDonorCabacosMap';
 import {
+  getDonorTuxemonTilesets,
+  isDonorTuxemonMap,
+  renderDonorTuxemonMapLayers,
+} from '../world/renderDonorTuxemonMap';
+import {
   nearestTiledNpc,
   spawnTiledWorldNpcs,
   tickTiledWorldNpcs,
@@ -652,6 +657,26 @@ export class WorldScene extends Phaser.Scene {
       } else if (import.meta.env.DEV) {
         console.error(
           '[Cabacos] Donor map detected but no tilesets bound; check BootScene donor textures.',
+          tilemap.tilesets.map((t) => t.name),
+        );
+      }
+      return;
+    }
+
+    if (isDonorTuxemonMap(tilemap)) {
+      const tilesets = getDonorTuxemonTilesets(tilemap);
+      if (tilesets.length > 0) {
+        renderDonorTuxemonMapLayers(this, tilemap, tilesets, (obj) => this.mapLayers.push(obj));
+        if (import.meta.env.DEV) {
+          console.info('[Tuxemon] donor render', {
+            mapId,
+            tilesetNames: tilesets.map((t) => t.name),
+            layerCount: this.mapLayers.length,
+          });
+        }
+      } else if (import.meta.env.DEV) {
+        console.error(
+          '[Tuxemon] Donor map detected but no tilesets bound; run vendor-donor-tuxemon-forest + BootScene textures.',
           tilemap.tilesets.map((t) => t.name),
         );
       }

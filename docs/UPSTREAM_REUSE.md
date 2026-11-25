@@ -24,7 +24,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 | Track | Branch / PR | Notes |
 |-------|-------------|-------|
 | **C3 art** | Cabacos → Demo E tile gid remap | Cabacos still draws **Sunnyside donor PNGs**; `import-donor-cabacos.mjs` has no Demo E remap yet — VQG / ART_DIRECTION mismatch until C3 follow-up |
-| **C3 world** | Kaetram forest, Tuxemon (GPL skip), PyDew scale | Next donors per multi-donor sprint |
+| **C3 world** | Kaetram forest patterns | Follow-up if needed beyond Tuxemon forest (§ below) |
 
 ## P0 avatar — Puny CC0 + private profile sync (recovery @ `8e4454d`)
 
@@ -142,8 +142,39 @@ VITE_OLW_EXTENDED_WORLD=1 npm run dev -- --host 127.0.0.1 --port 4173 --strictPo
 | [clear-code-projects/PyDew](https://github.com/clear-code-projects/PyDew) | `HEAD` | CC0 pygame Tiled 48px — wrong engine/scale for OLW Phaser 16px |
 | [robintrepte/hollowmere.tretu.de](https://github.com/robintrepte/hollowmere.tretu.de) | `HEAD` | **Transplanted:** `gull_bay` → `beach.json` (§ Hollowmere below) |
 | [Intelisgod/harvest-duo](https://github.com/Intelisgod/harvest-duo) | `HEAD` | **Surveyed:** `public/maps/donor/harvest-duo/` area graph + beach pier ref → Hollowmere coast polish |
-| [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | — | GPL — pattern only, no asset vendoring |
-| Kaetram | — | Not cloned this slice — reserved for forest candidate |
+| [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) | `4e63c45b` | **Transplanted:** forest — § Tuxemon forest below |
+| Kaetram | — | Collision-layer pattern reference only |
+
+---
+
+## Tuxemon forest (`tt_forest_route1` @ `4e63c45b`)
+
+| Field | Value |
+|-------|--------|
+| **Repository** | [Tuxemon/Tuxemon](https://github.com/Tuxemon/Tuxemon) @ `4e63c45b436d372daae9f802bb5efa44232fe151` |
+| **Donor maps** | `mods/tuxemon/maps/tt_forest_route1.tmx` (selected), alt `dryadsgrove.tmx` |
+| **Tilesets** | `core_outdoor`, `core_outdoor_water`, `core_outdoor_nature`, `prototyping_outdoor` under `public/maps/donor/tuxemon/gfx/tilesets/` |
+| **License** | GPL-3.0-or-later — `public/maps/donor/tuxemon/UPSTREAM-LICENSE.txt` |
+| **OLW output** | `public/assets/maps/forest.json` — layers `Ground`, `Vegetation`, `Water`, `Above Player`, `Collision` (object bake), `Portals` |
+
+### Reproduce
+
+```bash
+node scripts/vendor-donor-tuxemon-forest.mjs
+node scripts/capture-donor-tuxemon-forest-compare.mjs
+node scripts/import-donor-tuxemon-forest.mjs
+```
+
+### Proof
+
+- Compare stills: store `media/map-transplant-forest-tuxemon-*.png`
+- In-game: store `media/map-transplant-forest-olw-ingame.png`
+- Unit: `tests/unit/mapRecoveryImport.test.ts` (Tuxemon layer stack)
+
+### Excluded
+
+- Tuxemon battle/events/NPC object layers (not OLW gameplay)
+- GPL engine/runtime code (maps + tileset PNGs only)
 
 ---
 

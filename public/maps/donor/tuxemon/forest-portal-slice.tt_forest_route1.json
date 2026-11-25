@@ -1,0 +1,22 @@
+{
+  "id": "tuxemon-tt-forest-route1",
+  "donorMap": "tt_forest_route1.tmx",
+  "spawnDefault": { "tileX": 14, "tileY": 32 },
+  "portals": {
+    "village": {
+      "villageEdgeTile": { "tileX": 84, "tileY": 20 },
+      "forestSpawnTile": { "tileX": 3, "tileY": 32 },
+      "labelVi": "Vào rừng Route 1"
+    },
+    "returnToVillage": {
+      "forestEdgeTile": { "tileX": 1, "tileY": 32 },
+      "villageSpawnTile": { "tileX": 84, "tileY": 20 },
+      "labelVi": "Về làng Cabacos"
+    },
+    "beach": {
+      "forestEdgeTile": { "tileX": 14, "tileY": 38 },
+      "beachSpawnTile": { "tileX": 2, "tileY": 22 },
+      "labelVi": "Ra Gull Bay (bãi biển)"
+    }
+  }
+}

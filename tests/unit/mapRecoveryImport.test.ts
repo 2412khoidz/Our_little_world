@@ -36,9 +36,14 @@ describe('map recovery import contract', () => {
     expect(recoveryEnabled(shopJson)).toBe(true);
   });
 
-  it('forest recovery tags pending pydew tmx when set', () => {
-    const pending = forestJson.properties?.find((p) => p.name === 'olwForestPendingRealMap')?.value;
-    if (pending !== 'pydew-main.tmx') return;
-    expect(recoveryEnabled(forestJson)).toBe(true);
+  it('forest uses Tuxemon donor with full layer stack', () => {
+    const donor = forestJson.properties?.find((p) => p.name === 'olwDonor')?.value;
+    if (donor !== 'tuxemon') return;
+    const names = forestJson.layers.map((l) => l.name);
+    for (const required of ['Ground', 'Vegetation', 'Water', 'Above Player', 'Collision', 'Portals']) {
+      expect(names).toContain(required);
+    }
+    expect((forestJson.tilesets ?? []).length).toBeGreaterThan(1);
+    expect(forestJson.tilesets?.every((ts) => String(ts.image).includes('/maps/donor/tuxemon/'))).toBe(true);
   });
 });

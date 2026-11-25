@@ -4,24 +4,26 @@ import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import { isTileBlockedFromParsed } from '../../src/shared/world/parseTiledWorldMap';
 import forestJson from '../../public/assets/maps/forest.json';
 
-describe('PyDew forest slice', () => {
-  it('forest.json is stamped pydew donor', () => {
+describe('Tuxemon forest transplant', () => {
+  it('forest.json is stamped tuxemon donor', () => {
     const forest = getParsedTiledWorld('forest');
     expect(forest).not.toBeNull();
-    const pydewSign = forest!.interactableSpawns.find((s) => s.id === 'pydew_forest_sign');
-    expect(pydewSign?.labelVi).toContain('Glade');
-    const sketch = (forestJson as { properties?: { name: string; value: string }[] }).properties?.find(
-      (p) => p.name === 'olwDonorSketch',
+    const donor = (forestJson as { properties?: { name: string; value: string }[] }).properties?.find(
+      (p) => p.name === 'olwDonor',
     );
-    expect(sketch?.value).toBe('glade-v1-playable');
+    expect(donor?.value).toBe('tuxemon');
+    const mapSlug = (forestJson as { properties?: { name: string; value: string }[] }).properties?.find(
+      (p) => p.name === 'olwDonorMap',
+    );
+    expect(mapSlug?.value).toBe('tt_forest_route1');
   });
 
-  it('spawn and west portal tiles are walkable with tree collision elsewhere', () => {
+  it('spawn and west portal tiles are walkable with baked collision elsewhere', () => {
     const parsed = getParsedTiledWorld('forest')!;
     const spawn = getMapDefinition('forest').defaultSpawn;
     expect(isTileBlockedFromParsed(parsed, spawn.tileX, spawn.tileY)).toBe(false);
-    expect(isTileBlockedFromParsed(parsed, 1, 22)).toBe(false);
-    expect(isTileBlockedFromParsed(parsed, 12, 11)).toBe(true);
+    expect(isTileBlockedFromParsed(parsed, 1, 32)).toBe(false);
+    expect(isTileBlockedFromParsed(parsed, 0, 0)).toBe(true);
   });
 
   it('village↔forest portal graph for Cabacos extended world', () => {
