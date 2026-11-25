@@ -103,8 +103,14 @@ async function main() {
     await gotoWorld(pageA);
     const hotbarVisible = await pageA.getByTestId('game-hotbar').isVisible();
     const slots = await pageA.locator('[data-testid^="hotbar-slot-"]').count();
-    report.hudNotes.push(`hotbar visible=${hotbarVisible}, visible_slots=${slots} (P0 target=8)`);
+    const fabVisible = await pageA.getByTestId('couple-emote-fab').isVisible().catch(() => false);
+    const emoteExpanded = await pageA.getByTestId('couple-emote-dock').locator('.couple-emote-dock__panel').isVisible().catch(() => false);
+    report.hudNotes.push(
+      `hotbar visible=${hotbarVisible}, slots=${slots}/8, emote_fab=${fabVisible}, emote_expanded=${emoteExpanded}`,
+    );
     if (slots < 8) report.gaps.push(`HUD P0: hotbar shows ${slots}/8 slots @ ${SHA}`);
+    if (!fabVisible) report.gaps.push('HUD P0: couple-emote-fab missing');
+    if (emoteExpanded) report.gaps.push('HUD P0: emotion bar not collapsed');
     await shot(pageA, 'phase-ii-step-01-home-hud-desktop.png', log);
 
     await pageB.goto(`${BASE}/?extended-world=1`);
@@ -116,7 +122,7 @@ async function main() {
     await pageA.getByTestId('nav-farm').click({ force: true });
     await waitCanvas(pageA);
     await pageA.waitForTimeout(1200);
-    await shot(pageA, 'phase-ii-step-03-garden-enter.png', log);
+    await shot(pageA, 'phase-ii-step-03-farm-enter.png', log);
 
     const worldRes = await pageA.request.get(`${BASE}/api/dev-lan/world/snapshot`, {
       headers: { 'x-dev-user-id': '11111111-1111-4111-8111-111111111111' },

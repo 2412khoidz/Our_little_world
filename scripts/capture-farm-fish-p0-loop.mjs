@@ -5,7 +5,7 @@ import { chromium } from '@playwright/test';
 
 const PORT = process.env.OLW_PORT || '4182';
 const BASE = `http://127.0.0.1:${PORT}`;
-const ART = process.env.ART_DIR || '/opt/cursor/artifacts';
+const ART = process.env.ART_DIR || '/cursor/stores/self/media';
 
 async function waitServer() {
   for (let i = 0; i < 80; i += 1) {
@@ -24,7 +24,15 @@ async function main() {
   const srv = spawn(
     process.execPath,
     [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', PORT, '--strictPort'],
-    { stdio: 'ignore', env: { ...process.env, VITE_OLW_DONOR_ECONOMY: '1' } },
+    {
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        VITE_OLW_DONOR_ECONOMY: '1',
+        VITE_OLW_EXTENDED_WORLD: '1',
+        VITE_OLW_PRIVATE_ART: '1',
+      },
+    },
   );
   try {
     await waitServer();
@@ -37,13 +45,15 @@ async function main() {
     await page.getByTestId('game-canvas-host').locator('canvas').waitFor({ state: 'visible', timeout: 30000 });
     await page.waitForTimeout(2000);
     await page.getByTestId('game-hotbar').waitFor({ state: 'visible', timeout: 15000 });
+    await page.getByTestId('hotbar-slot-8').waitFor({ state: 'visible', timeout: 10_000 });
+    await page.getByTestId('couple-emote-fab').waitFor({ state: 'visible', timeout: 10_000 });
     await page.screenshot({ path: path.join(ART, 'farm-fish-p0-hotbar.png') });
-  await page.getByTestId('farm-fish-tutorial').waitFor({ state: 'visible', timeout: 8000 }).catch(() => null);
-    await page.evaluate(() => window.__OLW_VQG?.jump?.('farm', 20, 28));
+    await page.getByTestId('farm-fish-tutorial').waitFor({ state: 'visible', timeout: 8000 }).catch(() => null);
+    await page.getByTestId('nav-farm').click({ force: true });
     await page.waitForTimeout(2500);
     await page.screenshot({ path: path.join(ART, 'farm-fish-p0-farm-map.png') });
-    await page.evaluate(() => window.__OLW_VQG?.jump?.('outdoor', 32, 40));
-    await page.waitForTimeout(2000);
+    await page.getByTestId('nav-outdoor').click({ force: true });
+    await page.waitForTimeout(2500);
     await page.screenshot({ path: path.join(ART, 'farm-fish-p0-outdoor-fishing.png') });
     await browser.close();
     console.log('Wrote farm-fish P0 captures to', ART);
