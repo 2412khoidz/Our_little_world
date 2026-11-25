@@ -14,9 +14,10 @@ const T = {
   g2: 19,
   g3: 20,
   g4: 21,
+  /** Cobble from tileset (5,1)-(6,1); gid 22–23. Gid 24 is wood porch — never use for roads. */
   pathA: 22,
   pathB: 23,
-  pathC: 24,
+  pathC: 23,
   fenceH: 25,
   fenceP: 26,
   fenceV: 27,
@@ -124,13 +125,13 @@ function buildVillageMap() {
 
   // Đường chính Bắc–Nam
   for (let y = 8; y < h - 4; y += 1) {
-    paths[idx(w, 24, y)] = y % 2 === 0 ? T.pathB : T.pathC;
-    paths[idx(w, 25, y)] = y % 2 === 1 ? T.pathB : T.pathC;
+    paths[idx(w, 24, y)] = y % 2 === 0 ? T.pathA : T.pathB;
+    paths[idx(w, 25, y)] = y % 2 === 1 ? T.pathA : T.pathB;
   }
   // Đường Đông–Tây qua quảng trường
   for (let x = 4; x < w - 4; x += 1) {
-    paths[idx(w, x, 20)] = x % 2 === 0 ? T.pathA : T.pathC;
-    paths[idx(w, x, 21)] = x % 2 === 1 ? T.pathA : T.pathC;
+    paths[idx(w, x, 20)] = x % 2 === 0 ? T.pathA : T.pathB;
+    paths[idx(w, x, 21)] = x % 2 === 1 ? T.pathA : T.pathB;
   }
 
   // Hồ làng (phía tây)

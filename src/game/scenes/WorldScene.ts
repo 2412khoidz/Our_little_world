@@ -140,6 +140,7 @@ export class WorldScene extends Phaser.Scene {
   private joystickVector = { vx: 0, vy: 0 };
 
   private lastPortalAtMs = 0;
+  private buildingMap = false;
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
@@ -271,6 +272,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
+    this.buildingMap = true;
     this.currentMapId = mapId;
     this.clearLocalPosture(true);
     this.pathQueue = [];
@@ -333,6 +335,7 @@ export class WorldScene extends Phaser.Scene {
     this.syncCameraDataset();
 
     this.lastPortalAtMs = Date.now();
+    this.buildingMap = false;
     this.emitCurrentTile(true);
     this.emitLocalMovement('idle');
     gameEventBus.emit('evt:scene-ready', { mapId });
@@ -537,6 +540,7 @@ export class WorldScene extends Phaser.Scene {
   private buildTiledWorldMap(mapId: MapId): void {
     if (!isTiledWorldMapId(mapId)) return;
     const mapKey = TILED_MAP_PHASER_KEYS[mapId];
+    if (!this.cache.tilemap.exists(mapKey)) return;
     const tilemap = this.make.tilemap({ key: mapKey });
     this.tilemap = tilemap;
 
@@ -1380,18 +1384,19 @@ export class WorldScene extends Phaser.Scene {
     const tileX = Math.floor(this.localSprite.x / TILE_SIZE);
     const tileY = Math.floor((this.localSprite.y - 2) / TILE_SIZE);
 
-    if (now - this.lastPortalAtMs > 1200) {
-      for (const portal of def.portals) {
-        const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-        if (dist <= portal.radiusTiles) {
-          this.lastPortalAtMs = now;
-          gameEventBus.emit('evt:request-map-change', {
-            targetMapId: portal.targetMapId,
-            spawnX: portal.targetSpawnX,
-            spawnY: portal.targetSpawnY,
-          });
-          return;
-        }
+    if (this.buildingMap || now - this.lastPortalAtMs < 1800) return;
+
+    for (const portal of def.portals) {
+      if (portal.targetMapId === this.currentMapId) continue;
+      const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
+      if (dist <= portal.radiusTiles) {
+        this.lastPortalAtMs = now;
+        gameEventBus.emit('evt:request-map-change', {
+          targetMapId: portal.targetMapId,
+          spawnX: portal.targetSpawnX,
+          spawnY: portal.targetSpawnY,
+        });
+        return;
       }
     }
 
