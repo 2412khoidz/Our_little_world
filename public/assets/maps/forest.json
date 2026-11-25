@@ -15167,6 +15167,42 @@
               "value": 52
             }
           ]
+        },
+        {
+          "id": 91,
+          "name": "forest_canvas_stream",
+          "type": "interactable",
+          "x": 512,
+          "y": 384,
+          "width": 32,
+          "height": 32,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "fishing_spot"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Suối rừng — câu tension (canvas-games)"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 56
+            },
+            {
+              "name": "donorPlayable",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "fishingSpotId",
+              "type": "string",
+              "value": "east_stream"
+            }
+          ]
         }
       ]
     }

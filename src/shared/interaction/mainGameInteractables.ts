@@ -207,15 +207,6 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
         maxRadiusPx: 54,
         donorPlayable: true,
       });
-      targets.push({
-        id: 'farm_barn_mill',
-        kind: 'workshop_building',
-        labelVi: 'Xưởng — cối + lò Hollow',
-        x: (FARM_SLICE_SEED_SHOP_TILE.tileX + 3) * TILE_SIZE + TILE_SIZE / 2,
-        y: FARM_SLICE_SEED_SHOP_TILE.tileY * TILE_SIZE + TILE_SIZE / 2,
-        maxRadiusPx: 48,
-        donorPlayable: true,
-      });
     }
   }
 

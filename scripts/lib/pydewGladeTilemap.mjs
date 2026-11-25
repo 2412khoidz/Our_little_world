@@ -156,6 +156,10 @@ export function buildPydewGladeForestMap(slice, manifest) {
     collision[idx(w, w - 1, y)] = 1;
   }
 
+  const stream = slice.streamFishing ?? { tileX: 32, tileY: 24 };
+  water[idx(w, stream.tileX, stream.tileY)] = 28;
+  water[idx(w, stream.tileX + 1, stream.tileY)] = 28;
+
   paintWestPortalArt(paths, vegetation, buildings, collision, w, slice);
   paintEastPortalArt(paths, collision, w);
 
@@ -239,6 +243,26 @@ export function buildPydewGladeForestMap(slice, manifest) {
             value: 'Glade PyDew — lối về làng phía Tây',
           },
           { name: 'maxRadiusPx', type: 'int', value: 52 },
+        ],
+      },
+      {
+        id: 91,
+        name: 'forest_canvas_stream',
+        type: 'interactable',
+        x: stream.tileX * TW,
+        y: stream.tileY * TW,
+        width: TW * 2,
+        height: TW * 2,
+        properties: [
+          { name: 'kind', type: 'string', value: 'fishing_spot' },
+          {
+            name: 'labelVi',
+            type: 'string',
+            value: 'Suối rừng — câu tension (canvas-games)',
+          },
+          { name: 'maxRadiusPx', type: 'int', value: 56 },
+          { name: 'donorPlayable', type: 'bool', value: true },
+          { name: 'fishingSpotId', type: 'string', value: 'east_stream' },
         ],
       },
     ],

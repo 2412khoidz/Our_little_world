@@ -50540,7 +50540,7 @@
         },
         {
           "id": 4,
-          "name": "farm_barn_door",
+          "name": "farm_barn_mill",
           "type": "interactable",
           "x": 144,
           "y": 144,
@@ -50550,22 +50550,32 @@
             {
               "name": "kind",
               "type": "string",
-              "value": "door"
+              "value": "workshop_building"
             },
             {
               "name": "anchorId",
               "type": "string",
-              "value": "farm_barn_door"
+              "value": "farm_barn_mill"
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Cửa chuồng — chưa mở"
+              "value": "Xưởng ruộng — cối Meadowbrook"
             },
             {
               "name": "maxRadiusPx",
               "type": "int",
-              "value": 40
+              "value": 48
+            },
+            {
+              "name": "donorPlayable",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "workshopFocus",
+              "type": "string",
+              "value": "mill"
             }
           ]
         },
