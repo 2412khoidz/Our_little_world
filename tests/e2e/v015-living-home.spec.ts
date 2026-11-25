@@ -60,7 +60,7 @@ test.describe('V0.1.5 Living Home — Multi-Device E2E & Visual QA', () => {
     await pageA.getByTestId('menu-inventory').click();
     await expect(pageA.getByTestId('inventory-modal')).toBeVisible();
     await pageA.getByTestId('btn-claim-free-kibble').click();
-    await expect(pageA.getByTestId('tab-inventory-shared')).toContainText('(3)');
+    await expect(pageA.getByTestId('inv-row-pet_kibble_basic')).toContainText('×3/');
     await pageA.getByRole('button', { name: 'Đóng' }).first().click();
 
     // 3. Adopt cat 'Quýt' & feed kibble (OLW-015-03/04)
