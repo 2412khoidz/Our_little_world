@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GameHotbar } from '../../ui/components/GameHotbar';
 import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import { OlwCatStrokeBrain } from '../../donors/nintendogs-threejs-43d231c/olwCatStrokeBrain';
-import { petCareCatFrameCrop } from '../../shared/petLiving/petCare/petCareAtlasFrameMath';
+import { donorCatOrangeFramePixels } from '../../shared/petLiving/donor/donorCatOrangeAtlasRect';
 import { reactToCareStroke } from '../../shared/petLiving/petCare/petCareReactions';
 import type { PetCareZone } from '../../shared/petLiving/petCare/petCareTypes';
 import {
@@ -27,10 +27,6 @@ import { licensedCatFrameSeriesForState } from '../../shared/petLiving/petCare/p
 import type { PetAnimState } from '../../shared/petLiving/petVisualTypes';
 
 const ATLAS_BASE = import.meta.env.VITE_OLW_PRIVATE_ART === true ? '/assets/private-unified' : '/assets/unified';
-const FRAME_W = 16;
-const FRAME_H = 16;
-const SHEET_W = 192;
-
 const DEMO_SLOTS: HotbarSlot[] = [
   { slotIndex: 0, itemSku: 'pet_kibble_basic', itemKind: 'food', iconId: 'food_kibble', labelVi: 'Hạt mèo', qty: 3, quality: 'normal' },
   { slotIndex: 3, itemSku: 'water_pitcher', itemKind: 'water_pitcher', iconId: 'water_pitcher_full', labelVi: 'Bình nước', qty: 1, waterFillLevel: 70 },
@@ -38,19 +34,36 @@ const DEMO_SLOTS: HotbarSlot[] = [
 ];
 
 function buildCatFrameTexture(img: HTMLImageElement, frameIndex: number): THREE.CanvasTexture {
-  const { x, y } = petCareCatFrameCrop(frameIndex, FRAME_W, FRAME_H, SHEET_W);
+  const { srcX, srcY, frameW, frameH } = donorCatOrangeFramePixels(frameIndex);
   const canvas = document.createElement('canvas');
-  canvas.width = FRAME_W;
-  canvas.height = FRAME_H;
+  canvas.width = frameW;
+  canvas.height = frameH;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas2d');
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, x, y, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+  ctx.clearRect(0, 0, frameW, frameH);
+  ctx.drawImage(img, srcX, srcY, frameW, frameH, 0, 0, frameW, frameH);
   const tex = new THREE.CanvasTexture(canvas);
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
   return tex;
+}
+
+function sampleFrameHasCatPixel(img: HTMLImageElement, frameIndex: number): boolean {
+  const { srcX, srcY, frameW, frameH } = donorCatOrangeFramePixels(frameIndex);
+  const c = document.createElement('canvas');
+  c.width = frameW;
+  c.height = frameH;
+  const ctx = c.getContext('2d');
+  if (!ctx) return false;
+  ctx.drawImage(img, srcX, srcY, frameW, frameH, 0, 0, frameW, frameH);
+  const d = ctx.getImageData(0, 0, frameW, frameH).data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3]! > 8) return true;
+  }
+  return false;
 }
 
 export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
@@ -62,7 +75,6 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
   const [adoption] = useState(() => createAdoptionState({ id: 'donor-quyt', name: 'Quýt' }));
   const petDisplayName = adoption.adoptedName ?? 'Quýt';
   const [bubble, setBubble] = useState('...Quýt?');
-  const [anim, setAnim] = useState<PetAnimState>('sit_south');
   const animRef = useRef<PetAnimState>('sit_south');
   const [mode, setMode] = useState<'normal' | 'brush'>('normal');
   const [sessionMs, setSessionMs] = useState(0);
@@ -98,7 +110,6 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     frameIndexRef.current = series[0] ?? 48;
     frameCursorRef.current = 0;
     frameAccumRef.current = 0;
-    setAnim(state);
     animRef.current = state;
   }, []);
 
@@ -142,11 +153,19 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     let disposed = false;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1218);
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 40);
-    camera.position.set(0, 1.1, 4.2);
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    const camera = new THREE.OrthographicCamera(-2.2, 2.2, 2.8, -2.8, 0.1, 40);
+    camera.position.set(0, 0.2, 5);
+    camera.lookAt(0, 0.15, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    host.appendChild(renderer.domElement);
+    const canvasEl = renderer.domElement;
+    canvasEl.style.display = 'block';
+    canvasEl.style.position = 'absolute';
+    canvasEl.style.inset = '0';
+    canvasEl.style.width = '100%';
+    canvasEl.style.height = '100%';
+    canvasEl.dataset.testid = 'donor-pet-three-canvas';
+    host.appendChild(canvasEl);
 
     const floor = new THREE.Mesh(
       new THREE.CircleGeometry(1.2, 32),
@@ -162,36 +181,72 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
 
     let catSprite: THREE.Sprite | null = null;
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
+    const attachCatFromImage = (source: HTMLImageElement) => {
       if (disposed) return;
-      atlasImgRef.current = img;
-      const tex = buildCatFrameTexture(img, frameIndexRef.current);
-      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      if (!sampleFrameHasCatPixel(source, frameIndexRef.current)) return;
+      atlasImgRef.current = source;
+      const tex = buildCatFrameTexture(source, frameIndexRef.current);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
       catMatRef.current = mat;
-      catSprite = new THREE.Sprite(mat);
-      catSprite.scale.set(2.4, 2.4, 1);
-      catSprite.position.set(0, 0.15, 0);
-      catSpriteRef.current = catSprite;
-      scene.add(catSprite);
-      const toyMat = new THREE.SpriteMaterial({ color: 0xf5c74d });
-      const toy = new THREE.Sprite(toyMat);
-      toy.scale.set(0.25, 0.25, 1);
-      toy.position.set(0.9, -0.1, 0.1);
-      toySpriteRef.current = toy;
-      scene.add(toy);
+      if (catSprite) {
+        catSprite.material = mat;
+      } else {
+        catSprite = new THREE.Sprite(mat);
+        catSprite.scale.set(4.5, 4.5, 1);
+        catSprite.position.set(0, 0.2, 0);
+        catSprite.center.set(0.5, 0.88);
+        catSpriteRef.current = catSprite;
+        scene.add(catSprite);
+      }
+      canvasEl.dataset.donorCatReady = '1';
+      if (!toySpriteRef.current) {
+        const toyMat = new THREE.SpriteMaterial({ color: 0xf5c74d, depthTest: false });
+        const toy = new THREE.Sprite(toyMat);
+        toy.scale.set(0.35, 0.35, 1);
+        toy.position.set(0.9, -0.05, 0.1);
+        toySpriteRef.current = toy;
+        scene.add(toy);
+      }
     };
-    img.src = `${ATLAS_BASE}/world-props.png`;
+
+    const loadAtlas = (base: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const atlas = new Image();
+        atlas.crossOrigin = 'anonymous';
+        atlas.onload = () => resolve(atlas);
+        atlas.onerror = () => reject(new Error(`atlas failed: ${base}`));
+        atlas.src = `${base}/world-props.png`;
+      });
+
+    void (async () => {
+      const bases = [ATLAS_BASE, '/assets/unified'];
+      for (const base of bases) {
+        try {
+          const loaded = await loadAtlas(base);
+          attachCatFromImage(loaded);
+          if (canvasEl.dataset.donorCatReady === '1') break;
+        } catch {
+          /* try fallback atlas */
+        }
+      }
+    })();
 
     const resize = () => {
-      const w = host.clientWidth;
-      const h = host.clientHeight;
+      const w = Math.max(host.clientWidth || host.offsetWidth, 280);
+      const h = Math.max(host.clientHeight || host.offsetHeight, 280);
       renderer.setSize(w, h, false);
-      camera.aspect = w / Math.max(h, 1);
+      const aspect = w / h;
+      const halfH = 2.8;
+      const halfW = halfH * aspect;
+      camera.left = -halfW;
+      camera.right = halfW;
+      camera.top = halfH;
+      camera.bottom = -halfH;
       camera.updateProjectionMatrix();
     };
     resize();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(host);
     window.addEventListener('resize', resize);
 
     const pointerDown = (e: PointerEvent) => {
@@ -249,27 +304,15 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      ro.disconnect();
       window.removeEventListener('resize', resize);
       renderer.domElement.removeEventListener('pointerdown', pointerDown);
       renderer.domElement.removeEventListener('pointermove', pointerMove);
       renderer.domElement.removeEventListener('pointerup', pointerUp);
       renderer.dispose();
-      host.removeChild(renderer.domElement);
+      host.removeChild(canvasEl);
     };
   }, [applyStroke]);
-
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const mat = catMatRef.current;
-      if (!mat) return;
-      if (mat.map) mat.map.dispose();
-      mat.map = buildCatFrameTexture(img, frameIndexRef.current);
-      mat.needsUpdate = true;
-    };
-    img.src = `${ATLAS_BASE}/world-props.png`;
-  }, [anim]);
 
   return (
     <main className="donor-pet-three" data-testid="donor-pet-three-care" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#120e10' }}>
@@ -288,7 +331,11 @@ export function DonorPetThreeCare({ onExit }: { onExit?: () => void }) {
           Thoát
         </button>
       </header>
-      <div ref={hostRef} style={{ flex: 1, minHeight: 280, position: 'relative' }} />
+      <div
+        ref={hostRef}
+        data-testid="donor-pet-three-stage"
+        style={{ flex: 1, minHeight: 320, width: '100%', position: 'relative', overflow: 'hidden' }}
+      />
       <p style={{ textAlign: 'center', color: '#d8c4b0', margin: '4px 0' }}>{bubble}</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 16px 8px', maxWidth: 420, margin: '0 auto', width: '100%' }}>
         <button type="button" className="btn btn--primary" style={{ minHeight: 48 }} onClick={() => { setBubble(`${petDisplayName}!`); advanceFrame('happy_hop'); }}>
