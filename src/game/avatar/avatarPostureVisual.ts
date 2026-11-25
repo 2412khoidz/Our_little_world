@@ -1,11 +1,38 @@
 import type Phaser from 'phaser';
 import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
 import { cardinalFromFacing8, type Facing8 } from '../../shared/movement/facing8';
+import type { Direction } from '../../shared/types';
 import { avatarWalkAnimKey } from '../art/avatarAtlasLayout';
 import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 
 const DEFAULT_ORIGIN_Y = 0.88;
 const LIE_ORIGIN_Y = 0.95;
+
+export function hasBakedPostureClip(
+  scene: Phaser.Scene,
+  textureKey: string,
+  clip: 'sit' | 'lie',
+  facing: Direction,
+): boolean {
+  const key = `${textureKey}:${clip}-${facing}`;
+  const anim = scene.anims.get(key);
+  return Boolean(anim && anim.frames.length > 1);
+}
+
+export function expectedPostureAnimKey(
+  textureKey: string,
+  posture: CouplePostureKind,
+  facing: Facing8,
+): string | null {
+  const cardinal = cardinalFromFacing8(facing);
+  if (posture === 'lie_bed') return `${textureKey}:lie-${cardinal}`;
+  if (posture === 'hug') return `${textureKey}:sit-${cardinal}`;
+  if (posture === 'sit_study' || posture === 'sit_sofa' || posture === 'sit_bench') {
+    const sitFacing: Direction = posture === 'sit_study' ? 'up' : cardinal;
+    return `${textureKey}:sit-${sitFacing}`;
+  }
+  return null;
+}
 
 export function resetAvatarSpriteOrigin(sprite: Phaser.GameObjects.Sprite): void {
   sprite.setOrigin(0.5, DEFAULT_ORIGIN_Y);
@@ -73,4 +100,14 @@ export function playAvatarPostureAnim(
       }
     }
   }
+}
+
+export function syncAvatarAnimDataset(
+  canvas: HTMLCanvasElement,
+  sprite: Phaser.GameObjects.Sprite,
+  posture: CouplePostureKind,
+): void {
+  const current = sprite.anims.currentAnim?.key ?? '';
+  canvas.dataset.localAvatarAnim = current;
+  canvas.dataset.localPosture = posture;
 }

@@ -87,7 +87,12 @@ import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGa
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
-import { playAvatarPostureAnim, resetAvatarSpriteOrigin } from '../avatar/avatarPostureVisual';
+import {
+  hasBakedPostureClip,
+  playAvatarPostureAnim,
+  resetAvatarSpriteOrigin,
+  syncAvatarAnimDataset,
+} from '../avatar/avatarPostureVisual';
 import { MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
 import {
   cardinalFromFacing8,
@@ -1123,6 +1128,8 @@ export class WorldScene extends Phaser.Scene {
         const seatY = (desk.tileY + desk.heightTiles + 0.65) * TILE_SIZE;
         this.localSprite.setPosition(seatX, seatY);
         this.localFacing = 'up';
+        this.localFacing8 = 'up';
+        this.game.canvas.dataset.localFacing8 = 'up';
         this.localPosture = 'sit_study';
         this.playLocalMoveAnim(false);
         this.emitCurrentTile(true);
@@ -1208,10 +1215,14 @@ export class WorldScene extends Phaser.Scene {
       (typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('vqg-capture') === '1');
     if (devVqgHooks && typeof globalThis !== 'undefined') {
       const globalDev = globalThis as {
-        __olwDevEnterPosture?: (kind: 'sofa_sit' | 'bench_sit' | 'bed_lie') => void;
+        __olwDevEnterPosture?: (kind: 'sofa_sit' | 'bench_sit' | 'bed_lie' | 'study_sit') => void;
         __olwDevSetFacing8?: (f8: Facing8) => void;
       };
       globalDev.__olwDevEnterPosture = (kind) => {
+        if (kind === 'study_sit') {
+          gameEventBus.emit('cmd:seat-at-desk', { seat: 'left' });
+          return;
+        }
         this.enterSharedPosture(kind);
       };
       globalDev.__olwDevSetFacing8 = (f8) => {
@@ -1551,12 +1562,12 @@ export class WorldScene extends Phaser.Scene {
     this.localSprite.setDepth(this.localSprite.y);
     this.localShadow.setDepth(this.localSprite.y - 1);
     this.localLabel.setPosition(this.localSprite.x, this.localSprite.y - 25);
-    this.game.canvas.dataset.localPosture = this.localPosture;
-
     if (moving) {
       if (this.localBlanket) this.localBlanket.setVisible(false);
       this.syncLocalRestAura(false);
       playAvatarPostureAnim(this, this.localSprite, this.localTextureKey, 'none', this.localFacing8, true);
+      syncAvatarAnimDataset(this.game.canvas, this.localSprite, 'none');
+      this.game.canvas.dataset.localBlanketVisible = '0';
       return;
     }
 
@@ -1568,8 +1579,12 @@ export class WorldScene extends Phaser.Scene {
       this.localFacing8,
       false,
     );
+    syncAvatarAnimDataset(this.game.canvas, this.localSprite, this.localPosture);
 
-    if (this.localPosture === 'lie_bed') {
+    const bakedLie = hasBakedPostureClip(this, this.localTextureKey, 'lie', this.localFacing);
+    const useBlanketOverlay = this.localPosture === 'lie_bed' && !bakedLie;
+
+    if (useBlanketOverlay) {
       if (!this.localBlanket) {
         this.localBlanket = this.add
           .rectangle(this.localSprite.x, this.localSprite.y - 4, 15, 9, 0xf2b7c6, 0.94)
@@ -1579,14 +1594,17 @@ export class WorldScene extends Phaser.Scene {
         .setPosition(this.localSprite.x, this.localSprite.y - 5)
         .setDepth(this.localSprite.y + 2)
         .setVisible(true);
+      this.game.canvas.dataset.localBlanketVisible = '1';
       this.syncLocalRestAura(true, 'zzz…');
     } else {
       if (this.localBlanket) this.localBlanket.setVisible(false);
+      this.game.canvas.dataset.localBlanketVisible = '0';
       const resting =
         this.localPosture === 'sit_sofa' ||
         this.localPosture === 'sit_bench' ||
         this.localPosture === 'sit_study';
-      this.syncLocalRestAura(resting, resting ? '♨' : null);
+      const lieRest = this.localPosture === 'lie_bed' && bakedLie;
+      this.syncLocalRestAura(resting || lieRest, lieRest ? '…' : resting ? '♨' : null);
     }
 
     if (this.localPosture === 'none') {
@@ -1715,6 +1733,7 @@ export class WorldScene extends Phaser.Scene {
     if (!mirrorPartner) {
       this.game.canvas.dataset.envTransitionHook = hook.hookId;
       this.game.canvas.dataset.envTransitionKind = hook.kind;
+      syncAvatarAnimDataset(this.game.canvas, this.localSprite, this.localPosture);
       if (hook.kind === 'door' && this.homeDoorGfx && hook.hookId.includes('garden_door')) {
         this.tweens.add({
           targets: this.homeDoorGfx,
@@ -1951,6 +1970,8 @@ export class WorldScene extends Phaser.Scene {
     this.tapMarker?.clear();
     this.localSprite.setPosition(chosen.x, chosen.y);
     this.localFacing = 'down';
+    this.localFacing8 = 'down';
+    this.game.canvas.dataset.localFacing8 = 'down';
     this.localPosture = targetPosture;
     this.playLocalMoveAnim(false);
     this.emitCurrentTile(true);
@@ -2000,7 +2021,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private syncRemoteBlanket(entity: RemoteAvatarEntity): void {
-    if (entity.posture === 'lie_bed' && entity.mapId === this.currentMapId) {
+    const facing = entity.facing;
+    const bakedLie = hasBakedPostureClip(this, entity.textureKey, 'lie', facing);
+    if (entity.posture === 'lie_bed' && entity.mapId === this.currentMapId && !bakedLie) {
       if (!entity.blanket) {
         entity.blanket = this.add
           .rectangle(entity.sprite.x, entity.sprite.y - 4, 13, 8, 0xb8d9ee, 0.94)
