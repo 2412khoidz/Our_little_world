@@ -133,7 +133,7 @@ export async function tryHandleFarmDevLan(ctx: {
     const coins = v015.wallets[worldId]?.coins ?? 0;
     sendJson(res, 200, {
       ok: true,
-      data: buildFarmSnapshot(worldId, row.version, row.farm, coins, nowMs),
+      data: buildFarmSnapshot(worldId, row.version, row.farm, coins, nowMs, timeScale),
     });
     return true;
   }
@@ -146,7 +146,7 @@ export async function tryHandleFarmDevLan(ctx: {
         ok: false,
         code: 'VERSION_CONFLICT',
         message: 'Nông trại vừa đổi (đồng bộ lại).',
-        data: buildFarmSnapshot(worldId, row.version, row.farm, v015.wallets[worldId]?.coins ?? 0, nowMs),
+        data: buildFarmSnapshot(worldId, row.version, row.farm, v015.wallets[worldId]?.coins ?? 0, nowMs, timeScale),
       });
       return true;
     }
@@ -185,7 +185,7 @@ export async function tryHandleFarmDevLan(ctx: {
     sendJson(res, 200, {
       ok: true,
       data: {
-        snapshot: buildFarmSnapshot(worldId, row.version, row.farm, applied.walletCoins, nowMs),
+        snapshot: buildFarmSnapshot(worldId, row.version, row.farm, applied.walletCoins, nowMs, timeScale),
         harvested: applied.harvested,
       },
     });

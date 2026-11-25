@@ -100,6 +100,13 @@ export interface GameEventMap {
   };
   'cmd:sync-mailbox-unread': { unreadCount: number };
   'cmd:sync-held-item': HeldItemState;
+  'cmd:sync-farm': {
+    serverNowMs: number;
+    growthTimeScale?: number;
+    plots: readonly import('../shared/farming/farmSnapshotTypes').FarmPlotView[];
+    /** Plot index that changed (e.g. after till) for one-shot Cabacos soil pop. */
+    highlightPlotId?: number;
+  };
   /** DEV living-pet local simulation — presentation only, no consumption. */
   'cmd:pet-local-food-offer': PetFoodOfferInput;
   'cmd:pet-care-mode': { active: boolean };

@@ -1,11 +1,12 @@
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
+import { devLanRequestHeaders } from './devLanSessionHeaders';
 
 export type { DonorFishingSpotId };
 
 async function donorDevLanJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/dev-lan${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    headers: devLanRequestHeaders(init?.headers),
   });
   const json = (await res.json()) as { ok: boolean; data?: T; message?: string };
   if (!json.ok) throw new Error(json.message ?? 'Donor API lỗi');

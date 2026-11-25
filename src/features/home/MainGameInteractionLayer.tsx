@@ -7,6 +7,7 @@ import {
 } from '../../shared/interaction/interactionResolver';
 import { buildHotbarSlotsFromInventory } from '../../shared/interaction/inventoryHotbarAdapter';
 import type { ContextualResolution } from '../../shared/interaction/interactionTypes';
+import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type { MapId } from '../../shared/types';
@@ -43,6 +44,8 @@ export interface MainGameInteractionLayerProps {
   onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
   donorLanPlayable?: boolean;
+  farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>;
+  farmServerNowMs?: number;
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */
   petCareOverlayActive?: boolean;
@@ -70,6 +73,8 @@ export function MainGameInteractionLayer({
   onOpenDonorStreamFishing,
   onOpenDonorWorkshop,
   donorLanPlayable = false,
+  farmPlotByIndex,
+  farmServerNowMs,
   onNotice,
   petCareOverlayActive = false,
 }: MainGameInteractionLayerProps) {
@@ -210,6 +215,8 @@ export function MainGameInteractionLayer({
         heldItem: heldRef.current,
         interactables: frame.interactables,
         economyPlayable: frame.economyPlayable ?? donorLanPlayable,
+        farmPlotByIndex,
+        serverNowMs: farmServerNowMs,
       });
       setResolution((cur) =>
         cur.targetId === next.targetId &&
@@ -221,7 +228,7 @@ export function MainGameInteractionLayer({
       );
     };
     return gameEventBus.on('evt:interaction-frame', onFrame);
-  }, [donorLanPlayable]);
+  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

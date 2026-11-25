@@ -77,6 +77,7 @@ import {
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
+import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
@@ -196,6 +197,8 @@ export class WorldScene extends Phaser.Scene {
   private heldItem: HeldItemState = EMPTY_HELD_ITEM;
   private heldRenderer: HeldItemRenderer | null = null;
   private localMoving = false;
+  private farmPlotVisual: FarmPlotVisualController | null = null;
+  private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
 
   private unsubscribes: Array<() => void> = [];
 
@@ -339,6 +342,8 @@ export class WorldScene extends Phaser.Scene {
     this.tiledNpcs = [];
     this.tilemap?.destroy();
     this.tilemap = null;
+    this.farmPlotVisual?.destroy();
+    this.farmPlotVisual = null;
 
     const def = getMapDefinition(mapId);
     const worldW = def.widthTiles * TILE_SIZE;
@@ -355,6 +360,14 @@ export class WorldScene extends Phaser.Scene {
         this.buildTiledWorldMap(mapId);
       }
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
+      if (mapId === 'farm' && this.tilemap) {
+        this.farmPlotVisual = new FarmPlotVisualController(this, this.tilemap, 'tileset-cozy', (obj) =>
+          this.mapLayers.push(obj),
+        );
+        if (this.farmPlotsCache.length > 0) {
+          this.farmPlotVisual.sync(this.farmPlotsCache);
+        }
+      }
     } else if (mapId === 'outdoor') {
       const outdoor = renderOutdoorWorld(this, (obj) => this.mapLayers.push(obj), this.placeProp.bind(this));
       this.moteBounds = outdoor.moteBounds;
@@ -1022,6 +1035,13 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
+      }),
+
+      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId }) => {
+        this.farmPlotsCache = plots;
+        if (this.currentMapId === 'farm') {
+          this.farmPlotVisual?.sync(plots, highlightPlotId);
+        }
       }),
 
       gameEventBus.on('cmd:set-paused', ({ paused }) => {

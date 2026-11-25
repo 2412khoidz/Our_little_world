@@ -47,6 +47,7 @@ import type { DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
 import { parseDonorFishingSpot } from '../shared/donor/donorFishingSpots';
 import type { DonorWorkshopFocus } from '../shared/donor/donorWorkshopFocus';
 import { getCropDefinition } from '../shared/farming/crops';
+import type { FarmPlotView, FarmSnapshot } from '../shared/farming/farmSnapshotTypes';
 import { InventoryModal } from '../features/inventory/InventoryModal';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
 import { InviteModal } from '../features/pairing/InviteModal';
@@ -288,7 +289,33 @@ function MainCoupleApp() {
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [farmWalletCoins, setFarmWalletCoins] = useState(0);
   const farmVersionRef = useRef(0);
+  const [farmPlotByIndex, setFarmPlotByIndex] = useState<ReadonlyMap<number, FarmPlotView>>(new Map());
+  const [farmClockAnchor, setFarmClockAnchor] = useState({ serverNowMs: 0, fetchedAtMs: 0 });
+  const [farmServerNowMs, setFarmServerNowMs] = useState(0);
   const [farmBusy, setFarmBusy] = useState(false);
+
+  const applyFarmSnapshotToUi = useCallback((snap: FarmSnapshot, highlightPlotId?: number) => {
+    const fetchedAtMs = Date.now();
+    setFarmClockAnchor({ serverNowMs: snap.serverNowMs, fetchedAtMs });
+    setFarmServerNowMs(snap.serverNowMs);
+    setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
+    gameEventBus.emit('cmd:sync-farm', {
+      plots: snap.plots,
+      serverNowMs: snap.serverNowMs,
+      growthTimeScale: snap.growthTimeScale,
+      highlightPlotId,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (currentMapId !== 'farm' || !backend.farm) return;
+    const tick = () => {
+      setFarmServerNowMs(farmClockAnchor.serverNowMs + (Date.now() - farmClockAnchor.fetchedAtMs));
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [currentMapId, backend.farm, farmClockAnchor]);
   const [donorChillFishingSpot, setDonorChillFishingSpot] = useState<DonorFishingSpotId>('meadow_pond');
   const [donorWorkshopFocus, setDonorWorkshopFocus] = useState<DonorWorkshopFocus | undefined>(undefined);
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
@@ -399,9 +426,10 @@ function MainCoupleApp() {
     if (res.ok && res.data) {
       setFarmWalletCoins(res.data.walletCoins);
       farmVersionRef.current = res.data.version;
+      applyFarmSnapshotToUi(res.data);
       if (backend.inventory) await refreshInventorySnapshot(targetWorldId);
     }
-  }, [backend.farm, backend.inventory, refreshInventorySnapshot]);
+  }, [applyFarmSnapshotToUi, backend.farm, backend.inventory, refreshInventorySnapshot]);
 
   useEffect(() => {
     if ((currentMapId === 'farm' || currentMapId === 'garden') && backend.farm) {
@@ -1780,6 +1808,7 @@ function MainCoupleApp() {
             }
             setFarmWalletCoins(res.data.snapshot.walletCoins);
             farmVersionRef.current = res.data.snapshot.version;
+            applyFarmSnapshotToUi(res.data.snapshot, action === 'till' ? plotIndex : undefined);
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
               showToast(
@@ -1824,6 +1853,8 @@ function MainCoupleApp() {
             : undefined
         }
         donorLanPlayable={donorLanPlayable}
+        farmPlotByIndex={farmPlotByIndex}
+        farmServerNowMs={farmServerNowMs}
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
