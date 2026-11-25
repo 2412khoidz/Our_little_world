@@ -460,7 +460,7 @@ function buildFromHollowmere(mapData) {
         height: TW,
         properties: [
           { name: 'kind', type: 'string', value: 'bench' },
-          { name: 'labelVi', type: 'string', value: 'Gull Bay — bãi donor Hollowmere' },
+          { name: 'labelVi', type: 'string', value: 'Gull Bay — bãi biển' },
           { name: 'maxRadiusPx', type: 'int', value: 52 },
         ],
       },
@@ -474,7 +474,7 @@ function buildFromHollowmere(mapData) {
         height: TW * 2,
         properties: [
           { name: 'kind', type: 'string', value: 'fishing_spot' },
-          { name: 'labelVi', type: 'string', value: 'Cầu câu Gull Bay (donor)' },
+          { name: 'labelVi', type: 'string', value: 'Cầu câu Gull Bay' },
           { name: 'maxRadiusPx', type: 'int', value: 56 },
           { name: 'donorPlayable', type: 'bool', value: true },
           { name: 'fishingSpotId', type: 'string', value: 'gull_bay' },

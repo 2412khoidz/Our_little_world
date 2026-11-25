@@ -219,7 +219,7 @@ export function MenuModal({
                   onOpenDonorWorkshop();
                 }}
               >
-                <Factory size={16} /> Cối xay donor (C1)
+                <Factory size={16} /> Xưởng chế biến ruộng
               </button>
             )}
 
@@ -233,7 +233,7 @@ export function MenuModal({
                   onOpenDonorFishing();
                 }}
               >
-                <Fish size={16} /> Cầu câu donor (C1)
+                <Fish size={16} /> Thử cầu cá ngoài trời
               </button>
             )}
 

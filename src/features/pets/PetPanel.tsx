@@ -5,6 +5,7 @@ import {
   getPetMoodLabelVi,
 } from '../../shared/pet/petNeeds';
 import type { PetActionType, PetSnapshot } from '../../shared/pet/petTypes';
+import { PetShopCloseUpCat } from '../pet/PetShopCloseUpCat';
 
 interface PetPanelProps {
   pet: PetSnapshot | null;
@@ -174,6 +175,8 @@ export function PetPanel({
                 Đổi tên
               </button>
             </div>
+
+            <PetShopCloseUpCat catName={pet.name} moodLabel={getPetMoodLabelVi(pet.emotion)} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <VitalBar label="Độ no (giảm chậm theo giờ)" value={pet.vitals.hunger} color="#e58f65" />

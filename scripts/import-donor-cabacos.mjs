@@ -204,7 +204,7 @@ function exportVillage() {
       height: TW * 2,
       properties: [
         { name: 'kind', type: 'string', value: 'fishing_spot' },
-        { name: 'labelVi', type: 'string', value: '→ Gull Bay (bãi biển donor)' },
+        { name: 'labelVi', type: 'string', value: '→ Gull Bay (bãi biển)' },
         { name: 'maxRadiusPx', type: 'int', value: 64 },
         { name: 'donorPlayable', type: 'bool', value: true },
       ],

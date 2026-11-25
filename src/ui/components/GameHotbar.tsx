@@ -10,12 +10,14 @@ interface GameHotbarProps {
   onSelectSlot: (slotIndex: number) => void;
   /** Larger slots when pet-care overlay needs iPhone-friendly taps. */
   touchFriendly?: boolean;
+  /** NUVORA wooden hotbar skin (donor presentation). */
+  skin?: 'cozy' | 'nuvora';
 }
 
-export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = false }: GameHotbarProps) {
+export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = false, skin = 'nuvora' }: GameHotbarProps) {
   return (
     <div
-      className={`olw-hotbar-tray ${touchFriendly ? 'olw-hotbar-tray--touch' : ''}`}
+      className={`olw-hotbar-tray ${skin === 'nuvora' ? 'olw-hotbar-tray--nuvora' : ''} ${touchFriendly ? 'olw-hotbar-tray--touch' : ''}`}
       role="toolbar"
       aria-label="Thanh vật phẩm nhanh"
       data-testid="game-hotbar"
