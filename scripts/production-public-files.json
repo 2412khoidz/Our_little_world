@@ -1,6 +1,7 @@
 [
   "assets/manifest.json",
   "assets/maps/garden.json",
+  "assets/maps/meadow.json",
   "assets/maps/home.json",
   "assets/starter/furniture-cozy.png",
   "assets/starter/tileset-cozy.png",

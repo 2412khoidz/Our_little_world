@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getMapDefinition, TILE_SIZE } from './maps';
+import { getMapDefinition, MAP_IDS, TILE_SIZE } from './maps';
 import type { MapId, MovementPacket, PresencePayload } from './types';
 
 export const MOVEMENT_SEND_INTERVAL_MS = 125;
@@ -10,7 +10,7 @@ export const movementPacketSchema = z.object({
   worldId: z.string().min(1).max(128),
   userId: z.string().min(1).max(128),
   sessionId: z.string().min(1).max(128),
-  mapId: z.enum(['home', 'garden']),
+  mapId: z.enum(MAP_IDS),
   seq: z.number().int().nonnegative(),
   timestampMs: z.number().finite().nonnegative(),
   x: z.number().finite().min(0).max(10000),

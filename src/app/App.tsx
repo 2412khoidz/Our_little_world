@@ -10,6 +10,8 @@ import type {
 import { DEFAULT_AVATAR_PARTNER_A } from '../shared/avatar';
 import { getCatalogItem } from '../shared/catalog';
 import { getMapDefinition } from '../shared/maps';
+import { normalizeMapId } from '../shared/world/mapIdCompat';
+import { isExtendedWorldDevEnabled } from '../shared/worldIntegration/extendedWorldDevFlag';
 import type {
   AvatarConfig,
   Direction,
@@ -24,6 +26,8 @@ import { PhotoFrameModal } from '../features/couple/PhotoFrameModal';
 import { DecorateDrawer } from '../features/home/DecorateDrawer';
 import { GameViewport } from '../features/home/GameViewport';
 import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLayer';
+import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
+import { ExtendedWorldDevBanner } from '../features/home/ExtendedWorldDevBanner';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
@@ -195,7 +199,20 @@ function MainCoupleApp() {
   const [authReady, setAuthReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthSessionUser | null>(null);
   const [worldSnapshot, setWorldSnapshot] = useState<WorldSnapshot | null>(null);
-  const [currentMapId, setCurrentMapId] = useState<MapId>('home');
+  const [currentMapId, setCurrentMapId] = useState<MapId>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const q = new URLSearchParams(window.location.search);
+    const deep = normalizeMapId(q.get('map'));
+    if (deep === 'outdoor' && isExtendedWorldDevEnabled()) return 'village';
+    if (
+      (deep === 'village' || deep === 'farm' || deep === 'forest' || deep === 'beach' || deep === 'shop') &&
+      isExtendedWorldDevEnabled()
+    ) {
+      return deep;
+    }
+    if (deep === 'garden' || deep === 'home') return deep;
+    return 'home';
+  });
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [movementConnectionVersion, setMovementConnectionVersion] = useState(0);
   const [presences, setPresences] = useState<PresencePayload[]>([]);
@@ -236,6 +253,7 @@ function MainCoupleApp() {
   useEffect(() => {
     currentMapIdRef.current = currentMapId;
   }, [currentMapId]);
+
   const [previewNotice, setPreviewNotice] = useState<{
     title: string;
     body: string;
@@ -874,7 +892,12 @@ function MainCoupleApp() {
     void backend
       .connectWorldRealtime(worldId, initialPresence, {
         onPresenceChange: (list) => {
-          setPresences(list);
+          setPresences(
+            list.map((p) => ({
+              ...p,
+              mapId: normalizeMapId(p.mapId) ?? p.mapId,
+            })),
+          );
         },
         onMovement: (packet) => {
           gameEventBus.emit('cmd:remote-movement', packet);
@@ -1092,6 +1115,31 @@ function MainCoupleApp() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Dev-only stable camera jumps for Visual Quality Gate capture scripts (`?vqg-capture=1`). */
+  useEffect(() => {
+    if (!import.meta.env.DEV || !worldSnapshot || typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('vqg-capture') !== '1') return;
+    type VqgCaptureApi = {
+      jump: (mapId: MapId, tileX: number, tileY: number) => void;
+    };
+    const w = window as Window & { __OLW_VQG?: VqgCaptureApi };
+    w.__OLW_VQG = {
+      jump(mapId, tileX, tileY) {
+        setDecorateActive(false);
+        setActiveSku(null);
+        setSelectedPlacementId(null);
+        setCurrentMapId(mapId);
+        gameEventBus.emit('cmd:set-map', {
+          mapId,
+          spawnTile: { tileX, tileY },
+        });
+      },
+    };
+    return () => {
+      delete w.__OLW_VQG;
+    };
+  }, [worldSnapshot]);
+
   // Atomic furniture mutations with optimistic UI + rollback
   const handlePlaceRequest = useCallback(
     async ({ mapId, sku, tileX, tileY }: { mapId: MapId; sku: string; tileX: number; tileY: number }) => {
@@ -1305,13 +1353,15 @@ function MainCoupleApp() {
   }, [backend]);
 
   function handleSelectMap(target: MapId) {
+    const mapId =
+      import.meta.env.DEV && isExtendedWorldDevEnabled() && target === 'outdoor' ? 'village' : target;
     setDecorateActive(false);
     setActiveSku(null);
     setSelectedPlacementId(null);
-    setCurrentMapId(target);
-    const def = getMapDefinition(target);
+    setCurrentMapId(mapId);
+    const def = getMapDefinition(mapId);
     gameEventBus.emit('cmd:set-map', {
-      mapId: target,
+      mapId,
       spawnTile: def.defaultSpawn,
     });
   }
@@ -1391,6 +1441,9 @@ function MainCoupleApp() {
           </span>
         </button>
       )}
+
+      <LivingPetDevBanner />
+      <ExtendedWorldDevBanner />
 
       <GameViewport
         worldId={worldSnapshot.world.id}
