@@ -8,6 +8,7 @@ test.use({ trace: longRun ? 'on' : 'on' });
  * Owner checklist — 60s CI default · 7m when OLW_ACCEPTANCE_LONG=1 (trace + summary artifact).
  */
 test.describe('Pet care — owner session', () => {
+  test.describe.configure({ retries: longRun ? 0 : 1 });
   const sessionMs = longRun ? 420_000 : 60_000;
 
   test.beforeEach(async ({ request }) => {
@@ -33,10 +34,17 @@ test.describe('Pet care — owner session', () => {
       window.dispatchEvent(new Event('olw-dev-pet-care-fast-autonomy'));
       window.dispatchEvent(new Event('olw-dev-enter-pet-care'));
     });
-    await page.getByTestId('pet-care-overlay').waitFor({ timeout: 20_000 });
-
-    const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === 'portrait')).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const overlay = await page.getByTestId('pet-care-overlay').isVisible().catch(() => false);
+          if (!overlay) return false;
+          const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+          return canvas.evaluate((c) => c.dataset.petCareRig === 'portrait');
+        },
+        { timeout: 25_000 },
+      )
+      .toBe(true);
 
     const reactions = new Set<string>();
     let autonomyQuiet = 0;

@@ -33,7 +33,10 @@ export class PetCareAutonomy {
     if (playerQuietMs < 3500) return { kind: 'idle' };
 
     if (nowMs < this.refuseBackoffUntil) {
-      return { kind: 'proactive', action: 'observe', bubbleVi: '…cần một chút yên tĩnh' };
+      if (playerQuietMs < 8_000) {
+        return { kind: 'proactive', action: 'observe', bubbleVi: '…cần một chút yên tĩnh' };
+      }
+      return { kind: 'proactive', action: 'call', bubbleVi: '…mrow?' };
     }
 
     this.idleRolls += 1;

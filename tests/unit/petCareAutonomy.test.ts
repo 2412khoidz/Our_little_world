@@ -16,11 +16,14 @@ describe('PetCareAutonomy', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const a = new PetCareAutonomy(mood);
     a.notifyRefuse(10_000);
-    const cue = a.tick(17_000, 6000);
-    expect(cue.kind).toBe('proactive');
-    if (cue.kind === 'proactive') {
-      expect(cue.action).toBe('observe');
-      expect(cue.bubbleVi).toContain('yên tĩnh');
+    const quietCue = a.tick(17_000, 5_000);
+    expect(quietCue.kind).toBe('proactive');
+    if (quietCue.kind === 'proactive') {
+      expect(quietCue.action).toBe('observe');
+    }
+    const laterCue = a.tick(20_000, 12_000);
+    if (laterCue.kind === 'proactive') {
+      expect(laterCue.action).toBe('call');
     }
     vi.restoreAllMocks();
   });

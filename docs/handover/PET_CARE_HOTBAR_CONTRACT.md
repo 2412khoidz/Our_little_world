@@ -16,10 +16,22 @@
 Emit: `gameEventBus.emit('cmd:sync-held-item', held)`.  
 Resolver: `resolveContextualActions` + `executeMainGameContextAction`.
 
-## Hotbar projection (V0.1.5)
+## Hotbar projection (V0.2 shared)
 
-`buildHotbarSlotsFromInventory` — allowlist `MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST`.  
-Pet care SKUs: `fish_salmon_bite`, `toy_yarn`, `toy_cardboard_box`, `water_pitcher`, kibble.  
+**Single module:** `src/shared/interaction/hotbarContract.ts` + `inventoryHotbarAdapter.buildHotbarSlotsFromInventory`.
+
+| Group | Constant | J-key when care active | Authority |
+|-------|----------|------------------------|-----------|
+| Pet food/toy/water | `PET_CARE_HOTBAR_SKUS` | `offer_food` / `roll_toy` / care HUD | `consumeHandFood` or scene-only (water brush) |
+| Farm tools/seeds | `FARM_TOOL_HOTBAR_SKUS` (C1 extends) | `resolveContextualActions` on plot | #14 RPC — **not** `evt:pet-care-request-consume` |
+
+Rules:
+
+1. One held item via `cmd:sync-held-item`; slot 1–8 chọn trước khi **J**.
+2. Care mode: `isPetCareModeActive()` routes food → `evt:pet-care-request-consume` (never client debit).
+3. Care mode + `itemKind === 'tool'`: world/farm actions only (C1); pet scene ignores farm SKU until plot interact.
+4. Adding a farm SKU: append to `FARM_TOOL_HOTBAR_SKUS`, map `hotbarSkuToHeldKind`, add resolver branch — **do not** duplicate allowlist in `App.tsx`.
+
 Backfill: `ensurePetCareStarterPackIfMissing` on GET `/inventory` when pet exists.
 
 ## Care mode (isolated scene)
