@@ -88,10 +88,13 @@ export function drawFrameAccessories(
   dir: 'right' | 'up' | 'left' | 'down',
   rig: RigId,
   config: AvatarConfig,
+  rowKind = 0,
 ): void {
   const faceHeadY = rig === 'amelia' ? 14 : 15;
+  const isSit = rowKind === 2;
+  const isPhone = rowKind === 3;
 
-  if (config.accessory === 'glasses') {
+  if (config.accessory === 'glasses' && !(isSit && dir === 'down')) {
     ctx.fillStyle = '#3a3a50';
     if (dir === 'down') {
       // Crisp 2px lens frames sitting over eyes
@@ -103,23 +106,29 @@ export function drawFrameAccessories(
       ctx.fillStyle = '#3a3a50';
       ctx.fillRect(frameX + 7, frameY + faceHeadY + 2, 2, 1);
     } else if (dir === 'left') {
-      ctx.fillRect(frameX + 4, frameY + faceHeadY + 2, 3, 2);
+      const gx = isSit ? 3 : 4;
+      const gy = isSit ? faceHeadY + 3 : faceHeadY + 2;
+      ctx.fillRect(frameX + gx, frameY + gy, 3, 2);
       ctx.fillStyle = '#cbe7f5';
-      ctx.fillRect(frameX + 4, frameY + faceHeadY + 2, 1, 1);
+      ctx.fillRect(frameX + gx, frameY + gy, 1, 1);
     } else if (dir === 'right') {
-      ctx.fillRect(frameX + 9, frameY + faceHeadY + 2, 3, 2);
+      const gx = isSit ? 10 : 9;
+      const gy = isSit ? faceHeadY + 3 : faceHeadY + 2;
+      ctx.fillRect(frameX + gx, frameY + gy, 3, 2);
       ctx.fillStyle = '#cbe7f5';
-      ctx.fillRect(frameX + 11, frameY + faceHeadY + 2, 1, 1);
+      ctx.fillRect(frameX + gx + 2, frameY + gy, 1, 1);
     }
   } else if (config.accessory === 'ribbon') {
+    const ry = isSit ? 11 : 10;
+    const rx = dir === 'left' ? 7 : 9;
     ctx.fillStyle = '#b04868';
-    ctx.fillRect(frameX + 9, frameY + 10, 4, 2);
+    ctx.fillRect(frameX + rx, frameY + ry, 4, 2);
     ctx.fillStyle = '#ffa8c4';
-    ctx.fillRect(frameX + 10, frameY + 10, 2, 2);
+    ctx.fillRect(frameX + rx + 1, frameY + ry, 2, 2);
   }
 
   // Subtle V0.1 outfit style accent on torso front/cardigan/overall straps
-  if (dir === 'down') {
+  if (dir === 'down' && !isPhone && !isSit) {
     const torsoY = frameY + 21;
     if (config.outfitStyle === 'overall') {
       ctx.fillStyle = '#f5ead8';

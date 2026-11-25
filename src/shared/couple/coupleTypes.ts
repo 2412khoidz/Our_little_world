@@ -2,7 +2,7 @@ import type { Direction, MapId } from '../types';
 import type { EnvInteractionHookKind } from '../world/envInteractionHooks';
 
 export type CoupleEmoteId = 'heart' | 'wave' | 'sleepy' | 'cheer' | 'miss_you';
-export type CouplePostureKind = 'none' | 'sit_study' | 'sit_sofa' | 'sit_bench' | 'lie_bed' | 'hug';
+export type CouplePostureKind = 'none' | 'sit_study' | 'sit_sofa' | 'sit_bench' | 'lie_bed' | 'hug' | 'hold_hands';
 
 export interface CoupleEmoteOption {
   id: CoupleEmoteId;
@@ -21,7 +21,7 @@ export const COUPLE_EMOTES: readonly CoupleEmoteOption[] = [
 export interface CoupleInvitePayload {
   type: 'COUPLE_INVITE';
   inviteId: string;
-  kind: 'hug';
+  kind: 'hug' | 'hold_hands';
   worldId: string;
   fromUserId: string;
   fromSessionId: string;
@@ -36,6 +36,7 @@ export interface CoupleInvitePayload {
 export interface CoupleAcceptPayload {
   type: 'COUPLE_ACCEPT';
   inviteId: string;
+  kind?: 'hug' | 'hold_hands';
   worldId: string;
   fromUserId: string;
   toUserId: string;

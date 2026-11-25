@@ -76,43 +76,51 @@ export class HeldItemRenderer {
     moving: boolean,
     held: HeldItemState,
     timeMs: number,
+    avatarScale = 1,
   ): void {
     if (held.itemKind === 'none' || !this.applyHeldVisual(held)) {
       this.image.setVisible(false);
+      this.image.setRotation(0);
       return;
     }
 
     const toolHeld = held.itemKind === 'tool';
     const seedHeld = Boolean(held.itemSku?.startsWith('seed_'));
-    this.image.setScale(toolHeld ? 0.55 : seedHeld ? 0.2 : 0.75);
+    const baseScale = toolHeld ? 0.56 : seedHeld ? 0.22 : 0.72;
+    this.image.setScale(baseScale * avatarScale);
 
-    const walkBob = moving ? Math.sin(timeMs / 90) * 1.1 : 0;
+    const walkBob = moving ? Math.sin(timeMs / 90) * 1.1 * avatarScale : 0;
     const toolSwing =
       toolHeld && held.temporaryActionState === 'none' && moving
-        ? Math.sin(timeMs / 120) * 1.4
+        ? Math.sin(timeMs / 120) * 1.3 * avatarScale
         : 0;
-    const actionBob = held.temporaryActionState !== 'none' ? -2 : toolSwing;
+    const actionActive = held.temporaryActionState !== 'none';
+    const actionBob = actionActive ? -2.2 * avatarScale : toolSwing;
+    const swingAngle = actionActive
+      ? (facing === 'left' ? -0.52 : 0.52) * Math.sin(timeMs / 75)
+      : 0;
 
     let ox: number;
     let oy: number;
     let depth = avatarDepth + 1;
 
     if (facing === 'left') {
-      ox = -7;
-      oy = -6 + walkBob + actionBob;
+      ox = -7 * avatarScale;
+      oy = -8 * avatarScale + walkBob + actionBob;
     } else if (facing === 'right') {
-      ox = 7;
-      oy = -6 + walkBob + actionBob;
+      ox = 7 * avatarScale;
+      oy = -8 * avatarScale + walkBob + actionBob;
     } else if (facing === 'up') {
-      ox = 5;
-      oy = -9 + walkBob + actionBob;
+      ox = 5 * avatarScale;
+      oy = -11 * avatarScale + walkBob + actionBob;
       depth = avatarDepth - 1;
     } else {
-      ox = -5;
-      oy = -6 + walkBob + actionBob;
+      ox = -5 * avatarScale;
+      oy = -7 * avatarScale + walkBob + actionBob;
     }
 
     this.image.setPosition(Math.round(avatarX + ox), Math.round(avatarY + oy));
+    this.image.setRotation(swingAngle);
     this.image.setDepth(depth);
     this.image.setVisible(true);
   }

@@ -8,8 +8,9 @@ export function getCoupleEmoteSymbol(emote: CoupleEmoteId): string {
   return COUPLE_EMOTES.find((e) => e.id === emote)?.symbol ?? '❤️';
 }
 
-export function createHugInvite(params: {
+export function createCoupleInvite(params: {
   inviteId: string;
+  kind: 'hug' | 'hold_hands';
   worldId: string;
   fromUserId: string;
   fromSessionId: string;
@@ -22,7 +23,7 @@ export function createHugInvite(params: {
   return {
     type: 'COUPLE_INVITE',
     inviteId: params.inviteId,
-    kind: 'hug',
+    kind: params.kind,
     worldId: params.worldId,
     fromUserId: params.fromUserId,
     fromSessionId: params.fromSessionId,
@@ -33,6 +34,20 @@ export function createHugInvite(params: {
     createdAtMs: params.nowMs,
     expiresAtMs: params.nowMs + COUPLE_INVITE_TTL_MS,
   };
+}
+
+export function createHugInvite(params: {
+  inviteId: string;
+  worldId: string;
+  fromUserId: string;
+  fromSessionId: string;
+  toUserId: string;
+  mapId: MapId;
+  anchorX: number;
+  anchorY: number;
+  nowMs: number;
+}): CoupleInvitePayload {
+  return createCoupleInvite({ ...params, kind: 'hug' });
 }
 
 export function isInviteExpired(invite: CoupleInvitePayload, nowMs: number): boolean {
@@ -63,6 +78,7 @@ export function validateInviteAcceptance(
     accept: {
       type: 'COUPLE_ACCEPT',
       inviteId: invite.inviteId,
+      kind: invite.kind,
       worldId: invite.worldId,
       fromUserId: responderUserId,
       toUserId: invite.fromUserId,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   COUPLE_INVITE_TTL_MS,
+  createCoupleInvite,
   createHugInvite,
   isInviteExpired,
   pickAvailableSharedSlot,
@@ -48,5 +49,26 @@ describe('V0.1.5 Couple Interactions Protocol (OLW-015-07)', () => {
     expect(pickAvailableSharedSlot([0])).toBe(1);
     expect(pickAvailableSharedSlot([1])).toBe(0);
     expect(pickAvailableSharedSlot([0, 1], 1)).toBe(1);
+  });
+
+  it('supports hold_hands couple invite and preserves kind on acceptance', () => {
+    const t0 = 1_700_000_000_000;
+    const inv = createCoupleInvite({
+      inviteId: 'hand-1',
+      kind: 'hold_hands',
+      worldId: 'w1',
+      fromUserId: 'may',
+      fromSessionId: 's1',
+      toUserId: 'nang',
+      mapId: 'garden',
+      anchorX: 112,
+      anchorY: 96,
+      nowMs: t0,
+    });
+    const res = validateInviteAcceptance(inv, 'nang', 'garden', t0 + 1000);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.accept.kind).toBe('hold_hands');
+    }
   });
 });

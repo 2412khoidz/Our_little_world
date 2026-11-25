@@ -12,6 +12,7 @@ interface CoupleEmoteDockProps {
   outgoingInviteActive: boolean;
   onSendEmote: (emote: CoupleEmoteId) => void;
   onRequestHug: () => void;
+  onRequestHoldHands?: () => void;
   onAcceptHug: () => void;
   onDeclineHug: () => void;
   onStandUp: () => void;
