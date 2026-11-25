@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Backpack, Gift, Sparkles, X } from 'lucide-react';
-import { propsIconIdForCatalogSku } from '../../shared/art/catalogSkuPropsIcon';
+import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
-import { PET_FOOD_CATALOG } from '../../shared/petLiving/petFoodCatalog';
-import { CatalogPropsIcon } from '../../ui/components/CatalogPropsIcon';
-import { ItemArtSvg } from '../../ui/designSystem/GameIcons';
+import { NuvoraInventoryGrid } from './nuvora/NuvoraInventoryGrid';
+import './nuvora/nuvoraInventorySkin.css';
 
 interface InventoryModalProps {
   snapshot: InventorySnapshot | null;
@@ -25,26 +24,37 @@ export function InventoryModal({
 }: InventoryModalProps) {
   const [tab, setTab] = useState<'shared' | 'personal'>('shared');
 
-  const catalogMap = new Map((snapshot?.catalog ?? []).map((c) => [c.sku, c]));
+  const catalogMap = useMemo(
+    () => new Map((snapshot?.catalog ?? []).map((c) => [c.sku, c])),
+    [snapshot?.catalog],
+  );
   const items = snapshot?.items ?? [];
   const sharedItems = items.filter((i) => i.ownerScope === 'shared');
   const personalItems = items.filter((i) => i.ownerScope === `user:${localUserId}`);
   const shown = tab === 'shared' ? sharedItems : personalItems;
 
+  const gridCells = useMemo(
+    () =>
+      inventoryRowsToNuvoraGrid(
+        shown.map((row) => ({ itemSku: row.itemSku, qty: row.qty })),
+        (sku) => catalogMap.get(sku)?.nameVi ?? sku,
+        tab === 'shared' ? 36 : 18,
+      ),
+    [shown, catalogMap, tab],
+  );
+
+  const sharedQty = sharedItems.reduce((sum, i) => sum + i.qty, 0);
+  const personalQty = personalItems.reduce((sum, i) => sum + i.qty, 0);
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Túi đồ & Hạt mèo">
-      <div className="modal-panel" data-testid="inventory-modal">
-        <div className="modal-header">
-          <h2 className="modal-title">
+    <div className="modal-backdrop nuvora-inv-backdrop" role="dialog" aria-modal="true" aria-label="Túi đồ & Hạt mèo">
+      <div className="nuvora-desk" data-testid="inventory-modal">
+        <div className="nuvora-desk__title-row">
+          <h2 className="nuvora-desk__title">
             <Backpack size={18} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
             Túi đồ ngôi nhà
           </h2>
-          <button
-            type="button"
-            className="btn btn--secondary btn--sm"
-            onClick={onClose}
-            aria-label="Đóng"
-          >
+          <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
             <X size={16} />
           </button>
         </div>
@@ -57,7 +67,7 @@ export function InventoryModal({
             data-testid="tab-inventory-shared"
             onClick={() => setTab('shared')}
           >
-            Túi chung ({sharedItems.reduce((sum, i) => sum + i.qty, 0)})
+            Túi chung ({sharedQty})
           </button>
           <button
             type="button"
@@ -66,7 +76,7 @@ export function InventoryModal({
             data-testid="tab-inventory-personal"
             onClick={() => setTab('personal')}
           >
-            <Gift size={14} /> Ngăn riêng ({personalItems.reduce((sum, i) => sum + i.qty, 0)})
+            <Gift size={14} /> Ngăn riêng ({personalQty})
           </button>
         </div>
 
@@ -75,17 +85,17 @@ export function InventoryModal({
             style={{
               padding: 12,
               borderRadius: 12,
-              background: 'var(--surface-warm)',
-              border: '1px solid var(--border-honey)',
+              background: '#f0e4c8',
+              border: '2px solid #8a5a2e',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 10,
             }}
           >
-            <div style={{ fontSize: 13 }}>
+            <div style={{ fontSize: 13, color: '#4a3320' }}>
               <strong>Hạt mèo miễn phí hôm nay</strong>
-              <div style={{ color: 'var(--ink-muted)', fontSize: 12 }}>
+              <div style={{ fontSize: 12, opacity: 0.85 }}>
                 Nhận 3 phần hạt cơ bản (0₫) cho bé mèo cam khi bát đang trống.
               </div>
             </div>
@@ -102,71 +112,17 @@ export function InventoryModal({
         )}
 
         {shown.length === 0 ? (
-          <div className="cozy-alert" style={{ fontSize: 13 }}>
+          <div className="cozy-alert" style={{ fontSize: 13, background: '#f0e4c8', color: '#4a3320' }}>
             {tab === 'shared'
               ? 'Túi chung hiện đang trống. Bạn có thể nhận hạt mèo miễn phí phía trên.'
               : 'Ngăn riêng tư hiện chưa có món nào. Chỉ mình bạn mới xem được ngăn này để giấu quà bất ngờ!'}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {shown.map((entry) => {
-              const info = catalogMap.get(entry.itemSku);
-              const propsIconId = propsIconIdForCatalogSku(entry.itemSku);
-              const petFood = PET_FOOD_CATALOG.find((f) => f.sku === entry.itemSku);
-              return (
-                <div
-                  key={`${entry.ownerScope}-${entry.itemSku}`}
-                  data-testid={`inv-row-${entry.itemSku}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 12,
-                    background: 'var(--surface-warm)',
-                    border: '1px solid var(--border-honey)',
-                  }}
-                >
-                  {propsIconId ? (
-                    <CatalogPropsIcon iconId={propsIconId} size={28} testId={`inv-icon-${entry.itemSku}`} />
-                  ) : petFood ? (
-                    <ItemArtSvg iconId={petFood.iconId} size={28} />
-                  ) : null}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>
-                      {info?.nameVi ?? entry.itemSku}
-                    </div>
-                    {info?.descriptionVi && (
-                      <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
-                        {info.descriptionVi}
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    style={{
-                      fontWeight: 800,
-                      fontSize: 13,
-                      padding: '4px 10px',
-                      borderRadius: 99,
-                      background: 'rgba(217, 119, 98, 0.16)',
-                    }}
-                  >
-                    ×{entry.qty}/{info?.stackLimit ?? 99}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <NuvoraInventoryGrid cells={gridCells} plateLabel={tab === 'shared' ? 'TÚI CHUNG' : 'NGĂN RIÊNG'} />
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            className="btn btn--secondary btn--sm"
-            disabled={loading}
-            onClick={() => void onRefresh()}
-          >
+          <button type="button" className="btn btn--secondary btn--sm" disabled={loading} onClick={() => void onRefresh()}>
             Làm mới túi đồ
           </button>
         </div>

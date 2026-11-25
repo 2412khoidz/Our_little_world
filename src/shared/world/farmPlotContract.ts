@@ -160,7 +160,7 @@ export const VILLAGE_SHOP_PORTAL = {
   targetMapId: 'shop' as MapId,
   doorTileX: 41,
   doorTileY: 29,
-  labelVi: 'Vào nhà (Cabacos donor interior)',
+  labelVi: 'Vào nhà Bác Hai (làng)',
 } as const;
 
 export interface FarmPlotContractExport {

@@ -1,0 +1,43 @@
+.pet-shop-closeup-cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 4px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 248, 239, 0.95), rgba(245, 228, 200, 0.85));
+  border: 2px solid var(--border-honey, #e8c9a0);
+  box-shadow: 0 4px 0 rgba(61, 40, 16, 0.12);
+}
+
+.pet-shop-closeup-cat__stage {
+  width: min(168px, 48vw);
+  line-height: 0;
+}
+
+.pet-shop-closeup-cat__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pet-shop-closeup-cat__tail {
+  transform-origin: 22px 66px;
+  animation: pet-shop-tail-sway 2.8s ease-in-out infinite;
+}
+
+@keyframes pet-shop-tail-sway {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+.pet-shop-closeup-cat__mood {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted, #6b4b3e);
+}

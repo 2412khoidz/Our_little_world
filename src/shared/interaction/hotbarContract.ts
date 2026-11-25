@@ -1,6 +1,6 @@
 /**
  * Shared hotbar SKU policy — pet care (#13) + farming (#14) via one adapter.
- * Composer 1: append farm tool/seed SKUs to `FARM_TOOL_HOTBAR_SKUS` only (no fork of GameHotbar).
+ * Farm C1 tools: append SKUs to `FARM_TOOL_HOTBAR_SKUS` only (no fork of GameHotbar).
  */
 import type { HeldItemKind } from './interactionTypes';
 

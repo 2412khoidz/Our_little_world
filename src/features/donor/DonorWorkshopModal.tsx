@@ -70,7 +70,7 @@ export function DonorWorkshopModal({ worldId, focusSection, onClose, onInventory
               ? 'Lò Hollow — làng'
               : focusSection === 'coop'
                 ? 'Chuồng gà — làng'
-                : 'Donor chế biến (C1+)'}
+                : 'Xưởng chế biến ruộng'}
           </h2>
           <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
             <X size={16} />
