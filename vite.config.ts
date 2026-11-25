@@ -47,12 +47,9 @@ export default defineConfig(({ command, mode }) => {
     }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: [
-        'icons/favicon-32x32.png',
-        'icons/apple-touch-icon-180x180.png',
-        'assets/manifest.json',
-        'assets/unified/CREDITS.md',
-      ],
+      // Chỉ thêm file không nằm trong workbox.globPatterns (json/png/svg/webmanifest).
+      // Trùng includeAssets + glob gây duplicate URL/revision → add-to-cache-list-conflicting-entries.
+      includeAssets: ['assets/unified/CREDITS.md'],
       manifest: {
         name: 'Our Little World',
         short_name: 'Little World',
@@ -80,7 +77,14 @@ export default defineConfig(({ command, mode }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,json,svg,webmanifest}'],
-        globIgnores: ['spike/**', 'assets/private-unified/**'],
+        globIgnores: [
+          'spike/**',
+          'assets/private-unified/**',
+          // manifest.webmanifest + PWA icons được inject riêng; glob trùng gây conflicting-entries
+          'manifest.webmanifest',
+          'icons/pwa-192x192.png',
+          'icons/pwa-512x512.png',
+        ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/spike\//, /^\/api\//],
         runtimeCaching: [],

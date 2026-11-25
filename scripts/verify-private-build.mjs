@@ -7,6 +7,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { findDuplicatePrecacheUrls } from './parse-sw-precache.mjs';
 
 const distRoot = process.env.OLW_PRIVATE_DIST_ROOT
   ? path.resolve(process.env.OLW_PRIVATE_DIST_ROOT)
@@ -73,8 +74,13 @@ for (const rel of REQUIRED_PRIVATE_FILES) {
 }
 
 const swPath = path.join(distRoot, 'sw.js');
-if (fs.existsSync(swPath)) {
+if (!fs.existsSync(swPath)) {
+  leaks.push('Thiếu dist-private/sw.js.');
+} else {
   const precache = fs.readFileSync(swPath, 'utf8');
+  for (const d of findDuplicatePrecacheUrls(precache)) {
+    leaks.push(`Precache URL trùng trong dist-private: ${d.url} (${d.count})`);
+  }
   if (/assets\/private-unified|private-unified\//i.test(precache)) {
     leaks.push(
       'Precache dist-private không được chứa assets/private-unified (VitePWA globIgnores — atlas chỉ runtime).',

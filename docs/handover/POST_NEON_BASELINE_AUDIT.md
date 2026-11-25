@@ -81,6 +81,12 @@ PLAYWRIGHT_PORT=4176 npx playwright test → 15 passed, 1 skipped (~2.1 min)
 - **Pet AI:** `petPrimitivesAdapter.ts` vẫn là **[PRE-INTEGRATION FIXTURE]**; DeepSeek `petAdvanced/primitives` có test (`petPrimitives.test.ts`) nhưng chưa nối runtime chính.
 - **V0.2+ domain (DeepSeek):** farming/fishing/cooking/economy/minigames — **chỉ `src/shared/` + tests**, không `WorldBackend` hook trong `App.tsx`.
 
+## PWA runtime (public build)
+
+- **Nguyên nhân:** `includeAssets` + `globPatterns` trùng `assets/manifest.json`; manifest PWA icons + `manifest.webmanifest` trùng glob.
+- **Sửa:** `vite.config.ts` — `includeAssets` chỉ `CREDITS.md`; `globIgnores` cho pwa icons + webmanifest.
+- **Regression:** `scripts/parse-sw-precache.mjs`, `verify-prod-guard.mjs`, `tests/server/swPrecache.test.mjs`, `npm run test:e2e:pwa` (preview).
+
 ## 5. Rủi ro còn lại (không khai khống Accepted)
 
 1. **Supabase Cloud + migration trùng `20261125000100`** (GPT security vs Neon inventory) — chưa merge/apply trên cloud.

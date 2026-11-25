@@ -83,7 +83,19 @@ npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 - `scripts/verify-private-build.mjs`: guard tách biệt cho `dist-private/` (không làm yếu `verify-prod-guard.mjs`).
 - `scripts/check-demo-e-sources.mjs` + `pack-demo-e-minimal.mjs`: đóng gói tối thiểu 40 file Demo E.
 
-## 5. Không làm trên Cloud (theo mission)
+## 5. PWA runtime (public, preview)
+
+```bash
+npm run test:e2e:pwa   # build + vite preview + Playwright SW/cache/offline smoke
+```
+
+Nguyên nhân duplicate precache trước đây: `includeAssets` trùng `workbox.globPatterns` + manifest icons trùng glob. Guard `verify-prod-guard.mjs` fail nếu `sw.js` thiếu hoặc URL precache trùng.
+
+## 6. Git history Dev LAN state
+
+Xem [GIT_HISTORY_REMEDIATION.md](./GIT_HISTORY_REMEDIATION.md) — không force-push từ cloud.
+
+## 7. Không làm trên Cloud (theo mission)
 
 - Không deploy Internet, không migration Supabase Cloud, không commit `asset-candidates/` hay `private-unified/`.
 - Không thay thế atlas Demo E bằng placeholder rồi báo hoàn thành `build:private`.
