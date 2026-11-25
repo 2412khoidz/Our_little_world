@@ -22,7 +22,6 @@ import type {
   WorldSnapshot,
 } from '../../shared/types';
 import { getSupabaseClient } from '../supabase';
-import type { PetLivingAuthoritySnapshot } from '../../shared/petLiving/petAuthorityTypes';
 import type {
   AuthSessionUser,
   RealtimeHandle,
