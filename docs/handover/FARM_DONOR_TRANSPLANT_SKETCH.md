@@ -1,22 +1,19 @@
 # Farm donor transplant (Cabacos) — Phase II sketch
 
-**Status:** Sketch landed (`npm run import-donor:cabacos-farm`)  
+**Status:** Deep reuse v1 (`farm-v1-deep`, `npm run import-donor:cabacos-farm`)  
 **Contract:** `farmPlotContract.v1.json` — **184** anchors (`farm_main` 120 + `farm_annex` 64) unchanged.
 
-## Current sketch (v0)
+## Deep reuse v1 (shipped)
 
-- `farm.json` keeps **cozy** `tileset-cozy` + procedural layers.
-- Map properties: `olwDonor=cabacos`, `olwDonorSketch=farm-v0`.
-- Light Cabacos-inspired path/hedge pass outside plot rectangles.
-- Sign interactable `farm_donor_cabacos_sign` for playtest wayfinding.
+- `farm.json` crops Cabacos overworld `@ (2,2)` **64×56** with layers `land`…`decoration_03`.
+- `OLW_ContractSoil` overlay (cozy gids) preserves **184** anchors; OLW `Collision` + portals/interactables unchanged.
+- `WorldScene` uses `renderDonorCabacosMapLayers` when `olwDonor=cabacos` (binds `ts_map`, `ts_forest`, `tileset-cozy`).
 
-## Full transplant (next)
+## Next
 
-1. **Render path:** Extend `renderDonorCabacosMap.ts` for `map-farm` when `olwDonor=cabacos` (reuse `ts_map.png` like village).
-2. **Layout source:** Composite Cabacos TMJ layers `farm` / `farm2` / `farm3` into 64×56 OLW footprint OR split player farm as dedicated TMJ export @ `79e423d`.
-3. **Plot graft:** Run `paintFarmPlotRegionsFromContract` after any ground bake so gids **53/54** stay on anchor tiles.
-4. **Collision:** Portals + `FARM_WORLD_INTERACTABLES` anchors fixed in contract — never move without bumping `FARM_PLOT_CONTRACT_VERSION`.
-5. **Alt donor:** PyDew CC0 (`clear-code-projects/PyDew`) surveyed as fallback scale reference — see `public/maps/donor/pydew/README.md`.
+1. Tune crop offset / scale for owner Cabacos bar parity (may need dedicated farm TMJ export).
+2. Donor collision merge vs Cabacos `Collision` crop.
+3. PyDew fallback — `public/maps/donor/pydew/README.md`.
 
 ## Commands
 

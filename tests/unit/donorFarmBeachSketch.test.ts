@@ -12,7 +12,10 @@ describe('donor farm/beach sketch', () => {
     const donor = (farmJson as { properties?: { name: string; value: string }[] }).properties?.find(
       (p) => p.name === 'olwDonorSketch',
     );
-    expect(donor?.value).toBe('farm-v0');
+    expect(donor?.value).toBe('farm-v1-deep');
+    const tilesets = (farmJson as { tilesets?: { name: string }[] }).tilesets?.map((t) => t.name) ?? [];
+    expect(tilesets).toContain('ts_map');
+    expect(farmJson.layers.some((l) => l.name === 'OLW_ContractSoil')).toBe(true);
   });
 
   it('beach has donor interactables for Gull Bay pier/sign', () => {

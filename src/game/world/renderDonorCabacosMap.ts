@@ -9,6 +9,7 @@ const SKIP_LAYERS = new Set([
   'Portals',
   'Interactables',
   'NPCSpawns',
+  // Not in SKIP: OLW_ContractSoil (cozy plot overlay), Cabacos visual layers
 ]);
 
 /** Cabacos / GameMaker export layer draw order (depth from `gamemaker_depth` when present). */
@@ -86,7 +87,10 @@ export function getDonorCabacosTilesets(
 ): Phaser.Tilemaps.Tileset[] {
   const out: Phaser.Tilemaps.Tileset[] = [];
   for (const ts of tilemap.tilesets) {
-    const textureKey = DONOR_TEXTURE_ALIASES[ts.name] ?? `donor-cabacos-${ts.name}`;
+    const textureKey =
+      ts.name === 'tileset-cozy'
+        ? 'tileset-cozy'
+        : (DONOR_TEXTURE_ALIASES[ts.name] ?? `donor-cabacos-${ts.name}`);
     if (!sceneHasTexture(tilemap.scene, textureKey)) continue;
     const tw = ts.tileWidth ?? TILE_SIZE;
     const th = ts.tileHeight ?? TILE_SIZE;
