@@ -211,7 +211,7 @@ function MainCoupleApp() {
 
   // Modals & settings
   const [activeModal, setActiveModal] = useState<
-    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'farm_shipping' | 'dev_console' | 'v03_proto'
+    null | 'invite' | 'avatar' | 'menu' | 'pwa' | 'spike' | 'inventory' | 'pet' | 'study' | 'photo' | 'mailbox' | 'farm_market' | 'farm_shipping' | 'farm_pantry' | 'dev_console' | 'v03_proto'
   >(null);
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -1505,6 +1505,9 @@ function MainCoupleApp() {
           void refreshFarmWallet();
           setActiveModal('farm_shipping');
         } : undefined}
+        onOpenFarmPantry={backend.farm ? () => {
+          setActiveModal('farm_pantry');
+        } : undefined}
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
@@ -1714,15 +1717,43 @@ function MainCoupleApp() {
         />
       )}
 
-      {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
+      {(activeModal === 'farm_market' || activeModal === 'farm_shipping' || activeModal === 'farm_pantry') &&
+        backend.farm && (
         <div className="modal-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
           <div onClick={(e) => e.stopPropagation()}>
             <FarmEconomyPanel
-              mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}
+              mode={
+                activeModal === 'farm_market'
+                  ? 'shop'
+                  : activeModal === 'farm_pantry'
+                    ? 'pantry'
+                    : 'shipping'
+              }
               walletCoins={farmWalletCoins}
               inventory={inventorySnapshot}
               busy={farmBusy}
               onClose={() => setActiveModal(null)}
+              onProcess={async (outputSku) => {
+                const targetWorldId = snapshotRef.current?.world.id;
+                if (!targetWorldId) return;
+                setFarmBusy(true);
+                try {
+                  const res = await backend.farm!.processPantry({
+                    worldId: targetWorldId,
+                    outputSku,
+                    idempotencyKey: makeIdempotencyKey('farm-process'),
+                  });
+                  if (!res.ok) {
+                    showToast(res.message, true);
+                    return;
+                  }
+                  await refreshInventorySnapshot(targetWorldId);
+                  showToast(`Đã chế biến ${outputSku === 'flour' ? 'bột mì' : outputSku === 'strawberry_jam' ? 'mứt dâu' : 'súp cà rốt'}.`);
+                  realtimeRef.current?.notifyWorldMutated('inventory');
+                } finally {
+                  setFarmBusy(false);
+                }
+              }}
               onShip={async (sku, qty, quality) => {
                 const targetWorldId = snapshotRef.current?.world.id;
                 if (!targetWorldId) return;

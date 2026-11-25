@@ -128,6 +128,13 @@ export const FARM_SHOP_SEED_SKUS = [
   'seed_carrot',
   'seed_tomato',
   'seed_strawberry',
+  'seed_sunflower',
+  'seed_cabbage',
 ] as const;
 
+/** Pantry inputs sold at the seed shop (Mission 06 chains). */
+export const FARM_SHOP_PANTRY_SKUS = ['sugar_pack', 'spice'] as const;
+
 export const FARM_SELLABLE_CROP_SKUS = ['wheat', 'carrot', 'tomato', 'strawberry', 'sunflower', 'cabbage'] as const;
+
+export const FARM_SELLABLE_PANTRY_SKUS = ['flour', 'strawberry_jam', 'carrot_soup'] as const;

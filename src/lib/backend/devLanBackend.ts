@@ -541,6 +541,9 @@ export function createDevLanBackend(): WorldBackend {
       async shipToBin(params) {
         return apiJson(`/farm/ship`, { method: 'POST', body: JSON.stringify(params) });
       },
+      async processPantry(params) {
+        return apiJson(`/farm/process`, { method: 'POST', body: JSON.stringify(params) });
+      },
     },
 
     devConsole: {

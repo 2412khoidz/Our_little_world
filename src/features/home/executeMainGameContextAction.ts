@@ -19,6 +19,7 @@ export interface MainGameActionContext {
   onFarmApply?: (plotIndex: number, action: 'till' | 'plant' | 'water' | 'harvest', seedSku?: string | null) => Promise<void>;
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
+  onOpenFarmPantry?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
 }
 
@@ -147,6 +148,10 @@ export async function executeMainGameContextAction(
   }
   if (code === 'open_shipping_bin' && ctx.onOpenFarmShipping) {
     ctx.onOpenFarmShipping();
+    return;
+  }
+  if (code === 'open_farm_pantry' && ctx.onOpenFarmPantry) {
+    ctx.onOpenFarmPantry();
     return;
   }
 

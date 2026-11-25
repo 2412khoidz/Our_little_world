@@ -187,6 +187,11 @@ export interface FarmBackend {
     lines: { sku: string; qty: number; quality?: 'normal' | 'silver' | 'gold' }[];
     idempotencyKey: string;
   }): Promise<MutationResult<{ walletCoins: number; totalCoins: number }>>;
+  processPantry(params: {
+    worldId: string;
+    outputSku: string;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ outputSku: string }>>;
 }
 
 export interface DevConsoleBackend {

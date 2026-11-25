@@ -51,7 +51,8 @@ export type InteractableDomainKind =
   | 'fishing_spot'
   | 'kitchen'
   | 'shop_npc'
-  | 'shipping_bin';
+  | 'shipping_bin'
+  | 'pantry_station';
 
 export interface InteractableTarget {
   id: string;
@@ -89,6 +90,7 @@ export type InteractionActionCode =
   | 'water_crop'
   | 'harvest_crop'
   | 'open_farm_market'
+  | 'open_farm_pantry'
   | 'open_shipping_bin'
   | 'inspect_prop'
   | 'put_away_held';

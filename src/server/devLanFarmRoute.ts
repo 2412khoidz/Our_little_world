@@ -1,4 +1,5 @@
 import { vietnamDayIndex } from '../shared/economy/shippingBin';
+import { processFarmPantryRecipe } from '../shared/farming/farmPantryProcessing';
 import {
   applyFarmShippingBinSale,
   type FarmShippingMeta,
@@ -242,6 +243,20 @@ export async function tryHandleFarmDevLan(ctx: {
     }
     saveDb();
     sendJson(res, 200, { ok: true, data: { walletCoins: shipped.walletCoins, totalCoins: shipped.totalCoins } });
+    return true;
+  }
+
+  if (req.method === 'POST' && route === '/farm/process') {
+    const outputSku = String(body.outputSku ?? '');
+    const items = getInventoryList(worldId);
+    const processed = processFarmPantryRecipe(worldId, items, outputSku, nowMs);
+    if (!processed.ok) {
+      sendJson(res, 409, { ok: false, code: processed.code, message: processed.messageVi });
+      return true;
+    }
+    setInventoryList(worldId, processed.items);
+    saveDb();
+    sendJson(res, 200, { ok: true, data: { outputSku } });
     return true;
   }
 

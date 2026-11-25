@@ -734,6 +734,17 @@ export function createSupabaseBackend(): WorldBackend {
         }
         return { ok: true, data: data as { walletCoins: number; totalCoins: number } };
       },
+      async processPantry(params) {
+        const { data, error } = await supabase.rpc('farm_process_pantry', {
+          p_world_id: params.worldId,
+          p_output_sku: params.outputSku,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { outputSku: string } };
+      },
     },
   };
 }

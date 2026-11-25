@@ -35,13 +35,28 @@ Interpretation: 184-plot capacity **lowers** monoculture advantage in the headle
 
 Full smoke log: agent artifact `economy-sim-184-smoke.log`.
 
-## Production chain v1 (domain)
+## Production chain v1.1 (playable)
 
 ```
-shop (seed_*) → farm_apply(till|plant|water|harvest) → farm_ship / sell → wallet
+shop (seeds + sugar/spice) → till|plant|water|harvest → pantry (flour / mứt dâu / súp) → shipping bin → wallet
 ```
 
-Config: `buildFarmProductionChainV1()` — starter tools, shop SKUs, step authority map. Next PR: wire NPC shop + shipping UI to this doc without client-side debits.
+- **Shop:** 6 seeds + `sugar_pack`, `spice` (`FARM_SHOP_*` in `farmShipping.ts`).
+- **Pantry:** `farm_pantry_station` interactable + `POST /farm/process` (Dev LAN) / `farm_process_pantry` (Supabase).
+- **Shipping:** crops + `FARM_SELLABLE_PANTRY_SKUS`; UI hint in `FARM_ECONOMY_PROGRESSION_V1`.
+
+### Anti-grind knobs @ 184 plots
+
+| Knob | Location | Intent |
+|------|----------|--------|
+| Shipping group saturation | `shippingBin.ts` | Raw crop spam loses margin; processed goods use pantry/dish groups |
+| Process-before-bulk hint | `farmEconomyProgression.ts` | Steers co-op toward jam/flour/soup before bin dump |
+| Sim `plotCount=184` | `npm run economy:sim -- --plots=184` | Re-balance when session model changes; ratio 0.71 @ smoke 7d |
+| Mid-tier seed wallet hint | `midTierSeedWalletHint: 80` | Pacing for sunflower/cabbage without hard server gate |
+
+Config: `buildFarmProductionChainV1()` v**1.1.0**.
+
+**Catalog fingerprint:** `71f9ecca` (+ `strawberry_jam` pantry SKU; sim/arbitrage gates re-run on #17).
 
 ## Related
 

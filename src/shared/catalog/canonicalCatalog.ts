@@ -80,10 +80,10 @@ export interface UnifiedCatalogRow {
   tradeable: boolean;
 }
 
-/** Merged projection for SQL generation (fingerprint 7076075b on economy slice only). */
+/** Merged projection for SQL generation (fingerprint 71f9ecca on economy slice — Mission 06 + jam). */
 export function buildUnifiedCatalogRows(): readonly UnifiedCatalogRow[] {
-  if (catalogFingerprint() !== '7076075b') {
-    throw new Error('Production economy catalog fingerprint must remain 7076075b');
+  if (catalogFingerprint() !== '71f9ecca') {
+    throw new Error('Production economy catalog fingerprint must remain 71f9ecca');
   }
 
   const skuSet = new Set<string>();
