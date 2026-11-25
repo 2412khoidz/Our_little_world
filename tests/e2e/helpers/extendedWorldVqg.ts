@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
-type VqgWindow = Window & {
+type OlwVqgGlobal = {
   __OLW_VQG?: { jump: (mapId: string, tileX: number, tileY: number) => void };
 };
 
@@ -13,7 +13,7 @@ export async function seedDevCouple(request: APIRequestContext, base: string): P
 
 export async function waitForVqgJump(page: Page, timeoutMs = 20_000): Promise<void> {
   await page.waitForFunction(
-    () => typeof (globalThis as VqgWindow).__OLW_VQG?.jump === 'function',
+    () => typeof (globalThis as unknown as OlwVqgGlobal).__OLW_VQG?.jump === 'function',
     undefined,
     { timeout: timeoutMs },
   );
@@ -43,7 +43,7 @@ async function emitVqgJump(page: Page, mapId: string, tileX: number, tileY: numb
   await waitForVqgJump(page);
   await page.evaluate(
     ({ mapId: mid, tileX: tx, tileY: ty }) => {
-      const w = globalThis as VqgWindow;
+      const w = globalThis as unknown as OlwVqgGlobal;
       if (!w.__OLW_VQG?.jump) throw new Error('__OLW_VQG.jump missing');
       w.__OLW_VQG.jump(mid, tx, ty);
     },
