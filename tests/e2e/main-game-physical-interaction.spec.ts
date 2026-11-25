@@ -41,5 +41,8 @@ test.describe('Main game — physical interaction (Mission 03)', () => {
     await input.fill('Qu');
     await page.keyboard.press('j');
     await expect(input).toHaveValue('Quj');
+    await page.keyboard.press('Escape');
+    await expect(input).not.toBeVisible();
+    await expect(page.getByTestId('main-game-interaction-hud')).toBeVisible();
   });
 });
