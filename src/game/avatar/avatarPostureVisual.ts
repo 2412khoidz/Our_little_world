@@ -18,37 +18,58 @@ export function playAvatarPostureAnim(
   posture: CouplePostureKind,
   facing: Facing8,
   moving: boolean,
+  running = false,
 ): void {
   const cardinal = cardinalFromFacing8(facing);
   if (moving) {
     resetAvatarSpriteOrigin(sprite);
-    const walkKey = avatarWalkAnimKey(textureKey, facing);
-    if (sprite.anims.isPlaying && sprite.anims.currentAnim?.key === walkKey) return;
-    if (scene.anims.exists(walkKey)) {
-      sprite.play(walkKey, true);
+    const prefix = running ? 'run' : 'walk';
+    const moveKey = running ? `${textureKey}:run-${facing}` : avatarWalkAnimKey(textureKey, facing);
+    if (sprite.anims.isPlaying && sprite.anims.currentAnim?.key === moveKey) return;
+    if (scene.anims.exists(moveKey)) {
+      sprite.play(moveKey, true);
       return;
     }
-    const cardinalWalk = avatarWalkAnimKey(textureKey, cardinal);
-    if (scene.anims.exists(cardinalWalk)) {
-      sprite.play(cardinalWalk, true);
+    const cardinalMove = `${textureKey}:${prefix}-${cardinal}`;
+    if (scene.anims.exists(cardinalMove)) {
+      if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== cardinalMove) {
+        sprite.play(cardinalMove, true);
+      }
+      return;
+    }
+    const fallbackWalk = avatarWalkAnimKey(textureKey, cardinal);
+    if (scene.anims.exists(fallbackWalk)) {
+      sprite.play(fallbackWalk, true);
     }
     return;
   }
 
   if (posture === 'none') {
     resetAvatarSpriteOrigin(sprite);
+    const idleKey = `${textureKey}:idle-${cardinal}`;
+    if (scene.anims.exists(idleKey)) {
+      if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== idleKey) {
+        sprite.play(idleKey, true);
+      }
+      return;
+    }
     sprite.stop();
     sprite.setFrame(avatarIdleFrame(textureKey, cardinal));
     return;
   }
 
-  if (posture === 'hug') {
+  if (posture === 'hug' || posture === 'hold_hands') {
     resetAvatarSpriteOrigin(sprite);
-    const hugFacing = cardinal;
-    const sitKey = `${textureKey}:sit-${hugFacing}`;
-    if (scene.anims.exists(sitKey)) {
-      sprite.play(sitKey, true);
+    const standingFacing = posture === 'hold_hands' ? 'down' : cardinal;
+    const idleKey = `${textureKey}:idle-${standingFacing}`;
+    if (scene.anims.exists(idleKey)) {
+      if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== idleKey) {
+        sprite.play(idleKey, true);
+      }
+      return;
     }
+    sprite.stop();
+    sprite.setFrame(avatarIdleFrame(textureKey, standingFacing));
     return;
   }
 
@@ -65,7 +86,7 @@ export function playAvatarPostureAnim(
 
   if (posture === 'sit_study' || posture === 'sit_sofa' || posture === 'sit_bench') {
     resetAvatarSpriteOrigin(sprite);
-    const sitFacing = posture === 'sit_study' ? 'up' : cardinal;
+    const sitFacing = posture === 'sit_study' ? 'up' : posture === 'sit_sofa' || posture === 'sit_bench' ? 'down' : cardinal;
     const sitKey = `${textureKey}:sit-${sitFacing}`;
     if (scene.anims.exists(sitKey)) {
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== sitKey) {

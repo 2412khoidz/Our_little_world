@@ -1,21 +1,16 @@
-import Phaser from 'phaser';
-import type { AvatarConfig } from '../../shared/types';
+import type Phaser from 'phaser';
+import type { AvatarConfig, Direction } from '../../shared/types';
 import { AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED } from '../../shared/assets/avatarGameplayPolicy';
+import { cardinalFromFacing8, FACING8_VALUES, type Facing8 } from '../../shared/movement/facing8';
 import { AVATAR_ATLAS_KEY } from './atlasProfile';
 import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } from './avatarSpriteBuilder';
 import {
-  donorGameplayTextureForConfig,
-  registerDonorPydewFarmerAnims,
-} from './donorPydewFarmerAvatarTexture';
-
-export {
-  avatarIdleFrame,
-  avatarIdleFrameForFacing8,
-  isDonorGameplayAvatarTexture,
-  isDonorPunyAvatarTexture,
-  playDonorToolUseAnim,
-} from './donorPydewFarmerAvatarTexture';
-import { AVATAR_ATLAS_ROW_LIE, AVATAR_ATLAS_ROW_SIT, AVATAR_ATLAS_ROW_WALK } from './avatarAtlasLayout';
+  AVATAR_ATLAS_ROW_IDLE,
+  AVATAR_ATLAS_ROW_LIE,
+  AVATAR_ATLAS_ROW_PHONE,
+  AVATAR_ATLAS_ROW_SIT,
+  AVATAR_ATLAS_ROW_WALK,
+} from './avatarAtlasLayout';
 import {
   AVATAR_DIRECTIONS,
   AVATAR_FRAME_COUNT,
@@ -23,16 +18,70 @@ import {
   AVATAR_FRAME_WIDTH,
   buildWorldAvatarCanvas,
 } from './worldAvatarCanvas';
-
-import type { Direction } from '../../shared/types';
+import type { PydewFarmerAction } from '../../shared/donor/pydewFarmerCharacterSheet';
 
 const LEGACY_DIRECTIONS: readonly Direction[] = ['down', 'up', 'left', 'right'];
 
-function donorGameplayPreferred(scene: Phaser.Scene, config: AvatarConfig): string | null {
-  const key = donorGameplayTextureForConfig(config);
-  if (!scene.textures.exists(key)) return null;
-  registerDonorPydewFarmerAnims(scene, key);
-  return key;
+export function isCozyHumanAvatarTexture(textureKey: string): boolean {
+  return textureKey.startsWith('avatar-') || textureKey.startsWith('avatar:');
+}
+
+export function isDonorGameplayAvatarTexture(textureKey: string): boolean {
+  return isCozyHumanAvatarTexture(textureKey);
+}
+
+/** @deprecated legacy helper kept for compatibility — cozy human V2 uses unified scale 1 */
+export function isDonorPunyAvatarTexture(_textureKey: string): boolean {
+  return false;
+}
+
+export function avatarIdleFrame(_textureKey: string, direction: Direction): number {
+  return getIdleFrameIndex(direction);
+}
+
+export function avatarIdleFrameForFacing8(_textureKey: string, facing: Facing8): number {
+  return getIdleFrameIndex(cardinalFromFacing8(facing));
+}
+
+export function playCozyActionMotion(
+  scene: Phaser.Scene,
+  sprite: Phaser.GameObjects.Sprite,
+  _textureKey: string,
+  facing: Direction,
+  action: PydewFarmerAction | 'tool' = 'hoe',
+): void {
+  if (!sprite.scene) return;
+  scene.tweens.killTweensOf(sprite);
+  const dx = facing === 'left' ? -2 : facing === 'right' ? 2 : 0;
+  const dy = facing === 'up' ? -2 : facing === 'down' ? 1.5 : 0;
+  const baseX = sprite.x;
+  const baseY = sprite.y;
+  const tilt = action === 'fish' ? (facing === 'left' ? -0.06 : 0.06) : facing === 'left' ? -0.09 : 0.09;
+  scene.tweens.add({
+    targets: sprite,
+    x: baseX + dx,
+    y: baseY + dy,
+    rotation: tilt,
+    duration: 130,
+    yoyo: true,
+    ease: 'Sine.easeInOut',
+    onComplete: () => {
+      if (sprite.scene) {
+        sprite.setRotation(0);
+      }
+    },
+  });
+}
+
+/** Plays honest non-combat tool motion on the consistent cozy human rig. */
+export function playDonorToolUseAnim(
+  scene: Phaser.Scene,
+  sprite: Phaser.GameObjects.Sprite,
+  textureKey: string,
+  facing: Direction,
+  action: PydewFarmerAction | 'tool' = 'hoe',
+): void {
+  playCozyActionMotion(scene, sprite, textureKey, facing, action);
 }
 
 function rowY(row: number): number {
@@ -53,14 +102,17 @@ function registerDirectionalClips(
   atlasRow: number,
   frameRate: number,
   repeat: number,
+  frameCount = AVATAR_FRAME_COUNT,
 ): void {
   const xBase = directionStrideX(direction);
   const animKey = `${key}:${animSuffix}-${direction}`;
   if (scene.anims.exists(animKey)) return;
   const frames: string[] = [];
-  for (let i = 0; i < AVATAR_FRAME_COUNT; i += 1) {
+  for (let i = 0; i < frameCount; i += 1) {
     const frameName = `${animSuffix}-${direction}-${i}`;
-    tex.add(frameName, 0, xBase + i * AVATAR_FRAME_WIDTH, rowY(atlasRow), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+    if (!tex.has(frameName)) {
+      tex.add(frameName, 0, xBase + i * AVATAR_FRAME_WIDTH, rowY(atlasRow), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+    }
     frames.push(frameName);
   }
   scene.anims.create({
@@ -72,9 +124,6 @@ function registerDirectionalClips(
 }
 
 export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarConfig): string {
-  const donorKey = donorGameplayPreferred(scene, config);
-  if (donorKey) return donorKey;
-
   const key = getAvatarTextureKey(config);
   if (scene.textures.exists(key)) return key;
 
@@ -85,62 +134,96 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
   const procSheet = atlasCanvas ? null : buildAvatarSpritesheetCanvas(config);
   const tex = scene.textures.addCanvas(key, atlasCanvas || procSheet!);
   if (!tex) return key;
-  tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  tex.setFilter(0); // Phaser.Textures.FilterMode.NEAREST
   const usingAtlasLayout = Boolean(atlasCanvas);
 
   for (const direction of LEGACY_DIRECTIONS) {
     const base = getIdleFrameIndex(direction);
-    let frames: (number | string)[] = [base + 1, base, base + 2, base];
+    let walkFrames: (number | string)[] = [base + 1, base, base + 2, base];
     if (atlasCanvas) {
       const x = directionStrideX(direction);
-      tex.add(base, 0, x, 0, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
-      tex.add(base + 1, 0, x + AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
-      tex.add(base + 2, 0, x + 4 * AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT, AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
-      frames = Array.from({ length: AVATAR_FRAME_COUNT }, (_, i) => {
-        const frame = direction + '-walk-' + i;
+      tex.add(base, 0, x, rowY(AVATAR_ATLAS_ROW_IDLE), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      tex.add(base + 1, 0, x + AVATAR_FRAME_WIDTH, rowY(AVATAR_ATLAS_ROW_WALK), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      tex.add(base + 2, 0, x + 4 * AVATAR_FRAME_WIDTH, rowY(AVATAR_ATLAS_ROW_WALK), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
+      walkFrames = Array.from({ length: AVATAR_FRAME_COUNT }, (_, i) => {
+        const frame = `${direction}-walk-${i}`;
         tex.add(frame, 0, x + i * AVATAR_FRAME_WIDTH, rowY(AVATAR_ATLAS_ROW_WALK), AVATAR_FRAME_WIDTH, AVATAR_FRAME_HEIGHT);
         return frame;
       });
+      registerDirectionalClips(scene, key, tex, direction, 'idle', AVATAR_ATLAS_ROW_IDLE, 5, -1);
       registerDirectionalClips(scene, key, tex, direction, 'sit', AVATAR_ATLAS_ROW_SIT, 4, -1);
-      registerDirectionalClips(scene, key, tex, direction, 'lie', AVATAR_ATLAS_ROW_LIE, 3, -1);
+      registerDirectionalClips(scene, key, tex, direction, 'phone', AVATAR_ATLAS_ROW_PHONE, 6, -1);
+      registerDirectionalClips(scene, key, tex, direction, 'lie', AVATAR_ATLAS_ROW_LIE, 3, -1, 1);
     } else {
       for (let col = 0; col < 3; col += 1) {
-        tex.add(base + col, 0, col * 16, base / 3 * 24, 16, 24);
+        tex.add(base + col, 0, col * 16, (base / 3) * 24, 16, 24);
       }
-    }
-    const animKey = key + ':walk-' + direction;
-    if (!scene.anims.exists(animKey)) {
-      scene.anims.create({
-        key: animKey,
-        frames: frames.map((frame) => ({ key, frame })),
-        frameRate: atlasCanvas ? 10 : 8,
-        repeat: -1,
-      });
-    }
-    if (!usingAtlasLayout) {
-      const sitAnimKey = key + ':sit-' + direction;
-      if (!scene.anims.exists(sitAnimKey)) {
+      if (!scene.anims.exists(`${key}:idle-${direction}`)) {
         scene.anims.create({
-          key: sitAnimKey,
+          key: `${key}:idle-${direction}`,
           frames: [{ key, frame: base }],
           frameRate: 4,
           repeat: -1,
         });
       }
-      const lieAnimKey = key + ':lie-' + direction;
-      if (!scene.anims.exists(lieAnimKey)) {
+      if (!scene.anims.exists(`${key}:sit-${direction}`)) {
         scene.anims.create({
-          key: lieAnimKey,
+          key: `${key}:sit-${direction}`,
+          frames: [{ key, frame: base }],
+          frameRate: 4,
+          repeat: -1,
+        });
+      }
+      if (!scene.anims.exists(`${key}:lie-${direction}`)) {
+        scene.anims.create({
+          key: `${key}:lie-${direction}`,
           frames: [{ key, frame: base }],
           frameRate: 3,
           repeat: -1,
         });
       }
     }
+
+    const walkAnimKey = `${key}:walk-${direction}`;
+    if (!scene.anims.exists(walkAnimKey)) {
+      scene.anims.create({
+        key: walkAnimKey,
+        frames: walkFrames.map((frame) => ({ key, frame })),
+        frameRate: atlasCanvas ? 8.5 : 8,
+        repeat: -1,
+      });
+    }
+
+    const runAnimKey = `${key}:run-${direction}`;
+    if (!scene.anims.exists(runAnimKey)) {
+      scene.anims.create({
+        key: runAnimKey,
+        frames: walkFrames.map((frame) => ({ key, frame })),
+        frameRate: atlasCanvas ? 13.5 : 12,
+        repeat: -1,
+      });
+    }
+  }
+
+  for (const facing8 of FACING8_VALUES) {
+    if (!facing8.includes('-')) continue;
+    const cardinal = cardinalFromFacing8(facing8);
+    for (const prefix of ['walk', 'run', 'idle', 'sit'] as const) {
+      const aliasKey = `${key}:${prefix}-${facing8}`;
+      const srcAnim = scene.anims.get(`${key}:${prefix}-${cardinal}`);
+      if (!scene.anims.exists(aliasKey) && srcAnim) {
+        scene.anims.create({
+          key: aliasKey,
+          frames: srcAnim.frames.map((f) => ({ key, frame: f.frame.name })),
+          frameRate: srcAnim.frameRate,
+          repeat: srcAnim.repeat,
+        });
+      }
+    }
   }
 
   if (procSheet && !usingAtlasLayout && !AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED) {
-    // Diagonal procedural rows removed — gameplay diagonals use donor PyDew cardinal clips.
+    // Diagonal alpha composites remain banned on the gameplay path.
   }
 
   return key;

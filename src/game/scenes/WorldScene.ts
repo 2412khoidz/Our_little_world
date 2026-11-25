@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
+import { avatarConfigsEqual, DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
 import { getCatalogItem } from '../../shared/catalog';
 import { getMapDefinition, getMapTilePixelSize } from '../../shared/maps';
 import { MapDebugOverlay } from '../dev/mapDebugOverlay';
@@ -65,7 +65,11 @@ import type {
   WorldMember,
 } from '../../shared/types';
 import { PetEntity } from '../entities/PetEntity';
-import { avatarIdleFrame, ensurePhaserAvatarTexture, isDonorPunyAvatarTexture, playDonorToolUseAnim } from '../art/phaserAvatarTexture';
+import {
+  avatarIdleFrame,
+  ensurePhaserAvatarTexture,
+  playDonorToolUseAnim,
+} from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
 import { USE_PRIVATE_ART } from '../art/atlasProfile';
 import { WORLD_ART_KEY, WORLD_PROPS_KEY, worldFurnitureFrame } from '../art/worldAtlas';
@@ -139,7 +143,7 @@ interface RemoteAvatarEntity {
   sessionId: string;
   mapId: MapId;
   sprite: Phaser.GameObjects.Sprite;
-  shadow: Phaser.GameObjects.Ellipse;
+  shadow: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Container;
   labelText: Phaser.GameObjects.Text;
   targetX: number;
@@ -148,7 +152,7 @@ interface RemoteAvatarEntity {
   facing8?: Facing8;
   anim: 'idle' | 'walk';
   posture: CouplePostureKind;
-  blanket?: Phaser.GameObjects.Rectangle;
+  blanket?: Phaser.GameObjects.Container;
   textureKey: string;
   avatarConfig: AvatarConfig;
   nickname: string;
@@ -174,15 +178,17 @@ export class WorldScene extends Phaser.Scene {
   private blockedGrid: Set<string> = new Set();
 
   private localSprite!: Phaser.GameObjects.Sprite;
-  private localShadow!: Phaser.GameObjects.Ellipse;
+  private localShadow!: Phaser.GameObjects.Image;
   private localLabel!: Phaser.GameObjects.Container;
   private localLabelText!: Phaser.GameObjects.Text;
   private localTextureKey = '';
   private localFacing: Direction = 'down';
   private localFacing8: Facing8 = 'down';
   private localPosture: CouplePostureKind = 'none';
-  private localBlanket: Phaser.GameObjects.Rectangle | null = null;
+  private localBlanket: Phaser.GameObjects.Container | null = null;
   private localRestAura: Phaser.GameObjects.Text | null = null;
+  private coupleAffectionIcon: Phaser.GameObjects.Text | null = null;
+  private lastRunDustAtMs = 0;
   private pathQueue: GridPoint[] = [];
   private tapMarker: Phaser.GameObjects.Graphics | null = null;
   private mailboxBadge: Phaser.GameObjects.Container | null = null;
@@ -222,6 +228,7 @@ export class WorldScene extends Phaser.Scene {
     D: Phaser.Input.Keyboard.Key;
     E: Phaser.Input.Keyboard.Key;
     SPACE: Phaser.Input.Keyboard.Key;
+    SHIFT: Phaser.Input.Keyboard.Key;
   };
   private joystickVector = { vx: 0, vy: 0 };
 
@@ -267,6 +274,7 @@ export class WorldScene extends Phaser.Scene {
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
         E: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
         SPACE: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
+        SHIFT: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
       };
     }
 
@@ -317,17 +325,52 @@ export class WorldScene extends Phaser.Scene {
     return { container, text };
   }
 
+  private avatarScale(): number {
+    return this.tilePx() >= 64 ? 2 : 1;
+  }
+
+  private nameTagOffsetY(posture: CouplePostureKind): number {
+    const base = posture === 'lie_bed' ? 21 : posture.startsWith('sit_') ? 25 : 28;
+    return Math.round(base * this.avatarScale());
+  }
+
+  private buildCozyQuilt(x: number, y: number, fillHex: number): Phaser.GameObjects.Container {
+    const s = this.avatarScale();
+    const quilt = this.add.rectangle(0, 0, 15, 9, fillHex, 0.96).setStrokeStyle(0.75, 0xfff8ef, 0.92);
+    const fold = this.add.rectangle(0, -3.5, 14.5, 2.2, 0xfff6eb, 0.95);
+    const seam = this.add.rectangle(0, 1.5, 13, 0.7, 0xffffff, 0.32);
+    const container = this.add.container(x, y, [quilt, fold, seam]);
+    container.setScale(s);
+    return container;
+  }
+
+  private spawnRunDust(x: number, y: number): void {
+    const s = this.avatarScale();
+    const puff = this.add.circle(x + (Math.random() - 0.5) * 4 * s, y - 1 * s, 1.5 * s, 0xf6ead7, 0.65);
+    puff.setDepth(y - 2);
+    this.tweens.add({
+      targets: puff,
+      y: puff.y - 4 * s,
+      alpha: 0,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 280,
+      ease: 'Sine.Out',
+      onComplete: () => puff.destroy(),
+    });
+  }
+
   private updateTagText(container: Phaser.GameObjects.Container, textObj: Phaser.GameObjects.Text, nextText: string, accentHex: string): void {
     if (textObj.text === nextText) return;
     textObj.setText(nextText);
     const bg = container.list[0] as Phaser.GameObjects.Graphics;
-    const w = Math.ceil(textObj.width + 6);
-    const h = 9;
+    const w = Math.ceil(textObj.width + 7);
+    const h = 9.5;
     bg.clear();
-    bg.fillStyle(0x281e24, 0.72);
-    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 2.5);
-    bg.lineStyle(0.75, Phaser.Display.Color.HexStringToColor(accentHex).color, 0.88);
-    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 2.5);
+    bg.fillStyle(0x261a20, 0.8);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 3);
+    bg.lineStyle(0.8, Phaser.Display.Color.HexStringToColor(accentHex).color, 0.92);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 3);
   }
 
   private createLocalAvatar(): void {
@@ -339,19 +382,17 @@ export class WorldScene extends Phaser.Scene {
     const def = getMapDefinition(this.currentMapId);
     const startX = (def.defaultSpawn.tileX + 0.5) * this.tilePx();
     const startY = (def.defaultSpawn.tileY + 1) * this.tilePx();
+    const s = this.avatarScale();
 
-    this.localShadow = this.add
-      .ellipse(startX, startY - 1, 11, 4.5, 0x22151c, 0.34)
-      .setDepth(startY - 1);
+    this.localShadow = placeSoftShadow(this, startX, startY - 1, 14 * s, 5 * s, startY - 1, 0.44);
     this.localSprite = this.add
       .sprite(startX, startY, this.localTextureKey, avatarIdleFrame(this.localTextureKey, this.localFacing))
-      .setOrigin(0.5, 1)
+      .setScale(s)
+      .setOrigin(0.5, 0.88)
       .setDepth(startY);
-    if (isDonorPunyAvatarTexture(this.localTextureKey)) {
-      this.localSprite.setScale(0.5);
-    }
 
-    const tag = this.buildNameTag(startX, startY - 25, nickname, '#8bc4d9');
+    const tag = this.buildNameTag(startX, startY - this.nameTagOffsetY('none'), nickname, '#8bc4d9');
+    tag.container.setScale(s);
     this.localLabel = tag.container;
     this.localLabelText = tag.text;
   }
@@ -365,7 +406,9 @@ export class WorldScene extends Phaser.Scene {
       this.localTextureKey,
       avatarIdleFrame(this.localTextureKey, this.localFacing),
     );
+    this.localSprite.setScale(this.avatarScale());
     this.updateTagText(this.localLabel, this.localLabelText, me.nickname, '#8bc4d9');
+    this.playLocalMoveAnim(this.localMoving, false);
   }
 
   private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
@@ -451,9 +494,20 @@ export class WorldScene extends Phaser.Scene {
     const partnerOffsetX = !spawnTile && me?.role === 'partner' && !def.isStaticBlocked(spawn.tileX + 1, spawn.tileY) ? 1 : 0;
     const px = (spawn.tileX + partnerOffsetX + 0.5) * this.tilePx();
     const py = (spawn.tileY + 0.85) * this.tilePx();
+    const s = this.avatarScale();
+    this.localSprite.setScale(s);
     this.localSprite.setPosition(px, py);
+    this.localShadow.setDisplaySize(14 * s, 5 * s);
     this.localShadow.setPosition(px, py - 1);
-    this.localLabel.setPosition(px, py - 25);
+    this.localLabel.setScale(s);
+    this.localLabel.setPosition(px, py - this.nameTagOffsetY('none'));
+    this.coupleAffectionIcon?.setVisible(false);
+    for (const remote of this.remoteEntities.values()) {
+      remote.sprite.setScale(s);
+      remote.shadow.setDisplaySize(14 * s, 5 * s);
+      remote.label.setScale(s);
+      remote.blanket?.setScale(s);
+    }
 
     this.rebuildFurnitureAndCollisions();
     this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
@@ -1244,18 +1298,18 @@ export class WorldScene extends Phaser.Scene {
           this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
           if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+            if (this.localSprite) {
               playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'hoe');
             }
           }
           if (highlightPlotId != null && highlightAction === 'water') {
             playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+            if (this.localSprite) {
               playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'water');
             }
           }
           if (highlightPlotId != null && highlightAction === 'harvest') {
-            if (this.localSprite && isDonorPunyAvatarTexture(this.localTextureKey)) {
+            if (this.localSprite) {
               playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'harvest');
             }
           }
@@ -1503,7 +1557,7 @@ export class WorldScene extends Phaser.Scene {
       cam.setZoom(fitWorldZoom(width, height, worldW, worldH));
       cam.centerOn(worldW / 2, worldH / 2);
     } else {
-      const zoom = computeGameplayZoom(width, height, worldW, worldH);
+      const zoom = computeGameplayZoom(width, height, worldW, worldH, this.tilePx());
       cam.setZoom(zoom);
       const largeWorld =
         this.currentMapId === 'outdoor' || isTiledWorldMapId(this.currentMapId);
@@ -1641,7 +1695,8 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    const speed = 78;
+    const running = Boolean(this.wasd?.SHIFT.isDown);
+    const speed = 78 * (running ? 1.45 : 1) * (this.tilePx() >= 64 ? 2.5 : 1);
     const manualMag = Math.hypot(vx, vy);
 
     if (manualMag > 0.15) {
@@ -1656,7 +1711,11 @@ export class WorldScene extends Phaser.Scene {
 
       this.localFacing = this.vectorToDirection(nx, ny);
       const moved = this.tryMovePixel(stepX, stepY);
-      this.playLocalMoveAnim(moved);
+      this.playLocalMoveAnim(moved, running);
+      if (moved && running && this.time.now - this.lastRunDustAtMs > 170) {
+        this.lastRunDustAtMs = this.time.now;
+        this.spawnRunDust(this.localSprite.x, this.localSprite.y);
+      }
       this.emitCurrentTile(false);
       return moved;
     }
@@ -1674,7 +1733,7 @@ export class WorldScene extends Phaser.Scene {
         this.pathQueue.shift();
         if (this.pathQueue.length === 0) {
           this.tapMarker?.clear();
-          this.playLocalMoveAnim(false);
+          this.playLocalMoveAnim(false, false);
           this.emitCurrentTile(false);
           return false;
         }
@@ -1685,13 +1744,13 @@ export class WorldScene extends Phaser.Scene {
         this.localSprite.x += mx;
         this.localSprite.y += my;
         this.localFacing = this.vectorToDirection(dx, dy);
-        this.playLocalMoveAnim(true);
+        this.playLocalMoveAnim(true, running);
         this.emitCurrentTile(false);
         return true;
       }
     }
 
-    this.playLocalMoveAnim(false);
+    this.playLocalMoveAnim(false, false);
     return false;
   }
 
@@ -1732,17 +1791,33 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
-  private playLocalMoveAnim(moving: boolean): void {
-    this.localShadow.setPosition(this.localSprite.x, this.localSprite.y - 1);
-    this.localSprite.setDepth(this.localSprite.y);
+  private playLocalMoveAnim(moving: boolean, running = false): void {
+    const s = this.avatarScale();
+    const activePosture: CouplePostureKind = moving ? 'none' : this.localPosture;
+    const isLying = activePosture === 'lie_bed';
+    const isSitting = activePosture.startsWith('sit_');
+    const depthBoost = activePosture === 'lie_bed' ? 24 : activePosture === 'sit_sofa' ? 14 : 0;
+    this.localShadow.setPosition(this.localSprite.x, this.localSprite.y - 1 * s);
+    this.localShadow.setDisplaySize((isSitting ? 12 : 14) * s, 5 * s);
+    this.localShadow.setVisible(!isLying);
+    this.localSprite.setDepth(this.localSprite.y + depthBoost);
     this.localShadow.setDepth(this.localSprite.y - 1);
-    this.localLabel.setPosition(this.localSprite.x, this.localSprite.y - 25);
+    this.localLabel.setPosition(this.localSprite.x, this.localSprite.y - this.nameTagOffsetY(activePosture));
     this.game.canvas.dataset.localPosture = this.localPosture;
 
     if (moving) {
       if (this.localBlanket) this.localBlanket.setVisible(false);
       this.syncLocalRestAura(false);
-      playAvatarPostureAnim(this, this.localSprite, this.localTextureKey, 'none', this.localFacing8, true);
+      this.coupleAffectionIcon?.setVisible(false);
+      playAvatarPostureAnim(
+        this,
+        this.localSprite,
+        this.localTextureKey,
+        'none',
+        this.localFacing8,
+        true,
+        running,
+      );
       return;
     }
 
@@ -1753,17 +1828,17 @@ export class WorldScene extends Phaser.Scene {
       this.localPosture,
       this.localFacing8,
       false,
+      false,
     );
 
     if (this.localPosture === 'lie_bed') {
       if (!this.localBlanket) {
-        this.localBlanket = this.add
-          .rectangle(this.localSprite.x, this.localSprite.y - 4, 15, 9, 0xf2b7c6, 0.94)
-          .setStrokeStyle(0.75, 0xfff8ef, 0.9);
+        this.localBlanket = this.buildCozyQuilt(this.localSprite.x, this.localSprite.y - 5 * s, 0xf2b7c6);
       }
       this.localBlanket
-        .setPosition(this.localSprite.x, this.localSprite.y - 5)
-        .setDepth(this.localSprite.y + 2)
+        .setPosition(this.localSprite.x, this.localSprite.y - 4 * s)
+        .setDepth(this.localSprite.y + 26)
+        .setScale(s)
         .setVisible(true);
       this.syncLocalRestAura(true, 'zzz…');
     } else {
@@ -1775,9 +1850,51 @@ export class WorldScene extends Phaser.Scene {
       this.syncLocalRestAura(resting, resting ? '♨' : null);
     }
 
+    this.syncCoupleAffectionVisual();
+
     if (this.localPosture === 'none') {
       resetAvatarSpriteOrigin(this.localSprite);
     }
+  }
+
+  private syncCoupleAffectionVisual(): void {
+    const partner = Array.from(this.remoteEntities.values()).find(
+      (e) => e.mapId === this.currentMapId,
+    );
+    const sameRoomSitting =
+      partner &&
+      (this.localPosture === 'sit_sofa' || this.localPosture === 'sit_bench') &&
+      partner.posture === this.localPosture;
+    const activeAffection =
+      partner &&
+      (this.localPosture === 'hug' ||
+        this.localPosture === 'hold_hands' ||
+        sameRoomSitting);
+
+    if (!activeAffection || !partner) {
+      this.coupleAffectionIcon?.setVisible(false);
+      return;
+    }
+
+    const icon =
+      this.localPosture === 'hug'
+        ? '💕'
+        : this.localPosture === 'hold_hands'
+          ? '💛'
+          : '♥';
+    const midX = (this.localSprite.x + partner.sprite.x) / 2;
+    const midY = Math.min(this.localSprite.y, partner.sprite.y) - 36 * this.avatarScale();
+    if (!this.coupleAffectionIcon) {
+      this.coupleAffectionIcon = this.add
+        .text(midX, midY, icon, { fontSize: '9px', color: '#ff8da6', resolution: 4 })
+        .setOrigin(0.5, 1)
+        .setDepth(12_050);
+    }
+    this.coupleAffectionIcon
+      .setText(icon)
+      .setPosition(midX, midY + Math.sin(this.time.now / 260) * 1.5)
+      .setScale(this.avatarScale())
+      .setVisible(true);
   }
 
   private syncLocalRestAura(visible: boolean, label: string | null = '♨'): void {
@@ -1789,19 +1906,22 @@ export class WorldScene extends Phaser.Scene {
       this.localRestAura = this.add
         .text(0, 0, label, {
           fontFamily: 'system-ui, sans-serif',
-          fontSize: '11px',
+          fontSize: '7px',
           fontStyle: 'bold',
           color: '#ffe8c7',
-          backgroundColor: '#2a2026cc',
-          padding: { x: 5, y: 2 },
+          backgroundColor: '#261a20cc',
+          padding: { x: 3, y: 1 },
+          resolution: 4,
         })
         .setOrigin(0.5, 1)
         .setDepth(12_000);
     }
+    const s = this.avatarScale();
     this.localRestAura
       .setText(label)
-      .setPosition(this.localSprite.x, this.localSprite.y - 34)
-      .setDepth(this.localSprite.y + 12)
+      .setScale(s)
+      .setPosition(this.localSprite.x, this.localSprite.y - 34 * s)
+      .setDepth(this.localSprite.y + 30)
       .setVisible(true);
   }
 
@@ -2114,16 +2234,16 @@ export class WorldScene extends Phaser.Scene {
     const footY = (item.tileY + item.heightTiles) * this.tilePx();
     const slot0 =
       kind === 'bed_lie'
-        ? { x: centerX - 6, y: (item.tileY + 1.35) * this.tilePx() }
+        ? { x: centerX - 7, y: (item.tileY + 1.38) * this.tilePx() }
         : kind === 'bench_sit'
-          ? { x: centerX - 6, y: footY + 2 }
-          : { x: centerX - 8, y: footY - 2 };
+          ? { x: centerX - 8, y: footY + 2 }
+          : { x: centerX - 9, y: footY - 1 };
     const slot1 =
       kind === 'bed_lie'
-        ? { x: centerX + 6, y: slot0.y }
+        ? { x: centerX + 7, y: slot0.y }
         : kind === 'bench_sit'
-          ? { x: centerX + 6, y: footY + 2 }
-          : { x: centerX + 8, y: footY - 2 };
+          ? { x: centerX + 8, y: footY + 2 }
+          : { x: centerX + 9, y: footY - 1 };
 
     const occupiedSlots: number[] = [];
     for (const remote of this.remoteEntities.values()) {
@@ -2190,15 +2310,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private syncRemoteBlanket(entity: RemoteAvatarEntity): void {
+    const s = this.avatarScale();
     if (entity.posture === 'lie_bed' && entity.mapId === this.currentMapId) {
       if (!entity.blanket) {
-        entity.blanket = this.add
-          .rectangle(entity.sprite.x, entity.sprite.y - 4, 13, 8, 0xb8d9ee, 0.94)
-          .setStrokeStyle(0.75, 0xfff8ef, 0.9);
+        entity.blanket = this.buildCozyQuilt(entity.sprite.x, entity.sprite.y - 5 * s, 0xb8d9ee);
       }
       entity.blanket
-        .setPosition(entity.sprite.x, entity.sprite.y - 4)
-        .setDepth(entity.sprite.y + 2)
+        .setPosition(entity.sprite.x, entity.sprite.y - 4 * s)
+        .setDepth(entity.sprite.y + 26)
+        .setScale(s)
         .setVisible(true);
     } else if (entity.blanket) {
       entity.blanket.setVisible(false);
@@ -2266,12 +2386,14 @@ export class WorldScene extends Phaser.Scene {
       if (!existing) {
         const texKey = ensurePhaserAvatarTexture(this, avatarConfig);
         const { x: px, y: py } = position;
-        const shadow = this.add.ellipse(px, py - 1, 11, 4.5, 0x22151c, 0.32);
+        const s = this.avatarScale();
+        const shadow = placeSoftShadow(this, px, py - 1 * s, 14 * s, 5 * s, py - 1, 0.42);
         const sprite = this.add
           .sprite(px, py, texKey, avatarIdleFrame(texKey, position.facing))
-          .setScale(isDonorPunyAvatarTexture(texKey) ? 0.5 : 1)
-          .setOrigin(0.5, 1);
-        const tag = this.buildNameTag(px, py - 25, nickname, '#f2a2ba');
+          .setScale(s)
+          .setOrigin(0.5, 0.88);
+        const tag = this.buildNameTag(px, py - this.nameTagOffsetY('none'), nickname, '#f2a2ba');
+        tag.container.setScale(s);
 
         this.remoteEntities.set(p.userId, {
           userId: p.userId,
@@ -2295,6 +2417,13 @@ export class WorldScene extends Phaser.Scene {
           existing.sessionId = p.sessionId;
           this.setRemoteTarget(existing, position, true);
         }
+        if (!avatarConfigsEqual(existing.avatarConfig, avatarConfig)) {
+          existing.avatarConfig = avatarConfig;
+          existing.textureKey = ensurePhaserAvatarTexture(this, avatarConfig);
+          existing.sprite.stop();
+          existing.sprite.setTexture(existing.textureKey, avatarIdleFrame(existing.textureKey, existing.facing));
+        }
+        existing.sprite.setScale(this.avatarScale());
         existing.nickname = nickname;
         this.updateTagText(existing.label, existing.labelText, nickname, '#f2a2ba');
       }
@@ -2314,6 +2443,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private syncRemoteAppearancesFromMembers(): void {
+    const s = this.avatarScale();
     for (const entity of this.remoteEntities.values()) {
       const member = this.members.find((m) => m.userId === entity.userId);
       if (!member) continue;
@@ -2322,6 +2452,15 @@ export class WorldScene extends Phaser.Scene {
       entity.textureKey = ensurePhaserAvatarTexture(this, member.avatarConfig);
       entity.sprite.stop();
       entity.sprite.setTexture(entity.textureKey, avatarIdleFrame(entity.textureKey, entity.facing));
+      entity.sprite.setScale(s);
+      playAvatarPostureAnim(
+        this,
+        entity.sprite,
+        entity.textureKey,
+        entity.posture,
+        entity.facing8 ?? entity.facing,
+        entity.anim === 'walk',
+      );
       this.updateTagText(entity.label, entity.labelText, member.nickname, '#f2a2ba');
     }
     if (this.latestPresences.length > 0) {
@@ -2360,9 +2499,10 @@ export class WorldScene extends Phaser.Scene {
       entity.blanket?.setVisible(false);
     }
     if (snap) {
+      const s = this.avatarScale();
       entity.sprite.setPosition(position.x, position.y);
-      entity.shadow.setPosition(position.x, position.y - 1);
-      entity.label.setPosition(position.x, position.y - 25);
+      entity.shadow.setPosition(position.x, position.y - 1 * s);
+      entity.label.setPosition(position.x, position.y - this.nameTagOffsetY('none'));
     }
   }
 
@@ -2370,7 +2510,7 @@ export class WorldScene extends Phaser.Scene {
     for (const entity of this.remoteEntities.values()) {
       const sameRoom = entity.mapId === this.currentMapId;
       entity.sprite.setVisible(sameRoom);
-      entity.shadow.setVisible(sameRoom);
+      entity.shadow.setVisible(sameRoom && entity.posture !== 'lie_bed');
       entity.label.setVisible(sameRoom);
       this.syncRemoteBlanket(entity);
     }
@@ -2378,6 +2518,7 @@ export class WorldScene extends Phaser.Scene {
 
   private updateRemoteEntities(deltaMs: number): void {
     const now = Date.now();
+    const s = this.avatarScale();
     for (const entity of this.remoteEntities.values()) {
       if (entity.mapId !== this.currentMapId) continue;
 
@@ -2387,12 +2528,6 @@ export class WorldScene extends Phaser.Scene {
         deltaMs,
       );
       const moving = Math.hypot(next.x - entity.sprite.x, next.y - entity.sprite.y) > 0.05;
-
-      entity.sprite.setPosition(next.x, next.y);
-      entity.sprite.setDepth(next.y);
-      entity.shadow.setPosition(next.x, next.y - 1);
-      entity.shadow.setDepth(next.y - 1);
-      entity.label.setPosition(next.x, next.y - 25);
       if (moving) {
         entity.posture = 'none';
         entity.blanket?.setVisible(false);
@@ -2404,11 +2539,20 @@ export class WorldScene extends Phaser.Scene {
         entity.posture = 'none';
         entity.blanket?.setVisible(false);
       }
+      const activePosture: CouplePostureKind = remoteMoving ? 'none' : entity.posture;
+      const depthBoost = activePosture === 'lie_bed' ? 24 : activePosture === 'sit_sofa' ? 14 : 0;
+      entity.sprite.setPosition(next.x, next.y);
+      entity.sprite.setDepth(next.y + depthBoost);
+      entity.shadow.setPosition(next.x, next.y - 1 * s);
+      entity.shadow.setDepth(next.y - 1);
+      entity.shadow.setDisplaySize((activePosture.startsWith('sit_') ? 12 : 14) * s, 5 * s);
+      entity.shadow.setVisible(activePosture !== 'lie_bed');
+      entity.label.setPosition(next.x, next.y - this.nameTagOffsetY(activePosture));
       playAvatarPostureAnim(
         this,
         entity.sprite,
         entity.textureKey,
-        remoteMoving ? 'none' : entity.posture,
+        activePosture,
         entity.facing8 ?? entity.facing,
         remoteMoving,
       );
@@ -2418,6 +2562,7 @@ export class WorldScene extends Phaser.Scene {
         entity.blanket.setVisible(false);
       }
     }
+    this.syncCoupleAffectionVisual();
   }
 
   private syncHomeBowlPresentation(): void {
@@ -2429,7 +2574,6 @@ export class WorldScene extends Phaser.Scene {
   private syncHeldItemPresentation(timeMs: number): void {
     if (!this.heldRenderer || !this.localSprite) return;
     if (
-      isDonorPunyAvatarTexture(this.localTextureKey) &&
       this.heldItem.itemKind === 'tool' &&
       this.heldItem.temporaryActionState !== 'none' &&
       this.heldItem.temporaryActionState !== this.lastHeldToolAction
@@ -2445,6 +2589,7 @@ export class WorldScene extends Phaser.Scene {
       this.localMoving,
       this.heldItem,
       timeMs,
+      this.avatarScale(),
     );
   }
 
@@ -2500,6 +2645,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.coupleAffectionIcon?.destroy();
+    this.coupleAffectionIcon = null;
     this.mapDebugOverlay?.destroy();
     this.mapDebugOverlay = null;
     this.worldLighting?.destroy();

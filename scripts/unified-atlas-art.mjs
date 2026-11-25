@@ -191,7 +191,7 @@ const avatarColors = {
 };
 
 export const rigLayout = { frameWidth: 16, frameHeight: 32, frameCount: 6, directions: ['right', 'up', 'left', 'down'] };
-export const AVATAR_ATLAS_ROW_COUNT = 3;
+export const AVATAR_ATLAS_ROW_COUNT = 4;
 export { avatarColors };
 
 const DIAGONAL_PRIMARY = {
@@ -212,15 +212,17 @@ function paintAvatarFrame(c, ox, oy, hairStyle, direction, rowKind, frame, legBi
   const p = avatarColors;
   const isSit = rowKind === 2;
   const isWalk = rowKind === 1;
+  const isPhone = rowKind === 3;
   const step = isWalk ? [0, 1, 1, 0, -1, -1][frame] + legBias : legBias;
-  const bob = (isWalk && frame % 3 !== 0 ? -1 : 0) + (isSit ? 2 : 0);
+  const bob = (isWalk && frame % 3 !== 0 ? -1 : 0) + (isSit ? 3 : 0) + (rowKind === 0 && frame >= 3 ? 1 : 0);
   const r = (dx, dy, w, h, color) => c.rect(ox + dx, oy + dy, w, h, color);
   const side = direction === 'left' || direction === 'right';
   const right = direction === 'right';
   const back = direction === 'up';
   if (isSit) {
-    r(4, 27, 4, 3, p.outline);
-    r(8, 27, 4, 3, p.outline);
+    // Cozy seated legs tucked forward/down
+    r(4, 27, 4, 4, p.outline);
+    r(8, 27, 4, 4, p.outline);
     r(5, 28, 2, 2, '#786679');
     r(9, 28, 2, 2, '#6b596a');
   } else if (side) {
@@ -237,10 +239,17 @@ function paintAvatarFrame(c, ox, oy, hairStyle, direction, rowKind, frame, legBi
   r(5, 25 + bob, 6, 2, p.shirtShadow);
   r(6, 21 + bob, 4, 1, p.shirtLight);
   if (!side) {
-    r(3, 21 + bob + Math.max(step, 0), 2, 4, p.shirtShadow);
-    r(11, 21 + bob + Math.max(-step, 0), 2, 4, p.shirtShadow);
-    r(3, 24 + bob + Math.max(step, 0), 2, 2, p.skin);
-    r(11, 24 + bob + Math.max(-step, 0), 2, 2, p.skinShadow);
+    if (isPhone && !back) {
+      r(3, 21 + bob, 2, 4, p.shirtShadow);
+      r(11, 21 + bob, 2, 4, p.shirtShadow);
+      r(6, 22 + bob, 4, 3, '#cbe7f5');
+      r(7, 23 + bob, 2, 2, '#8bc4d9');
+    } else {
+      r(3, 21 + bob + Math.max(step, 0), 2, 4, p.shirtShadow);
+      r(11, 21 + bob + Math.max(-step, 0), 2, 4, p.shirtShadow);
+      r(3, 24 + bob + Math.max(step, 0), 2, 2, p.skin);
+      r(11, 24 + bob + Math.max(-step, 0), 2, 2, p.skinShadow);
+    }
   } else {
     r(7 + step, 22 + bob, 2, 4, p.shirtShadow);
     r(7 + step, 25 + bob, 2, 1, p.skin);
@@ -299,7 +308,7 @@ function paintLieFrame(c, ox, oy, hairStyle, direction, frame) {
 
 export function makeRig(hairStyle) {
   const c = new PixelCanvas(384, rigLayout.frameHeight * AVATAR_ATLAS_ROW_COUNT);
-  for (let row = 0; row < 3; row += 1) {
+  for (let row = 0; row < AVATAR_ATLAS_ROW_COUNT; row += 1) {
     for (const [index, direction] of rigLayout.directions.entries()) {
       for (let frame = 0; frame < rigLayout.frameCount; frame += 1) {
         paintAvatarFrame(
