@@ -13,6 +13,7 @@
 | **P3** | Anchors trung thực (mailbox, picnic, fishing/market/farm preview) — **không** fake RPC farming/pet | **Done** |
 | **P4** | `MAP_IDS` + realtime `outdoor`; presence normalize `meadow`; pet vẫn home-only | **Done** |
 | **P5** | E2E navigation; Vitest contract; sandbox route giữ nguyên | **Partial** (sandbox chưa redirect) |
+| **P6** | Tilemap zones (village/farm/forest/beach/shop), farm contract 1.0.1, Stardew pass slice | **In progress** @ PR #12 — [capture checklist](./WORLD_EXPLORATION_CAPTURE_CHECKLIST.md) |
 
 **HEAD đã kiểm tra (agent):** commit trên branch sau push lần này — xem `git log -1` trên PR #12.
 

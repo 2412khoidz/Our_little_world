@@ -3,6 +3,7 @@ import {
   buildFarmPlotContractExport,
   enumerateFarmPlotAnchors,
   FARM_PLOT_CONTRACT_VERSION,
+  isFarmSoilTile,
   FARM_PLOT_MIN_WALKABLE_TILES,
   FARM_PLOT_REGIONS,
   FARM_WORLD_INTERACTABLES,
@@ -43,6 +44,16 @@ describe('farmPlotContract', () => {
       if (!isTileBlockedFromParsed(parsed, a.tileX, a.tileY)) walkable += 1;
     }
     expect(walkable).toBeGreaterThanOrEqual(FARM_PLOT_MIN_WALKABLE_TILES);
+  });
+
+  it('farm_annex: all 64 contract anchors walkable on Tiled collision', () => {
+    const parsed = getParsedTiledWorld('farm')!;
+    const annex = enumerateFarmPlotAnchors().filter((a) => a.regionId === 'farm_annex');
+    expect(annex.length).toBe(64);
+    for (const a of annex) {
+      expect(isFarmSoilTile(a.tileX, a.tileY)).toBe(true);
+      expect(isTileBlockedFromParsed(parsed, a.tileX, a.tileY)).toBe(false);
+    }
   });
 
   it('village shop portal exists for shop door routing', () => {
