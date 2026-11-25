@@ -1,4 +1,5 @@
--- Mission 04C: authoritative hand-feed in pet care (inventory debit + vitals), PR #10 family.
+-- Mission 04C / Foundation #10: authoritative hand-feed in pet care (inventory debit + vitals).
+-- Canonical RPC `pet_consume_hand_food` — identical on PR #10 and PR #13; dedupe one file on integration merge.
 CREATE OR REPLACE FUNCTION public.pet_consume_hand_food(
   p_world_id uuid,
   p_pet_id uuid,

@@ -64,8 +64,10 @@ export async function consumeHandFoodInCare(
   const message =
     res.code === 'INSUFFICIENT_ITEMS'
       ? 'Trong túi không đủ món để cho bé.'
-      : res.code === 'COOLDOWN_ACTIVE'
-        ? 'Bé vừa ăn — chờ một chút nhé.'
-        : res.message;
+      : res.code === 'PET_FULL'
+        ? 'Bé no rồi — để dành món sau nhé.'
+        : res.code === 'COOLDOWN_ACTIVE'
+          ? 'Bé vừa ăn — chờ một chút nhé.'
+          : res.message;
   return { status: 'error', message, code: res.code };
 }

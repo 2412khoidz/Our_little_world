@@ -64,6 +64,7 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ],
     ['BOWL_FULL', 'BOWL_FULL', 'Bát đã đầy rồi nhé.'],
     ['BOWL_EMPTY', 'BOWL_EMPTY', 'Bát đang trống.'],
+    ['PET_FULL', 'PET_FULL', 'Bé no rồi — để dành món sau nhé.'],
   ];
 
   for (const [token, code, message] of map) {
