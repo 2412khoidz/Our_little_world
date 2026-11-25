@@ -131,3 +131,7 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 ## 10. Mission 02 — SQL foundation đang review
 
 Đã đối chiếu lịch sử theo xác nhận chủ dự án và gỡ version migration trùng. Catalog/quality, RPC bát ăn nước và các vector integer có bản chuẩn bị trong nhánh mission. PostgreSQL fixture fresh/upgrade và các regression local pass. Parity giá/bão hòa, quality gift, authority không gian, gameplay có thưởng và Supabase Test còn chờ. [Checkpoint và API](research/MISSION_02_CHECKPOINT.md)
+
+## 11. Mission 02.5 — nhánh tích hợp thử
+
+Đã review snapshot PR #4 `700d1af` và thử tích hợp riêng: 474 Vitest, Playwright 19 pass / 1 skip, PostgreSQL fixture fresh/upgrade và public/private guards pass. Đã thêm bản sửa thử cho identity/quality hotbar, concurrent input và Escape. Luồng `pet_interact('feed')` cũ vẫn vượt qua gate physical care; catalog, quality gift/transfer và server authority chưa hoàn tất. Chưa đủ điều kiện merge hoặc deploy; Supabase thật và iPhone thật chưa được kiểm. [Bàn giao Mission 04](research/MISSION_04_TECHNICAL_HANDOVER.md)
