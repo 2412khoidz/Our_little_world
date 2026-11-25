@@ -52,3 +52,4 @@ Thumbs.db
 
 # Local art direction evaluation candidates (never commit or bundle into production)
 asset-candidates/
+.tmp-demo-e-minimal-pack/

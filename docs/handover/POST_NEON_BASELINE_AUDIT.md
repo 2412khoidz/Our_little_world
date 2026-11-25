@@ -27,8 +27,10 @@ npm run lint          → exit 0
 npm run typecheck     → exit 0 (tsc -b)
 npm test              → 46 files, 453/453 pass
 npm run build         → exit 0
-verify-prod-guard.mjs → PASSED (0 dev leaks)
+node scripts/verify-prod-guard.mjs → PASSED (chỉ dist/ public; không quét dist-private)
 npm run build:private → exit 1 (thiếu private-unified atlas)
+npm run verify:private → chưa chạy (cần build:private thành công trước)
+npm run assets:check-demo-e → exit 1 (0/40 nguồn trên cloud)
 PLAYWRIGHT_PORT=4176 npx playwright test → 15 passed, 1 skipped (~2.1 min)
 ```
 
@@ -39,7 +41,7 @@ PLAYWRIGHT_PORT=4176 npx playwright test → 15 passed, 1 skipped (~2.1 min)
 | `build:private` fail | **Thiếu asset** | `asset-candidates/extracted/` không có trên git/cloud |
 | Playwright lần đầu fail | **Lỗi môi trường** | Chưa `npx playwright install chromium` — đã khắc phục |
 | `assets:atlas:private` ENOENT python | **Lỗi môi trường** | Linux không có `python` — sửa `OLW_PYTHON`/`python3` trong handover |
-| Atlas public ~84 KiB vs Demo E đầy đủ | **Thiếu asset** | Game chính dùng CC0 unified; chất lượng thấp hơn sandbox khi không bật private art |
+| Atlas public ~84 KiB vs Demo E đầy đủ | **Thiếu asset** | Unified public = CC0 procedural + CC BY 4.0 pet; chất lượng thấp hơn private Demo E |
 
 ## 3. Kiểm tra runtime (Playwright + artifact)
 
@@ -56,12 +58,15 @@ PLAYWRIGHT_PORT=4176 npx playwright test → 15 passed, 1 skipped (~2.1 min)
 | `/?pet-lab=1` | ✓ | 8 needs / scenarios |
 | `/?world-sandbox=1` | ✓ | Expansion map |
 | `/?ui-sandbox=1` | ✓ | Cottage + Storybook |
-| `/minigames.html` | Không trong suite E2E chính | Entry `minigamesDemo.tsx`; art pass screenshots trong `test-results/art-pass/after/` (từ Neon local) |
+| `/minigames.html` | ✓ (nested) | Trong `grand-experience-sandboxes.spec.ts` test GIF desktop — xem bảng dưới |
 
-### Mini-games
+### Mini-games — mức kiểm thử
 
-- Reducer/rule: `src/shared/minigames/` — **453 unit tests** bao gồm `minigames.test.ts`, `minigamePrivacy.test.ts`.
-- UI tabletop CSS: `minigames.css` — dùng qua `minigames.html` (dev), **chưa** trong menu `App.tsx` chính (đúng `DEEPSEEK_NIGHT_CHECKPOINT.md`).
+| Mức | Phạm vi | Trạng thái Cloud |
+|---|---|---|
+| **UI smoke (art/tabletop)** | `grand-experience` mở `/minigames.html`, click vài ô Caro, chụp 4 tab (Caro/Othello/Memory/Battleship) | ✓ E2E desktop (nested trong GIF test) |
+| **Functional (rules)** | Vitest `minigames.test.ts`, `minigamePrivacy.test.ts` | ✓ 453 suite |
+| **Multiplayer E2E** | Hai client Dev LAN, session sync qua backend | **Chưa có** — UI qua `minigames.html` dev only, **chưa** menu `App.tsx` |
 
 ### Bằng chứng hình ảnh (Cloud run)
 

@@ -48,7 +48,7 @@ npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 
 ### Có sẵn trong Git (đủ chạy game chính + E2E public atlas)
 
-- `public/assets/unified/` — world.png (~13 KiB), world-props.png (~9.5 KiB), avatars.png, manifest, props-manifest (CC0 / starter procedural).
+- `public/assets/unified/` — world.png (~13 KiB), world-props.png (~9.5 KiB), avatars.png, manifest, props-manifest (**CC0 procedural + CC BY 4.0 Frakassets pet frames** — xem `CREDITS.md`).
 - `public/assets/maps/garden.json`, `home.json` — Tiled maps V0.1.
 - `public/assets/starter/` — fallback procedural.
 
@@ -65,6 +65,9 @@ npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 | `npm run assets:atlas` | Chạy được nếu thiếu pack (fallback starter) | Atlas public nhỏ |
 | `npm run assets:atlas:private` | **Fail** — thiếu `asset-candidates/extracted/...` | Cần nguồn local; xem [MISSING_ASSETS_MANIFEST.md](./MISSING_ASSETS_MANIFEST.md) |
 | `npm run build:private` | **Fail** cùng lý do | Vite: `Thiếu atlas riêng. Chạy npm run assets:atlas:private trước.` |
+| `node scripts/verify-prod-guard.mjs` | Sau **`npm run build` only** | Quét **`dist/`** — không được có `private-unified` |
+| `npm run verify:private` | Sau **`npm run build:private` only** | Quét **`dist-private/`** — phải có atlas private |
+| `npm run assets:check-demo-e` | Exit 1 trên cloud | 40 file bắt buộc — xem manifest |
 
 ### Biến môi trường tùy chọn
 
@@ -74,7 +77,9 @@ npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
 
 ## 4. Thay đổi repo trong handover (không đụng gameplay)
 
-- `scripts/build-unified-atlas.mjs`: gọi `python3` mặc định trên Unix + hỗ trợ `OLW_PYTHON` (tránh lỗi `spawnSync python ENOENT` trên Linux cloud).
+- `scripts/resolve-python.mjs` + E2E GIF: `python3` / `OLW_PYTHON`, `execFileSync` (Windows + Linux).
+- `scripts/verify-private-build.mjs`: guard tách biệt cho `dist-private/` (không làm yếu `verify-prod-guard.mjs`).
+- `scripts/check-demo-e-sources.mjs` + `pack-demo-e-minimal.mjs`: đóng gói tối thiểu 40 file Demo E.
 
 ## 5. Không làm trên Cloud (theo mission)
 

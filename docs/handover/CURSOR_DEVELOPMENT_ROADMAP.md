@@ -12,9 +12,10 @@ Mục tiêu dài hạn: cozy game đồng nhất **một** shell gameplay (khôn
 
 | Deliverable | Acceptance criteria | Phụ thuộc |
 |---|---|---|
-| Restore `asset-candidates/` trên agent | `npm run assets:atlas:private` exit 0 | tarball từ chủ dự án |
-| `public/assets/private-unified/` | `npm run build:private` exit 0; guard pass | M0 atlas |
-| Document `OLW_PYTHON` / Pillow / Playwright trong `environment.json` | Build cloud xanh full matrix | — |
+| Tarball tối thiểu 40 file Demo E | `npm run assets:check-demo-e` exit 0 | `assets:pack-demo-e-minimal` trên máy chủ |
+| Private atlas + build | `assets:atlas:private` + `build:private` exit 0 | Nguồn extract |
+| **Hai guard tách biệt** | `verify-prod-guard.mjs` → `dist/` không có private; `verify:private` → `dist-private/` có atlas | Scripts handover |
+| `OLW_PYTHON` / Pillow / Playwright | Lint/test/build public + Playwright xanh | Cloud env |
 
 ---
 
@@ -26,7 +27,7 @@ Mục tiêu dài hạn: cozy game đồng nhất **một** shell gameplay (khôn
 |---|---|---|
 | Cắt 16 `path_dirt_*` + `grass_edge_*` vào `props-manifest.json` | Tilemap 64/96 vẽ đường mượt, không rectangle debug | M0, `OLW-010-01` backlog |
 | Gộp renderer: `WorldScene` dùng cùng prop/shadow/ambient helpers như Expansion | Screenshot diff giảm; E2E `v01` vẫn 8/8 | M0 |
-| Chọn profile art: public CC0 vs private dev | PD-01 ghi trong `DECISIONS.md` | Chủ dự án |
+| Chọn profile art: public (CC0+CC BY) vs private dev | PD-01 ghi trong `DECISIONS.md` | Chủ dự án |
 
 *Không* bật sandbox vào production bằng cách gỡ dev guard.
 

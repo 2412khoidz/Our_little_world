@@ -32,7 +32,7 @@ Phân loại theo mission: **(1)** tích hợp game chính · **(2)** sandbox/de
 | Pet intelligence lab | `/?pet-lab=1` | Dùng adapter fixture |
 | UI design variants | `/?ui-sandbox=1` | Cottage vs Storybook |
 | V0.3 prototype modals (local) | Menu → dev `v03_proto` | Không fake currency/cloud |
-| Mini-game UI (4 trò) | `/minigames.html` | Reducer shared, không menu chính |
+| Mini-game UI (4 trò) | `/minigames.html` | E2E **UI smoke** trong `grand-experience-sandboxes` (GIF test); chưa multiplayer E2E |
 | Art demos A–E | Dev routes / `artDemos` | Không production |
 
 ## 3. Đã có logic nhưng chưa nối UI / gameplay chính
@@ -80,6 +80,6 @@ Phân loại theo mission: **(1)** tích hợp game chính · **(2)** sandbox/de
 | **Pet intelligence** | Needs/backend đơn giản | ✓ pet-lab | Fixture + DeepSeek primitives tách rời |
 | **Physical interactions** | Không | ✓ experience-demo | ✓ resolver |
 | **Couple activities** | ✓ | ✓ combined | ✓ |
-| **Mini-games** | Không menu | `minigames.html` | ✓ reducers |
+| **Mini-games** | Không menu | `minigames.html` (smoke E2E) | ✓ reducers; ✗ PvP E2E |
 | **Multiplayer** | ✓ Dev LAN; Supabase khi `.env` | ✓ | — |
 | **Persistence** | ✓ Dev LAN file / Supabase schema sẵn | Local sandbox state | Migrations chưa apply cloud |

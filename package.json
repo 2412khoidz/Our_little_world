@@ -19,6 +19,9 @@
     "assets:atlas": "node scripts/build-unified-atlas.mjs",
     "assets:atlas:private": "node scripts/build-unified-atlas.mjs --private",
     "build:private": "tsc -b && vite build --mode private-art --outDir dist-private",
+    "verify:private": "node scripts/verify-private-build.mjs",
+    "assets:check-demo-e": "node scripts/check-demo-e-sources.mjs",
+    "assets:pack-demo-e-minimal": "node scripts/pack-demo-e-minimal.mjs",
     "preview:private": "vite preview --outDir dist-private --host 127.0.0.1 --port 4174 --strictPort",
     "assets:import": "node scripts/import-external-assets.mjs",
     "spike:video": "node scripts/generate-spike-video.mjs"

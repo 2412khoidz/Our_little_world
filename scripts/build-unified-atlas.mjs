@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { pythonArgv } from './resolve-python.mjs';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -319,8 +320,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     });
     const { SEMANTIC_ASSETS } = await import('data:text/javascript;base64,' + Buffer.from(outputText).toString('base64'));
     const paths = JSON.parse(fs.readFileSync(path.join(root, 'scripts/atlas-sources/demo-e-textures.json'), 'utf8'));
-    const pythonCmd = process.env.OLW_PYTHON || (process.platform !== 'win32' ? 'python3' : 'python');
-    const result = spawnSync(pythonCmd, ['-X', 'utf8', path.join(root, 'scripts/build-private-atlas.py')], {
+    const pyScript = path.join(root, 'scripts/build-private-atlas.py');
+    const { cmd, args } = pythonArgv(pyScript);
+    const result = spawnSync(cmd, args, {
       input: JSON.stringify({
         output: path.join(root, 'public/assets/private-unified'),
         fallback: defaultOutput,
