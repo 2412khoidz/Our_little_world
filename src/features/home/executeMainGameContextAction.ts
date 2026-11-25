@@ -27,12 +27,13 @@ export interface MainGameActionContext {
   livingPetLocalSimulation?: boolean;
 }
 
-function emitDiegeticOpen(code: InteractionActionCode): boolean {
+function emitDiegeticOpen(code: InteractionActionCode, targetId?: string): boolean {
   switch (code) {
     case 'open_wardrobe':
       gameEventBus.emit('evt:open-avatar-customizer');
       return true;
     case 'open_study':
+      gameEventBus.emit('cmd:seat-at-desk', { seat: 'left' });
       gameEventBus.emit('evt:open-study-panel');
       return true;
     case 'open_mailbox':
@@ -42,13 +43,13 @@ function emitDiegeticOpen(code: InteractionActionCode): boolean {
       gameEventBus.emit('evt:open-photo-frame');
       return true;
     case 'sit_sofa':
-      gameEventBus.emit('evt:request-couple-posture', { kind: 'sofa_sit' });
+      gameEventBus.emit('evt:request-couple-posture', { kind: 'sofa_sit', targetId });
       return true;
     case 'lie_bed':
-      gameEventBus.emit('evt:request-couple-posture', { kind: 'bed_lie' });
+      gameEventBus.emit('evt:request-couple-posture', { kind: 'bed_lie', targetId });
       return true;
     case 'sit_bench':
-      gameEventBus.emit('evt:request-couple-posture', { kind: 'bench_sit' });
+      gameEventBus.emit('evt:request-couple-posture', { kind: 'bench_sit', targetId });
       return true;
     default:
       return false;
@@ -209,7 +210,7 @@ export async function executeMainGameContextAction(
     return;
   }
 
-  if (emitDiegeticOpen(code)) return;
+  if (emitDiegeticOpen(code, action.targetId)) return;
 
   const plotId = plotIdFromInteractableId(action.targetId);
   if (plotId != null && ctx.onFarmApply) {

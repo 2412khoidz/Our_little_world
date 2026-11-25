@@ -81,6 +81,8 @@ import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGa
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
+import { playAvatarPostureAnim, resetAvatarSpriteOrigin } from '../avatar/avatarPostureVisual';
+import { MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
 
 interface RemoteAvatarEntity {
   userId: string;
@@ -124,6 +126,7 @@ export class WorldScene extends Phaser.Scene {
   private localFacing: Direction = 'down';
   private localPosture: CouplePostureKind = 'none';
   private localBlanket: Phaser.GameObjects.Rectangle | null = null;
+  private localRestAura: Phaser.GameObjects.Text | null = null;
   private pathQueue: GridPoint[] = [];
   private tapMarker: Phaser.GameObjects.Graphics | null = null;
   private mailboxBadge: Phaser.GameObjects.Container | null = null;
@@ -963,6 +966,13 @@ export class WorldScene extends Phaser.Scene {
         this.triggerNearbyInteraction();
       }),
 
+      gameEventBus.on('evt:request-couple-posture', ({ kind, targetId }) => {
+        if (kind === 'bench_sit' && targetId && this.tryEnterAnchorBench(targetId)) {
+          return;
+        }
+        this.enterSharedPosture(kind);
+      }),
+
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
       }),
@@ -1018,6 +1028,7 @@ export class WorldScene extends Phaser.Scene {
         this.playLocalMoveAnim(false);
         this.emitCurrentTile(true);
         this.emitLocalMovement('idle', true);
+        this.emitLocalPostureChanged(0);
       }),
 
       gameEventBus.on('cmd:apply-local-posture', ({ posture, x, y, facing }) => {
@@ -1037,6 +1048,7 @@ export class WorldScene extends Phaser.Scene {
         this.playLocalMoveAnim(false);
         this.emitCurrentTile(true);
         this.emitLocalMovement('idle', true);
+        this.emitLocalPostureChanged(0);
       }),
 
       gameEventBus.on('cmd:cancel-local-posture', () => {
@@ -1055,7 +1067,9 @@ export class WorldScene extends Phaser.Scene {
           entity.facing = facing;
           entity.sprite.setPosition(x, y);
         }
+        playAvatarPostureAnim(this, entity.sprite, entity.textureKey, entity.posture, entity.facing, false);
         this.syncRemoteBlanket(entity);
+        this.syncRemoteRestAura(entity);
         this.reconcileRemoteVisibility();
       }),
 
@@ -1077,6 +1091,13 @@ export class WorldScene extends Phaser.Scene {
         this.refreshMailboxBadge();
       }),
     );
+
+    if (import.meta.env.DEV && typeof globalThis !== 'undefined') {
+      (globalThis as { __olwDevEnterPosture?: (kind: 'sofa_sit' | 'bench_sit' | 'bed_lie') => void }).__olwDevEnterPosture =
+        (kind) => {
+          this.enterSharedPosture(kind);
+        };
+    }
   }
 
   private setPetCareMode(active: boolean): void {
@@ -1381,45 +1402,134 @@ export class WorldScene extends Phaser.Scene {
     this.localSprite.setDepth(this.localSprite.y);
     this.localShadow.setDepth(this.localSprite.y - 1);
     this.localLabel.setPosition(this.localSprite.x, this.localSprite.y - 25);
+    this.game.canvas.dataset.localPosture = this.localPosture;
 
     if (moving) {
       if (this.localBlanket) this.localBlanket.setVisible(false);
-      const animKey = `${this.localTextureKey}:walk-${this.localFacing}`;
-      if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== animKey) {
-        this.localSprite.play(animKey, true);
-      }
-    } else if (
-      this.localPosture === 'sit_study' ||
-      this.localPosture === 'sit_sofa' ||
-      this.localPosture === 'sit_bench'
-    ) {
-      if (this.localBlanket) this.localBlanket.setVisible(false);
-      const sitAnim = `${this.localTextureKey}:sit-${this.localFacing}`;
-      if (this.anims.exists(sitAnim)) {
-        if (!this.localSprite.anims.isPlaying || this.localSprite.anims.currentAnim?.key !== sitAnim) {
-          this.localSprite.play(sitAnim, true);
-        }
-      } else {
-        this.localSprite.stop();
-        this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
-      }
-    } else if (this.localPosture === 'lie_bed') {
-      this.localSprite.stop();
-      this.localSprite.setFrame(getIdleFrameIndex('down'));
+      this.syncLocalRestAura(false);
+      playAvatarPostureAnim(this, this.localSprite, this.localTextureKey, 'none', this.localFacing, true);
+      return;
+    }
+
+    playAvatarPostureAnim(
+      this,
+      this.localSprite,
+      this.localTextureKey,
+      this.localPosture,
+      this.localFacing,
+      false,
+    );
+
+    if (this.localPosture === 'lie_bed') {
       if (!this.localBlanket) {
         this.localBlanket = this.add
-          .rectangle(this.localSprite.x, this.localSprite.y - 4, 13, 8, 0xf2b7c6, 0.94)
+          .rectangle(this.localSprite.x, this.localSprite.y - 4, 15, 9, 0xf2b7c6, 0.94)
           .setStrokeStyle(0.75, 0xfff8ef, 0.9);
       }
       this.localBlanket
-        .setPosition(this.localSprite.x, this.localSprite.y - 4)
+        .setPosition(this.localSprite.x, this.localSprite.y - 5)
         .setDepth(this.localSprite.y + 2)
         .setVisible(true);
+      this.syncLocalRestAura(true, 'zzz…');
     } else {
       if (this.localBlanket) this.localBlanket.setVisible(false);
-      this.localSprite.stop();
-      this.localSprite.setFrame(getIdleFrameIndex(this.localFacing));
+      const resting =
+        this.localPosture === 'sit_sofa' ||
+        this.localPosture === 'sit_bench' ||
+        this.localPosture === 'sit_study';
+      this.syncLocalRestAura(resting, resting ? '♨' : null);
     }
+
+    if (this.localPosture === 'none') {
+      resetAvatarSpriteOrigin(this.localSprite);
+    }
+  }
+
+  private syncLocalRestAura(visible: boolean, label: string | null = '♨'): void {
+    if (!visible || !label) {
+      this.localRestAura?.setVisible(false);
+      return;
+    }
+    if (!this.localRestAura) {
+      this.localRestAura = this.add
+        .text(0, 0, label, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          fontStyle: 'bold',
+          color: '#ffe8c7',
+          backgroundColor: '#2a2026cc',
+          padding: { x: 5, y: 2 },
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(12_000);
+    }
+    this.localRestAura
+      .setText(label)
+      .setPosition(this.localSprite.x, this.localSprite.y - 34)
+      .setDepth(this.localSprite.y + 12)
+      .setVisible(true);
+  }
+
+  private syncRemoteRestAura(entity: RemoteAvatarEntity): void {
+    const resting =
+      entity.posture === 'lie_bed' ||
+      entity.posture === 'sit_sofa' ||
+      entity.posture === 'sit_bench' ||
+      entity.posture === 'sit_study';
+    if (!resting || entity.mapId !== this.currentMapId) return;
+    void entity;
+  }
+
+  private emitLocalPostureChanged(slotIndex: number): void {
+    gameEventBus.emit('evt:local-posture-changed', {
+      posture: this.localPosture,
+      slotIndex,
+      x: this.localSprite.x,
+      y: this.localSprite.y,
+      facing: this.localFacing,
+      mapId: this.currentMapId,
+    });
+  }
+
+  private tryEnterAnchorBench(targetId: string): boolean {
+    if (this.currentMapId !== 'outdoor') return false;
+    const anchors = MAIN_GAME_WORLD_ANCHORS.outdoor;
+    const slots: Record<string, { x: number; y: number; slot1?: { x: number; y: number } }> = {
+      outdoor_picnic: {
+        x: anchors.picnicPx.x - 6,
+        y: anchors.picnicPx.y,
+        slot1: { x: anchors.picnicPx.x + 6, y: anchors.picnicPx.y },
+      },
+      outdoor_sunset: {
+        x: anchors.sunsetBenchPx.x - 6,
+        y: anchors.sunsetBenchPx.y,
+        slot1: { x: anchors.sunsetBenchPx.x + 6, y: anchors.sunsetBenchPx.y },
+      },
+    };
+    const anchor = slots[targetId];
+    if (!anchor) return false;
+
+    const slot0 = { x: anchor.x, y: anchor.y };
+    const slot1 = anchor.slot1 ?? { x: anchor.x + 12, y: anchor.y };
+    const occupiedSlots: number[] = [];
+    for (const remote of this.remoteEntities.values()) {
+      if (remote.mapId !== this.currentMapId || remote.posture !== 'sit_bench') continue;
+      if (Math.hypot(remote.sprite.x - slot0.x, remote.sprite.y - slot0.y) < 12) occupiedSlots.push(0);
+      else if (Math.hypot(remote.sprite.x - slot1.x, remote.sprite.y - slot1.y) < 12) occupiedSlots.push(1);
+    }
+    const slotIndex = pickAvailableSharedSlot(occupiedSlots, 0);
+    const chosen = slotIndex === 0 ? slot0 : slot1;
+
+    this.pathQueue = [];
+    this.tapMarker?.clear();
+    this.localSprite.setPosition(chosen.x, chosen.y);
+    this.localFacing = 'down';
+    this.localPosture = 'sit_bench';
+    this.playLocalMoveAnim(false);
+    this.emitCurrentTile(true);
+    this.emitLocalMovement('idle', true);
+    this.emitLocalPostureChanged(slotIndex);
+    return true;
   }
 
   private vectorToDirection(dx: number, dy: number): Direction {
@@ -1655,14 +1765,7 @@ export class WorldScene extends Phaser.Scene {
     this.playLocalMoveAnim(false);
     this.emitCurrentTile(true);
     this.emitLocalMovement('idle', true);
-    gameEventBus.emit('evt:local-posture-changed', {
-      posture: targetPosture,
-      slotIndex,
-      x: chosen.x,
-      y: chosen.y,
-      facing: 'down',
-      mapId: this.currentMapId,
-    });
+    this.emitLocalPostureChanged(slotIndex);
   }
 
   private spawnEmoteBubble(x: number, y: number, symbol: string): void {
@@ -1907,31 +2010,23 @@ export class WorldScene extends Phaser.Scene {
       }
 
       const stale = this.remoteFilter.isStale(entity.sessionId, now);
-      if ((entity.anim === 'walk' || moving) && !stale) {
-        const animKey = `${entity.textureKey}:walk-${entity.facing}`;
-        if (!entity.sprite.anims.isPlaying || entity.sprite.anims.currentAnim?.key !== animKey) {
-          entity.sprite.play(animKey, true);
-        }
-      } else if (
-        entity.posture === 'sit_study' ||
-        entity.posture === 'sit_sofa' ||
-        entity.posture === 'sit_bench'
-      ) {
-        const sitKey = `${entity.textureKey}:sit-${entity.facing}`;
-        if (this.anims.exists(sitKey)) {
-          if (!entity.sprite.anims.isPlaying || entity.sprite.anims.currentAnim?.key !== sitKey) {
-            entity.sprite.play(sitKey, true);
-          }
-        } else {
-          entity.sprite.stop();
-          entity.sprite.setFrame(getIdleFrameIndex(entity.facing));
-        }
-      } else {
-        entity.sprite.stop();
-        entity.sprite.setFrame(getIdleFrameIndex(entity.facing));
-        if (entity.posture === 'lie_bed') {
-          this.syncRemoteBlanket(entity);
-        }
+      const remoteMoving = (entity.anim === 'walk' || moving) && !stale;
+      if (remoteMoving) {
+        entity.posture = 'none';
+        entity.blanket?.setVisible(false);
+      }
+      playAvatarPostureAnim(
+        this,
+        entity.sprite,
+        entity.textureKey,
+        remoteMoving ? 'none' : entity.posture,
+        entity.facing,
+        remoteMoving,
+      );
+      if (entity.posture === 'lie_bed' && !remoteMoving) {
+        this.syncRemoteBlanket(entity);
+      } else if (entity.blanket) {
+        entity.blanket.setVisible(false);
       }
     }
   }

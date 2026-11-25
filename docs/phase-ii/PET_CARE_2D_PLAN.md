@@ -15,3 +15,6 @@
 
 ## VQG
 - Pet care capture must show `data-pet-care-illustration="1"` on game canvas when illustration path is active.
+
+## 2P co-op (Phase II follow-up)
+- `sharedPetCareSession.ts` — client merge stub; dev-LAN `COUPLE_POSTURE`-style broadcast for care patches still TODO.
