@@ -29,7 +29,7 @@ import { MainGameInteractionLayer } from '../features/home/MainGameInteractionLa
 import { LivingPetDevBanner } from '../features/home/LivingPetDevBanner';
 import { ExtendedWorldDevBanner } from '../features/home/ExtendedWorldDevBanner';
 import { registerLivingPetDevAcceptanceHooks } from '../shared/petLiving/mainGame/livingPetDevAcceptance';
-import { isLivingPetLocalSimulationEnabled } from '../shared/petLiving/mainGame/petLivingDevFlag';
+import { consumeHandFoodInCare } from '../features/petCare/petCareHandFeedAuthority';
 import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
 import { QuickNavBar } from '../features/home/QuickNavBar';
@@ -651,10 +651,10 @@ function MainCoupleApp() {
     () =>
       gameEventBus.on('evt:pet-care-request-consume', ({ sku, quality, ownerScope }) => {
         const targetWorldId = snapshotRef.current?.world.id;
-        if (!targetWorldId || !backend.pet || !petSnapshot) return;
+        if (!targetWorldId || !petSnapshot) return;
         void (async () => {
           setPetBusy(true);
-          const res = await backend.pet!.consumeHandFood({
+          const outcome = await consumeHandFoodInCare(backend, {
             worldId: targetWorldId,
             petId: petSnapshot.id,
             expectedVersion: petSnapshot.version,
@@ -664,36 +664,25 @@ function MainCoupleApp() {
             idempotencyKey: makeIdempotencyKey(`pet-care-consume-${sku}`),
           });
           setPetBusy(false);
-          if (!res.ok) {
-            if (
-              import.meta.env.DEV &&
-              res.code === 'SERVER_AUTHORITY_REQUIRED' &&
-              isLivingPetLocalSimulationEnabled()
-            ) {
-              gameEventBus.emit('cmd:pet-local-food-offer', {
-                offerId: `care-fallback-${Date.now()}`,
-                caregiverId: 'dev-care-fallback',
-                sku,
-                quality,
-              });
-              showToast('Bé ngửi món (mô phỏng DEV — chưa trừ kho).', true);
-              return;
-            }
-            showToast(res.message, true);
-            if (res.code === 'VERSION_CONFLICT') {
+          if (outcome.status === 'dev_presentation') {
+            showToast('Bé ngửi món (mô phỏng DEV — chưa trừ kho).', true);
+            return;
+          }
+          if (outcome.status === 'error') {
+            showToast(outcome.message, true);
+            if (outcome.code === 'VERSION_CONFLICT') {
               void refreshPetSnapshot(targetWorldId);
               void refreshInventorySnapshot(targetWorldId);
             }
             return;
           }
-          setPetSnapshot(res.data.pet);
-          gameEventBus.emit('cmd:sync-pet', res.data.pet);
+          setPetSnapshot(outcome.pet);
+          gameEventBus.emit('cmd:sync-pet', outcome.pet);
           gameEventBus.emit('cmd:pet-reaction', { action: 'feed' });
           void refreshInventorySnapshot(targetWorldId);
           realtimeRef.current?.notifyWorldMutated('inventory');
           realtimeRef.current?.notifyWorldMutated('pet');
-          // Authoritative debit — prod path requires PR #10 petLiving wired; not a substitute for bowl RPC.
-          showToast(`${res.data.pet.name} đã ăn món nhé!`);
+          showToast(`${outcome.pet.name} đã ăn món nhé!`);
           playPetFeedbackChime('feed');
         })();
       }),

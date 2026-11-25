@@ -9,6 +9,14 @@ interface PetCareTouchOverlayProps {
 /** Thin HUD — strokes happen on the Phaser close-up rig; hotbar + J for toys/food. */
 export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps) {
   const [hint, setHint] = useState('Vuốt trên thân mèo — đầu, cằm, lưng');
+  const [goalsLabel, setGoalsLabel] = useState('');
+
+  useEffect(() => {
+    if (!active) return;
+    return gameEventBus.on('evt:pet-care-session-goals', ({ count, total }) => {
+      setGoalsLabel(count > 0 ? `Phiên: ${count}/${total} hoạt động` : '');
+    });
+  }, [active]);
 
   useEffect(() => {
     if (!active) return;
@@ -51,7 +59,10 @@ export function PetCareTouchOverlay({ active, onExit }: PetCareTouchOverlayProps
       aria-label="Chế độ chăm sóc mèo cận cảnh"
     >
       <div className="pet-care-overlay__vignette" />
-      <p className="pet-care-overlay__title">Chăm sóc gần — vuốt lên mèo, dùng thanh đồ (1–8) + J</p>
+      <p className="pet-care-overlay__title">
+        Chăm sóc gần — vuốt lên mèo, dùng thanh đồ (1–8) + J
+        {goalsLabel ? ` · ${goalsLabel}` : ''}
+      </p>
       <p className="pet-care-overlay__hint" data-testid="pet-care-stroke-hint">
         {hint}
       </p>

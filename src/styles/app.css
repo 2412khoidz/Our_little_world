@@ -239,11 +239,12 @@
   position: fixed;
   inset: 0;
   z-index: 28;
-  pointer-events: auto;
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-bottom: calc(108px + var(--safe-bottom));
 }
 
 .pet-care-overlay__vignette {
@@ -289,8 +290,10 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 8px;
   z-index: 2;
+  pointer-events: auto;
+  max-width: min(96vw, 420px);
 }
 
 .pet-care-overlay__chip {
@@ -298,9 +301,12 @@
   background: rgba(40, 30, 36, 0.75);
   color: #ffe8c7;
   font-size: 14px;
-  padding: 8px 14px;
+  padding: 10px 16px;
+  min-height: 44px;
   border-radius: 999px;
   cursor: pointer;
+  touch-action: manipulation;
+  pointer-events: auto;
 }
 
 .pet-care-overlay__exit {
@@ -308,7 +314,9 @@
   top: calc(52px + var(--safe-top));
   right: calc(12px + var(--safe-right));
   z-index: 2;
-  padding: 6px 10px;
+  pointer-events: auto;
+  min-height: 44px;
+  padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid #c98f6a;
   background: rgba(40, 30, 36, 0.88);

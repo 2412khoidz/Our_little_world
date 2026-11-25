@@ -15,6 +15,7 @@ import {
   ensurePetCarePortraitSheet,
   getPetCarePortraitAnimKey,
 } from './petCarePortraitTexture';
+import { gameEventBus } from '../../eventBus';
 import { PetCareToyLayer } from './PetCareToyLayer';
 import { PetCareAmbientProps } from './PetCareAmbientProps';
 
@@ -90,7 +91,7 @@ export class PetCarePortraitRig {
       .setResolution(2);
 
     this.hitPad = scene.add
-      .rectangle(0, -8, 130, 140, 0xffffff, 0.001)
+      .rectangle(0, -8, 148, 152, 0xffffff, 0.001)
       .setInteractive({ useHandCursor: true, draggable: true });
 
     this.toys = new PetCareToyLayer(scene, this.root, (kind) => this.onToyBounce(kind));
@@ -119,6 +120,7 @@ export class PetCarePortraitRig {
     });
 
     this.hitPad.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      pointer.event?.preventDefault();
       const local = this.hitPad.getLocalPoint(pointer.worldX, pointer.worldY);
       this.onStroke(this.zoneFromLocal(local.x, local.y), 1);
       this.lastStrokeMs = Date.now();
@@ -239,6 +241,7 @@ export class PetCarePortraitRig {
       strokeIndex,
     );
     this.applyExpression(expr);
+    if (zone !== 'none') gameEventBus.emit('evt:pet-care-stroke-done', { zone });
   }
 
   private zoneFromLocal(px: number, py: number): PetCareZone {
@@ -251,6 +254,9 @@ export class PetCarePortraitRig {
 
   private applyExpression(expr: PetCareExpression): void {
     this.expression = expr;
+    if (expr.refuse) {
+      gameEventBus.emit('evt:pet-care-refuse', { squeak: expr.squeak ?? 'refuse' });
+    }
     const tailMode = expr.tail ?? 'idle';
     if (tailMode === 'wag_fast') this.tail.setFillStyle(0xe8a56e, 0.95);
     else if (tailMode === 'tuck') this.tail.setFillStyle(0xc76e2e, 0.85);

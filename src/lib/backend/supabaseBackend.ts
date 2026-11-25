@@ -8,6 +8,7 @@ import type {
   PetInteractionResult,
   PetSnapshot,
 } from '../../shared/pet/petTypes';
+import type { PetLivingAuthoritySnapshot } from '../../shared/petLiving/petAuthorityTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,

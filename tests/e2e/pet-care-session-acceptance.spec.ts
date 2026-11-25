@@ -1,12 +1,14 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
-test.use({ trace: 'on' });
+const longRun = process.env.OLW_ACCEPTANCE_LONG === '1';
+test.use({ trace: longRun ? 'on' : 'on' });
 
 /**
- * Owner checklist — structured care session (90s CI / 300s when OLW_ACCEPTANCE_LONG=1).
+ * Owner checklist — 60s CI default · 7m when OLW_ACCEPTANCE_LONG=1 (trace + summary artifact).
  */
 test.describe('Pet care — owner session', () => {
-  const sessionMs = process.env.OLW_ACCEPTANCE_LONG === '1' ? 360_000 : 60_000;
+  const sessionMs = longRun ? 420_000 : 60_000;
 
   test.beforeEach(async ({ request }) => {
     const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
@@ -37,6 +39,7 @@ test.describe('Pet care — owner session', () => {
     await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === 'portrait')).toBe(true);
 
     const reactions = new Set<string>();
+    let autonomyQuiet = 0;
     const started = Date.now();
 
     while (Date.now() - started < sessionMs) {
@@ -74,9 +77,33 @@ test.describe('Pet care — owner session', () => {
       await page.waitForTimeout(4000);
 
       await page.getByTestId('pet-care-stroke-hint').waitFor({ state: 'visible' });
+
+      if (longRun) {
+        await page.waitForTimeout(3500);
+        const title = await page.locator('.pet-care-overlay__title').innerText();
+        if (title.includes('Phiên:')) autonomyQuiet += 1;
+      }
     }
 
+    const elapsedMs = Date.now() - started;
     expect(reactions.size).toBeGreaterThanOrEqual(5);
+  if (longRun) {
+      expect(elapsedMs).toBeGreaterThanOrEqual(300_000);
+      expect(autonomyQuiet).toBeGreaterThanOrEqual(2);
+    }
+    mkdirSync('/opt/cursor/artifacts', { recursive: true });
+    const summary = {
+      elapsedMs,
+      reactions: [...reactions],
+      longRun,
+      autonomyGoalTicks: autonomyQuiet,
+      head: process.env.GITHUB_SHA ?? 'local',
+    };
+    writeFileSync('/opt/cursor/artifacts/pet-care-session-summary.json', JSON.stringify(summary, null, 2));
     await page.screenshot({ path: '/opt/cursor/artifacts/pet-care-session-final.png' });
+    await test.info().attach('pet-care-session-summary', {
+      body: JSON.stringify(summary),
+      contentType: 'application/json',
+    });
   });
 });

@@ -60,7 +60,15 @@ export function reactToCareAction(kind: PetCareActionKind, ctx: PetCareReactionC
   switch (kind) {
     case 'toy_yarn':
       if (shyRefuse(ctx, 0.7)) {
-        return { anim: 'sit_south', bubbleVi: '…để sau nhé', earTilt: -8, tail: 'tuck', eyeMood: 'shy', refuse: true, squeak: 'refuse' };
+        return {
+          anim: 'sit_south',
+          bubbleVi: 'Chưa muốn chơi lắm…',
+          earTilt: -8,
+          tail: 'tuck',
+          eyeMood: 'shy',
+          refuse: true,
+          squeak: 'refuse',
+        };
       }
       return {
         anim: 'play_pounce',
@@ -79,22 +87,24 @@ export function reactToCareAction(kind: PetCareActionKind, ctx: PetCareReactionC
         eyeMood: 'happy',
         squeak: 'mrow',
       };
-    case 'offer_food':
+    case 'offer_food': {
       if (shyRefuse(ctx, 0.6)) {
         return { anim: 'sniff', bubbleVi: 'Ngửi… thử một chút?', earTilt: 5, tail: 'wag_slow', eyeMood: 'open', squeak: 'chirp' };
       }
       if (ctx.traits.glutton > 0.55) {
         return { anim: 'eat', bubbleVi: 'Ngon quá!', earTilt: 0, tail: 'wag_fast', eyeMood: 'happy', squeak: 'purr' };
       }
+      const fussy = Math.random() > 0.62;
       return {
-        anim: 'sniff',
-        bubbleVi: Math.random() > 0.35 ? 'Mmm, ăn nhé!' : 'Không thích…',
-        earTilt: 0,
-        tail: 'wag_slow',
-        eyeMood: 'open',
-        squeak: 'mrow',
-        refuse: Math.random() > 0.65,
+        anim: fussy ? 'sniff' : 'eat',
+        bubbleVi: fussy ? 'Hôm nay không thích món này…' : 'Mmm, ăn nhé!',
+        earTilt: fussy ? -3 : 0,
+        tail: fussy ? 'tuck' : 'wag_slow',
+        eyeMood: fussy ? 'shy' : 'open',
+        squeak: fussy ? 'refuse' : 'mrow',
+        refuse: fussy,
       };
+    }
     case 'brush':
       return {
         anim: 'groom',

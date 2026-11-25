@@ -7,6 +7,7 @@ import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood
 import type { PetCareActionKind } from '../../../shared/petLiving/petCare/petCareTypes';
 import { PET_PERSONALITY_PRESETS } from '../../../shared/petLiving/petIntelligenceConfig';
 import { setPetCareModeActive } from '../../../shared/petLiving/petCare/petCareModeFlag';
+import { PetCareSessionGoals } from '../../../shared/petLiving/petCare/petCareSessionGoals';
 import { PetCarePortraitRig } from './PetCarePortraitRig';
 
 export interface PetCareSceneData {
@@ -23,6 +24,7 @@ export class PetCareScene extends Phaser.Scene {
   private autonomy: PetCareAutonomy | null = null;
   private readonly unsubs: Array<() => void> = [];
   private sessionStartMs = 0;
+  private readonly sessionGoals = new PetCareSessionGoals();
 
   constructor() {
     super({ key: 'PetCareScene', active: false, visible: false });
@@ -65,6 +67,12 @@ export class PetCareScene extends Phaser.Scene {
       gameEventBus.on('cmd:pet-care-stroke', ({ zone, strokeIndex }) => {
         this.rig?.strokeFromHud(zone, strokeIndex);
       }),
+      gameEventBus.on('evt:pet-care-stroke-done', () => {
+        if (this.sessionGoals.record('stroke')) this.emitSessionGoals();
+      }),
+      gameEventBus.on('evt:pet-care-refuse', () => {
+        this.autonomy?.notifyRefuse(Date.now());
+      }),
       gameEventBus.on('cmd:pet-care-action', (payload) => {
         this.handleCareAction(payload.kind, payload.sku, payload.quality, payload.ownerScope);
       }),
@@ -85,10 +93,20 @@ export class PetCareScene extends Phaser.Scene {
     ownerScope = 'shared',
   ): void {
     this.rig?.performAction(kind);
-    // offer_food only → inventory RPC (dev LAN / Supabase after #10); brush/pour_water stay scene-local.
+    if (this.sessionGoals.recordAction(kind)) this.emitSessionGoals();
+    // offer_food only → inventory RPC (dev LAN / Supabase); brush/pour_water stay scene-local.
     if (kind === 'offer_food' && sku) {
       gameEventBus.emit('evt:pet-care-request-consume', { sku, quality, ownerScope });
     }
+  }
+
+  private emitSessionGoals(): void {
+    const p = this.sessionGoals.progress;
+    gameEventBus.emit('evt:pet-care-session-goals', {
+      count: p.count,
+      total: p.total,
+      labelsVi: p.labelsVi,
+    });
   }
 
   update(_time: number, deltaMs: number): void {
@@ -105,6 +123,8 @@ export class PetCareScene extends Phaser.Scene {
       const cue = this.autonomy.tick(now, quiet);
       if (cue.kind === 'proactive') {
         this.rig.performAction(cue.action);
+        if (this.sessionGoals.record('autonomy')) this.emitSessionGoals();
+        if (this.sessionGoals.recordAction(cue.action)) this.emitSessionGoals();
       }
     }
   }
