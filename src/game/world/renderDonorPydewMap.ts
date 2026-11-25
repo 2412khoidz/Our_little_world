@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { tiledMapPropertyValue } from './renderDonorCabacosMap';
 
-const SKIP_LAYERS = new Set([
+/** Layers drawn by Phaser (not gameplay authority). Water is visual-only; Collision/Farmable stay hidden. */
+export const PYDEW_DONOR_SKIP_LAYERS = new Set([
   'Collision',
   'Farmable',
-  'Water',
   'Portals',
   'Interactables',
   'NPCSpawns',
@@ -13,6 +13,20 @@ const SKIP_LAYERS = new Set([
   'Decoration',
   'Objects',
 ]);
+
+/** Bottom → top; mirrors Tuxemon stack (Water under Ground). */
+export const PYDEW_DONOR_DEPTH_ORDER = [
+  'Water',
+  'Ground',
+  'Forest Grass',
+  'Outside Decoration',
+  'Hills',
+  'Fence',
+  'HouseFloor',
+  'HouseWalls',
+  'HouseFurnitureBottom',
+  'HouseFurnitureTop',
+] as const;
 
 export function isDonorPydewValleyMap(tilemap: Phaser.Tilemaps.Tilemap): boolean {
   return tiledMapPropertyValue(tilemap, 'olwDonor') === 'pydew-valley';
@@ -48,22 +62,12 @@ export function renderDonorPydewMapLayers(
 ): void {
   if (tilesets.length === 0) return;
 
-  const depthOrder = [
-    'Ground',
-    'Forest Grass',
-    'Outside Decoration',
-    'Hills',
-    'Fence',
-    'HouseFloor',
-    'HouseWalls',
-    'HouseFurnitureBottom',
-    'HouseFurnitureTop',
-  ];
+  const depthOrder = PYDEW_DONOR_DEPTH_ORDER;
 
   const byName = new Map(tilemap.layers.map((l) => [l.name, l]));
   let depth = 0;
   for (const name of depthOrder) {
-    if (!byName.has(name) || SKIP_LAYERS.has(name)) continue;
+    if (!byName.has(name) || PYDEW_DONOR_SKIP_LAYERS.has(name)) continue;
     if (!tilemap.getLayer(name)) continue;
     const created = tilemap.createLayer(name, tilesets, 0, 0);
     if (created) {
@@ -75,7 +79,7 @@ export function renderDonorPydewMapLayers(
 
   for (const layerData of tilemap.layers) {
     const name = layerData.name;
-    if (SKIP_LAYERS.has(name) || depthOrder.includes(name)) continue;
+    if (PYDEW_DONOR_SKIP_LAYERS.has(name) || (depthOrder as readonly string[]).includes(name)) continue;
     if (!tilemap.getLayer(name)) continue;
     const created = tilemap.createLayer(name, tilesets, 0, 0);
     if (created) {
