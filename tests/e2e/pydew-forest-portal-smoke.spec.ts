@@ -1,29 +1,25 @@
 import { expect, test } from '@playwright/test';
+import {
+  enterExtendedWorldGame,
+  expectCanvasMapId,
+  seedDevCouple,
+  vqgJumpMap,
+} from './helpers/extendedWorldVqg';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || '4173'}`;
 
 test.describe('PyDew forest portal smoke', () => {
-  test.beforeEach(async ({ request }) => {
-    const res = await request.post(`${BASE}/api/dev-lan/reset`, { data: {} });
-    expect(res.ok()).toBe(true);
-  });
-
-  test('VQG jump to forest after extended-world onboarding', async ({ page }, testInfo) => {
+  test('VQG jump forest and return via village nav', async ({ page, request }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'portal smoke on desktop');
-    await page.goto('/?extended-world=1&vqg-capture=1');
-    await page.getByTestId('btn-dev-seed-couple').click();
-    await page.getByTestId('preset-partner-a').click();
-    const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await expect(canvas).toBeVisible({ timeout: 15_000 });
-    await page.evaluate(() => {
-      const w = window as Window & { __OLW_VQG?: { jump: (m: string, x: number, y: number) => void } };
-      w.__OLW_VQG?.jump?.('forest', 8, 26);
-    });
-    await expect(canvas).toHaveAttribute('data-map-id', 'forest', { timeout: 20_000 });
-    await page.evaluate(() => {
-      const w = window as Window & { __OLW_VQG?: { jump: (m: string, x: number, y: number) => void } };
-      w.__OLW_VQG?.jump?.('village', 84, 20);
-    });
-    await expect(canvas).toHaveAttribute('data-map-id', 'village', { timeout: 15_000 });
+    test.setTimeout(60_000);
+
+    await seedDevCouple(request, BASE);
+    const canvas = await enterExtendedWorldGame(page, BASE);
+
+    await vqgJumpMap(page, canvas, 'forest', 8, 26);
+
+    await page.getByTestId('nav-outdoor').click({ force: true });
+    await expectCanvasMapId(canvas, 'village');
+    await expect(page.getByTestId('nav-outdoor')).toBeVisible();
   });
 });

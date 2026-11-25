@@ -31,13 +31,21 @@ async function main() {
     await waitServer();
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-    await page.goto(`${BASE}/?extended-world=1&vqg-capture=1`);
     await fetch(`${BASE}/api/dev-lan/reset`, { method: 'POST', body: '{}' });
-    await page.getByTestId('btn-dev-seed-couple').click();
+    await fetch(`${BASE}/api/dev-lan/seed-couple`, { method: 'POST', body: '{}' });
+    await page.goto(`${BASE}/?extended-world=1&vqg-capture=1`);
     await page.getByTestId('preset-partner-a').click();
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await canvas.waitFor({ state: 'visible', timeout: 20_000 });
-    await page.evaluate(() => window.__OLW_VQG?.jump?.('forest', 8, 26));
+    await canvas.waitFor({ state: 'visible', timeout: 30_000 });
+    await page.waitForFunction(
+      () => typeof globalThis.__OLW_VQG?.jump === 'function',
+      undefined,
+      { timeout: 20_000 },
+    );
+    await page.evaluate(() => {
+      if (!globalThis.__OLW_VQG?.jump) throw new Error('VQG jump unavailable');
+      globalThis.__OLW_VQG.jump('forest', 8, 26);
+    });
     for (let i = 0; i < 40; i += 1) {
       if ((await canvas.getAttribute('data-map-id')) === 'forest') break;
       await page.waitForTimeout(250);

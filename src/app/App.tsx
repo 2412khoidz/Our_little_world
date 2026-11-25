@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gameEventBus, type GameDiagnosticsSnapshot } from '../game/eventBus';
 import { getWorldBackend } from '../lib/backend';
 import type {
@@ -348,7 +348,7 @@ function MainCoupleApp() {
     }, 3600);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!import.meta.env.DEV || typeof window === 'undefined') return;
     const q = new URLSearchParams(window.location.search);
     if (q.get('vqg-capture') !== '1') return;
