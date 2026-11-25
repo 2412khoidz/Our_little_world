@@ -42,6 +42,7 @@ const sqlTestFiles = [
   'v01_security_hardening.sql',
   'inventory_transfer_quality.sql',
   'mailbox_gift_quality.sql',
+  'pet_living_authority.sql',
 ].filter((name) => fs.existsSync(path.join(testsDir, name)));
 
 const upgradeOnlyTest = 'upgrade_preserve_01000.sql';

@@ -21,6 +21,7 @@ import type {
   WorldSnapshot,
 } from '../../shared/types';
 import { getSupabaseClient } from '../supabase';
+import type { PetLivingAuthoritySnapshot } from '../../shared/petLiving/petAuthorityTypes';
 import type {
   AuthSessionUser,
   RealtimeHandle,
@@ -63,6 +64,18 @@ function mapSupabaseError(err: { message?: string; code?: string } | null): {
     ],
     ['BOWL_FULL', 'BOWL_FULL', 'Bát đã đầy rồi nhé.'],
     ['BOWL_EMPTY', 'BOWL_EMPTY', 'Bát đang trống.'],
+    ['MOVEMENT_NOT_READY', 'VALIDATION_ERROR', 'Chưa đủ thời gian di chuyển — máy chủ chưa xác nhận.'],
+    ['CONSUMPTION_NOT_AUTHORIZED', 'FORBIDDEN', 'Chưa đủ điều kiện tiêu thụ — máy chủ từ chối an toàn.'],
+    ['ALREADY_CONSUMED', 'VALIDATION_ERROR', 'Phần ăn/uống này đã được ghi nhận.'],
+    ['ACTION_IN_PROGRESS', 'VALIDATION_ERROR', 'Bé mèo đang thực hiện hành động khác.'],
+    ['OFFER_EXPIRED', 'VALIDATION_ERROR', 'Lời mời thức ăn đã hết hạn.'],
+    ['TARGET_MISMATCH', 'VALIDATION_ERROR', 'Đích di chuyển không khớp hành động mèo.'],
+    ['TARGET_UNREACHABLE', 'VALIDATION_ERROR', 'Không tìm thấy đường tới đích trên bản đồ nhà.'],
+    ['MOVEMENT_PROOF_REQUIRED', 'VALIDATION_ERROR', 'Cần xác nhận vị trí đứng hợp lệ từ máy chủ.'],
+    ['MOVEMENT_PROOF_INVALID', 'VALIDATION_ERROR', 'Vị trí đứng không khớp kế hoạch di chuyển máy chủ.'],
+    ['BRAIN_AUTHORITY_REQUIRED', 'FORBIDDEN', 'Chỉ máy chủ quyết định mèo chấp nhận hay từ chối món ăn.'],
+    ['ACTION_STALE', 'VALIDATION_ERROR', 'Hành động đã quá hạn — hãy đồng bộ lại.'],
+    ['PET_FULL', 'COOLDOWN_ACTIVE', 'Bé mèo no rồi!'],
   ];
 
   for (const [token, code, message] of map) {
@@ -552,6 +565,99 @@ export function createSupabaseBackend(): WorldBackend {
             },
             pet: raw.pet,
           } as PetCareApplyResult,
+        };
+      },
+      async consumeHandFood(params) {
+        const { data, error } = await supabase.rpc('pet_consume_hand_food', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_expected_version: params.expectedVersion,
+          p_scope: params.ownerScope,
+          p_sku: params.itemSku,
+          p_quality: params.quality,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        const raw = data as { pet: PetSnapshot; sku: string; quality: string };
+        return { ok: true, data: raw };
+      },
+    },
+
+    petLiving: {
+      async getLivingSnapshot(worldId) {
+        const { data, error } = await supabase.rpc('pet_living_get_snapshot', { p_world_id: worldId });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as PetLivingAuthoritySnapshot };
+      },
+      async beginLivingAction(params) {
+        const { data, error } = await supabase.rpc('pet_living_begin_action', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_action_id: params.actionId,
+          p_target_affordance_id: params.targetAffordanceId,
+          p_expected_living_version: params.expectedLivingVersion,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { instanceId: string; snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async submitLivingProposal(params) {
+        const { data, error } = await supabase.rpc('pet_living_submit_proposal', {
+          p_world_id: params.worldId,
+          p_instance_id: params.instanceId,
+          p_proposal: params.proposal,
+          p_idempotency_key: params.idempotencyKey,
+          p_proof: params.proof ?? null,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async createFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_create', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_item_sku: params.itemSku,
+          p_quality: params.quality,
+          p_ttl_seconds: params.ttlSeconds,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { offerId: string; snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async respondFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_respond', {
+          p_world_id: params.worldId,
+          p_offer_id: params.offerId,
+          p_response: params.response,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return { ok: true, data: data as { snapshot: PetLivingAuthoritySnapshot } };
+      },
+      async evaluateFoodOffer(params) {
+        const { data, error } = await supabase.rpc('pet_food_offer_evaluate', {
+          p_world_id: params.worldId,
+          p_pet_id: params.petId,
+          p_idempotency_key: params.idempotencyKey,
+        });
+        if (error || !data) {
+          return { ok: false, ...mapSupabaseError(error) };
+        }
+        return {
+          ok: true,
+          data: data as { outcome?: string; offerId?: string; snapshot: PetLivingAuthoritySnapshot },
         };
       },
     },
