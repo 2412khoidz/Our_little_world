@@ -1,8 +1,24 @@
 # MISSION_04B-1 — Pet Movement & Animation Runtime
 
 **Branch:** `cursor/mission-04b1-pet-movement-36fd`  
-**Base:** Mission 04A snapshot `632c157` (PR #7)  
-**Depends on:** PR #7 brain intents (`PetActionIntent`); Final Integration Checkpoint merge order.
+**PR:** #8 → `integration/night-merge`  
+**Tested HEAD:** `d47cb5ce836d9850542543724292bf5ba7319210` (04B-1 `a71f3b0` + merge `cursor/final-integration-trial-d77e` @ `e2eacc1`)  
+**Depends on:** PR #7 brain (`PetActionIntent`, persistence v2); Final Integration Checkpoint.
+
+## Integration compatibility (verified @ HEAD)
+
+| Concern | Result |
+|---------|--------|
+| Pet Brain persistence v2 + `lastIntent` restore | Vitest `petBrainAutonomous` pass on merged tree |
+| `completedInstanceIds` cap (**64**) from trial fix | Present in `petAutonomousController.ts`; brain tests pass |
+| Movement `instanceId` stable + proposal keys `instance:kind` | `petMovementRuntime` + scenario traces pass |
+| Shared `tilePathfinding` (avatar + pet) | `placement` + movement path tests; E2E avatar movement pass |
+| Furniture collision via `buildHomeMovementBlockedTiles` | Uses `placement.getFootprintTiles` + catalog `blocksMovement` |
+| Interaction anchors vs prop pixels | Bowl/bed stand tiles ≠ object centers |
+| Target relocation / cancel / stuck | Scenario + unit tests pass |
+| No false arrival on blocked path | Unit assert: no `movement_ready` when walled |
+| No client-authoritative consumption | Brain `memoryIntents: []`; movement proposals only; SQL `pet_consumption_authority` pass |
+| Pet Lab movement strip | E2E grand sandboxes + `data-testid="pet-lab-movement-strip"` |
 
 ## Architecture
 
@@ -63,8 +79,8 @@ Known fallback: `scratch_stretch` uses `groom` track; `explore_area` uses `sniff
 ## Pet Lab evidence
 
 - `PetLabMovementStrip` on `/?pet-lab=1` (`data-testid="pet-lab-movement-strip"`).
-- Vitest traces: `test-results/pet-movement-traces/*.json` (6 scenarios, 8–35s simulated each).
-- Cloud agent: **no** private Demo E atlas in VM — E2E sandbox smoke only; full art verified locally.
+- Vitest traces: `test-results/pet-movement-traces/*.json` (6 scenarios).
+- Cloud: public build E2E sandboxes; private atlas build not run on agent.
 
 ### Scenarios
 
@@ -93,9 +109,17 @@ Known fallback: `scratch_stretch` uses `groom` track; `explore_area` uses `sniff
 
 `MOVEMENT_SERVER_VERIFICATION_HINT_VI` in `petMovementBrainAdapter.ts`.
 
-## Verification (agent)
+## Verification (@ `d47cb5c`)
 
-- `npm run lint` / `typecheck` / Vitest (incl. movement suite)
-- `npm run build`
-- Playwright sandboxes (includes Pet Lab movement strip)
-- Not claimed: private build, iPhone device, production multiplayer
+| Check | Result |
+|--------|--------|
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| Vitest | **520** pass (59 files) |
+| `npm run test:sql` | Pass (fresh + upgrade disposable `olw_sql_*` on loopback Postgres) |
+| `npm run build` (public) | Pass |
+| `node scripts/verify-prod-guard.mjs` | Pass |
+| Playwright E2E | **31** pass, **1** skip |
+| `npm run test:e2e:pwa` | Pass |
+
+**Not claimed:** `verify:private` (no `dist-private/`), Supabase Cloud, physical iPhone, production multiplayer.
