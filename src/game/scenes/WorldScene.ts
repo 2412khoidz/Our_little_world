@@ -55,8 +55,7 @@ import { buildMainGameInteractables } from '../../shared/interaction/mainGameInt
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
-import { PetCareCloseUpRig } from '../pet/PetCareCloseUpRig';
-import type { PetCareActionKind } from '../../shared/petLiving/petCare/petCareTypes';
+import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 
 interface RemoteAvatarEntity {
@@ -116,8 +115,6 @@ export class WorldScene extends Phaser.Scene {
   private petSnapshot: PetSnapshot | null = null;
   private livingPetDriver: PetLivingMainGameDriver | null = null;
   private petCareMode = false;
-  private petCareCloseUpRig: PetCareCloseUpRig | null = null;
-  private petCareBackdrop: Phaser.GameObjects.Rectangle | null = null;
   private livingPetSimulationActive = false;
   private studyPetMode = false;
 
@@ -960,28 +957,6 @@ export class WorldScene extends Phaser.Scene {
         this.setPetCareMode(active);
       }),
 
-      gameEventBus.on('cmd:pet-care-stroke', ({ zone, strokeIndex }) => {
-        if (!this.petCareMode) return;
-        if (this.petCareCloseUpRig) {
-          this.petCareCloseUpRig.strokeFromHud(zone, strokeIndex);
-        } else {
-          this.petEntity?.triggerCareStroke(zone);
-        }
-      }),
-
-      gameEventBus.on('cmd:pet-care-action', ({ kind, sku }) => {
-        if (!this.petCareMode || !this.petCareCloseUpRig) return;
-        const mapped = mapPetCareActionKind(kind, sku);
-        if (mapped) this.petCareCloseUpRig.performAction(mapped);
-        if (kind === 'offer_food' && sku && this.livingPetDriver) {
-          gameEventBus.emit('cmd:pet-local-food-offer', {
-            offerId: `care-offer-${Date.now()}`,
-            caregiverId: this.localUserId || 'local-player',
-            sku,
-            quality: 'normal',
-          });
-        }
-      }),
 
       gameEventBus.on('cmd:seat-at-desk', ({ seat }) => {
         if (!seat || this.currentMapId !== 'home') {
@@ -1065,47 +1040,30 @@ export class WorldScene extends Phaser.Scene {
     if (this.petCareMode === active) return;
     this.petCareMode = active;
     setPetCareModeActive(active);
-    const cam = this.cameras.main;
-    const canvas = this.game.canvas;
 
     if (active && this.petEntity && this.petSnapshot) {
       this.pathQueue = [];
-      cam.stopFollow();
+      this.cameras.main.stopFollow();
       this.petEntity.setCareCloseUp(false);
       this.petEntity.setVisible(false);
-
-      const cx = cam.width / 2;
-      const cy = cam.height / 2 - 12;
-      this.petCareBackdrop = this.add
-        .rectangle(cx, cy, cam.width + 8, cam.height + 8, 0x120c14, 0.62)
-        .setScrollFactor(0)
-        .setDepth(11_000);
-
+      this.scene.pause();
       const visual = this.petEntity.getVisualIdentity();
-      const traitId = this.livingPetDriver?.getTraitPresetId();
-      this.petCareCloseUpRig = new PetCareCloseUpRig(
-        this,
-        cx,
-        cy,
-        visual.variant,
-        visual.accessory,
-        visual.name,
-        traitId,
-      );
-      if (canvas) canvas.dataset.petCareRig = '1';
+      enterPetCareRuntime(this.game, {
+        variant: visual.variant,
+        accessory: visual.accessory,
+        petName: visual.name,
+        traitId: this.livingPetDriver?.getTraitPresetId(),
+        petSnapshot: this.petSnapshot,
+      });
     } else {
-      this.petCareCloseUpRig?.destroy();
-      this.petCareCloseUpRig = null;
-      this.petCareBackdrop?.destroy();
-      this.petCareBackdrop = null;
+      exitPetCareRuntime(this.game);
+      this.scene.resume();
       if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
         this.petEntity.setCareCloseUp(false);
         this.petEntity.setVisible(true);
       }
-      if (canvas) delete canvas.dataset.petCareRig;
       this.handleResize(true);
     }
-    gameEventBus.emit('evt:pet-care-mode', { active });
   }
 
   private bindContextEvents(): void {
@@ -1133,13 +1091,7 @@ export class WorldScene extends Phaser.Scene {
   private handleResize(snapFollow = false): void {
     const cam = this.cameras.main;
     if (!cam) return;
-    if (this.petCareMode) {
-      const cx = cam.width / 2;
-      const cy = cam.height / 2 - 12;
-      this.petCareCloseUpRig?.setWorldPosition(cx, cy);
-      this.petCareBackdrop?.setPosition(cx, cy).setSize(cam.width + 8, cam.height + 8);
-      return;
-    }
+    if (this.petCareMode) return;
     const def = getMapDefinition(this.currentMapId);
     const width = this.scale.width || 400;
     const height = this.scale.height || 600;
@@ -1200,15 +1152,6 @@ export class WorldScene extends Phaser.Scene {
 
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
-    if (this.petCareMode && this.petCareCloseUpRig) {
-      const cam = this.cameras.main;
-      const cx = cam.width / 2;
-      const cy = cam.height / 2 - 12;
-      this.petCareCloseUpRig.setWorldPosition(cx, cy);
-      this.petCareBackdrop?.setPosition(cx, cy);
-      this.petCareCloseUpRig.update(deltaMs, now);
-    }
-
     if (
       !this.petCareMode &&
       this.livingPetDriver &&
@@ -1971,26 +1914,3 @@ export class WorldScene extends Phaser.Scene {
   }
 }
 
-function mapPetCareActionKind(
-  kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'call' | 'observe',
-  sku?: string,
-): PetCareActionKind | null {
-  switch (kind) {
-    case 'toy_yarn':
-      return 'toy_yarn';
-    case 'toy_box':
-      return 'toy_box';
-    case 'offer_food':
-      return 'offer_food';
-    case 'brush':
-      return 'brush';
-    case 'call':
-      return 'call';
-    case 'observe':
-      return 'observe';
-    default:
-      if (sku === 'toy_cardboard_box') return 'toy_box';
-      if (sku === 'toy_yarn') return 'toy_yarn';
-      return null;
-  }
-}

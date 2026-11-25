@@ -23,7 +23,15 @@
 
 Không fork `PetSnapshot` / memory / personality.
 
-## Slice 2 (branch hiện tại)
+## Slice 3 (branch hiện tại)
+
+- **`PetCareScene`** tách khỏi WorldScene — giảm xung đột map/PR #12
+- **`PetCarePortraitRig`**: atlas care riêng + **mắt/đồng tử** + nhịp thở; toys kéo (len/hộp) + chase
+- **`PetCareAutonomy`**: mèo chủ động gọi/ngủ/chơi khi player im lặng
+- Authority: `consumeHandFood` (dev LAN) + `evt:pet-care-request-consume` — trừ kho + `cmd:sync-pet`
+- Hotbar contract: `docs/handover/PET_CARE_HOTBAR_CONTRACT.md`
+
+## Slice 2
 
 - **PetCareCloseUpRig** (~5.75× sprite + tai/đuôi procedural) thay zoom 2.85×
 - Vuốt trực tiếp trên canvas; `petCareReactions` theo personality (refuse bụng, sniff ăn)

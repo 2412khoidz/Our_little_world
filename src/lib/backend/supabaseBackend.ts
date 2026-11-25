@@ -554,6 +554,13 @@ export function createSupabaseBackend(): WorldBackend {
           } as PetCareApplyResult,
         };
       },
+      async consumeHandFood() {
+        return {
+          ok: false,
+          code: 'SERVER_AUTHORITY_REQUIRED',
+          message: 'Đưa thức ăn trực tiếp cần máy chủ Mission 04 — hiện dùng đổ vào bát.',
+        };
+      },
     },
 
     study: {

@@ -102,6 +102,14 @@ export interface GameEventMap {
   'cmd:pet-care-action': {
     kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'call' | 'observe';
     sku?: string;
+    quality?: 'normal' | 'silver' | 'gold';
+    ownerScope?: string;
+  };
+  /** React shell → authoritative inventory + vitals (dev LAN / Supabase). */
+  'evt:pet-care-request-consume': {
+    sku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    ownerScope: string;
   };
   'evt:pet-care-mode': { active: boolean };
 

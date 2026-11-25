@@ -32,7 +32,7 @@ test.describe('Pet care — close-up rig', () => {
     await expect(page.getByTestId('pet-care-overlay')).toBeVisible({ timeout: 20_000 });
 
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
-    await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === '1')).toBe(true);
+    await expect.poll(async () => canvas.evaluate((c) => c.dataset.petCareRig === 'portrait')).toBe(true);
 
     await page.getByTestId('pet-care-call').click();
     await page.getByTestId('pet-care-exit').click();

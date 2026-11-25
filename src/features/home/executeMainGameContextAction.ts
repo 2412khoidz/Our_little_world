@@ -77,19 +77,26 @@ export async function executeMainGameContextAction(
       ctx.onNotice(MISSION02_PENDING_VI, true);
       return;
     }
+    if (isPetCareModeActive()) {
+      const sku = ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU;
+      gameEventBus.emit('cmd:pet-care-action', {
+        kind: 'offer_food',
+        sku,
+        quality: ctx.heldItem.quality ?? 'normal',
+        ownerScope: ctx.heldItem.ownerScope ?? 'shared',
+      });
+      ctx.onNotice('Bé ngửi món — đợi máy chủ xác nhận…');
+      return;
+    }
     if (ctx.livingPetLocalSimulation) {
       const sku = ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU;
-      if (isPetCareModeActive()) {
-        gameEventBus.emit('cmd:pet-care-action', { kind: 'offer_food', sku });
-      } else {
-        gameEventBus.emit('cmd:pet-local-food-offer', {
-          offerId: `local-offer-${Date.now()}`,
-          caregiverId: 'local-player',
-          sku,
-          quality: ctx.heldItem.quality ?? 'normal',
-        });
-      }
-      ctx.onNotice('Bé đánh hơi món — chỉ mô phỏng cục bộ (chưa trừ kho).');
+      gameEventBus.emit('cmd:pet-local-food-offer', {
+        offerId: `local-offer-${Date.now()}`,
+        caregiverId: 'local-player',
+        sku,
+        quality: ctx.heldItem.quality ?? 'normal',
+      });
+      ctx.onNotice('Bé đánh hơi món — mô phỏng cục bộ (chưa trừ kho).');
       return;
     }
     if (!ctx.petCanFeed) {

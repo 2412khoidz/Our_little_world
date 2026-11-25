@@ -109,6 +109,15 @@ export interface PetBackend {
     quality: 'normal' | 'silver' | 'gold';
     idempotencyKey: string;
   }): Promise<MutationResult<PetCareApplyResult>>;
+  consumeHandFood(params: {
+    worldId: string;
+    petId: string;
+    expectedVersion: number;
+    ownerScope: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ pet: PetSnapshot; sku: string; quality: string }>>;
 }
 
 export interface SpikeCinemaPacket {

@@ -607,6 +607,44 @@ function MainCoupleApp() {
     [],
   );
 
+  useEffect(
+    () =>
+      gameEventBus.on('evt:pet-care-request-consume', ({ sku, quality, ownerScope }) => {
+        const targetWorldId = snapshotRef.current?.world.id;
+        if (!targetWorldId || !backend.pet || !petSnapshot) return;
+        void (async () => {
+          setPetBusy(true);
+          const res = await backend.pet!.consumeHandFood({
+            worldId: targetWorldId,
+            petId: petSnapshot.id,
+            expectedVersion: petSnapshot.version,
+            ownerScope,
+            itemSku: sku,
+            quality,
+            idempotencyKey: makeIdempotencyKey(`pet-care-consume-${sku}`),
+          });
+          setPetBusy(false);
+          if (!res.ok) {
+            showToast(res.message, true);
+            if (res.code === 'VERSION_CONFLICT') {
+              void refreshPetSnapshot(targetWorldId);
+              void refreshInventorySnapshot(targetWorldId);
+            }
+            return;
+          }
+          setPetSnapshot(res.data.pet);
+          gameEventBus.emit('cmd:sync-pet', res.data.pet);
+          gameEventBus.emit('cmd:pet-reaction', { action: 'feed' });
+          void refreshInventorySnapshot(targetWorldId);
+          realtimeRef.current?.notifyWorldMutated('inventory');
+          realtimeRef.current?.notifyWorldMutated('pet');
+          showToast(`${res.data.pet.name} đã ăn món nhé!`);
+          playPetFeedbackChime('feed');
+        })();
+      }),
+    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast],
+  );
+
   useEffect(() => {
     if (!incomingHugInvite && !outgoingInviteExpiresAtMs) return;
     const id = window.setInterval(() => {
