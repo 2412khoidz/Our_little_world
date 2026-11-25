@@ -71,8 +71,8 @@ test.describe('Mission 05 — co-op farm (Dev LAN API)', () => {
     });
     expect(tillB.ok()).toBeTruthy();
 
-    await pageA.getByTestId('nav-garden').click();
-    await pageB.getByTestId('nav-garden').click();
+    await pageA.getByTestId('nav-farm').click();
+    await pageB.getByTestId('nav-farm').click();
 
     await ctxA.close();
     await ctxB.close();
