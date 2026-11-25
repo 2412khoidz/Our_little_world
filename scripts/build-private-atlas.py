@@ -462,16 +462,16 @@ def main() -> None:
     props_sheet, props_entries = pack_sprites(props_items, 1024)
 
     repo_root = output.parent.parent.parent
-    puny_src = repo_root / "public/assets/donor/cc0-puny-8d"
-    puny_dst = output / "donor-cc0-puny-8d"
-    puny_dst.mkdir(parents=True, exist_ok=True)
+    farmer_src = repo_root / "public/assets/donor/pydew-characters"
+    farmer_dst = output / "donor-pydew-characters"
+    farmer_dst.mkdir(parents=True, exist_ok=True)
     gameplay_files: dict[str, str] = {}
-    for name in ("character-base.png", "mage-cyan.png", "mage-red.png", "CREDITS.md"):
-        src = puny_src / name
+    for name in ("farmer-may-atlas.png", "farmer-nang-atlas.png", "farmer-rose-atlas.png", "CREDITS.md"):
+        src = farmer_src / name
         if not src.is_file():
-            raise FileNotFoundError(f"Thiếu donor gameplay avatar (Puny CC0): {src}")
-        shutil.copy2(src, puny_dst / name)
-        gameplay_files[name] = f"donor-cc0-puny-8d/{name}"
+            raise FileNotFoundError(f"Thiếu donor gameplay avatar (PyDew farmer CC0): {src}")
+        shutil.copy2(src, farmer_dst / name)
+        gameplay_files[name] = f"donor-pydew-characters/{name}"
 
     # === 6. Save all outputs cleanly ===
     manifest = {
@@ -485,21 +485,18 @@ def main() -> None:
         "entries": world_entries + avatar_entries,
         "upstream": list(used.values()),
         "avatarGameplay": {
-            "provider": "shade-puny-characters-cc0",
-            "sourceUrl": "https://opengameart.org/content/puny-characters",
-            "frameWidth": 32,
-            "frameHeight": 32,
-            "colsPerRow": 24,
-            "framesPerDirection": 3,
+            "provider": "artemn0va-pydew-valley-cc0",
+            "sourceUrl": "https://github.com/artemn0va/pydew-valley",
+            "frameWidth": 64,
+            "frameHeight": 64,
+            "colsPerRow": 16,
+            "framesPerDirection": 4,
             "rowIndex": {
                 "idle": 0,
                 "walk": 1,
-                "slash": 2,
-                "bow": 3,
-                "stave": 4,
-                "throw": 5,
-                "hurt": 6,
-                "death": 7,
+                "hoe": 2,
+                "water": 3,
+                "harvest": 4,
             },
             "facing8Order": [
                 "down",
@@ -511,7 +508,7 @@ def main() -> None:
                 "right",
                 "down-right",
             ],
-            "posturePolicy": {"sit": "idle-row", "lie": "idle-row", "tool": "slash-row"},
+            "posturePolicy": {"sit": "idle-row", "lie": "idle-row", "facing8": "cardinal"},
             "wardrobeAvatarsPx": {"width": avatars_sheet.width, "height": avatars_sheet.height},
             "files": gameplay_files,
         },

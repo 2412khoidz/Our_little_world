@@ -93,7 +93,7 @@ export function AvatarModal({
           />
           <div style={{ flex: 1, fontSize: 12, color: 'var(--text-muted)' }}>
             <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--text)' }}>
-              Xem trước đúng nhân vật trong game (Puny CC0 8 hướng).
+              Xem trước đúng nhân vật trong game (PyDew farmer CC0).
             </p>
             <p style={{ margin: 0 }}>
               Tùy da/tóc/áo mẫu không đổi hoạt họa donor — chỉ chọn diện mạo Mây/Nắng bên dưới.

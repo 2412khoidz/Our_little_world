@@ -1,24 +1,25 @@
 {
   "version": 1,
-  "slice": "asset-transplant-a",
+  "slice": "worker-g-pydew-farmer",
   "policy": {
     "avatarDiagonalAlphaCompositeBanned": true
   },
   "entries": [
     {
-      "id": "avatar.walk.8dir",
-      "provider": "shade-puny-characters-cc0",
+      "id": "avatar.walk.pydew-farmer",
+      "provider": "artemn0va-pydew-valley-cc0",
+      "sha": "5b33bfda76d54866c648e7e54eff4e4e8a1eec8a",
       "files": [
-        "cc0-puny-8d/character-base.png",
-        "cc0-puny-8d/mage-cyan.png",
-        "cc0-puny-8d/mage-red.png"
+        "pydew-characters/farmer-may-atlas.png",
+        "pydew-characters/farmer-nang-atlas.png",
+        "pydew-characters/farmer-rose-atlas.png"
       ],
-      "frameWidth": 32,
-      "frameHeight": 32,
+      "frameWidth": 64,
+      "frameHeight": 64,
       "consumers": [
-        "donor-puny-character-base",
-        "donor-cozy-puny-mage-cyan",
-        "donor-cozy-puny-mage-red"
+        "donor-pydew-farmer-may",
+        "donor-pydew-farmer-nang",
+        "donor-pydew-farmer-rose"
       ]
     },
     {

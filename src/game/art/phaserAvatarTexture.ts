@@ -3,9 +3,18 @@ import type { AvatarConfig } from '../../shared/types';
 import { AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED } from '../../shared/assets/avatarGameplayPolicy';
 import { AVATAR_ATLAS_KEY } from './atlasProfile';
 import { buildAvatarSpritesheetCanvas, getAvatarTextureKey, getIdleFrameIndex } from './avatarSpriteBuilder';
-import { donorPunyTextureForConfig, registerDonorPunyAvatarAnims } from './donorPunyAvatarTexture';
+import {
+  donorGameplayTextureForConfig,
+  registerDonorPydewFarmerAnims,
+} from './donorPydewFarmerAvatarTexture';
 
-export { avatarIdleFrame, avatarIdleFrameForFacing8, isDonorPunyAvatarTexture, playDonorToolUseAnim } from './donorPunyAvatarTexture';
+export {
+  avatarIdleFrame,
+  avatarIdleFrameForFacing8,
+  isDonorGameplayAvatarTexture,
+  isDonorPunyAvatarTexture,
+  playDonorToolUseAnim,
+} from './donorPydewFarmerAvatarTexture';
 import { AVATAR_ATLAS_ROW_LIE, AVATAR_ATLAS_ROW_SIT, AVATAR_ATLAS_ROW_WALK } from './avatarAtlasLayout';
 import {
   AVATAR_DIRECTIONS,
@@ -19,10 +28,10 @@ import type { Direction } from '../../shared/types';
 
 const LEGACY_DIRECTIONS: readonly Direction[] = ['down', 'up', 'left', 'right'];
 
-function donorPunyPreferred(scene: Phaser.Scene, config: AvatarConfig): string | null {
-  const key = donorPunyTextureForConfig(config);
+function donorGameplayPreferred(scene: Phaser.Scene, config: AvatarConfig): string | null {
+  const key = donorGameplayTextureForConfig(config);
   if (!scene.textures.exists(key)) return null;
-  registerDonorPunyAvatarAnims(scene, key);
+  registerDonorPydewFarmerAnims(scene, key);
   return key;
 }
 
@@ -63,7 +72,7 @@ function registerDirectionalClips(
 }
 
 export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarConfig): string {
-  const donorKey = donorPunyPreferred(scene, config);
+  const donorKey = donorGameplayPreferred(scene, config);
   if (donorKey) return donorKey;
 
   const key = getAvatarTextureKey(config);
@@ -131,7 +140,7 @@ export function ensurePhaserAvatarTexture(scene: Phaser.Scene, config: AvatarCon
   }
 
   if (procSheet && !usingAtlasLayout && !AVATAR_DIAGONAL_ALPHA_COMPOSITE_BANNED) {
-    // Diagonal procedural rows removed — gameplay diagonals require donor Puny 8-dir sheets.
+    // Diagonal procedural rows removed — gameplay diagonals use donor PyDew cardinal clips.
   }
 
   return key;

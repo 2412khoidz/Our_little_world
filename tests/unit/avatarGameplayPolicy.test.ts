@@ -15,7 +15,7 @@ describe('avatar gameplay policy', () => {
 
   it('registers Puny gameplay + Cabacos reference rows', () => {
     const ids = OLW_ASSET_REGISTRY.map((r) => r.id);
-    expect(ids).toContain('avatar.walk.8dir');
+    expect(ids).toContain('avatar.walk.pydew-farmer');
     expect(ids).toContain('avatar.reference.cabacos-sunnyside');
   });
 });

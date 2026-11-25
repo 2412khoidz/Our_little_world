@@ -347,6 +347,9 @@ export class WorldScene extends Phaser.Scene {
       .sprite(startX, startY, this.localTextureKey, avatarIdleFrame(this.localTextureKey, this.localFacing))
       .setOrigin(0.5, 1)
       .setDepth(startY);
+    if (isDonorPunyAvatarTexture(this.localTextureKey)) {
+      this.localSprite.setScale(0.5);
+    }
 
     const tag = this.buildNameTag(startX, startY - 25, nickname, '#8bc4d9');
     this.localLabel = tag.container;
@@ -2266,6 +2269,7 @@ export class WorldScene extends Phaser.Scene {
         const shadow = this.add.ellipse(px, py - 1, 11, 4.5, 0x22151c, 0.32);
         const sprite = this.add
           .sprite(px, py, texKey, avatarIdleFrame(texKey, position.facing))
+          .setScale(isDonorPunyAvatarTexture(texKey) ? 0.5 : 1)
           .setOrigin(0.5, 1);
         const tag = this.buildNameTag(px, py - 25, nickname, '#f2a2ba');
 

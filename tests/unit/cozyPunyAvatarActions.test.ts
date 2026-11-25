@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { COZY_PUNY_ACTION_ROWS, PUNY_DONOR_GAMEPLAY_MANIFEST, PUNY_SHEET } from '../../src/shared/donor/punyCharacter8dSheet';
-import { cozyPunyAnimKey } from '../../src/game/art/donorPunyAvatarTexture';
+import {
+  PYDEW_FARMER_ACTION_ROWS,
+  PYDEW_FARMER_GAMEPLAY_MANIFEST,
+  PYDEW_FARMER_SHEET,
+} from '../../src/shared/donor/pydewFarmerCharacterSheet';
+import { cozyGameplayAnimKey } from '../../src/game/art/donorPydewFarmerAvatarTexture';
 
-describe('cozy Puny donor-framed actions', () => {
-  it('maps sit/lie/tools to real sheet rows (not idle/slash aliases)', () => {
-    expect(COZY_PUNY_ACTION_ROWS.sit).toBe(PUNY_SHEET.rows.hurt);
-    expect(COZY_PUNY_ACTION_ROWS.lie).toBe(PUNY_SHEET.rows.death);
-    expect(COZY_PUNY_ACTION_ROWS.hoe).toBe(PUNY_SHEET.rows.stave);
-    expect(COZY_PUNY_ACTION_ROWS.water).toBe(PUNY_SHEET.rows.bow);
-    expect(PUNY_DONOR_GAMEPLAY_MANIFEST.gameplayExcludedRows).toContain('slash');
+describe('PyDew farmer donor-framed actions', () => {
+  it('maps tools to dedicated rows (not idle aliases)', () => {
+    expect(PYDEW_FARMER_ACTION_ROWS.hoe).toBe(PYDEW_FARMER_SHEET.rows.hoe);
+    expect(PYDEW_FARMER_ACTION_ROWS.water).toBe(PYDEW_FARMER_SHEET.rows.water);
+    expect(PYDEW_FARMER_ACTION_ROWS.harvest).toBe(PYDEW_FARMER_SHEET.rows.harvest);
+    expect(PYDEW_FARMER_GAMEPLAY_MANIFEST.facing8Policy).toBe('cardinal-from-facing8');
   });
 
   it('builds stable anim keys for farming clips', () => {
-    expect(cozyPunyAnimKey('donor-puny-character-base', 'hoe', 'down')).toBe(
-      'donor-puny-character-base:tool-down',
+    expect(cozyGameplayAnimKey('donor-pydew-farmer-may', 'hoe', 'down')).toBe(
+      'donor-pydew-farmer-may:tool-down',
     );
-    expect(cozyPunyAnimKey('donor-puny-character-base', 'water', 'left')).toBe(
-      'donor-puny-character-base:water-left',
+    expect(cozyGameplayAnimKey('donor-pydew-farmer-may', 'water', 'left')).toBe(
+      'donor-pydew-farmer-may:water-left',
     );
   });
 });
