@@ -26,6 +26,15 @@ export class BootScene extends Phaser.Scene {
     this.load.image('donor-cabacos-house-interior', '/maps/donor/cabacos/house_interior_sem_fundo.png');
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
     this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
+    this.load.image(
+      'donor-cabacos-watering-can',
+      '/assets/donor/cabacos-plantation/tools/watering_can.png',
+    );
+    this.load.image('donor-cabacos-sickle', '/assets/donor/cabacos-plantation/tools/sickle.png');
+    this.load.image(
+      'donor-farm-rai-trader',
+      '/assets/donor/farm-rai-larn-na/shop/trader.webp',
+    );
     const cropSheets: [string, string, number, number][] = [
       ['donor-cabacos-wheat', '/assets/donor/cabacos-plantation/crops/wheat.png', 13, 16],
       ['donor-cabacos-carrot', '/assets/donor/cabacos-plantation/crops/carrot.png', 12, 13],
@@ -59,6 +68,9 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-house-interior',
       'donor-cabacos-soil',
       'donor-cabacos-hoe',
+      'donor-cabacos-watering-can',
+      'donor-cabacos-sickle',
+      'donor-farm-rai-trader',
       'donor-cabacos-wheat',
       'donor-cabacos-carrot',
       'donor-cabacos-sunflower',
