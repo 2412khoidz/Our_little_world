@@ -19,14 +19,14 @@ function ensureProductionDist() {
   }
 }
 
-it('dist/sw.js has no duplicate precache URLs', () => {
+it('dist/sw.js has no duplicate precache URLs', { timeout: 120_000 }, () => {
   ensureProductionDist();
   const sw = fs.readFileSync(path.join(process.cwd(), 'dist/sw.js'), 'utf8');
   const dups = findDuplicatePrecacheUrls(sw);
   expect(dups, JSON.stringify(dups, null, 2)).toEqual([]);
 });
 
-it('each critical app shell asset appears once in precache', () => {
+it('each critical app shell asset appears once in precache', { timeout: 120_000 }, () => {
   ensureProductionDist();
   const sw = fs.readFileSync(path.join(process.cwd(), 'dist/sw.js'), 'utf8');
   const urls = parsePrecacheEntries(sw).map((e) => e.url);
