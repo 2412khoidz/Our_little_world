@@ -2,6 +2,18 @@
 
 *Cập nhật lần cuối: 25/11/2026*
 
+## Phase II donor preview (parallel integration)
+
+| Field | Value |
+|-------|--------|
+| **Frozen owner compare** | `0ef19c4` @ `integration/donor-reuse-preview` (#27–#29: HUD, discoverability, farm/fish) |
+| **Render checkpoint tag** | `checkpoint/p0-cabacos-pet-7474eb0` (pre–Phase II) |
+| **Worker dispatch** | Phase II branches continue in parallel; owner gate reversed — integration merges after VQG |
+| **Playthrough** | [PHASE_II_OWNER_PLAYTHROUGH.md](PHASE_II_OWNER_PLAYTHROUGH.md) |
+| **Interactables** | store [`interactable-inventory.md`](/cursor/stores/self/docs/interactable-inventory.md) |
+
+`integration/playtest-all` vẫn @ `c01d291` — không đổi.
+
 ## 0. V0.2 P0 — A Home Comes Alive (đồng bộ Roadmap v2)
 
 **Nguồn:** [V02_ROADMAP.md](V02_ROADMAP.md) · [V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md) · [V02_INTEGRATION_PLAYBOOK.md](V02_INTEGRATION_PLAYBOOK.md)

@@ -1188,7 +1188,8 @@ function MainCoupleApp() {
       gameEventBus.emit('cmd:seat-at-desk', { seat: studySeat });
     });
 
-    const unsubSceneReady = gameEventBus.on('evt:scene-ready', () => {
+    const unsubSceneReady = gameEventBus.on('evt:scene-ready', ({ mapId }) => {
+      setCurrentMapId((prev) => (prev === mapId ? prev : mapId));
       void refreshPetSnapshot();
       void refreshStudySnapshot();
       void refreshMailboxSnapshot();

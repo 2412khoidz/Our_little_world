@@ -1,7 +1,8 @@
 # Phase II — hướng dẫn chơi thử (owner)
 
-**Checkpoint so sánh:** tag `checkpoint/p0-cabacos-pet-7474eb0` (không đổi).  
-**Preview hiện hành:** xem `integration/donor-reuse-preview` tip mới nhất sau khi integration xác nhận VQG (HUD 8 ô + vòng farm/câu).
+**Checkpoint so sánh (frozen):** tag `checkpoint/p0-cabacos-pet-7474eb0`.  
+**Acceptance compare SHA:** `0ef19c4` (Phase II stack #27–#29) — xem `docs/PROGRESS.md` + store `internal/p0-preview-qa-log.md`.  
+**Preview tip:** có thể tiến sau VQG; owner chỉ thử SHA mới khi coordinator báo.
 
 ## Chuẩn bị
 
@@ -16,7 +17,8 @@ VITE_OLW_PRIVATE_ART=1 VITE_OLW_EXTENDED_WORLD=1 VITE_OLW_DONOR_ECONOMY=1 \
   npm run dev -- --host 0.0.0.0 --port 4173 --strictPort
 ```
 
-Hai trình duyệt / iPhone + PC cùng Wi‑Fi: `http://<IP-máy-chủ>:4173/?extended-world=1`
+Hai trình duyệt / iPhone + PC cùng Wi‑Fi: `http://<IP-máy-chủ>:4173/`  
+(Với `VITE_OLW_PRIVATE_ART=1`, thế giới mở rộng bật mặc định trong DEV — không bắt buộc `?extended-world=1`.)
 
 ## 11 bước (không dùng `?vqg-capture=1`)
 
@@ -33,6 +35,9 @@ Hai trình duyệt / iPhone + PC cùng Wi‑Fi: `http://<IP-máy-chủ>:4173/?ex
 | 9 | **Thùng giao** hoặc shop → bán/gửi | Xu tăng; không bắt buộc menu Dev |
 | 10 | **Ao / suối** → **J** câu | Modal câu donor mở từ thế giới |
 | 11 | **Làng Cabacos** + cửa shop | Tiles đầy đủ; nhãn cửa/nhà dễ thấy |
+| 12a | **Nhà** → đứng cạnh **sofa** → **J** | Nhân vật ngồi; tab Nhà |
+| 12b | **Giường** (`bed_cozy`) → **J** | Tư thế nằm; đối tác thấy trên cùng map |
+| 13 | **2 người:** B bấm **♥** → **Ôm nhau** (hoặc mời ôm) | FAB góc phải; không cần thanh emoji mở |
 
 **Phím:** `1`–`8` chọn ô; **J** tương tác; đi bằng WASD / chạm.
 

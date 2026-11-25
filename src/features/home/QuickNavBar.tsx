@@ -2,6 +2,8 @@ import { Armchair, Compass, Home, Menu, Shirt, Sprout, Trees } from 'lucide-reac
 import { isOutdoorMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
+const DONOR_WORLD_NAV_IDS: MapId[] = ['village', 'beach', 'shop', 'forest', 'outdoor'];
+
 interface QuickNavBarProps {
   hidden?: boolean;
   currentMapId: MapId;
@@ -58,7 +60,7 @@ export function QuickNavBar({
       {outdoorUnlocked && (
         <button
           type="button"
-          className={`nav-btn ${(currentMapId === 'village' || currentMapId === 'beach') && !decorateActive ? 'nav-btn--active' : ''}`}
+          className={`nav-btn ${DONOR_WORLD_NAV_IDS.includes(currentMapId) && !decorateActive ? 'nav-btn--active' : ''}`}
           data-testid="nav-outdoor"
           onClick={() => onSelectMap('village')}
         >
