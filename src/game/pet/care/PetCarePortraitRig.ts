@@ -13,6 +13,14 @@ import type { CatAccessoryId, CatCoatVariantId, PetAnimState } from '../../../sh
 import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood';
 import { ensureLicensedCareCatReady, getLicensedCareCatTextureKey, PET_CARE_CAT_ORANGE_SCALE } from './petCareCatOrange';
 import { PET_CARE_ILLUSTRATION_DISPLAY_SCALE, petCareIllustrationAtlasEnabled } from '../../../shared/petLiving/petCare/petCareIllustrationFlag';
+import { petCareJ4lpanPortraitEnabled } from '../../../shared/petLiving/petCare/petCareJ4lpanPortraitFlag';
+import {
+  activeJ4lpanFlash,
+  j4lpanFlashFromAction,
+  j4lpanFlashFromExpression,
+  publishJ4lpanPortrait,
+  type J4lpanFlashState,
+} from './petCarePortraitRigJ4lpan';
 import { ensurePetCareIllustrationSheet, petCareIllustrationFrameForState } from './petCarePortraitTexture';
 import { petCareCatShadowTextureKey } from './petCareCatIsolateTexture';
 import {
@@ -27,8 +35,10 @@ import { PetCareAmbientProps } from './PetCareAmbientProps';
 export class PetCarePortraitRig {
   private readonly scene: Phaser.Scene;
   private readonly root: Phaser.GameObjects.Container;
-  private readonly shadow: Phaser.GameObjects.Sprite;
-  private readonly body: Phaser.GameObjects.Sprite;
+  private readonly shadow: Phaser.GameObjects.Sprite | null;
+  private readonly body: Phaser.GameObjects.Sprite | null;
+  private readonly j4lpanMode: boolean;
+  private j4lpanFlash: J4lpanFlashState = null;
   private readonly bubble: Phaser.GameObjects.Text;
   private readonly hitPad: Phaser.GameObjects.Rectangle;
   private readonly toys: PetCareToyLayer;
@@ -43,7 +53,7 @@ export class PetCarePortraitRig {
   private targetTiltDeg = 0;
   private currentTiltDeg = 0;
   private swayPhase = 0;
-  private readonly framePlayer: PetCareLicensedAnimPlayer;
+  private readonly framePlayer: PetCareLicensedAnimPlayer | null;
 
   constructor(
     scene: Phaser.Scene,
@@ -57,41 +67,50 @@ export class PetCarePortraitRig {
   ) {
     this.scene = scene;
     const illustration = petCareIllustrationAtlasEnabled();
+    this.j4lpanMode = petCareJ4lpanPortraitEnabled();
     this.petName = petName;
     this.snapshot = snapshot;
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
     this.traits = preset.traits;
 
     const displayScale = illustration ? PET_CARE_ILLUSTRATION_DISPLAY_SCALE : PET_CARE_CAT_ORANGE_SCALE;
-    let bodyKey: string;
-    let defaultIndex: number;
-    if (illustration) {
-      bodyKey = ensurePetCareIllustrationSheet(scene, _variant, _accessory);
-      defaultIndex = petCareIllustrationFrameForState('sit_south', 0);
-    } else {
-      ensureLicensedCareCatReady(scene);
-      bodyKey = getLicensedCareCatTextureKey();
-      defaultIndex = 48;
-    }
-    const shadowKey = petCareCatShadowTextureKey();
-
     this.root = scene.add.container(x, y).setScrollFactor(0).setDepth(12_000);
 
     const floor = scene.add.ellipse(0, 44, 118, 22, 0x1a1218, 0.5);
-    this.shadow = scene.add
-      .sprite(2, 42, shadowKey, defaultIndex)
-      .setOrigin(0.5, 0.5)
-      .setAlpha(illustration ? 0.28 : 0.45)
-      .setScale(displayScale * 0.95)
-      .setVisible(!illustration);
-    this.body = scene.add
-      .sprite(0, 6, bodyKey, defaultIndex)
-      .setOrigin(0.5, 0.88)
-      .setScale(displayScale);
-    this.framePlayer = illustration
-      ? createPetCareIllustrationFramePlayer(this.body, scene, _variant, _accessory)
-      : createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
-    this.publishAtlasRegressionMarkers(scene, bodyKey, defaultIndex, illustration);
+    this.shadow = null;
+    this.body = null;
+    this.framePlayer = null;
+
+    if (!this.j4lpanMode) {
+      let bodyKey: string;
+      let defaultIndex: number;
+      if (illustration) {
+        bodyKey = ensurePetCareIllustrationSheet(scene, _variant, _accessory);
+        defaultIndex = petCareIllustrationFrameForState('sit_south', 0);
+      } else {
+        ensureLicensedCareCatReady(scene);
+        bodyKey = getLicensedCareCatTextureKey();
+        defaultIndex = 48;
+      }
+      const shadowKey = petCareCatShadowTextureKey();
+      this.shadow = scene.add
+        .sprite(2, 42, shadowKey, defaultIndex)
+        .setOrigin(0.5, 0.5)
+        .setAlpha(illustration ? 0.28 : 0.45)
+        .setScale(displayScale * 0.95)
+        .setVisible(!illustration);
+      this.body = scene.add
+        .sprite(0, 6, bodyKey, defaultIndex)
+        .setOrigin(0.5, 0.88)
+        .setScale(displayScale);
+      this.framePlayer = illustration
+        ? createPetCareIllustrationFramePlayer(this.body, scene, _variant, _accessory)
+        : createPetCareLicensedFramePlayer(this.body, this.shadow, scene);
+      this.publishAtlasRegressionMarkers(scene, bodyKey, defaultIndex, illustration);
+    } else {
+      scene.game.canvas.dataset.petCareJ4lpan = '1';
+      scene.game.canvas.dataset.petCareIllustration = '0';
+    }
 
     this.bubble = scene.add
       .text(0, -72, '', {
@@ -113,7 +132,10 @@ export class PetCarePortraitRig {
     this.ambient = new PetCareAmbientProps(scene, this.root);
     this.ambient.softenCloseUpPresentation();
 
-    this.root.add([floor, this.shadow, this.body, this.toys.getLayer(), this.bubble, this.hitPad]);
+    const rigChildren: Phaser.GameObjects.GameObject[] = [floor, this.toys.getLayer(), this.bubble, this.hitPad];
+    if (this.shadow) rigChildren.splice(1, 0, this.shadow);
+    if (this.body) rigChildren.splice(this.shadow ? 2 : 1, 0, this.body);
+    this.root.add(rigChildren);
 
     const mood = derivePetCareMood(snapshot, this.traits);
     this.applyExpression({
@@ -123,6 +145,7 @@ export class PetCarePortraitRig {
       tail: 'idle',
       eyeMood: mood.label === 'sleepy' ? 'sleep' : 'open',
     });
+    if (this.j4lpanMode) this.syncJ4lpanPortrait(mood.bubbleVi);
 
     this.hitPad.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       pointer.event?.preventDefault();
@@ -153,6 +176,7 @@ export class PetCarePortraitRig {
   syncSnapshot(snapshot: PetSnapshot | null): void {
     this.snapshot = snapshot;
     if (snapshot) this.petName = snapshot.name;
+    if (this.j4lpanMode) this.syncJ4lpanPortrait(this.bubble.text);
   }
 
   /** 2P shared session — reflect partner care without caregiver toggle. */
@@ -171,6 +195,19 @@ export class PetCarePortraitRig {
       eyeMood: happy ? 'happy' : 'open',
     });
     window.setTimeout(() => this.bubble.setText(mood.bubbleVi), 2400);
+    if (this.j4lpanMode) {
+      this.j4lpanFlash = j4lpanFlashFromExpression(
+        {
+          anim: physical.isSleeping ? 'sleep' : 'pet_purr',
+          bubbleVi: '',
+          earTilt: 0,
+          tail: happy ? 'wag_slow' : 'idle',
+          eyeMood: happy ? 'happy' : 'open',
+        },
+        Date.now(),
+      );
+      this.syncJ4lpanPortrait(happy ? 'Purr~ hai người cùng chăm!' : 'Mlem~ người kia vừa chăm bé.');
+    }
   }
 
   getLastInteractionMs(): number {
@@ -183,6 +220,7 @@ export class PetCarePortraitRig {
   }
 
   performAction(kind: PetCareActionKind): void {
+    if (this.j4lpanMode) this.j4lpanFlash = j4lpanFlashFromAction(kind, Date.now());
     if (kind === 'toy_yarn') this.toys.spawnYarn();
     if (kind === 'toy_box') this.toys.spawnBox();
     if (kind === 'brush') this.ambient.playBrush();
@@ -209,16 +247,23 @@ export class PetCarePortraitRig {
     const mood = derivePetCareMood(this.snapshot, this.traits);
     this.breathPhase += deltaMs * 0.0025;
     this.swayPhase += deltaMs * 0.0011;
-    const breath = 1 + Math.sin(this.breathPhase) * mood.breathAmplitude * 0.65;
-    const scale = PET_CARE_CAT_ORANGE_SCALE * breath;
-    this.body.setScale(scale);
+    if (this.body) {
+      const breath = 1 + Math.sin(this.breathPhase) * mood.breathAmplitude * 0.65;
+      const scale = PET_CARE_CAT_ORANGE_SCALE * breath;
+      this.body.setScale(scale);
+    }
 
     const lerp = Math.min(1, deltaMs * 0.0045);
     this.currentTiltDeg += (this.targetTiltDeg - this.currentTiltDeg) * lerp;
     const sway = Math.sin(this.swayPhase) * 0.8;
     this.root.setAngle(this.currentTiltDeg * 0.2 + sway);
 
-    this.framePlayer.tick(deltaMs);
+    this.framePlayer?.tick(deltaMs);
+    if (this.j4lpanMode) {
+      const now = _nowMs;
+      this.j4lpanFlash = activeJ4lpanFlash(this.j4lpanFlash, now);
+      this.syncJ4lpanPortrait(this.bubble.text);
+    }
     this.toys.update(deltaMs, 0, -12);
     if (this.toys.isChaseActive()) {
       this.applyExpression({
@@ -274,7 +319,8 @@ export class PetCarePortraitRig {
         ease: 'Quad.easeOut',
       });
     }
-    if (expr.anim === 'play_pounce' || expr.anim === 'eat') {
+    if (this.j4lpanMode) this.j4lpanFlash = j4lpanFlashFromExpression(expr, Date.now());
+    if (this.body && (expr.anim === 'play_pounce' || expr.anim === 'eat')) {
       this.scene.tweens.add({
         targets: this.body,
         y: '+=2',
@@ -285,6 +331,16 @@ export class PetCarePortraitRig {
     }
     this.playAnim(expr.anim);
     if (expr.bubbleVi) this.bubble.setText(expr.bubbleVi);
+    if (this.j4lpanMode) this.syncJ4lpanPortrait(expr.bubbleVi ?? this.bubble.text);
+  }
+
+  private syncJ4lpanPortrait(bubbleVi: string): void {
+    publishJ4lpanPortrait({
+      snapshot: this.snapshot,
+      bubbleVi,
+      flash: this.j4lpanFlash,
+      nowMs: this.snapshot?.serverNowMs ?? Date.now(),
+    });
   }
 
   private publishAtlasRegressionMarkers(
@@ -306,6 +362,6 @@ export class PetCarePortraitRig {
   }
 
   private playAnim(state: PetAnimState): void {
-    this.framePlayer.setState(state);
+    this.framePlayer?.setState(state);
   }
 }

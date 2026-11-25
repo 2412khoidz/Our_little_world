@@ -1888,6 +1888,7 @@ function MainCoupleApp() {
 
       <PetCareTouchOverlay
         active={petCareMode}
+        petSnapshot={petSnapshot}
         onExit={() => gameEventBus.emit('cmd:pet-care-mode', { active: false })}
       />
 

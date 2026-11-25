@@ -17,7 +17,9 @@
 | `src/main.js` — `triggerBlink` / idle yawn / `triggerTailWag` timing | `src/shared/donor/pet-shop-j4lpan/petShopCareAnimLoop.ts` + `PetShopCloseUpCat.tsx` | Blink, ear twitch, yawn, boosted tail wag on care |
 | `src/styles.css` — `data-eyes` / `data-mouth` | `src/features/pet/petShopCloseUpCat.css` | CSS-driven face swap |
 | — | `src/features/pet/PetShopCloseUpCat.tsx` | Pet panel portrait; replaces upscaled Phaser portrait path for care UI |
-| — | `src/features/pets/PetPanel.tsx` | Wires care buttons → flash window for face loop |
+| — | `src/game/pet/care/PetCarePortraitRig.ts` | Default portrait path (replaces procedural 48×48) |
+| — | `src/features/petCare/PetCareJ4lpanPortrait.tsx` | React SVG over `PetCareScene` canvas |
+| — | `src/features/pets/PetPanel.tsx` | Inventory/authority only — portrait lives in care scene |
 
 Does **not** replace main-game Phaser pet sprite or `?donor-pet-three=1` Three.js route in this slice.  
 Does **not** port tray walking / multi-pet chase / Tauri shell.

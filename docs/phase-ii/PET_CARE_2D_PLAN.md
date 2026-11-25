@@ -2,7 +2,7 @@
 
 ## Direction
 - **Stop** presenting overworld `cat-orange` 16×16 cells blown up (×8.25) as the care close-up.
-- **Default in dev:** 48×48 care illustration atlas (`petCarePortraitPainter.ts`) via `petCareIllustrationAtlasEnabled()`.
+- **Default (recovery @ 8e4454d):** j4lpan/pet-shop SVG via `PetCarePortraitRig` + `PetCareJ4lpanPortrait` (`petCareJ4lpanPortraitEnabled()`). Procedural 48×48 (`petCarePortraitPainter.ts`) only with `?pet-care-procedural=1`.
 - **Next:** memu-cat / donor skeletal 2D evaluation; Three.js donor sandbox stays **opt-in** (`?donor-pet-three=1`) only.
 - **2P:** one physical pet per world — `sharedPetCareSession.ts` + backend merge; no “Đổi người chăm” UI.
 
