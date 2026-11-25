@@ -72,6 +72,7 @@ Demo E đã được duyệt. Các bước sau áp dụng khi mở OLW-010-01:
 | Lệnh | Đầu ra và mục đích |
 |---|---|
 | `npm run assets:atlas:private` | Đọc pack hiện có dưới `asset-candidates/extracted/` (Python + Pillow). Chỉ trích khung được chọn từ registry Demo E. `public/assets/private-unified/` bị ignore. Vite dev nhận atlas riêng khi khởi động với đủ bốn tệp. |
+| `VITE_OLW_PRIVATE_ART=1` + extended maps | `WorldScene` vẽ village/farm/forest/beach/shop qua `demoEZoneRenderer` (Sprout `env.meadow_tile` + `prop.*` manifest); Tiled JSON chỉ còn collision/portals/NPC — không `tileset-cozy` khi atlas sẵn sàng. |
 | `npm run build:private` và `npm run preview:private` | `dist-private/` để xem bản build riêng qua loopback. Atlas riêng nằm ngoài precache. |
 | `npm run assets:atlas` và `npm run build` | `public/assets/unified/` là fallback có quyền Web/PWA. `dist/` chỉ nhận tệp công khai trong danh sách allowlist. Production guard kiểm tra asset, JS và Service Worker. |
 
