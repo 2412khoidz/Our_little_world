@@ -109,8 +109,9 @@ export interface GameEventMap {
     serverNowMs: number;
     growthTimeScale?: number;
     plots: readonly import('../shared/farming/farmSnapshotTypes').FarmPlotView[];
-    /** Plot index that changed (e.g. after till) for one-shot Cabacos soil pop. */
+    /** Plot index that changed for one-shot farm presentation FX. */
     highlightPlotId?: number;
+    highlightAction?: 'till' | 'water' | 'plant' | 'harvest';
   };
   /** React shell → Phaser presentation-only day/night + weather overlay. */
   'cmd:sync-world-clock': import('../shared/world/worldClock').WorldClockPresentation;

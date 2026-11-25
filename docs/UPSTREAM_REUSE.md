@@ -150,6 +150,19 @@ python3 scripts/build-asset-transplant-a-contact-sheets.py
 - `npm run vendor-donor:fishing-frenzy` + `node scripts/capture-fishing-frenzy-contact-sheet.mjs`
 - In-game: `data-testid` `fishing-frenzy-catch-reveal`, `tidefall-fishing-canvas` (fisher overlay)
 
+## Full sprint Worker C — farming art transplant (2026-11-25)
+
+| Donor | OLW path | Consumer |
+|-------|----------|----------|
+| Cabacos `tools/*.png`, `farming/indicators/*` | `public/assets/donor/cabacos-plantation/` | `BootScene`, `HeldItemRenderer`, `FarmPlotVisualController` |
+| Cabacos `plantation/crops/*` | `public/assets/donor/cabacos-plantation/crops/` | `farmCropVisualResolver` |
+| PyDew `graphics/soil_water/*`, `fruit/tomato/*` | `public/assets/donor/pydew-farming/` | `FarmPlotVisualController`, `pydewCropVisualRegistry.ts` |
+| Cabacos `tools/rod.png` | `public/assets/donor/cabacos-plantation/tools/rod.png` | `rod_basic` held item (Hollowmere fishing hook) |
+
+**Excluded:** Inventory SVG/icons as map crop sprites; duplicate farming authority.
+
+**Proof:** `farmCropVisualResolver.test.ts`, `farmHeldToolPresentation.test.ts`, `npm run assets:farming-transplant-sheet`
+
 ## Frozen acceptance (do not move)
 
 `integration/playtest-all` @ `c01d291f709bc639eba378999482d904c1d8d0c3`
