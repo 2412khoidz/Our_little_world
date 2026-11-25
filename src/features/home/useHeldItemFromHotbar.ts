@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EMPTY_HELD_ITEM, selectHotbarSlot } from '../../shared/interaction/interactionResolver';
 import { reconcileHeldItemWithHotbar } from '../../shared/interaction/heldItemIdentity';
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
@@ -13,6 +13,14 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
     () => reconcileHeldItemWithHotbar(heldAnchor, slots),
     [heldAnchor, slots],
   );
+
+  // Drop stale user intent when the selected stack is depleted (prevents auto-reselect on replenish).
+  useEffect(() => {
+    if (heldAnchor.itemSku && heldItem.itemKind === 'none') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- prune stale anchor when stack depletes
+      setHeldAnchor(EMPTY_HELD_ITEM);
+    }
+  }, [heldAnchor.itemSku, heldItem.itemKind]);
 
   const selectSlot = (index: number) => {
     setHeldAnchor((cur) => selectHotbarSlot(slots, cur, index));

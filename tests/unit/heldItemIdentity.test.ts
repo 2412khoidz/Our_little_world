@@ -45,6 +45,18 @@ describe('reconcileHeldItemWithHotbar', () => {
     expect(next.slotIndex).toBe(1);
   });
 
+  it('does not resurrect selection when the same stack returns later without user input', () => {
+    const held = selectHotbarSlot([slot(0, 'pet_kibble_basic', 1)], EMPTY_HELD_ITEM, 0);
+    let anchor = held;
+    let visible = reconcileHeldItemWithHotbar(anchor, [slot(0, null, 0)]);
+    expect(visible.itemKind).toBe('none');
+    if (anchor.itemSku && visible.itemKind === 'none') {
+      anchor = EMPTY_HELD_ITEM;
+    }
+    visible = reconcileHeldItemWithHotbar(anchor, [slot(0, 'pet_kibble_basic', 2)]);
+    expect(visible.itemKind).toBe('none');
+  });
+
   it('does not show stale SKU when slot index reused for another item', () => {
     const held = selectHotbarSlot([slot(0, 'pet_kibble_basic', 2)], EMPTY_HELD_ITEM, 0);
     const swapped: HotbarSlot[] = [slot(0, 'fish_salmon_bite', 1)];
