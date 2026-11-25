@@ -44,6 +44,7 @@ import {
   validatePlacement,
 } from '../../shared/placement';
 import { isDecorateMapId } from '../../shared/decorate/decorateInteriorPolicy';
+import { decorateGhostAnchorFromFootprint } from '../../shared/decorate/decorateGhostAnchor';
 import { footprintForCatalog } from '../../shared/decorate/decoratePlacementLoop';
 import {
   MovementTxThrottle,
@@ -203,6 +204,7 @@ export class WorldScene extends Phaser.Scene {
 
   private decorateGridGraphics!: Phaser.GameObjects.Graphics;
   private decoratePreviewGraphics!: Phaser.GameObjects.Graphics;
+  private decoratePreviewGhost: Phaser.GameObjects.Image | null = null;
   private decorateState: DecorateStatePayload = {
     active: false,
     activeSku: null,
@@ -970,6 +972,7 @@ export class WorldScene extends Phaser.Scene {
     this.decorateGridGraphics.clear();
     if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) {
       this.decoratePreviewGraphics.clear();
+      this.hideDecoratePreviewGhost();
       return;
     }
 
@@ -994,10 +997,19 @@ export class WorldScene extends Phaser.Scene {
     this.redrawDecoratePreview();
   }
 
+  private hideDecoratePreviewGhost(): void {
+    if (this.decoratePreviewGhost) {
+      this.decoratePreviewGhost.setVisible(false);
+    }
+  }
+
   private redrawDecoratePreview(): void {
     if (!this.decoratePreviewGraphics) return;
     this.decoratePreviewGraphics.clear();
-    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) return;
+    if (!this.decorateState.active || !isDecorateMapId(this.currentMapId)) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     if (this.decorateState.selectedPlacementId) {
       const selected = this.placements.find(
@@ -1014,7 +1026,10 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    if (!this.hoverTile) return;
+    if (!this.hoverTile) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
     let previewSku = this.decorateState.activeSku;
     let ignoreId: string | undefined;
 
@@ -1025,10 +1040,16 @@ export class WorldScene extends Phaser.Scene {
         ignoreId = selected.id;
       }
     }
-    if (!previewSku) return;
+    if (!previewSku) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     const item = getCatalogItem(previewSku);
-    if (!item) return;
+    if (!item) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
 
     const selectedPlacement = ignoreId
       ? this.placements.find((p) => p.id === ignoreId)
@@ -1067,6 +1088,35 @@ export class WorldScene extends Phaser.Scene {
       footprint.widthTiles * this.tilePx(),
       footprint.heightTiles * this.tilePx(),
     );
+
+    const { key, frame } = worldFurnitureFrame(this, previewSku);
+    if (!this.textures.exists(key)) {
+      this.hideDecoratePreviewGhost();
+      return;
+    }
+
+    const anchor = decorateGhostAnchorFromFootprint({
+      tileX: this.hoverTile.tileX,
+      tileY: this.hoverTile.tileY,
+      widthTiles: footprint.widthTiles,
+      heightTiles: footprint.heightTiles,
+      tilePx: this.tilePx(),
+      layerSlot: item.layerSlot,
+    });
+
+    if (!this.decoratePreviewGhost) {
+      this.decoratePreviewGhost = this.add
+        .image(anchor.centerX, anchor.footY, key, frame)
+        .setOrigin(0.5, 1)
+        .setDepth(9045);
+    } else {
+      this.decoratePreviewGhost.setTexture(key, frame);
+      this.decoratePreviewGhost.setPosition(anchor.centerX, anchor.footY);
+      this.decoratePreviewGhost.setVisible(true);
+    }
+    this.decoratePreviewGhost.setDepth(9045);
+    this.decoratePreviewGhost.setAlpha(check.ok ? 0.62 : 0.48);
+    this.decoratePreviewGhost.setTint(check.ok ? 0xffffff : 0xffb0b0);
   }
 
   private bindEventBus(): void {

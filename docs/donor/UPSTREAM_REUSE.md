@@ -90,4 +90,15 @@ Branch: `cursor/multi-donor-expansion-d77e` → `integration/donor-reuse-preview
 
 **Art:** Modern Interiors / `public/assets/starter/furniture-cozy.png` — no ToffeeCraft / cocoworking tinyhouse PNGs in build.
 
+## PyDew Valley @ vendored SHA — environment FX (Worker E)
+
+| Upstream | OLW path |
+| --- | --- |
+| `graphics/rain/drops/*.png` | `src/shared/donor/pydew/pydewRainPresentation.ts`, `WorldLightingOverlay.ts` |
+| Farm water / environment tilesets | `public/maps/donor/pydew-valley/`, `renderDonorPydewMap.ts` |
+
+Registry: `src/shared/art/furnitureEnvFxTransplantRegistry.ts`. Evidence: `src/donors/pydew-valley/UPSTREAM_REUSE.md`.
+
+**RPG pixel pack (JaiGod):** not vendored in recovery — fire/water/windmill stay on Demo E `world-props` sheets unless a future selective import wins contact-sheet review.
+
 **Beach nav:** `OutdoorWorldNavSheet` + village `→ Gull Bay` discoverability marker (Cabacos portal bar).

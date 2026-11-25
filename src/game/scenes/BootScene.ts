@@ -7,6 +7,7 @@ import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 import farmWorldJson from '../../../public/assets/maps/farm.json';
 import homeWorldJson from '../../../public/assets/maps/home.json';
 import gardenWorldJson from '../../../public/assets/maps/garden.json';
+import { PYDEW_RAIN_DROP_TEXTURE_KEYS, PYDEW_RAIN_DROP_URLS } from '../../shared/donor/pydew/pydewRainPresentation';
 import { sproutTextureKey } from '../world/renderDonorSproutMap';
 
 function pydewTextureKey(tilesetName: string): string {
@@ -98,6 +99,10 @@ export class BootScene extends Phaser.Scene {
     if (isSproutDonorMap(gardenWorldJson as { properties?: { name: string; value: string }[] })) {
       preloadSproutTilesets(this.load, gardenWorldJson as { tilesets?: { name: string; image: string }[] });
     }
+
+    for (const [key, url] of PYDEW_RAIN_DROP_TEXTURE_KEYS.map((k, i) => [k, PYDEW_RAIN_DROP_URLS[i]] as const)) {
+      this.load.image(key, url);
+    }
   }
 
   create(): void {
@@ -153,6 +158,7 @@ export class BootScene extends Phaser.Scene {
       DONOR_PUNY_TEXTURE_IDS.base,
       DONOR_PUNY_TEXTURE_IDS.soldierBlue,
       DONOR_PUNY_TEXTURE_IDS.soldierRed,
+      ...PYDEW_RAIN_DROP_TEXTURE_KEYS,
     ]) {
       this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }

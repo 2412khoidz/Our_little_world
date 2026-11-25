@@ -1,14 +1,23 @@
 import Phaser from 'phaser';
+import {
+  PYDEW_RAIN_DROP_TEXTURE_KEYS,
+  pydewRainDropCount,
+  pydewRainFallSpeedPxPerSec,
+  pydewRainGroupAlpha,
+} from '../../shared/donor/pydew/pydewRainPresentation';
 import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { phaserLightingOverlayFromPresentation } from '../../shared/world/worldClock';
 
+type RainGfx = Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+
 interface RainDrop {
-  gfx: Phaser.GameObjects.Rectangle;
+  gfx: RainGfx;
   speed: number;
 }
 
 /**
  * Fullscreen day/night + drizzle presentation (AI Farm donor lighting → 2D overlay).
+ * Drizzle particles use PyDew Valley drop sprites when preloaded; procedural rects otherwise.
  */
 export class WorldLightingOverlay {
   private readonly scene: Phaser.Scene;
@@ -16,6 +25,7 @@ export class WorldLightingOverlay {
   private rainDrops: RainDrop[] = [];
   private rainGroup: Phaser.GameObjects.Container;
   private lastWeather: WorldClockPresentation['weather']['kind'] = 'clear';
+  private lastIntensity = -1;
   private camWidth = 0;
   private camHeight = 0;
 
@@ -50,29 +60,57 @@ export class WorldLightingOverlay {
     this.tintRect.setFillStyle(color, alpha);
 
     const weather = presentation.weather.kind;
-    if (weather !== this.lastWeather) {
+    const intensity = presentation.weather.intensity;
+    const weatherChanged = weather !== this.lastWeather;
+    const intensityBucket =
+      weather === 'drizzle' ? Math.round(intensity * 4) / 4 : 0;
+    const intensityChanged = intensityBucket !== this.lastIntensity;
+
+    if (weatherChanged || (weather === 'drizzle' && intensityChanged)) {
       this.lastWeather = weather;
+      this.lastIntensity = intensityBucket;
       this.clearRain();
       if (weather === 'drizzle') {
-        this.spawnRain(presentation.weather.intensity);
+        this.spawnRain(intensity);
       }
     } else if (weather === 'drizzle') {
-      this.tickRain(presentation.weather.intensity);
+      this.tickRain(intensity);
     }
+  }
+
+  private pydewRainTexturesReady(): boolean {
+    return PYDEW_RAIN_DROP_TEXTURE_KEYS.every((key) => this.scene.textures.exists(key));
   }
 
   private spawnRain(intensity: number): void {
     const cam = this.scene.cameras.main;
-    const count = Math.min(48, Math.max(12, Math.floor(12 + intensity * 36)));
+    const usePydew = this.pydewRainTexturesReady();
+    const count = pydewRainDropCount(intensity);
+
     for (let i = 0; i < count; i += 1) {
       const x = Math.random() * cam.width;
       const y = Math.random() * cam.height;
-      const gfx = this.scene.add
-        .rectangle(x, y, 1, 4 + Math.random() * 5, 0xa8c8e8, 0.35 + intensity * 0.25)
-        .setOrigin(0.5);
-      this.rainGroup.add(gfx);
-      this.rainDrops.push({ gfx, speed: 90 + Math.random() * 120 });
+      const speed = pydewRainFallSpeedPxPerSec(intensity) * (0.75 + Math.random() * 0.45);
+
+      if (usePydew) {
+        const key =
+          PYDEW_RAIN_DROP_TEXTURE_KEYS[Math.floor(Math.random() * PYDEW_RAIN_DROP_TEXTURE_KEYS.length)] ??
+          PYDEW_RAIN_DROP_TEXTURE_KEYS[0];
+        const img = this.scene.add
+          .image(x, y, key)
+          .setOrigin(0.5, 0)
+          .setAlpha(0.55 + intensity * 0.35);
+        this.rainGroup.add(img);
+        this.rainDrops.push({ gfx: img, speed });
+      } else {
+        const gfx = this.scene.add
+          .rectangle(x, y, 1, 4 + Math.random() * 5, 0xa8c8e8, 0.35 + intensity * 0.25)
+          .setOrigin(0.5);
+        this.rainGroup.add(gfx);
+        this.rainDrops.push({ gfx, speed });
+      }
     }
+    this.rainGroup.setAlpha(pydewRainGroupAlpha(intensity));
   }
 
   private tickRain(intensity: number): void {
@@ -80,12 +118,12 @@ export class WorldLightingOverlay {
     const dt = 1 / 30;
     for (const drop of this.rainDrops) {
       drop.gfx.y += drop.speed * dt;
-      if (drop.gfx.y > cam.height + 8) {
-        drop.gfx.y = -8;
+      if (drop.gfx.y > cam.height + 12) {
+        drop.gfx.y = -12;
         drop.gfx.x = Math.random() * cam.width;
       }
     }
-    this.rainGroup.setAlpha(0.55 + intensity * 0.35);
+    this.rainGroup.setAlpha(pydewRainGroupAlpha(intensity));
   }
 
   private clearRain(): void {
