@@ -28,7 +28,10 @@ async function main() {
   const srv = spawn(
     process.execPath,
     [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', PORT, '--strictPort'],
-    { stdio: 'ignore', env: { ...process.env, VITE_OLW_EXTENDED_WORLD: '1' } },
+    {
+      stdio: 'ignore',
+      env: { ...process.env, VITE_OLW_PRIVATE_ART: '1', VITE_OLW_EXTENDED_WORLD: '1' },
+    },
   );
   try {
     await waitServer();
@@ -40,10 +43,20 @@ async function main() {
     await page.getByTestId('preset-partner-a').click();
     const canvas = page.getByTestId('game-canvas-host').locator('canvas');
     await canvas.waitFor({ state: 'visible', timeout: 20000 });
-    await page.evaluate(() => window.__OLW_VQG?.jump?.('farm', 55, 20));
-    for (let i = 0; i < 40; i += 1) {
+    await page.getByTestId('nav-farm').click({ force: true });
+    for (let i = 0; i < 48; i += 1) {
       if ((await canvas.getAttribute('data-map-id')) === 'farm') break;
       await page.waitForTimeout(250);
+    }
+    if ((await canvas.getAttribute('data-map-id')) !== 'farm') {
+      await page.evaluate(() => window.__OLW_VQG?.jump?.('farm', 55, 20));
+      for (let i = 0; i < 48; i += 1) {
+        if ((await canvas.getAttribute('data-map-id')) === 'farm') break;
+        await page.waitForTimeout(250);
+      }
+    }
+  if ((await canvas.getAttribute('data-map-id')) !== 'farm') {
+      throw new Error('VQG: expected data-map-id=farm');
     }
     await page.waitForTimeout(1200);
     await assertCanvasPixelVariance(canvas, { minUnique: 28 });
