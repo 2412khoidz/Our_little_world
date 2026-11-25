@@ -6,17 +6,18 @@ import {
   tickChillReel,
   type ChillReelState,
 } from '../../shared/donor/chill-fishing/reelMinigame';
-import { postDonorFishingResolve, postDonorFishingStart } from '../../lib/backend/donorDevLanClient';
+import { postDonorFishingResolve, postDonorFishingStart, type DonorFishingSpotId } from '../../lib/backend/donorDevLanClient';
 
 interface ChillFishingModalProps {
   worldId: string;
+  spotId?: DonorFishingSpotId;
   onClose: () => void;
   onInventoryRefresh: () => Promise<void>;
 }
 
 const DEMO_FISH = { reelBehavior: 'normal' as const, speed: 0.6 };
 
-export function ChillFishingModal({ worldId, onClose, onInventoryRefresh }: ChillFishingModalProps) {
+export function ChillFishingModal({ worldId, spotId = 'meadow_pond', onClose, onInventoryRefresh }: ChillFishingModalProps) {
   const [phase, setPhase] = useState<'idle' | 'bite' | 'reeling' | 'done'>('idle');
   const [preview, setPreview] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -26,7 +27,7 @@ export function ChillFishingModal({ worldId, onClose, onInventoryRefresh }: Chil
   const lastTs = useRef(0);
 
   const startCast = useCallback(async () => {
-    const data = await postDonorFishingStart(worldId);
+    const data = await postDonorFishingStart(worldId, spotId);
     setPreview(data.preview.name);
     setPhase('bite');
     setMessage('Có cá! Nhấn giữ để kéo dây…');
@@ -34,7 +35,7 @@ export function ChillFishingModal({ worldId, onClose, onInventoryRefresh }: Chil
       setReel(createChillReelReady(DEMO_FISH, 0.2));
       setPhase('reeling');
     }, 800);
-  }, [worldId]);
+  }, [worldId, spotId]);
 
   useEffect(() => {
     if (phase !== 'reeling' || !reel) return;

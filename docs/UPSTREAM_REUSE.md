@@ -12,7 +12,7 @@ Each transplant documents: donor ref, license/terms check, files touched, gamepl
 |----|------------|---------|-------|
 | **C2-pet** | [SawyerHood/nintendogs-threejs](https://github.com/SawyerHood/nintendogs-threejs) @ `43d231c` · PR **#20** @ `e0a8741` | Phaser pet atlas stride fix + DEV `?donor-pet-three=1` Three.js care slice (cat-orange billboard) | `src/donors/nintendogs-threejs-43d231c/UPSTREAM_REUSE.md` · store `media/vqg-pet-care-c2.png` |
 | **C3-world** | [Farming-Simulator-Cabacos](https://github.com/goncalojbsousa/Farming-Simulator-Cabacos) @ `79e423d` · PR **#21** @ `ad156cc` | Cabacos overworld + Casa_player → `village.json` / `shop.json` | § Cabacos below · store `media/donor-cabacos-olw-village-after.png` |
-| **C1-economy** | webfarmville `c420bc2` + harvest-hollow `9b23e1a` + chill-fishing MIT · PR **#22** @ `db7e290` | Dev LAN mill queue + pond reel → shared inventory | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
+| **C1-economy** | webfarmville `c420bc2` + harvest-hollow `9b23e1a` + chill-fishing MIT + canvas-games fishing · expansion branch | Mill + Hollow bakery/coop + dual fishing spots (pond chill / stream tension) | [`docs/donor/UPSTREAM_REUSE.md`](donor/UPSTREAM_REUSE.md) · `tests/e2e/donor-economy-two-client.spec.ts` |
 
 ## Pending (composer / open PR)
 

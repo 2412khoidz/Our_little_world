@@ -96,6 +96,7 @@ export type InteractionActionCode =
   | 'open_farm_market'
   | 'open_shipping_bin'
   | 'open_donor_fishing'
+  | 'open_donor_stream_fishing'
   | 'open_donor_workshop'
   | 'inspect_prop'
   | 'put_away_held';

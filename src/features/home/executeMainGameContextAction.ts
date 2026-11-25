@@ -21,6 +21,7 @@ export interface MainGameActionContext {
   onOpenFarmMarket?: () => void;
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: () => void;
+  onOpenDonorStreamFishing?: () => void;
   onOpenDonorWorkshop?: () => void;
   onNotice: (message: string, isError?: boolean) => void;
   livingPetLocalSimulation?: boolean;
@@ -239,6 +240,10 @@ export async function executeMainGameContextAction(
   }
   if (code === 'open_donor_fishing' && ctx.onOpenDonorFishing) {
     ctx.onOpenDonorFishing();
+    return;
+  }
+  if (code === 'open_donor_stream_fishing' && ctx.onOpenDonorStreamFishing) {
+    ctx.onOpenDonorStreamFishing();
     return;
   }
   if (code === 'open_donor_workshop' && ctx.onOpenDonorWorkshop) {

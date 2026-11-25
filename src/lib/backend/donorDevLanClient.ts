@@ -9,9 +9,40 @@ async function donorDevLanJson<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 export function fetchDonorWorkshop(worldId: string) {
-  return donorDevLanJson<{ queue: { recipeId: string; endMs: number }[]; recipes: string[]; nowMs: number }>(
-    `/donor/workshop?worldId=${encodeURIComponent(worldId)}`,
-  );
+  return donorDevLanJson<{
+    mill: { queue: { recipeId: string; endMs: number }[]; recipes: string[] };
+    bakery: { queue: { recipeId: string; endMs: number }[]; recipes: string[] };
+    coop: { fedAtMs: number | null; readyAtMs: number | null };
+    nowMs: number;
+  }>(`/donor/workshop?worldId=${encodeURIComponent(worldId)}`);
+}
+
+export function postDonorBakeryQueue(worldId: string, recipeId: string) {
+  return donorDevLanJson(`/donor/bakery/queue?worldId=${encodeURIComponent(worldId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ worldId, recipeId }),
+  });
+}
+
+export function postDonorBakeryCollect(worldId: string) {
+  return donorDevLanJson(`/donor/bakery/collect?worldId=${encodeURIComponent(worldId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ worldId }),
+  });
+}
+
+export function postDonorCoopFeed(worldId: string) {
+  return donorDevLanJson(`/donor/coop/feed?worldId=${encodeURIComponent(worldId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ worldId }),
+  });
+}
+
+export function postDonorCoopCollect(worldId: string) {
+  return donorDevLanJson(`/donor/coop/collect?worldId=${encodeURIComponent(worldId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ worldId }),
+  });
 }
 
 export function postDonorWorkshopQueue(worldId: string, recipeId: string) {
@@ -28,11 +59,16 @@ export function postDonorWorkshopCollect(worldId: string) {
   });
 }
 
-export function postDonorFishingStart(worldId: string) {
-  return donorDevLanJson<{ preview: { name: string } }>(`/donor/fishing/start?worldId=${encodeURIComponent(worldId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ worldId }),
-  });
+export type DonorFishingSpotId = 'meadow_pond' | 'east_stream';
+
+export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId) {
+  return donorDevLanJson<{ preview: { name: string }; spotId: DonorFishingSpotId }>(
+    `/donor/fishing/start?worldId=${encodeURIComponent(worldId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ worldId, spotId }),
+    },
+  );
 }
 
 export function postDonorFishingResolve(worldId: string, reelProgressPermille: number) {

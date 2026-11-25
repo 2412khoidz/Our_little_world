@@ -1,6 +1,5 @@
 /**
  * Single adapter: donor rules → OLW shared inventory (no second ledger).
- * Wallet/coins stay on existing Dev LAN farm wallet; workshop only moves item SKUs.
  */
 import type { InventoryEntry, InventoryOwnerScope } from '../../inventory/inventoryTypes';
 import {
@@ -10,20 +9,37 @@ import {
   type WorkshopBuildingState,
 } from '../webfarmville-c420bc2/meadowbrookWorkshopQueue';
 import { OLW_MEADOWBROOK_MILL } from '../webfarmville-c420bc2/olwMeadowbrookMill';
+import { OLW_HOLLOW_BAKERY } from '../harvest-hollow-9b23e1a/olwHollowBakery';
 import {
   MEADOWBROOK_FISH_TO_OLW_SKU,
   resolveMeadowbrookCatch,
   previewMeadowbrookCatch,
 } from '../webfarmville-c420bc2/meadowbrookNatureCatch';
+import { pickCanvasStreamFish } from '../canvas-games-fishing/streamFishSpecies';
+import type { DonorFishingSpotId } from '../donorFishingSpots';
+import { parseDonorFishingSpot } from '../donorFishingSpots';
+import {
+  collectHollowCoop,
+  emptyHollowCoopState,
+  feedHollowCoop,
+  type HollowCoopState,
+} from '../harvest-hollow-9b23e1a/hollowCoopCycle';
 import { createRng, hashSeed } from '../../rng';
 
 export interface DonorWorkshopWorldState {
   mill: WorkshopBuildingState;
+  bakery: WorkshopBuildingState;
+  coop: HollowCoopState;
   rngSeed: number;
 }
 
 export function emptyDonorWorkshopState(seed = 42_019): DonorWorkshopWorldState {
-  return { mill: { level: 1, queue: [] }, rngSeed: seed };
+  return {
+    mill: { level: 1, queue: [] },
+    bakery: { level: 1, queue: [] },
+    coop: emptyHollowCoopState(),
+    rngSeed: seed,
+  };
 }
 
 function inventoryToMap(items: readonly InventoryEntry[]): InventoryLike {
@@ -63,6 +79,13 @@ function applyMapToSharedInventory(
   return next;
 }
 
+function debitSku(map: InventoryLike, sku: string, qty: number): boolean {
+  if ((map[sku] ?? 0) < qty) return false;
+  map[sku] = (map[sku] ?? 0) - qty;
+  if (map[sku] === 0) delete map[sku];
+  return true;
+}
+
 export function donorQueueMillRecipe(
   world: DonorWorkshopWorldState,
   items: InventoryEntry[],
@@ -93,11 +116,79 @@ export function donorCollectMillQueue(
   };
 }
 
+export function donorQueueBakeryRecipe(
+  world: DonorWorkshopWorldState,
+  items: InventoryEntry[],
+  worldId: string,
+  recipeId: string,
+  nowMs: number,
+): { world: DonorWorkshopWorldState; items: InventoryEntry[] } {
+  const map = inventoryToMap(items);
+  const queued = enqueueCraft(world.bakery, OLW_HOLLOW_BAKERY, recipeId, map, nowMs);
+  return {
+    world: { ...world, bakery: queued.building },
+    items: applyMapToSharedInventory(worldId, items, queued.inventory, nowMs),
+  };
+}
+
+export function donorCollectBakeryQueue(
+  world: DonorWorkshopWorldState,
+  items: InventoryEntry[],
+  worldId: string,
+  nowMs: number,
+): { world: DonorWorkshopWorldState; items: InventoryEntry[] } {
+  const map = inventoryToMap(items);
+  const collected = collectFinishedCrafts(world.bakery, OLW_HOLLOW_BAKERY, nowMs, map, () => 0);
+  return {
+    world: { ...world, bakery: collected.building },
+    items: applyMapToSharedInventory(worldId, items, collected.inventory, nowMs),
+  };
+}
+
+export function donorCoopFeed(
+  world: DonorWorkshopWorldState,
+  items: InventoryEntry[],
+  worldId: string,
+  nowMs: number,
+): { world: DonorWorkshopWorldState; items: InventoryEntry[] } {
+  const map = inventoryToMap(items);
+  const feedQty = map.chicken_feed ?? 0;
+  const out = feedHollowCoop(world.coop, feedQty, nowMs);
+  if (out.error) throw new Error(out.error);
+  if (!debitSku(map, 'chicken_feed', out.feedUsed)) throw new Error('NEED_FEED');
+  return {
+    world: { ...world, coop: out.coop },
+    items: applyMapToSharedInventory(worldId, items, map, nowMs),
+  };
+}
+
+export function donorCoopCollect(
+  world: DonorWorkshopWorldState,
+  items: InventoryEntry[],
+  worldId: string,
+  nowMs: number,
+): { world: DonorWorkshopWorldState; items: InventoryEntry[]; eggs: number } {
+  const collected = collectHollowCoop(world.coop, nowMs);
+  if (collected.error) throw new Error(collected.error);
+  let nextItems = items;
+  if (collected.eggs > 0) {
+    nextItems = creditSharedSku(worldId, items, 'donor_egg', collected.eggs, nowMs);
+  }
+  return { world: { ...world, coop: collected.coop }, items: nextItems, eggs: collected.eggs };
+}
+
 export function donorFishingPreview(
   seed: number,
   nowMs: number,
   hour: number,
-): { critterId: string; name: string } {
+  spotRaw: unknown,
+): { critterId: string; name: string; spotId: DonorFishingSpotId } {
+  const spotId = parseDonorFishingSpot(spotRaw);
+  if (spotId === 'east_stream') {
+    const rng = createRng(seed);
+    const fish = pickCanvasStreamFish(() => rng.next(), 0.55);
+    return { critterId: fish.id, name: fish.name, spotId };
+  }
   const rng = createRng(seed);
   const def = previewMeadowbrookCatch({
     kind: 'fish',
@@ -105,16 +196,27 @@ export function donorFishingPreview(
     nowMs,
     rng01: () => rng.next(),
   });
-  return { critterId: def.id, name: def.name };
+  return { critterId: def.id, name: def.name, spotId };
 }
 
 export function donorFishingResolve(
   seed: number,
   nowMs: number,
   hour: number,
-  chillReelProgressPermille: number,
-): { escaped: boolean; itemSku: string | null; labelVi: string } {
-  const score = Math.round((chillReelProgressPermille / 1000) * 100);
+  progressPermille: number,
+  spotRaw: unknown,
+): { escaped: boolean; itemSku: string | null; labelVi: string; spotId: DonorFishingSpotId } {
+  const spotId = parseDonorFishingSpot(spotRaw);
+  const score = Math.round((progressPermille / 1000) * 100);
+  if (spotId === 'east_stream') {
+    const rng = createRng(seed ^ progressPermille);
+    const fish = pickCanvasStreamFish(() => rng.next(), 0.55);
+    const escaped = score < 55 || progressPermille < 700;
+    if (escaped) {
+      return { escaped: true, itemSku: null, labelVi: fish.name, spotId };
+    }
+    return { escaped: false, itemSku: fish.olwSku, labelVi: fish.name, spotId };
+  }
   const rng = createRng(seed ^ score);
   const result = resolveMeadowbrookCatch({
     kind: 'fish',
@@ -124,10 +226,10 @@ export function donorFishingResolve(
     rng01: () => rng.next(),
   });
   if (result.escaped) {
-    return { escaped: true, itemSku: null, labelVi: result.critterName };
+    return { escaped: true, itemSku: null, labelVi: result.critterName, spotId };
   }
   const itemSku = MEADOWBROOK_FISH_TO_OLW_SKU[result.critterId] ?? 'carp_pond';
-  return { escaped: false, itemSku, labelVi: result.critterName };
+  return { escaped: false, itemSku, labelVi: result.critterName, spotId };
 }
 
 export function creditSharedSku(

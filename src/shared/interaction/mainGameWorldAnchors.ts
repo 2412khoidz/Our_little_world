@@ -17,6 +17,7 @@ export const MAIN_GAME_WORLD_ANCHORS = {
   outdoor: {
     porchMailboxPx: { x: 16 * TILE_SIZE + 120, y: 8 * TILE_SIZE + 52 },
     pondDockPx: { x: 26 * TILE_SIZE, y: 29 * TILE_SIZE },
+    streamBankPx: { x: 10 * TILE_SIZE, y: 12 * TILE_SIZE },
     picnicPx: { x: 11 * TILE_SIZE, y: 27 * TILE_SIZE },
     marketStallPx: { x: 14 * TILE_SIZE, y: 42 * TILE_SIZE },
     minigameTablePx: { x: 8 * TILE_SIZE, y: 10.5 * TILE_SIZE },
