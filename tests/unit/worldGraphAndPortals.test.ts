@@ -21,19 +21,34 @@ describe('Canonical Island World Graph & Portal Beacons (B1/B2)', () => {
     expect(CANONICAL_PORTAL_EDGES.length).toBeGreaterThanOrEqual(18);
   });
 
-  it('connects village-to-garden at NW archway gate (7,11) instead of water edge (6,22) and reaches Town Square', () => {
+  it('connects village-to-garden at North Causeway Bridge (26,0) and farm-to-forest on Farm North Road (29,0), plus climbable village ladders', () => {
     const village = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'src/assets/maps/village.json'), 'utf8'));
     const vDef = getMapDefinition('village');
     const portal = vDef.portals.find((p) => p.id === 'village-to-garden');
     expect(portal).toBeDefined();
-    expect(portal?.tileX).toBe(7);
-    expect(portal?.tileY).toBe(11);
+    expect(portal?.tileX).toBe(26);
+    expect(portal?.tileY).toBe(0);
     expect(portal?.targetSpawnX).toBe(8);
     expect(portal?.targetSpawnY).toBe(11);
     expect(getArrivalFacingForPortal('village-to-garden')).toBe('up');
     expect(getArrivalFacingForPortal('garden-to-village')).toBe('down');
+    expect(vDef.portals.find((p) => p.id === 'village-to-forest')).toBeUndefined();
 
-    // BFS walkability from Town Square (42, 31) to NW gate (7, 11)
+    const fDef = getMapDefinition('farm');
+    const toForest = fDef.portals.find((p) => p.id === 'farm-to-forest');
+    expect(toForest).toBeDefined();
+    expect(toForest?.tileX).toBe(29);
+    expect(toForest?.tileY).toBe(0);
+    expect(toForest?.targetMapId).toBe('forest');
+
+    const forestDef = getMapDefinition('forest');
+    const toFarm = forestDef.portals.find((p) => p.id === 'forest-to-farm');
+    expect(toFarm).toBeDefined();
+    expect(toFarm?.targetMapId).toBe('farm');
+    expect(toFarm?.targetSpawnX).toBe(29);
+    expect(toFarm?.targetSpawnY).toBe(2);
+
+    // BFS walkability from Town Square (42, 31) across North Bridge (26, 0) & wooden ladders (46, 7..10) + (27, 39..42)
     const col: number[] = village.layers.find((l: { name: string }) => l.name === 'Collision').data;
     const w: number = village.width;
     const h: number = village.height;
@@ -58,8 +73,12 @@ describe('Canonical Island World Graph & Portal Beacons (B1/B2)', () => {
         queue.push([nx, ny]);
       }
     }
-    expect(vis.has('7,11')).toBe(true);
-    expect(vis.has('7,13')).toBe(true);
+    expect(vis.has('26,0')).toBe(true);
+    expect(vis.has('26,2')).toBe(true);
+    expect(vis.has('46,8')).toBe(true);
+    expect(vis.has('46,6')).toBe(true);
+    expect(vis.has('27,40')).toBe(true);
+    expect(vis.has('27,43')).toBe(true);
   });
 
   it('generates TeaMobi-style directional portal beacons directly from canonical portal registry with clean copy', () => {

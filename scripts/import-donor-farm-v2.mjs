@@ -319,6 +319,21 @@ function buildFarmMap() {
           { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
         ],
       },
+      {
+        id: 3103,
+        name: 'farm-to-forest',
+        type: 'portal',
+        x: 29 * TW,
+        y: 0 * TW,
+        width: TW,
+        height: TW * 2,
+        properties: [
+          { name: 'targetMapId', type: 'string', value: 'forest' },
+          { name: 'spawnX', type: 'int', value: 8 },
+          { name: 'spawnY', type: 'int', value: 36 },
+          { name: 'labelVi', type: 'string', value: 'Vào Rừng thông' },
+        ],
+      },
     ],
   };
 

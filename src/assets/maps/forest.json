@@ -5650,7 +5650,7 @@
       "objects": [
         {
           "id": 1,
-          "name": "forest-to-village",
+          "name": "forest-to-farm",
           "type": "portal",
           "x": 128,
           "y": 624,
@@ -5660,22 +5660,22 @@
             {
               "name": "targetMapId",
               "type": "string",
-              "value": "village"
+              "value": "farm"
             },
             {
               "name": "spawnX",
               "type": "int",
-              "value": 52
+              "value": 29
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 5
+              "value": 2
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Về thị trấn Cabacos"
+              "value": "Về Nông trại"
             }
           ]
         }

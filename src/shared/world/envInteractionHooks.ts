@@ -26,6 +26,8 @@ const PORTAL_HOOKS: ReadonlyArray<{
   { portalId: 'village-to-farm', kind: 'zone_warp', hookId: 'village_farm_path', from: 'village', to: 'farm' },
   { portalId: 'village-to-beach', kind: 'zone_warp', hookId: 'village_beach_coast', from: 'village', to: 'beach' },
   { portalId: 'beach-to-village', kind: 'zone_warp', hookId: 'beach_village_path', from: 'beach', to: 'village' },
+  { portalId: 'farm-to-forest', kind: 'zone_warp', hookId: 'farm_forest_path', from: 'farm', to: 'forest' },
+  { portalId: 'forest-to-farm', kind: 'zone_warp', hookId: 'forest_farm_path', from: 'forest', to: 'farm' },
   { portalId: 'village-to-forest', kind: 'ladder', hookId: 'village_forest_ladder', from: 'village', to: 'forest' },
   { portalId: 'forest-to-village', kind: 'ladder', hookId: 'forest_village_ladder', from: 'forest', to: 'village' },
   { portalId: 'forest-to-beach', kind: 'ladder', hookId: 'forest_beach_ladder', from: 'forest', to: 'beach' },

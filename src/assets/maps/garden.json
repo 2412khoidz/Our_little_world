@@ -37,6 +37,11 @@
       "name": "olwPrivateArtPrefer",
       "type": "string",
       "value": "demo-e"
+    },
+    {
+      "name": "olwRecovery",
+      "type": "string",
+      "value": "map-recovery-v1-8e4454d"
     }
   ],
   "tilesets": [
@@ -1612,12 +1617,12 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 7
+              "value": 26
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 13
+              "value": 2
             },
             {
               "name": "labelVi",

@@ -27,13 +27,13 @@ describe('Tuxemon forest transplant', () => {
     expect(isTileBlockedFromParsed(parsed, 0, 0)).toBe(true);
   });
 
-  it('village↔forest portal graph for Cabacos extended world', () => {
-    const village = getParsedTiledWorld('village')!;
+  it('farm↔forest portal graph for Cabacos extended world', () => {
+    const farm = getParsedTiledWorld('farm')!;
     const forest = getParsedTiledWorld('forest')!;
-    const toForest = village.portals.find((p) => p.id === 'village-to-forest');
+    const toForest = farm.portals.find((p) => p.id === 'farm-to-forest');
     expect(toForest?.targetMapId).toBe('forest');
-    const toVillage = forest.portals.find((p) => p.id === 'forest-to-village');
-    expect(toVillage?.targetMapId).toBe('village');
+    const toFarm = forest.portals.find((p) => p.id === 'forest-to-farm');
+    expect(toFarm?.targetMapId).toBe('farm');
     expect(getMapDefinition('forest').portals.length).toBeGreaterThan(0);
   });
 });

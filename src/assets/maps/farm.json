@@ -22754,6 +22754,37 @@
               "value": "Về Vườn nhà"
             }
           ]
+        },
+        {
+          "id": 3103,
+          "name": "farm-to-forest",
+          "type": "portal",
+          "x": 464,
+          "y": 0,
+          "width": 16,
+          "height": 32,
+          "properties": [
+            {
+              "name": "targetMapId",
+              "type": "string",
+              "value": "forest"
+            },
+            {
+              "name": "spawnX",
+              "type": "int",
+              "value": 8
+            },
+            {
+              "name": "spawnY",
+              "type": "int",
+              "value": 36
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Vào Rừng thông"
+            }
+          ]
         }
       ]
     },

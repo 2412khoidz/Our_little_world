@@ -192,8 +192,8 @@ const GARDEN_TO_VILLAGE_PORTAL: MapPortal = {
   tileY: 13,
   radiusTiles: 1.6,
   targetMapId: 'village',
-  targetSpawnX: 7,
-  targetSpawnY: 13,
+  targetSpawnX: 26,
+  targetSpawnY: 2,
 };
 
 const GARDEN_TO_FARM_PORTAL: MapPortal = {

@@ -59,6 +59,13 @@ import {
   findPlacementAtTile,
   validatePlacement,
 } from '../../shared/placement';
+import {
+  isBlockedByActorColliders,
+  NPC_ACTOR_RADIUS_PX,
+  PET_ACTOR_RADIUS_PX,
+  PLAYER_ACTOR_RADIUS_PX,
+  type ActorCollider,
+} from '../../shared/movement/actorCollision';
 import { isDecorateMapId } from '../../shared/decorate/decorateInteriorPolicy';
 import { decorateGhostAnchorFromFootprint } from '../../shared/decorate/decorateGhostAnchor';
 import { footprintForCatalog } from '../../shared/decorate/decoratePlacementLoop';
@@ -332,13 +339,14 @@ export class WorldScene extends Phaser.Scene {
     this.createLocalAvatar();
     this.heldRenderer = new HeldItemRenderer(this);
     this.petEntity = new PetEntity(this, () => {
+      gameAudio.playNaturalCatMeow('greeting', { force: true });
       gameEventBus.emit('evt:open-pet-panel');
     });
+    // Canonical collision-safe 2D pet locomotion is ALWAYS active on all URLs (dev & production).
+    this.livingPetDriver = new PetLivingMainGameDriver(13.5 * this.tilePx(), 10.2 * this.tilePx());
+    this.petEntity.setLivingDriver(this.livingPetDriver);
+    // Keep DEV-only local telemetry / food offer authority flag strictly isolated.
     this.livingPetSimulationActive = isLivingPetLocalSimulationEnabled();
-    if (this.livingPetSimulationActive) {
-      this.livingPetDriver = new PetLivingMainGameDriver(13.5 * this.tilePx(), 10.2 * this.tilePx());
-      this.petEntity.setLivingDriver(this.livingPetDriver);
-    }
     if (import.meta.env.DEV) {
       this.mapDebugOverlay = new MapDebugOverlay(this);
       if (this.input.keyboard) {
@@ -743,10 +751,10 @@ export class WorldScene extends Phaser.Scene {
     this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
     if (this.petSnapshot && FOLLOW_CAT_MAPS.has(mapId)) {
       const petPos = this.findSafePetSpawnPx(spawn.tileX + partnerOffsetX, spawn.tileY, px, py);
-      this.petEntity?.teleportNear(petPos.x, petPos.y);
+      this.petEntity?.teleportNear(petPos.x, petPos.y, mapId);
     } else if (!this.petSnapshot && mapId === 'home') {
       const petPos = this.findSafePetSpawnPx(13, 10, 13.5 * this.tilePx(), 10.2 * this.tilePx());
-      this.petEntity?.teleportNear(petPos.x, petPos.y);
+      this.petEntity?.teleportNear(petPos.x, petPos.y, mapId);
     }
     this.reconcileRemoteVisibility();
     this.redrawDecorateOverlay();
@@ -2106,6 +2114,21 @@ export class WorldScene extends Phaser.Scene {
       canvas.dataset.playerTileX = String(Math.floor(this.localSprite.x / this.tilePx()));
       canvas.dataset.playerTileY = String(Math.floor((this.localSprite.y - 2) / this.tilePx()));
     }
+    if (import.meta.env.DEV) {
+      canvas.dataset.petDriverMode = this.livingPetDriver ? 'canonical' : 'none';
+      if (this.petEntity?.isOnMapVisible()) {
+        const loco = this.petEntity.getLocomotionState();
+        canvas.dataset.petX = String(Math.round(loco.x * 10) / 10);
+        canvas.dataset.petY = String(Math.round(loco.y * 10) / 10);
+        canvas.dataset.petFacing = loco.facing;
+        canvas.dataset.petAnim = loco.animState;
+      } else {
+        delete canvas.dataset.petX;
+        delete canvas.dataset.petY;
+        delete canvas.dataset.petFacing;
+        delete canvas.dataset.petAnim;
+      }
+    }
   }
 
   update(time: number, deltaMs: number): void {
@@ -2135,6 +2158,7 @@ export class WorldScene extends Phaser.Scene {
     const running = Boolean(this.wasd?.SHIFT.isDown);
     const toolSwinging = this.donorToolController.isMovementLocked();
 
+    const catPos = this.petEntity?.isOnMapVisible() ? this.petEntity.getWorldPosition() : null;
     if (this.ambientChickens.length > 0) {
       for (const ch of this.ambientChickens) {
         stepEmergentChicken(ch.state, {
@@ -2143,6 +2167,8 @@ export class WorldScene extends Phaser.Scene {
           tilePx: tPx,
           playerX: this.localSprite?.x ?? null,
           playerY: this.localSprite?.y ?? null,
+          catX: catPos?.x ?? null,
+          catY: catPos?.y ?? null,
           playerRunning: moved && running,
           toolSwinging,
           heldItemSku: this.heldItem.itemSku,
@@ -2268,6 +2294,14 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
+    const npcObstacles: ActorCollider[] = this.tiledNpcs.map((npc) => ({
+      id: npc.id,
+      x: npc.body.x,
+      y: npc.body.y,
+      radiusPx: NPC_ACTOR_RADIUS_PX,
+      kind: 'npc',
+    }));
+
     if (
       !this.petCareMode &&
       this.livingPetDriver &&
@@ -2293,6 +2327,12 @@ export class WorldScene extends Phaser.Scene {
         foodOffer: null,
         tilePx: tPx,
         isTileBlocked: isBlockedTile,
+        npcObstacles,
+        chickens: this.ambientChickens.map((ch) => ({
+          id: ch.state.id,
+          x: ch.state.x,
+          y: ch.state.y,
+        })),
         playerPosture: this.localPosture,
         isNight,
         weatherKind,
@@ -2304,6 +2344,9 @@ export class WorldScene extends Phaser.Scene {
         nearestChickenDistPx,
       });
       this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
+      if (out.chasedChickenThisTick && out.ambientBubble) {
+        gameAudio.playNaturalCatMeow('happy', { isSleeping: isNight });
+      }
       if (
         !isNight &&
         this.localPosture === 'none' &&
@@ -2315,7 +2358,11 @@ export class WorldScene extends Phaser.Scene {
           gameAudio.playNaturalCatMeow('ambient', { isSleeping: isNight });
         }
       }
-      if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
+      if (
+        import.meta.env.DEV &&
+        this.livingPetSimulationActive &&
+        now - this.lastLivingPetTelemetryAtMs >= 500
+      ) {
         this.lastLivingPetTelemetryAtMs = now;
         gameEventBus.emit(
           'evt:living-pet-dev-telemetry',
@@ -2330,6 +2377,26 @@ export class WorldScene extends Phaser.Scene {
       this.petEntity?.update(dtSec);
     }
     this.updateRemoteEntities(deltaMs);
+    const npcActorObstacles: ActorCollider[] = [];
+    if (this.localSprite) {
+      npcActorObstacles.push({
+        id: 'local-player',
+        x: this.localSprite.x,
+        y: this.localSprite.y,
+        radiusPx: PLAYER_ACTOR_RADIUS_PX,
+        kind: 'player',
+      });
+    }
+    if (this.petEntity?.isOnMapVisible()) {
+      const pPos = this.petEntity.getWorldPosition();
+      npcActorObstacles.push({
+        id: 'pet-cat',
+        x: pPos.x,
+        y: pPos.y,
+        radiusPx: PET_ACTOR_RADIUS_PX,
+        kind: 'pet',
+      });
+    }
     tickTiledWorldNpcs(this, this.tiledNpcs, now, dtSec, {
       playerX: this.localSprite?.x ?? null,
       playerY: this.localSprite?.y ?? null,
@@ -2337,6 +2404,7 @@ export class WorldScene extends Phaser.Scene {
       isNight,
       weatherKind,
       isTileBlocked: isBlockedTile,
+      actorObstacles: npcActorObstacles,
     });
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
@@ -2446,8 +2514,14 @@ export class WorldScene extends Phaser.Scene {
         const step = Math.min(speed * dtSec, dist);
         const mx = (dx / dist) * step;
         const my = (dy / dist) * step;
-        this.localSprite.x += mx;
-        this.localSprite.y += my;
+        const stepOk = this.tryMovePixel(mx, my);
+        if (!stepOk) {
+          this.pathQueue = [];
+          this.tapMarker?.clear();
+          this.playLocalMoveAnim(false, false);
+          this.emitCurrentTile(false);
+          return false;
+        }
         this.localFacing = this.vectorToDirection(dx, dy);
         this.playLocalMoveAnim(true, running);
         const footTx = Math.floor(this.localSprite.x / this.tilePx());
@@ -2530,6 +2604,41 @@ export class WorldScene extends Phaser.Scene {
         return false;
       }
       if (this.blockedGrid.has(`${tx},${ty}`)) {
+        return false;
+      }
+    }
+    if (this.localSprite) {
+      const actorObstacles: ActorCollider[] = [];
+      for (const npc of this.tiledNpcs) {
+        actorObstacles.push({
+          id: npc.id,
+          x: npc.body.x,
+          y: npc.body.y,
+          radiusPx: NPC_ACTOR_RADIUS_PX,
+          kind: 'npc',
+        });
+      }
+      if (this.petEntity?.isOnMapVisible() && this.localPosture === 'none') {
+        const pPos = this.petEntity.getWorldPosition();
+        actorObstacles.push({
+          id: 'pet-cat',
+          x: pPos.x,
+          y: pPos.y,
+          radiusPx: PET_ACTOR_RADIUS_PX,
+          kind: 'pet',
+        });
+      }
+      if (
+        actorObstacles.length > 0 &&
+        isBlockedByActorColliders(
+          px,
+          py,
+          this.localSprite.x,
+          this.localSprite.y,
+          PLAYER_ACTOR_RADIUS_PX,
+          actorObstacles,
+        )
+      ) {
         return false;
       }
     }

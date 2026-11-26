@@ -15,8 +15,8 @@ describe('envInteractionHooks', () => {
     expect(hook).toMatchObject({ kind: 'door', hookId: 'garden_home_door' });
   });
 
-  it('marks village forest links as ladder', () => {
-    const hook = resolveEnvHookForTravel('village', 'forest', 'village-to-forest');
-    expect(hook).toMatchObject({ kind: 'ladder', hookId: 'village_forest_ladder' });
+  it('marks farm north road links to forest as zone_warp and preserves ladder fallback', () => {
+    const hook = resolveEnvHookForTravel('farm', 'forest', 'farm-to-forest');
+    expect(hook).toMatchObject({ kind: 'zone_warp', hookId: 'farm_forest_path' });
   });
 });

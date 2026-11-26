@@ -310,8 +310,8 @@ export function buildGardenMap(tilesets, sha, recoveryProps = []) {
       height: TW,
       properties: [
         { name: 'targetMapId', type: 'string', value: 'village' },
-        { name: 'spawnX', type: 'int', value: 7 },
-        { name: 'spawnY', type: 'int', value: 13 },
+        { name: 'spawnX', type: 'int', value: 26 },
+        { name: 'spawnY', type: 'int', value: 2 },
         { name: 'labelVi', type: 'string', value: 'Vào Làng Cabacos' },
       ],
     },

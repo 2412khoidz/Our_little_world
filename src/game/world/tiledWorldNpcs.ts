@@ -13,6 +13,7 @@ import {
   type NpcRoutineState,
   type NpcWaypoint,
 } from '../../shared/world/emergentWorldBehavior';
+import type { ActorCollider } from '../../shared/movement/actorCollision';
 import { NPC_PROFILES } from '../../shared/npc/npcDialogueRegistry';
 
 export interface TiledWorldNpcEntity {
@@ -43,6 +44,7 @@ export interface NpcTickContext {
   weatherKind?: string;
   activeDialogueNpcId?: string | null;
   isTileBlocked?: (tx: number, ty: number) => boolean;
+  actorObstacles?: readonly ActorCollider[];
 }
 
 function npcAvatarForSpawn(id: string, role: string): AvatarConfig {
@@ -167,6 +169,7 @@ export function tickTiledWorldNpcs(
       weatherKind: ctx?.weatherKind ?? 'sunny',
       talkingToPlayer: ctx?.activeDialogueNpcId === npc.id,
       isTileBlocked: ctx?.isTileBlocked,
+      actorObstacles: ctx?.actorObstacles,
     });
 
     const nx = npc.routine.x;

@@ -100,7 +100,7 @@ export function applyAcceptedDisplacementToLocomotion(
   const adx = nextX - prev.x;
   const ady = nextY - prev.y;
   const stepDist = Math.hypot(adx, ady);
-  if (stepDist < 0.15) {
+  if (stepDist < 0.12) {
     const restingFacing = fallbackFacing ?? prev.facing;
     const restingIntent: PetBehaviorIntent =
       intent === 'move' || intent === 'run' ? 'sit' : intent;

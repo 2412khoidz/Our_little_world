@@ -60,10 +60,10 @@ export const ISLAND_ZONES: Readonly<Record<MapId, IslandZoneMeta>> = {
   forest: {
     id: 'forest',
     nameVi: 'Rừng thông',
-    subtitleVi: 'Rừng thông mát rượi phía Bắc',
+    subtitleVi: 'Rừng thông mát rượi phía Bắc Nông trại',
     biome: 'forest',
-    islandGrid: { x: 1, y: 1 },
-    districtVi: 'Sườn Bắc Làng',
+    islandGrid: { x: 0, y: 0 },
+    districtVi: 'Rừng Bắc Thung lũng',
   },
   beach: {
     id: 'beach',
@@ -162,7 +162,7 @@ export const CANONICAL_PORTAL_EDGES: readonly CanonicalPortalEdge[] = [
     shortLabelVi: 'Vườn nhà',
     arrivalFacing: 'right',
   },
-  // Garden ↔ Village (south trail <-> NW archway bridge gate)
+  // Garden ↔ Village (south bridge <-> north causeway bridge plaza)
   {
     id: 'garden-to-village',
     from: 'garden',
@@ -181,23 +181,23 @@ export const CANONICAL_PORTAL_EDGES: readonly CanonicalPortalEdge[] = [
     shortLabelVi: 'Vườn nhà',
     arrivalFacing: 'up',
   },
-  // Village ↔ Forest (north stone stairs)
+  // Farm ↔ Forest (farm north dirt road <-> forest south trail)
   {
-    id: 'village-to-forest',
-    from: 'village',
+    id: 'farm-to-forest',
+    from: 'farm',
     to: 'forest',
-    reciprocalId: 'forest-to-village',
+    reciprocalId: 'forest-to-farm',
     direction: 'north',
     shortLabelVi: 'Rừng thông',
     arrivalFacing: 'up',
   },
   {
-    id: 'forest-to-village',
+    id: 'forest-to-farm',
     from: 'forest',
-    to: 'village',
-    reciprocalId: 'village-to-forest',
+    to: 'farm',
+    reciprocalId: 'farm-to-forest',
     direction: 'south',
-    shortLabelVi: 'Làng Cabacos',
+    shortLabelVi: 'Nông trại',
     arrivalFacing: 'down',
   },
   // Village ↔ Beach (east wooden harbor pier)

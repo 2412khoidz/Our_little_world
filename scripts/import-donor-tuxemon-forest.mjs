@@ -46,9 +46,24 @@ function patchForestInteractables(forest) {
   const col = forest.layers.find((l) => l.name === 'Collision');
   const portals = forest.layers.find((l) => l.name === 'Portals');
 
-  // Ensure reciprocal topology (Forest connects strictly to Village)
+  // Ensure reciprocal topology (Forest connects strictly to Farm North Road)
   if (portals?.objects) {
-    portals.objects = portals.objects.filter((o) => o.name !== 'forest-to-beach');
+    portals.objects = portals.objects
+      .filter((o) => o.name !== 'forest-to-beach')
+      .map((o) =>
+        o.name === 'forest-to-village'
+          ? {
+              ...o,
+              name: 'forest-to-farm',
+              properties: [
+                { name: 'targetMapId', type: 'string', value: 'farm' },
+                { name: 'spawnX', type: 'int', value: 29 },
+                { name: 'spawnY', type: 'int', value: 2 },
+                { name: 'labelVi', type: 'string', value: 'Về Nông trại' },
+              ],
+            }
+          : o,
+      );
   }
 
   // Bake all Water tiles & solid Vegetation (trees, felled logs, boulders, stumps — preserving walkable ferns/grass)
@@ -167,28 +182,12 @@ function patchForestInteractables(forest) {
   });
 }
 
-function patchVillageForestPortal(village, slice) {
+function patchVillageForestPortal(village, _slice) {
   const donor = village.properties?.find((p) => p.name === 'olwDonor')?.value;
   if (donor !== 'cabacos') return village;
   const portalsLayer = village.layers.find((l) => l.name === 'Portals');
   if (!portalsLayer) return village;
   portalsLayer.objects = portalsLayer.objects.filter((o) => o.name !== 'village-to-forest');
-  const { villageEdgeTile, forestSpawnTile, labelVi } = slice.portals.village;
-  portalsLayer.objects.push({
-    id: 9106,
-    name: 'village-to-forest',
-    type: 'portal',
-    x: villageEdgeTile.tileX * TW,
-    y: villageEdgeTile.tileY * TW,
-    width: TW,
-    height: TW * 2,
-    properties: [
-      { name: 'targetMapId', type: 'string', value: 'forest' },
-      { name: 'spawnX', type: 'int', value: forestSpawnTile.tileX },
-      { name: 'spawnY', type: 'int', value: forestSpawnTile.tileY },
-      { name: 'labelVi', type: 'string', value: labelVi },
-    ],
-  });
   return village;
 }
 

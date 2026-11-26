@@ -75,10 +75,10 @@ function exportVillage() {
         id: 9101,
         name: 'village-to-garden',
         type: 'portal',
-        x: 7 * TW,
-        y: 11 * TW,
-        width: TW,
-        height: TW,
+        x: 26 * TW,
+        y: 0 * TW,
+        width: TW * 2,
+        height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
           { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
@@ -101,25 +101,6 @@ function exportVillage() {
           { name: 'spawnY', type: 'int', value: 16 },
         ],
       },
-      ...(MAP_RECOVERY_MODE
-        ? [
-            {
-              id: 9106,
-              name: 'village-to-forest',
-              type: 'portal',
-              x: 51 * TW,
-              y: 3 * TW,
-              width: TW * 2,
-              height: TW,
-              properties: [
-                { name: 'targetMapId', type: 'string', value: 'forest' },
-                { name: 'labelVi', type: 'string', value: 'Vào Rừng thông' },
-                { name: 'spawnX', type: 'int', value: 8 },
-                { name: 'spawnY', type: 'int', value: 36 },
-              ],
-            },
-          ]
-        : []),
     ],
   };
 
@@ -376,24 +357,24 @@ function exportVillage() {
           },
         ],
       },
-      {
-        id: 9304,
-        name: 'be_na',
-        type: 'npc',
-        x: 43 * TW,
-        y: 31 * TW,
-        width: TW,
-        height: TW,
-        properties: [
-          { name: 'role', type: 'string', value: 'town_guide' },
-          { name: 'labelVi', type: 'string', value: 'Bé Na' },
-          {
-            name: 'dialogueVi',
-            type: 'string',
-            value: 'Đi hướng Tây ra Nông trại 184 luống, hướng Đông qua bến tàu tới Vịnh Hải Âu, hướng Bắc là vào Rừng thông!',
-          },
-        ],
-      },
+        {
+          id: 9304,
+          name: 'be_na',
+          type: 'npc',
+          x: 43 * TW,
+          y: 31 * TW,
+          width: TW,
+          height: TW,
+          properties: [
+            { name: 'role', type: 'string', value: 'town_guide' },
+            { name: 'labelVi', type: 'string', value: 'Bé Na' },
+            {
+              name: 'dialogueVi',
+              type: 'string',
+              value: 'Đi cầu gỗ phía Bắc là về Vườn nhà và Nông trại 184 luống (thêm lối lên Rừng thông ở phía Bắc ruộng), còn hướng Đông qua bến tàu tới Vịnh Hải Âu!',
+            },
+          ],
+        },
     ],
   };
 
@@ -402,8 +383,12 @@ function exportVillage() {
   const landLayer = src.layers.find((l) => l.name === 'land' && l.type === 'tilelayer');
   const bldLayer = src.layers.find((l) => l.name === 'building' && l.type === 'tilelayer');
   const dec1Layer = src.layers.find((l) => l.name === 'decoration_01' && l.type === 'tilelayer');
+  const dec2Layer = src.layers.find((l) => l.name === 'decoration_02' && l.type === 'tilelayer');
   const wellsLayer = src.layers.find((l) => l.name === 'wells' && l.type === 'tilelayer');
   const wallsLayer = src.layers.find((l) => l.name === 'walls' && l.type === 'tilelayer');
+  const clouds1Layer = src.layers.find((l) => l.name === 'clouds_01' && l.type === 'tilelayer');
+  const clouds2Layer = src.layers.find((l) => l.name === 'clouds_02' && l.type === 'tilelayer');
+  const cloudShadowLayer = src.layers.find((l) => l.name === 'cloud_shadow' && l.type === 'tilelayer');
   if (colLayer?.data) {
     // Explicit solid GIDs that lacked collision in upstream Cabacos_map.tmj (fences, crates, beach shack)
     const EXPLICIT_SOLID_DEC1_GIDS = new Set([
@@ -415,7 +400,8 @@ function exportVillage() {
     const WALKABLE_BLD_OR_PATH_GIDS = new Set([0, 1, 649, 1501, 2128, 2129, 2204, 2320, 2321, 2322, 2386, 2448, 2449, 2520, 2525]);
     const RIVER_BANK_LAND_GIDS = new Set([471, 472, 473, 474, 475, 476, 535, 537, 539, 540, 541, 546, 547]);
     const CLIFF_WALL_LAND_GIDS = new Set([148, 149, 204, 267, 268, 340, 341, 342, 404]);
-    const BRIDGE_PATH_GIDS = new Set([295, 359, 423, 809]);
+    const BRIDGE_PATH_GIDS = new Set([295, 359, 423, 745, 809]);
+    const CLIMBABLE_LADDER_DEC1_GIDS = new Set([747, 811, 875]);
 
     for (let i = 0; i < colLayer.data.length; i += 1) {
       const pathGid = (pathsLayer?.data?.[i] ?? 0) & 0x1fffffff;
@@ -425,7 +411,13 @@ function exportVillage() {
       const wellGid = (wellsLayer?.data?.[i] ?? 0) & 0x1fffffff;
       const wallGid = (wallsLayer?.data?.[i] ?? 0) & 0x1fffffff;
 
-      // Water/river channel tiles without bridge planks, plus sheer cliff walls without paths, block player & pet
+      // Ground-backed wooden ladders on cliff faces MUST remain climbable
+      if (CLIMBABLE_LADDER_DEC1_GIDS.has(dec1Gid) && landGid > 1) {
+        colLayer.data[i] = 0;
+        continue;
+      }
+
+      // Water/river channel tiles without bridge planks, plus sheer cliff walls without paths/ladders, block player & pet
       if (
         ((RIVER_BANK_LAND_GIDS.has(landGid) || landGid <= 1) && !BRIDGE_PATH_GIDS.has(pathGid) && pathGid <= 1) ||
         (CLIFF_WALL_LAND_GIDS.has(landGid) && pathGid <= 1)
@@ -457,16 +449,52 @@ function exportVillage() {
       }
     }
 
-    // 3. Clear ONLY exact doorway thresholds, return spawns, bridges & gate trails
+    // 2b. Build clean 2-wide North Wooden Causeway Bridge at x=26..27, y=0..15 connecting plaza (26..27, 16) to Garden
+    for (let y = 0; y <= 15; y += 1) {
+      for (let x = 24; x <= 28; x += 1) {
+        const i = y * src.width + x;
+        if (clouds1Layer?.data) clouds1Layer.data[i] = 0;
+        if (clouds2Layer?.data) clouds2Layer.data[i] = 0;
+        if (cloudShadowLayer?.data) cloudShadowLayer.data[i] = 0;
+        if (x >= 25 && x <= 28) {
+          if (bldLayer?.data) bldLayer.data[i] = 0;
+          if (dec2Layer?.data) dec2Layer.data[i] = 0;
+          if (dec1Layer?.data) dec1Layer.data[i] = 0;
+        }
+      }
+      const leftIdx = y * src.width + 25;
+      if (pathsLayer?.data) pathsLayer.data[leftIdx] = y === 15 ? 744 : 808;
+      if (dec1Layer?.data) dec1Layer.data[leftIdx] = y === 15 ? 105 : 233;
+      colLayer.data[leftIdx] = 66;
+
+      for (const bx of [26, 27]) {
+        const idxB = y * src.width + bx;
+        if (pathsLayer?.data) pathsLayer.data[idxB] = y === 0 || y === 15 ? 745 : 809;
+        colLayer.data[idxB] = 0;
+      }
+
+      const rightIdx = y * src.width + 28;
+      if (pathsLayer?.data) pathsLayer.data[rightIdx] = y === 15 ? 746 : 810;
+      if (dec1Layer?.data) dec1Layer.data[rightIdx] = y === 15 ? 105 : 233;
+      colLayer.data[rightIdx] = 66;
+    }
+
+    // 3. Clear ONLY exact doorway thresholds, return spawns, bridges & climbable wooden ladders
     const clearAprons = [
       [32, 24, 33, 25], // seed_shop door & return spawn (32,25)
       [28, 36, 30, 37], // tool_shop door (28,36) & return spawn (30,36)
       [15, 32, 16, 34], // crop_market door & return spawn (16,34)
       [33, 14, 34, 15], // town_hall door & return spawn (34,15) — keeps blue roof (33,12..13) blocked
       [37, 31, 39, 32], // wooden river bridge planks
-      [7, 11, 7, 13],   // NW wooden archway gate (7,11) <-> garden and north bridge deck arrival (7,13)
+      [26, 15, 27, 17], // North Causeway Bridge southern plaza apron
+      [46, 6, 46, 11],  // North cliff wooden ladder (reachable to top lookout)
+      [27, 38, 27, 43], // South cliff wooden ladder (reachable to cave shore)
+      [37, 14, 37, 21], // Mid hill wooden ladder
+      [59, 8, 59, 12],  // NE plateau ladder
+      [60, 12, 60, 18], // NE cliff double ladder
+      [64, 31, 65, 35], // East harbor twin wooden ladders
+      [68, 34, 68, 38], // East harbor beach ladder
       [7, 22, 8, 22],   // west bridge approach (8,22); keeps (9,21)/(9,23) rails & south cliff solid
-      [50, 3, 53, 5],   // village-to-forest north plaza road & arrival (52,5)
       [41, 30, 44, 31], // community house front sidewalk & Bé Na path
     ];
     for (const [x0, y0, x1, y1] of clearAprons) {

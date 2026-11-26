@@ -59,6 +59,7 @@ export function resolveFootstepSurface(params: {
 
   if (mapId === 'village') {
     if (
+      (tileX >= 26 && tileX <= 27 && tileY <= 15) ||
       (tileX >= 6 && tileX <= 8 && tileY >= 11 && tileY <= 20) ||
       (tileX >= 10 && tileX <= 16 && tileY >= 18 && tileY <= 20) ||
       (tileX >= 36 && tileX <= 42 && tileY >= 31 && tileY <= 34) ||

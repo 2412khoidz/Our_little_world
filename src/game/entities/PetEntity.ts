@@ -23,16 +23,6 @@ import {
 } from '../pet/livingCatWorldSprite';
 import { FOLLOW_CAT_MAPS, type PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
-const HOME_WAYPOINTS = [
-  { x: 13.5 * TILE_SIZE, y: 10.2 * TILE_SIZE }, // Coral pet rug
-  { x: 12.6 * TILE_SIZE, y: 10.2 * TILE_SIZE }, // Food/water bowls
-  { x: 10.5 * TILE_SIZE, y: 8.6 * TILE_SIZE },  // Central cozy floor
-  { x: 6.5 * TILE_SIZE, y: 8.0 * TILE_SIZE },   // Living rug edge
-];
-
-const STUDY_LOUNGE_SPOT = { x: 11.4 * TILE_SIZE, y: 5.4 * TILE_SIZE };
-const FOOD_BOWL_SPOT = { x: 12.4 * TILE_SIZE, y: 10.1 * TILE_SIZE };
-
 /** Mission 04C — readable in world without blurry upscale. */
 const LIVING_PET_WORLD_SCALE = 1.45;
 /** Legacy zoom-scale — Mission 04C close-up rig replaces this in care mode. */
@@ -53,9 +43,6 @@ export class PetEntity {
   private visible = false;
   private studyMode = false;
 
-  private targetX = 13.5 * TILE_SIZE;
-  private targetY = 10.2 * TILE_SIZE;
-  private nextDecisionAtMs = 0;
   private reactionUntilMs = 0;
   private reactionIntent: PetBehaviorIntent = 'happy_hop';
   private bubbleTimerMs = 0;
@@ -191,13 +178,19 @@ export class PetEntity {
     }
   }
 
-  teleportNear(x: number, y: number): void {
+  teleportNear(x: number, y: number, mapId?: import('../../shared/types').MapId): void {
     this.loco = createLocomotionSnapshot(x, y);
-    this.targetX = x;
-    this.targetY = y;
-    this.livingDriver?.teleportTo(x, y);
+    if (mapId && this.livingDriver) {
+      this.livingDriver.resetMapPosition(mapId, x, y);
+    } else {
+      this.livingDriver?.teleportTo(x, y);
+    }
     this.sprite.setPosition(Math.round(x), Math.round(y));
     this.syncShadowAndLabel();
+  }
+
+  getLocomotionState(): PetLocomotionSnapshot {
+    return this.loco;
   }
 
   syncSnapshot(pet: PetSnapshot | null, currentMapId: import('../../shared/types').MapId): void {
@@ -214,20 +207,12 @@ export class PetEntity {
 
   setStudyMode(active: boolean): void {
     this.studyMode = active;
-    if (active) {
-      this.targetX = STUDY_LOUNGE_SPOT.x;
-      this.targetY = STUDY_LOUNGE_SPOT.y;
-    }
   }
 
   triggerReaction(action: PetActionType): void {
     const now = Date.now();
     this.reactionUntilMs = now + 2600;
     this.reactionIntent = action === 'feed' ? 'eat' : action === 'water' ? 'drink' : 'pet_purr';
-    if (action === 'feed' || action === 'water') {
-      this.targetX = FOOD_BOWL_SPOT.x;
-      this.targetY = FOOD_BOWL_SPOT.y;
-    }
     this.spawnFloatingBubble(action === 'feed' ? '🐟' : action === 'water' ? '💧' : '❤️');
   }
 
@@ -266,46 +251,24 @@ export class PetEntity {
       return;
     }
 
-    const dist = Math.hypot(this.targetX - this.loco.x, this.targetY - this.loco.y);
-    let desiredIntent: PetBehaviorIntent;
-
-    if (dist > 2) {
-      desiredIntent = 'move';
-    } else if (now < this.reactionUntilMs) {
-      desiredIntent = this.reactionIntent;
-    } else if (this.studyMode || this.petSnapshot.emotion === 'sleepy') {
-      desiredIntent = 'sleep';
-      this.tickAmbientBubble(dtSec, '~');
-    } else {
-      const cycle = Math.floor(now / 12000) % 4;
-      desiredIntent = cycle === 2 ? 'sleep' : cycle === 3 ? 'sit' : 'idle';
-      if (desiredIntent === 'sleep') {
-        this.tickAmbientBubble(dtSec, 'Zzz');
-      } else if (this.petSnapshot.emotion === 'hungry' && cycle === 0) {
-        this.tickAmbientBubble(dtSec, '🐟?');
-      }
-
-      if (now >= this.nextDecisionAtMs) {
-        this.nextDecisionAtMs = now + 6000 + ((now % 4) * 1000);
-        const seed = Math.floor(now / 6000) + this.petSnapshot.version;
-        const wp = HOME_WAYPOINTS[seed % HOME_WAYPOINTS.length]!;
-        this.targetX = wp.x;
-        this.targetY = wp.y;
-      }
-    }
-
+    // Legacy collision-free HOME_WAYPOINTS movement is permanently removed.
+    // Without a collision-aware driver, hold safely in stationary reaction/idle pose.
+    const desiredIntent: PetBehaviorIntent =
+      now < this.reactionUntilMs
+        ? this.reactionIntent
+        : this.studyMode || this.petSnapshot.emotion === 'sleepy'
+          ? 'sleep'
+          : 'idle';
     this.loco = stepPetLocomotion(this.loco, {
       intent: desiredIntent,
-      targetX: this.targetX,
-      targetY: this.targetY,
+      targetX: this.loco.x,
+      targetY: this.loco.y,
       dtSec,
       nowMs: now,
     });
-
     this.sprite.setPosition(Math.round(this.loco.x), Math.round(this.loco.y));
     this.syncShadowAndLabel();
     this.playAnimState(this.loco.animState);
-
     this.tickFloatingBubble(dtSec);
   }
 

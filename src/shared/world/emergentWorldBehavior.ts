@@ -1,5 +1,10 @@
 import type { Direction } from '../types';
 import type { CouplePostureKind } from '../couple/coupleTypes';
+import {
+  isBlockedByActorColliders,
+  NPC_ACTOR_RADIUS_PX,
+  type ActorCollider,
+} from '../movement/actorCollision';
 
 export type EmergentActivityState =
   | 'idle'
@@ -100,6 +105,8 @@ export interface EmergentChickenContext {
   tilePx: number;
   playerX: number | null;
   playerY: number | null;
+  catX?: number | null;
+  catY?: number | null;
   playerRunning: boolean;
   toolSwinging: boolean;
   heldItemSku: string | null;
@@ -127,6 +134,10 @@ export function stepEmergentChicken(state: ChickenActorState, ctx: EmergentChick
     ctx.playerX !== null && ctx.playerY !== null
       ? Math.hypot(ctx.playerX - state.x, ctx.playerY - state.y)
       : Infinity;
+  const distToCat =
+    ctx.catX != null && ctx.catY != null
+      ? Math.hypot(ctx.catX - state.x, ctx.catY - state.y)
+      : Infinity;
 
   if (ctx.isNight) {
     state.activity = 'roosting_sleep';
@@ -139,17 +150,22 @@ export function stepEmergentChicken(state: ChickenActorState, ctx: EmergentChick
   }
 
   const holdingSeed = Boolean(ctx.heldItemSku?.startsWith('seed_'));
+  const catChasing = distToCat < 34;
   const startledTrigger =
+    catChasing ||
     ((ctx.playerRunning || ctx.toolSwinging) && distToPlayer < 48) ||
     (!holdingSeed && distToPlayer < 22);
 
   if (startledTrigger && ctx.nowMs >= state.stateUntilMs) {
-    const awayX = ctx.playerX !== null ? state.x - ctx.playerX : 1;
-    const awayY = ctx.playerY !== null ? state.y - ctx.playerY : 0;
+    const chaserX = catChasing && ctx.catX != null ? ctx.catX : ctx.playerX;
+    const chaserY = catChasing && ctx.catY != null ? ctx.catY : ctx.playerY;
+    const awayX = chaserX !== null && chaserX !== undefined ? state.x - chaserX : 1;
+    const awayY = chaserY !== null && chaserY !== undefined ? state.y - chaserY : 0;
     const len = Math.max(1e-4, Math.hypot(awayX, awayY));
     state.activity = 'startled_hop';
-    state.vx = (awayX / len) * 34;
-    state.vy = (awayY / len) * 34;
+    const fleeSpeed = catChasing ? 40 : 34;
+    state.vx = (awayX / len) * fleeSpeed;
+    state.vy = (awayY / len) * fleeSpeed;
     state.facing = state.vx >= 0 ? 'right' : 'left';
     state.stateUntilMs = ctx.nowMs + 820;
     state.nextThinkAtMs = ctx.nowMs + 1450;
@@ -687,6 +703,7 @@ export interface NpcRoutineContext {
   weatherKind: string;
   talkingToPlayer?: boolean;
   isTileBlocked?: (tx: number, ty: number) => boolean;
+  actorObstacles?: readonly ActorCollider[];
 }
 
 function directionFromDelta(dx: number, dy: number, fallback: Direction): Direction {
@@ -743,7 +760,10 @@ export function stepNpcRoutine(state: NpcRoutineState, ctx: NpcRoutineContext): 
   const step = Math.min(speed * dt, dist);
   const nextX = state.x + (dx / dist) * step;
   const nextY = state.y + (dy / dist) * step;
-  if (canActorStand(nextX, nextY, Math.max(1, ctx.tilePx), ctx.isTileBlocked)) {
+  const actorBlocked =
+    Boolean(ctx.actorObstacles?.length) &&
+    isBlockedByActorColliders(nextX, nextY, state.x, state.y, NPC_ACTOR_RADIUS_PX, ctx.actorObstacles!);
+  if (!actorBlocked && canActorStand(nextX, nextY, Math.max(1, ctx.tilePx), ctx.isTileBlocked)) {
     state.x = nextX;
     state.y = nextY;
     state.facing = directionFromDelta(dx, dy, state.facing);
@@ -752,10 +772,10 @@ export function stepNpcRoutine(state: NpcRoutineState, ctx: NpcRoutineContext): 
   } else {
     state.moving = false;
     state.activity = 'waiting';
-    if (state.waypoints.length > 1) {
+    if (!actorBlocked && state.waypoints.length > 1) {
       state.waypointIndex = (state.waypointIndex + 1) % state.waypoints.length;
     }
-    state.pauseUntilMs = ctx.nowMs + 2200;
+    state.pauseUntilMs = ctx.nowMs + (actorBlocked ? 650 : 2200);
   }
   return state;
 }
