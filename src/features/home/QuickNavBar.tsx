@@ -2,7 +2,17 @@ import { Armchair, Compass, Home, Menu, Shirt, Sprout, Trees } from 'lucide-reac
 import { isOutdoorMapUnlocked } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
 
-const DONOR_WORLD_NAV_IDS: MapId[] = ['village', 'beach', 'shop', 'forest', 'outdoor'];
+const DONOR_WORLD_NAV_IDS: MapId[] = [
+  'village',
+  'beach',
+  'shop',
+  'shop_seed',
+  'shop_tool',
+  'shop_crop_market',
+  'shop_town_hall',
+  'forest',
+  'outdoor',
+];
 
 interface QuickNavBarProps {
   hidden?: boolean;

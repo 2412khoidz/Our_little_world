@@ -12,7 +12,7 @@ import type { MapId } from './types';
 
 export const TILE_SIZE = 16;
 
-/** Native Tiled tile width for a zone (PyDew farm uses 64px). */
+/** Native Tiled tile width for a zone (all zones unified on 16×16 pixel density). */
 export function getMapTilePixelSize(mapId: MapId): number {
   if (mapId === 'farm') {
     const tw = (farmWorldJson as { tilewidth?: number }).tilewidth;
@@ -92,32 +92,32 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     'village',
     'Làng',
     '/assets/maps/village.json',
-    { tileX: 42, tileY: 31 },
+    { tileX: 39, tileY: 31 },
   ),
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', {
     tileX:
       (farmWorldJson as { properties?: { name: string; value: number }[] }).properties?.find(
         (p) => p.name === 'olwDefaultSpawnTileX',
-      )?.value ?? 24,
+      )?.value ?? 29,
     tileY:
       (farmWorldJson as { properties?: { name: string; value: number }[] }).properties?.find(
         (p) => p.name === 'olwDefaultSpawnTileY',
-      )?.value ?? 27,
+      )?.value ?? 22,
   }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 14, tileY: 32 }),
-  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 1, tileY: 16 }),
-  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 11, tileY: 14 }),
+  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 5, tileY: 16 }),
+  shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 12, tileY: 14 }),
   shop_seed: buildTiledZoneDefinition(
     'shop_seed',
     'Cửa hàng hạt',
     '/assets/maps/shop_seed.json',
-    { tileX: 11, tileY: 14 },
+    { tileX: 12, tileY: 14 },
   ),
   shop_tool: buildTiledZoneDefinition(
     'shop_tool',
     'Cửa hàng dụng cụ',
     '/assets/maps/shop_tool.json',
-    { tileX: 11, tileY: 16 },
+    { tileX: 11, tileY: 13 },
   ),
   shop_crop_market: buildTiledZoneDefinition(
     'shop_crop_market',
@@ -129,7 +129,7 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     'shop_town_hall',
     'Tòa thị chính',
     '/assets/maps/shop_town_hall.json',
-    { tileX: 11, tileY: 15 },
+    { tileX: 11, tileY: 13 },
   ),
 };
 
@@ -185,17 +185,28 @@ const GARDEN_TO_VILLAGE_PORTAL: MapPortal = {
   id: 'garden-to-village',
   labelVi: 'Vào làng',
   tileX: 9,
-  tileY: 13,
+  tileY: 12,
   radiusTiles: 1.6,
   targetMapId: 'village',
-  targetSpawnX: 42,
+  targetSpawnX: 39,
   targetSpawnY: 31,
+};
+
+const GARDEN_TO_FARM_PORTAL: MapPortal = {
+  id: 'garden-to-farm',
+  labelVi: 'Ra nông trại',
+  tileX: 3,
+  tileY: 12,
+  radiusTiles: 1.6,
+  targetMapId: 'farm',
+  targetSpawnX: 29,
+  targetSpawnY: 4,
 };
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
   const base = MAP_DEFINITIONS[mapId];
   if (mapId === 'garden' && isExtendedWorldDevEnabled()) {
-    return { ...base, portals: [...base.portals, GARDEN_TO_VILLAGE_PORTAL] };
+    return { ...base, portals: [...base.portals, GARDEN_TO_VILLAGE_PORTAL, GARDEN_TO_FARM_PORTAL] };
   }
   return base;
 }

@@ -44,7 +44,7 @@ function mapPropBool(map, name) {
 }
 
 function cabacosSoilGidAt(map, x, y, w) {
-  for (const layerName of ['farm3', 'farm2', 'farm', 'land']) {
+  for (const layerName of ['soil', 'farm3', 'farm2', 'farm', 'land']) {
     const { data } = layerData(map, layerName);
     const gid = tileAt(data, w, x, y);
     if (gid > 0) return gid;

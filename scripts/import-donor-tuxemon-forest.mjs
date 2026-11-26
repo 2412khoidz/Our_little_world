@@ -54,7 +54,7 @@ function patchForestInteractables(forest) {
       }
     }
   }
-  forest.layers = forest.layers.filter((l) => l.name !== 'Interactables');
+  forest.layers = forest.layers.filter((l) => l.name !== 'Interactables' && l.name !== 'NPCSpawns');
   forest.layers.push({
     id: 21,
     name: 'Interactables',
@@ -75,10 +75,68 @@ function patchForestInteractables(forest) {
         height: TW,
         properties: [
           { name: 'kind', type: 'string', value: 'fishing_spot' },
-          { name: 'labelVi', type: 'string', value: 'Suối rừng — câu tension (canvas-games)' },
+          { name: 'labelVi', type: 'string', value: 'Suối rừng — câu cá thư giãn' },
           { name: 'maxRadiusPx', type: 'int', value: 56 },
           { name: 'donorPlayable', type: 'bool', value: true },
           { name: 'fishingSpotId', type: 'string', value: 'east_stream' },
+        ],
+      },
+      {
+        id: 92,
+        name: 'forest_glade_bench',
+        type: 'interactable',
+        x: 21 * TW,
+        y: 18 * TW,
+        width: TW * 2,
+        height: TW,
+        properties: [
+          { name: 'kind', type: 'string', value: 'bench' },
+          { name: 'labelVi', type: 'string', value: 'Ghế gỗ dưới tán thông — ngồi nghỉ cùng nhau' },
+          { name: 'maxRadiusPx', type: 'int', value: 48 },
+        ],
+      },
+      {
+        id: 93,
+        name: 'forest_mushroom_forage',
+        type: 'interactable',
+        x: 8 * TW,
+        y: 25 * TW,
+        width: TW * 2,
+        height: TW,
+        properties: [
+          { name: 'kind', type: 'string', value: 'bench' },
+          { name: 'labelVi', type: 'string', value: 'Bụi nấm rừng — ngắm cảnh cùng nhau' },
+          { name: 'maxRadiusPx', type: 'int', value: 46 },
+        ],
+      },
+    ],
+  });
+  forest.layers.push({
+    id: 22,
+    name: 'NPCSpawns',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: [
+      {
+        id: 101,
+        name: 'be_na',
+        type: 'npc',
+        x: 13 * TW,
+        y: 30 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'role', type: 'string', value: 'forest_keeper' },
+          { name: 'labelVi', type: 'string', value: 'Bé Na (Rừng)' },
+          {
+            name: 'dialogueVi',
+            type: 'string',
+            value: 'Rừng thông hôm nay yên tĩnh lắm! Hai bạn men theo lối mòn lên hồ phía đông câu cá hoặc ngồi ghế nghỉ dưới tán cây nhé.',
+          },
         ],
       },
     ],
@@ -136,7 +194,8 @@ function main() {
   const slicePath = path.join(DONOR, sliceForSlug(slug));
   const slice = loadJson(slicePath);
 
-  execFileSync('python3', [
+  const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+  execFileSync(pyCmd, [
     PY,
     '--tmx',
     path.join(DONOR, 'maps', tmxForSlug(slug)),

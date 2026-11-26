@@ -19,7 +19,14 @@ export function computeGameplayZoom(
   viewportHeight: number,
   mapWidth: number,
   mapHeight: number,
+  tilePx = 16,
 ): number {
+  if (tilePx >= 64) {
+    // 64px-tile PyDew farm: normalize zoom so 1 tile renders crisp & proportional to 16px zones
+    const shortSide = Math.min(viewportWidth, viewportHeight);
+    return shortSide < 500 ? 0.75 : 1;
+  }
+
   const shortSide = Math.min(viewportWidth, viewportHeight);
   const isPortrait = viewportWidth / Math.max(viewportHeight, 1) < 0.85;
   const isShortLandscape = viewportHeight < 460 && viewportWidth > viewportHeight;

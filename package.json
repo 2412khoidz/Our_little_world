@@ -45,7 +45,7 @@
     "vendor-donor:fishing-frenzy": "node scripts/vendor-donor-fishing-frenzy.mjs",
     "capture:fishing-recovery": "node scripts/capture-fishing-frenzy-recovery-evidence.mjs",
     "import-donor:sprout-home-garden": "node scripts/vendor-donor-sprout-home-garden.mjs && node scripts/import-donor-sprout-home-garden.mjs",
-    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-pydew-farm.mjs && node scripts/import-donor-cabacos-beach.mjs && node scripts/import-donor-tuxemon-forest.mjs && node scripts/import-donor-sprout-home-garden.mjs",
+    "import-donor:world-zones": "node scripts/import-donor-cabacos.mjs && node scripts/import-donor-farm-v2.mjs && node scripts/import-donor-beach-v2.mjs && node scripts/import-donor-tuxemon-forest.mjs && node scripts/import-donor-sprout-home-garden.mjs",
     "import-donor:recovery-world": "OLW_MAP_RECOVERY=1 npm run import-donor:world-zones",
     "spike:video": "node scripts/generate-spike-video.mjs",
     "test:sql": "node scripts/run-local-sql-suite.mjs"

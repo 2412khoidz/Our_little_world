@@ -1,18 +1,15 @@
-import { MapPin, Trees, Waves, X } from 'lucide-react';
+import { MapPin, Store, Trees, Waves, X } from 'lucide-react';
 import { isOutdoorMapUnlocked } from '../../shared/maps';
-import { WORLD_AREA_NODES } from '../../shared/world/worldAreaGraph';
 import type { MapId } from '../../shared/types';
 
 const OUTDOOR_DESTINATIONS: { mapId: MapId; labelVi: string; testId: string }[] = [
-  { mapId: 'village', labelVi: 'Làng Cabacos', testId: 'outdoor-nav-village' },
-  { mapId: 'farm', labelVi: 'Trang trại', testId: 'outdoor-nav-farm' },
-  { mapId: 'forest', labelVi: 'Rừng', testId: 'outdoor-nav-forest' },
-  {
-    mapId: 'beach',
-    labelVi: WORLD_AREA_NODES.find((n) => n.id === 'beach')?.nameVi ?? 'Bãi biển (Gull Bay)',
-    testId: 'outdoor-nav-beach',
-  },
-  { mapId: 'shop', labelVi: 'Cửa hàng làng', testId: 'outdoor-nav-shop' },
+  { mapId: 'village', labelVi: 'Thị trấn Cabacos', testId: 'outdoor-nav-village' },
+  { mapId: 'farm', labelVi: 'Nông trại (184 luống)', testId: 'outdoor-nav-farm' },
+  { mapId: 'forest', labelVi: 'Rừng thông Tuxemon', testId: 'outdoor-nav-forest' },
+  { mapId: 'beach', labelVi: 'Bãi biển Vịnh Hải Âu', testId: 'outdoor-nav-beach' },
+  { mapId: 'shop_seed', labelVi: 'Cửa hàng hạt giống', testId: 'outdoor-nav-shop' },
+  { mapId: 'shop_tool', labelVi: 'Cửa hàng dụng cụ & mồi', testId: 'outdoor-nav-shop-tool' },
+  { mapId: 'shop_crop_market', labelVi: 'Chợ nông sản', testId: 'outdoor-nav-shop-market' },
 ];
 
 interface OutdoorWorldNavSheetProps {
@@ -46,7 +43,7 @@ export function OutdoorWorldNavSheet({
           </button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--ink-muted)', margin: '0 0 10px' }}>
-          Chọn điểm đến — bãi biển Gull Bay nằm ở mép nam làng hoặc qua rừng (cùng chất lượng bản đồ Cabacos).
+          Chọn điểm đến nhanh — hai bạn cũng có thể đi bộ qua các lối nối giữa Vườn, Trang trại, Làng, Rừng và Bãi biển.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {OUTDOOR_DESTINATIONS.map((dest) => (
@@ -61,7 +58,15 @@ export function OutdoorWorldNavSheet({
                 onClose();
               }}
             >
-              {dest.mapId === 'beach' ? <Waves size={18} /> : dest.mapId === 'forest' ? <Trees size={18} /> : <MapPin size={18} />}
+              {dest.mapId === 'beach' ? (
+                <Waves size={18} />
+              ) : dest.mapId === 'forest' ? (
+                <Trees size={18} />
+              ) : dest.mapId.startsWith('shop') ? (
+                <Store size={18} />
+              ) : (
+                <MapPin size={18} />
+              )}
               {dest.labelVi}
             </button>
           ))}

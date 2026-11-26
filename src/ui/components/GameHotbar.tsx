@@ -1,4 +1,5 @@
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
+import { kilnItemIconUrlForSku } from '../../shared/art/kilnItemIcons';
 import { CatalogPropsIcon } from './CatalogPropsIcon';
 import { ItemArtSvg } from '../designSystem/GameIcons';
 
@@ -49,11 +50,25 @@ export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = fals
             >
               {idx + 1}
             </span>
-            {hasItem && slot!.propsIconId ? (
-              <CatalogPropsIcon iconId={slot!.propsIconId} size={24} />
-            ) : hasItem && slot!.iconId ? (
-              <ItemArtSvg iconId={slot!.iconId} size={24} />
-            ) : null}
+            {(() => {
+              if (!hasItem) return null;
+              const kilnUrl = slot!.itemSku ? kilnItemIconUrlForSku(slot!.itemSku) : null;
+              if (kilnUrl) {
+                return (
+                  <img
+                    src={kilnUrl}
+                    alt=""
+                    width={26}
+                    height={26}
+                    draggable={false}
+                    style={{ imageRendering: 'pixelated', objectFit: 'contain' }}
+                  />
+                );
+              }
+              if (slot!.propsIconId) return <CatalogPropsIcon iconId={slot!.propsIconId} size={24} />;
+              if (slot!.iconId) return <ItemArtSvg iconId={slot!.iconId} size={24} />;
+              return null;
+            })()}
             {hasItem && slot!.itemKind !== 'water_pitcher' && (
               <span
                 style={{

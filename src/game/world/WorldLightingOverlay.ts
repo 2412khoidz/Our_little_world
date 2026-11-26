@@ -17,7 +17,7 @@ interface RainDrop {
 
 /**
  * Fullscreen day/night + drizzle presentation (AI Farm donor lighting → 2D overlay).
- * Drizzle particles use PyDew Valley drop sprites when preloaded; procedural rects otherwise.
+ * Rain is strictly outdoor-only; interiors (`home`, `shop*`) stay dry with softer night tint.
  */
 export class WorldLightingOverlay {
   private readonly scene: Phaser.Scene;
@@ -26,6 +26,7 @@ export class WorldLightingOverlay {
   private rainGroup: Phaser.GameObjects.Container;
   private lastWeather: WorldClockPresentation['weather']['kind'] = 'clear';
   private lastIntensity = -1;
+  private lastIndoor = false;
   private camWidth = 0;
   private camHeight = 0;
 
@@ -45,7 +46,7 @@ export class WorldLightingOverlay {
     this.rainGroup.destroy();
   }
 
-  apply(presentation: WorldClockPresentation): void {
+  apply(presentation: WorldClockPresentation, isIndoor = false): void {
     const cam = this.scene.cameras.main;
     const w = Math.ceil(cam.width);
     const h = Math.ceil(cam.height);
@@ -57,11 +58,11 @@ export class WorldLightingOverlay {
     }
 
     const { color, alpha } = phaserLightingOverlayFromPresentation(presentation);
-    this.tintRect.setFillStyle(color, alpha);
+    this.tintRect.setFillStyle(color, isIndoor ? alpha * 0.42 : alpha);
 
-    const weather = presentation.weather.kind;
-    const intensity = presentation.weather.intensity;
-    const weatherChanged = weather !== this.lastWeather;
+    const weather = isIndoor ? 'clear' : presentation.weather.kind;
+    const intensity = isIndoor ? 0 : presentation.weather.intensity;
+    const weatherChanged = weather !== this.lastWeather || isIndoor !== this.lastIndoor;
     const intensityBucket =
       weather === 'drizzle' ? Math.round(intensity * 4) / 4 : 0;
     const intensityChanged = intensityBucket !== this.lastIntensity;
@@ -69,6 +70,7 @@ export class WorldLightingOverlay {
     if (weatherChanged || (weather === 'drizzle' && intensityChanged)) {
       this.lastWeather = weather;
       this.lastIntensity = intensityBucket;
+      this.lastIndoor = isIndoor;
       this.clearRain();
       if (weather === 'drizzle') {
         this.spawnRain(intensity);

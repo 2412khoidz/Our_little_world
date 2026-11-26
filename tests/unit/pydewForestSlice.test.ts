@@ -18,11 +18,12 @@ describe('Tuxemon forest transplant', () => {
     expect(mapSlug?.value).toBe('tt_forest_route1');
   });
 
-  it('spawn and west portal tiles are walkable with baked collision elsewhere', () => {
+  it('spawn and south portal tiles are walkable with baked collision elsewhere', () => {
     const parsed = getParsedTiledWorld('forest')!;
     const spawn = getMapDefinition('forest').defaultSpawn;
     expect(isTileBlockedFromParsed(parsed, spawn.tileX, spawn.tileY)).toBe(false);
-    expect(isTileBlockedFromParsed(parsed, 1, 32)).toBe(false);
+    expect(isTileBlockedFromParsed(parsed, 8, 39)).toBe(false);
+    expect(isTileBlockedFromParsed(parsed, 8, 36)).toBe(false);
     expect(isTileBlockedFromParsed(parsed, 0, 0)).toBe(true);
   });
 

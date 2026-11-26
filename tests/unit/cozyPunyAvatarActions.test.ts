@@ -4,22 +4,22 @@ import {
   PYDEW_FARMER_GAMEPLAY_MANIFEST,
   PYDEW_FARMER_SHEET,
 } from '../../src/shared/donor/pydewFarmerCharacterSheet';
-import { cozyGameplayAnimKey } from '../../src/game/art/donorPydewFarmerAvatarTexture';
+import { avatarWalkAnimKey } from '../../src/game/art/avatarAtlasLayout';
+import { avatarIdleFrame, avatarIdleFrameForFacing8 } from '../../src/game/art/phaserAvatarTexture';
 
-describe('PyDew farmer donor-framed actions', () => {
-  it('maps tools to dedicated rows (not idle aliases)', () => {
-    expect(PYDEW_FARMER_ACTION_ROWS.hoe).toBe(PYDEW_FARMER_SHEET.rows.hoe);
-    expect(PYDEW_FARMER_ACTION_ROWS.water).toBe(PYDEW_FARMER_SHEET.rows.water);
-    expect(PYDEW_FARMER_ACTION_ROWS.harvest).toBe(PYDEW_FARMER_SHEET.rows.harvest);
-    expect(PYDEW_FARMER_GAMEPLAY_MANIFEST.facing8Policy).toBe('cardinal-from-facing8');
+describe('Cozy Human V2 animation & donor reference alignment', () => {
+  it('keeps distinct directional idle indices and walk anim keys without combat frames', () => {
+    expect(avatarIdleFrame('avatar:test', 'down')).toBe(0);
+    expect(avatarIdleFrame('avatar:test', 'up')).toBe(3);
+    expect(avatarIdleFrame('avatar:test', 'left')).toBe(6);
+    expect(avatarIdleFrame('avatar:test', 'right')).toBe(9);
+    expect(avatarIdleFrameForFacing8('avatar:test', 'down-right')).toBe(0);
+    expect(avatarWalkAnimKey('avatar:test', 'down-right')).toBe('avatar:test:walk-down-right');
   });
 
-  it('builds stable anim keys for farming clips', () => {
-    expect(cozyGameplayAnimKey('donor-pydew-farmer-may', 'hoe', 'down')).toBe(
-      'donor-pydew-farmer-may:tool-down',
-    );
-    expect(cozyGameplayAnimKey('donor-pydew-farmer-may', 'water', 'left')).toBe(
-      'donor-pydew-farmer-may:water-left',
-    );
+  it('retains PyDew reference manifest constants for farm donor compatibility', () => {
+    expect(PYDEW_FARMER_ACTION_ROWS.hoe).toBe(PYDEW_FARMER_SHEET.rows.hoe);
+    expect(PYDEW_FARMER_ACTION_ROWS.water).toBe(PYDEW_FARMER_SHEET.rows.water);
+    expect(PYDEW_FARMER_GAMEPLAY_MANIFEST.facing8Policy).toBe('cardinal-from-facing8');
   });
 });

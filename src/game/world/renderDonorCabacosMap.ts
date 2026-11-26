@@ -25,10 +25,10 @@ export function renderDonorCabacosMapLayers(
     const name = layerData.name;
     if (SKIP_LAYERS.has(name)) continue;
     if (!tilemap.getLayer(name)) continue;
-    const depthProp = (layerData as { properties?: { name: string; value: number }[] }).properties?.find(
-      (p) => p.name === 'gamemaker_depth',
-    );
-    const depth = depthProp?.value !== undefined ? -depthProp.value / 100 : 0;
+    const props = (layerData as { properties?: { name: string; value: number }[] }).properties ?? [];
+    const olwDepth = props.find((p) => p.name === 'olwDepth')?.value;
+    const depthProp = props.find((p) => p.name === 'gamemaker_depth')?.value;
+    const depth = olwDepth !== undefined ? olwDepth : depthProp !== undefined ? -depthProp / 100 : 0;
     const created = tilemap.createLayer(name, tilesets, 0, 0);
     if (created) {
       created.setDepth(depth);

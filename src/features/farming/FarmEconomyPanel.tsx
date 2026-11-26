@@ -123,7 +123,7 @@ export function FarmEconomyPanel({
         <p
           className={mode === 'shop' ? 'nuvora-desk__title' : undefined}
           data-testid="farm-world-clock-context"
-          style={{ fontSize: 12, margin: '0 0 6px', color: '#f5e6c8', fontWeight: 400 }}
+          style={{ fontSize: 12, margin: '0 0 6px', color: '#5c351e', fontWeight: 600 }}
         >
           Ngày {farmClockContext.calendarDay} · {farmClockContext.seasonLabelVi} ·{' '}
           {farmClockContext.weatherLabelVi}
@@ -131,7 +131,7 @@ export function FarmEconomyPanel({
       ) : null}
       <p
         data-testid="farm-economy-wallet"
-        style={{ fontSize: 13, margin: '0 0 8px', color: mode === 'shop' ? '#f5e6c8' : '#f5e6c8' }}
+        style={{ fontSize: 13, margin: '0 0 8px', color: '#462818', fontWeight: 600 }}
       >
         Ví chung: <strong data-testid="farm-wallet-coins">{walletCoins}</strong> xu
         {mode === 'shop' ? (
@@ -193,7 +193,7 @@ export function FarmEconomyPanel({
         )}
         {mode === 'shipping' && (
           <>
-            <p style={{ fontSize: 12, color: '#f5e6c8', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#4e2e1a', margin: 0 }}>
               Chạm ô nông sản để gửi 1 phần qua đêm — giá do server tính theo ngày.
             </p>
             {shippingCells.every((c) => !c.sku) ? (

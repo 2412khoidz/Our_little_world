@@ -1,6 +1,10 @@
 .scrapbook-modal .modal-panel {
   max-width: min(96vw, 520px);
   padding-bottom: 14px;
+  background-color: #dec096;
+  border: 12px solid #6b4125;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 12px / 0 stretch;
+  color: #3d2417;
 }
 
 .scrapbook-book-host {
