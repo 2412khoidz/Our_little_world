@@ -565,21 +565,29 @@
 .pet-care-overlay {
   position: fixed;
   inset: 0;
-  z-index: 28;
+  z-index: 42;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: calc(108px + var(--safe-bottom));
+  padding-bottom: calc(96px + var(--safe-bottom));
+}
+
+.pet-care-three-host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: auto;
+  touch-action: none;
+  background: #f5e6cf;
 }
 
 .pet-care-overlay__vignette {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at center 52%, transparent 18%, rgba(12, 10, 14, 0.72) 68%),
-    rgba(10, 8, 12, 0.35);
+  z-index: 2;
+  background: radial-gradient(ellipse at center 48%, transparent 56%, rgba(44, 29, 20, 0.24) 100%);
   pointer-events: none;
 }
 
@@ -588,7 +596,7 @@
   left: 50%;
   top: 46%;
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
 }
@@ -613,40 +621,53 @@
 
 .pet-care-overlay__title {
   position: absolute;
-  top: calc(52px + var(--safe-top));
-  color: #fff5ea;
-  font-size: 15px;
+  top: calc(18px + var(--safe-top));
+  left: calc(16px + var(--safe-left));
+  margin: 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(44, 30, 24, 0.72);
+  backdrop-filter: blur(8px);
+  color: #fff6ea;
+  font-size: 14px;
   font-weight: 700;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  z-index: 4;
 }
 
 .pet-care-overlay__hint {
   position: absolute;
-  top: 38%;
-  color: #ffe0c0;
-  font-size: 15px;
-  font-weight: 700;
-  z-index: 3;
-  animation: pet-care-pop 0.35s ease-out;
+  top: calc(58px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(44, 30, 24, 0.62);
+  color: #ffe9cf;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 4;
+  animation: pet-care-pop 0.25s ease-out;
   text-align: center;
-  max-width: 88vw;
+  max-width: min(86vw, 420px);
+  pointer-events: none;
 }
 
 .pet-care-overlay__hint--ghost {
-  opacity: 0.55;
-  font-size: 13px;
-  font-weight: 600;
+  opacity: 0.72;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 @keyframes pet-care-pop {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.92);
+    transform: translateX(-50%) translateY(6px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0) scale(1);
   }
 }
 
@@ -654,42 +675,62 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(184px + var(--safe-bottom));
-  display: grid;
-  grid-template-columns: repeat(2, minmax(108px, 1fr));
-  gap: 10px;
+  bottom: calc(16px + var(--safe-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: center;
   z-index: 30;
   pointer-events: auto;
-  width: min(92vw, 280px);
+  width: min(94vw, 640px);
+  padding: 8px 10px;
+  border-radius: 22px;
+  background: rgba(42, 28, 22, 0.64);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 232, 199, 0.22);
 }
 
 .pet-care-overlay__chip {
   border: 1px solid rgba(255, 232, 199, 0.35);
-  background: rgba(40, 30, 36, 0.75);
+  background: rgba(54, 38, 32, 0.84);
   color: #ffe8c7;
-  font-size: 14px;
-  padding: 10px 16px;
-  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 13px;
+  min-height: 40px;
   border-radius: 999px;
   cursor: pointer;
   touch-action: manipulation;
   pointer-events: auto;
+  transition: transform 120ms ease, background-color 140ms ease, border-color 140ms ease;
+}
+
+.pet-care-overlay__chip:hover {
+  background: rgba(88, 60, 48, 0.94);
+  border-color: rgba(255, 220, 175, 0.7);
+}
+
+.pet-care-overlay__chip--active {
+  background: #e2835a;
+  border-color: #fff2df;
+  color: #fffaf4;
+  transform: translateY(-1px);
 }
 
 .pet-care-overlay__exit {
   position: absolute;
-  top: calc(52px + var(--safe-top));
-  right: calc(12px + var(--safe-right));
-  z-index: 2;
+  top: calc(18px + var(--safe-top));
+  right: calc(16px + var(--safe-right));
+  z-index: 4;
   pointer-events: auto;
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #c98f6a;
-  background: rgba(40, 30, 36, 0.88);
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 212, 174, 0.65);
+  background: rgba(44, 30, 24, 0.86);
   color: #fff8ef;
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 

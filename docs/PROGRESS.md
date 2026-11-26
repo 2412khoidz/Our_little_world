@@ -174,5 +174,19 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
 - **Branch:** `cursor/mission-05-farming-slice-d77e` — vòng lặp Dev LAN trong game chính: cuốc → gieo → tưới → thu hoạch → bán/mua hạt (`docs/handover/MISSION_05_FARMING_PLAYABLE.md`).
 - **Đã kiểm (local DoD):** Vitest **534** pass (`farmPlotContract` + 184 plots), lint/typecheck/build; Playwright `farming-co-op.spec.ts` — 2 client + API versioned apply, annex ô `120`, `INVALID_PLOT` (log: `/opt/cursor/artifacts/farming-co-op-e2e-184.log`).
 - **Lưới:** `farmPlotContract` **v1.0.1** (#12 vendored), **184** ô (`farm_main`+`farm_annex`), Dev LAN + Supabase `_farm_plot_on_contract_soil`; SQL `farming_authority.sql` chưa chạy trên Postgres thật.
-- **Chưa kiểm:** Supabase migration apply trên remote; duplicate-harvest 2 client; icon hotbar farming (Composer 2).
+- **Kiểm chứng:** Supabase migration apply trên remote; duplicate-harvest 2 client; icon hotbar farming (Composer 2).
 - **PR #10:** readiness + Composer 2 authority trong `docs/handover/PR10_INTEGRATION_COMPOSER2.md` (pet branch riêng).
+
+## 14. Mission M — Deep Living Pet Experience V2 (`antigravity/carbon-living-pet-v2`)
+
+- **Phạm vi & Kiến trúc:** Nâng cấp từ PR #79 (`26b185d`) lên hệ thống **3D Three.js Living Pet Care V2** (`src/donors/nintendogs-cat-v2/` + `src/game/pet/care/`):
+  - **Giải phẫu & shader lông mèo 3D (`CatModel`, `CatRig`, `CatActor`, `CatBreeds`, `CatPatterns`):** Surface Nets + GLSL shell-fur (`uFluff`, `uComb`, `uDirt`), đồng tử dọc mèo + double-blink/squint (`j4lpan/pet-shop` MIT), 8 râu 3D hai má, tai tam giác dựng/cụp airplane ears, đuôi dài 5 đốt (`idle`, `wag_slow`, `wag_fast`, `puff`, `tuck`), hộp sọ/bàn chân cho 3 giống OLW (`ginger-tabby`, `cream-puff`, `calico-patch`).
+  - **Không gian sống & đồ chơi (`CatRoom`, `CatProps`, `ToyWorld`, `CatWandSim`):** Phòng khách cặp đôi có nắng vàng, bụi sáng bay, thảm dệt, sofa đôi, nệm ngủ, trụ cào móng, khay bát ăn/bát nước gốm có hiệu ứng vơi/sóng nước, lược 3D, bóng chuông, cuộn len, hộp giấy và cần câu mèo dây Verlet 6 đốt.
+  - **Tự chủ hành vi & Ranh giới (`CatBrain`, `CatPlayController`, `PetCareThreeStage`):** Nối 1:1 `PetSnapshot`, `Pet8Needs`, `PetPersonalityTraits`, `derive9Emotion`, `scoreAffordanceAction`, `MemoryState`. Quýt tự đi dạo, đánh hơi, ngồi chớp mắt chậm, cuộn bánh mì, ngủ trưa, vươn vai ngáp, liếm chân rửa mặt, vồ đồ chơi, chui hộp giấy, tự chạy tới bát ăn/uống nước, và cụp tai né bước (`RefuseAct`) khi bị chạm quá đà/mệt.
+  - **2P Co-Care & Persistence:** Mở rộng `SharedPetCareSession` (`water`, `toy`, `pose`, `coatFluff`) trên Dev-LAN SSE + Supabase Realtime broadcast (`pet_care_session`), nối ngược trạng thái chăm sóc về `WorldScene` / `PetLivingMainGameDriver`, giữ nguyên 1 điểm phát `evt:pet-care-request-consume` chống trừ kho trùng.
+- **Đã kiểm (local Chromium WebGL2 + Dev-LAN, sau lần sửa code cuối):**
+  - `npm run lint` (**0 errors**, 2 warnings có sẵn), `npm run typecheck` (`tsc -b`, exit **0**), `npm run build` + VitePWA (`dist/sw.js`, 25 precache entries, **704ms**).
+  - `npm run test`: **152 files / 752 tests pass** (gồm `tests/unit/petCareV2CatBrain.test.ts`).
+  - Playwright Chromium Desktop (`PLAYWRIGHT_PORT=4183`): **6/6 pass** trên 5 specs (`pet-care-closeup.spec.ts`, `pet-care-isolated-atlas.spec.ts`, `pet-care-session-acceptance.spec.ts`, `pet-care-shared-session.spec.ts`, `pet-care-living-v2.spec.ts` gồm test 2-client `preset-partner-a` + `preset-partner-b`, single consume & exit/re-enter persistence). *(Ghi chú: spec có sẵn `pet-care-hotbar.spec.ts` không thuộc scope V2 trước đó fail ở `.locator('svg')` trong `hotbar-slot-1`.)*
+  - Video nghiệm thu liên tục H.264 `1280×720`: **385.44 giây (06:25)** + đối chiếu donor tại [PET_CARE_V2_COMPARISON.md](phase-ii/PET_CARE_V2_COMPARISON.md).
+- **Chưa kiểm trên thiết bị/hạ tầng thật (`Pending Device & Cloud Verification`):** Chưa test hiệu năng WebGL2 & cảm ứng thật trên **iPhone 16 Pro Max Safari / PWA Add to Home Screen**, và chưa test đồng bộ 2 mạng qua **Supabase Cloud** thật.

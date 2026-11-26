@@ -34,6 +34,17 @@ SOFTWARE.
 - **Assets Used:** `cat-orange` 16×16 top-down animated spritesheet (`outline_lit` & `shadow`, 128 frames) and `puppy-shiba` 16×16 preview frame.
 - **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
+## 3. Mission M — 3D Pet Care V2 Donors (`src/donors/nintendogs-cat-v2/` & expressions)
+
+1. **`SawyerHood/nintendogs-threejs` (`commit 43d231c26e209132dbadb752a6a8e14830c83ccd`)**
+   - **Adapted Modules:** Procedural SDF & Surface Nets mesher (`sdf.ts`, `surfaceNets.ts`), GLSL shell-fur shader (`fur.ts`), skeleton rig/IK/pose solver patterns (`catDesign.ts`, `catModel.ts`, `catRig.ts`, `catActor.ts`), `ToyWorld` physics (`toyPhysics.ts`), procedural living-room props & follow camera (`catProps.ts`, `catRoom.ts`), `Brain` & raycast `PlayController` patterns (`catBrain.ts`, `catPlayController.ts`).
+   - **Verification Note:** All ported files are tagged `// Adapted from SawyerHood/nintendogs-threejs@43d231c` and documented in `src/donors/nintendogs-cat-v2/UPSTREAM_REUSE.md`; upstream repo currently has **no LICENSE file declared** (recorded transparently for owner review before external public distribution).
+   - **Zero copyrighted audio/binary assets copied.**
+
+2. **`j4lpan/pet-shop` (`commit 77f8b59a33c93881b44e15209b310b199a423d2a`, `MIT License`)**
+   - **Adapted Concepts:** Double-blink eye micro-expressions, ear twitches, and lightweight reactive cues integrated into `catRig.ts` and `catBrain.ts`.
+   - **License:** MIT License (Copyright (c) j4lpan — permissive open-source license allowing modification and redistribution with attribution).
+
 ## Status of the V0.2–V0.3 domain modules (DeepSeek night session)
 
 The reference checkouts listed in `docs/research/REUSE_MATRIX.md`

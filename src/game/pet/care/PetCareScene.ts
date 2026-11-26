@@ -9,6 +9,7 @@ import { PET_PERSONALITY_PRESETS } from '../../../shared/petLiving/petIntelligen
 import { setPetCareModeActive } from '../../../shared/petLiving/petCare/petCareModeFlag';
 import { PetCareSessionGoals } from '../../../shared/petLiving/petCare/petCareSessionGoals';
 import { registerWorldAtlas } from '../../art/worldAtlas';
+import { setPetCareBridgeIdentity } from './petCareBridgeState';
 import { PetCarePortraitRig } from './PetCarePortraitRig';
 import { PetCareRoomBackdrop } from './PetCareRoomBackdrop';
 
@@ -67,6 +68,13 @@ export class PetCareScene extends Phaser.Scene {
       data.traitId,
     );
 
+    setPetCareBridgeIdentity({
+      variant: data.variant,
+      accessory: data.accessory,
+      petName: data.petName,
+      traitId: data.traitId,
+      petSnapshot: data.petSnapshot,
+    });
     this.game.canvas.dataset.petCareRig = 'portrait';
     gameEventBus.emit('evt:pet-care-mode', { active: true });
 
@@ -81,7 +89,7 @@ export class PetCareScene extends Phaser.Scene {
         this.autonomy?.notifyRefuse(Date.now());
       }),
       gameEventBus.on('cmd:pet-care-action', (payload) => {
-        this.handleCareAction(payload.kind, payload.sku, payload.quality, payload.ownerScope);
+        this.handleCareAction(payload.kind);
       }),
       gameEventBus.on('cmd:sync-pet', (pet) => {
         this.rig?.syncSnapshot(pet);
@@ -96,18 +104,9 @@ export class PetCareScene extends Phaser.Scene {
     );
   }
 
-  private handleCareAction(
-    kind: PetCareActionKind,
-    sku?: string,
-    quality: 'normal' | 'silver' | 'gold' = 'normal',
-    ownerScope = 'shared',
-  ): void {
+  private handleCareAction(kind: PetCareActionKind): void {
     this.rig?.performAction(kind);
     if (this.sessionGoals.recordAction(kind)) this.emitSessionGoals();
-    // offer_food only → inventory RPC (dev LAN / Supabase); brush/pour_water stay scene-local.
-    if (kind === 'offer_food' && sku) {
-      gameEventBus.emit('evt:pet-care-request-consume', { sku, quality, ownerScope });
-    }
   }
 
   private emitSessionGoals(): void {

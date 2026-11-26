@@ -6,6 +6,8 @@ export type PetCareZone = 'head' | 'chin' | 'back' | 'belly' | 'none';
 export type PetCareActionKind =
   | 'stroke'
   | 'toy_yarn'
+  | 'toy_ball'
+  | 'toy_wand'
   | 'toy_box'
   | 'offer_food'
   | 'brush'
