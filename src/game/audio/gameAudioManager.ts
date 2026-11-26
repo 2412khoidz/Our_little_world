@@ -1,4 +1,12 @@
 import type { MapId } from '../../shared/types';
+import {
+  CatVocalizationScheduler,
+  type CatVocalContext,
+} from '../../shared/audio/catVocalizationScheduler';
+import {
+  footstepSfxForSurface,
+  type SurfaceFootstepKind,
+} from '../../shared/audio/surfaceFootsteps';
 
 export type AudioDomain = 'world' | 'farming' | 'pet' | 'ui';
 
@@ -11,6 +19,12 @@ export type GameSfxName =
   | 'axe'
   | 'rod'
   | 'footstep'
+  | 'footstep_grass'
+  | 'footstep_soil'
+  | 'footstep_sand'
+  | 'footstep_wood'
+  | 'footstep_stone'
+  | 'footstep_water'
   | 'door'
   | 'interact'
   | 'shop_buy'
@@ -20,9 +34,16 @@ export type GameSfxName =
   | 'fail'
   | 'meow_soft'
   | 'meow_happy'
-  | 'meow_food';
+  | 'meow_food'
+  | 'meow_short'
+  | 'meow_chirp'
+  | 'stinger_item'
+  | 'stinger_fish'
+  | 'stinger_rare'
+  | 'stinger_quest'
+  | 'stinger_area';
 
-export type MusicTrackId = 'title' | 'farm' | 'town' | 'forest';
+export type MusicTrackId = 'title' | 'garden' | 'farm' | 'town' | 'forest' | 'beach';
 
 export interface GameAudioSettings {
   muted: boolean;
@@ -52,6 +73,12 @@ export const SFX_DOMAIN_MAP: Readonly<Record<GameSfxName, { domain: AudioDomain;
   axe: { domain: 'farming', clip: 'hoe', fallbackUrl: '/assets/audio/sfx/hoe.mp3' },
   rod: { domain: 'world', clip: 'rod', fallbackUrl: '/assets/audio/sfx/toolSwap.mp3' },
   footstep: { domain: 'world', clip: 'footstep', fallbackUrl: '/assets/audio/sfx/grassyStep.mp3' },
+  footstep_grass: { domain: 'world', clip: 'footstep_grass', fallbackUrl: '/assets/audio/sfx/grassyStep.mp3' },
+  footstep_soil: { domain: 'world', clip: 'footstep_soil', fallbackUrl: '/assets/audio/sfx/step_soil.mp3' },
+  footstep_sand: { domain: 'world', clip: 'footstep_sand', fallbackUrl: '/assets/audio/sfx/step_sand.mp3' },
+  footstep_wood: { domain: 'world', clip: 'footstep_wood', fallbackUrl: '/assets/audio/sfx/step_wood.mp3' },
+  footstep_stone: { domain: 'world', clip: 'footstep_stone', fallbackUrl: '/assets/audio/sfx/step_stone.mp3' },
+  footstep_water: { domain: 'world', clip: 'footstep_water', fallbackUrl: '/assets/audio/sfx/step_water.mp3' },
   door: { domain: 'world', clip: 'door', fallbackUrl: '/assets/audio/sfx/doorOpen.mp3' },
   interact: { domain: 'world', clip: 'interact', fallbackUrl: '/assets/audio/sfx/interaction.mp3' },
   ui_select: { domain: 'ui', clip: 'ui_select', fallbackUrl: '/assets/audio/sfx/select.mp3' },
@@ -62,6 +89,13 @@ export const SFX_DOMAIN_MAP: Readonly<Record<GameSfxName, { domain: AudioDomain;
   meow_soft: { domain: 'pet', clip: 'meow_soft', fallbackUrl: '/assets/pet-care-v2/audio/meow_soft.mp3' },
   meow_happy: { domain: 'pet', clip: 'meow_happy', fallbackUrl: '/assets/pet-care-v2/audio/meow_happy.mp3' },
   meow_food: { domain: 'pet', clip: 'meow_food', fallbackUrl: '/assets/pet-care-v2/audio/meow_food.mp3' },
+  meow_short: { domain: 'pet', clip: 'meow_short', fallbackUrl: '/assets/pet-care-v2/audio/meow_short.mp3' },
+  meow_chirp: { domain: 'pet', clip: 'meow_chirp', fallbackUrl: '/assets/pet-care-v2/audio/meow_chirp.mp3' },
+  stinger_item: { domain: 'ui', clip: 'stinger_item', fallbackUrl: '/assets/audio/sfx/stinger_item.mp3' },
+  stinger_fish: { domain: 'ui', clip: 'stinger_fish', fallbackUrl: '/assets/audio/sfx/stinger_fish.mp3' },
+  stinger_rare: { domain: 'ui', clip: 'stinger_rare', fallbackUrl: '/assets/audio/sfx/stinger_rare.mp3' },
+  stinger_quest: { domain: 'ui', clip: 'stinger_quest', fallbackUrl: '/assets/audio/sfx/stinger_quest.mp3' },
+  stinger_area: { domain: 'ui', clip: 'stinger_area', fallbackUrl: '/assets/audio/sfx/stinger_area.mp3' },
 };
 
 const SPRITE_MANIFEST_URLS: Record<AudioDomain, string> = {
@@ -80,9 +114,11 @@ const SPRITE_AUDIO_URLS: Record<AudioDomain, string> = {
 
 const MUSIC_URLS: Record<MusicTrackId, string> = {
   title: '/assets/audio/music/title.mp3',
+  garden: '/assets/audio/music/garden.mp3',
   farm: '/assets/audio/music/farm.mp3',
   town: '/assets/audio/music/town.mp3',
-  forest: '/assets/audio/music/forest.mp3',
+  forest: '/assets/audio/music/blue_forest.mp3',
+  beach: '/assets/audio/music/forest.mp3',
 };
 
 const STORAGE_KEY = 'olw_audio_settings_v1';
@@ -116,17 +152,19 @@ function loadSettings(): GameAudioSettings {
   }
 }
 
-function musicTrackForMap(mapId: MapId): MusicTrackId {
+export function musicTrackForMap(mapId: MapId): MusicTrackId {
   switch (mapId) {
     case 'home':
-    case 'garden':
       return 'title';
+    case 'garden':
+    case 'outdoor':
+      return 'garden';
     case 'farm':
       return 'farm';
     case 'forest':
-    case 'beach':
-    case 'outdoor':
       return 'forest';
+    case 'beach':
+      return 'beach';
     default:
       return 'town';
   }
@@ -160,6 +198,7 @@ interface PendingSfxTrigger {
   fallbackUrl: string | null;
   volumeScale: number;
   rateJitter: number;
+  playbackRate?: number;
   queuedAtMs: number;
 }
 
@@ -173,11 +212,13 @@ class GameAudioManager {
   private readonly lastPlayMs = new Map<string, number>();
   private readonly pendingQueue: PendingSfxTrigger[] = [];
   private readonly listeners = new Set<(s: GameAudioSettings) => void>();
+  private readonly catVoice = new CatVocalizationScheduler();
   private currentMusicEl: HTMLAudioElement | null = null;
   private currentTrackId: MusicTrackId | null = null;
   private desiredTrackId: MusicTrackId = 'title';
   private overlayPaused = false;
   private unlocked = false;
+  private surfNodes: { src: AudioBufferSourceNode; lfo: OscillatorNode; gain: GainNode } | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -201,15 +242,25 @@ class GameAudioManager {
     return Array.from(this.domainSprites.keys());
   }
 
+  getActiveMusicTrackId(): MusicTrackId | null {
+    return this.currentTrackId;
+  }
+
+  getDesiredMusicTrackId(): MusicTrackId {
+    return this.desiredTrackId;
+  }
+
   getSpriteDebugInfo(): {
     unlocked: boolean;
     loadedDomains: AudioDomain[];
     queuedCount: number;
+    musicTrack: MusicTrackId;
   } {
     return {
       unlocked: this.unlocked,
       loadedDomains: this.getLoadedDomains(),
       queuedCount: this.pendingQueue.length,
+      musicTrack: this.desiredTrackId,
     };
   }
 
@@ -233,6 +284,7 @@ class GameAudioManager {
       }
     }
     this.syncMusicVolume();
+    this.syncCoastalAmbience();
     for (const fn of this.listeners) fn(this.getSettings());
   }
 
@@ -277,6 +329,7 @@ class GameAudioManager {
       }
     }
     this.ensureMusicPlaying();
+    this.syncCoastalAmbience();
     this.flushPendingQueue();
   }
 
@@ -344,13 +397,60 @@ class GameAudioManager {
     return task;
   }
 
-  playSfx(name: GameSfxName, opts?: { volumeScale?: number; rateJitter?: number; cooldownMs?: number }): void {
+  playSfx(
+    name: GameSfxName,
+    opts?: { volumeScale?: number; rateJitter?: number; cooldownMs?: number; playbackRate?: number },
+  ): void {
     const mapping = SFX_DOMAIN_MAP[name];
     if (!mapping) return;
     this.playDomainSfx(mapping.domain, mapping.clip, {
       ...opts,
       fallbackUrl: mapping.fallbackUrl,
       cooldownKey: name,
+    });
+  }
+
+  playFootstepForSurface(surface: SurfaceFootstepKind, opts?: { running?: boolean }): void {
+    const running = Boolean(opts?.running);
+    const sfx = footstepSfxForSurface(surface);
+    this.playSfx(sfx, {
+      volumeScale: surface === 'water' ? 0.42 : running ? 0.44 : 0.33,
+      cooldownMs: running ? 240 : 340,
+      rateJitter: 0.08,
+    });
+  }
+
+  playNaturalCatMeow(
+    context: CatVocalContext,
+    opts?: { isSleeping?: boolean; force?: boolean },
+  ): boolean {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const pick = this.catVoice.pick(context, now, opts);
+    if (!pick) return false;
+    this.playSfx(pick.clip, {
+      volumeScale: pick.volumeScale * 0.65,
+      playbackRate: pick.playbackRate,
+      rateJitter: 0,
+      cooldownMs: 300,
+    });
+    return true;
+  }
+
+  playStinger(kind: 'item' | 'fish' | 'rare' | 'quest' | 'area'): void {
+    const sfx: GameSfxName =
+      kind === 'fish'
+        ? 'stinger_fish'
+        : kind === 'rare'
+          ? 'stinger_rare'
+          : kind === 'quest'
+            ? 'stinger_quest'
+            : kind === 'area'
+              ? 'stinger_area'
+              : 'stinger_item';
+    this.playSfx(sfx, {
+      volumeScale: kind === 'rare' || kind === 'quest' ? 0.92 : 0.84,
+      rateJitter: 0,
+      cooldownMs: 250,
     });
   }
 
@@ -361,13 +461,15 @@ class GameAudioManager {
       volumeScale?: number;
       rateJitter?: number;
       cooldownMs?: number;
+      playbackRate?: number;
       fallbackUrl?: string;
       cooldownKey?: string;
     },
   ): void {
     if (this.settings.muted) return;
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    const cooldown = opts?.cooldownMs ?? (clipKey === 'footstep' ? 320 : 50);
+    const isStep = clipKey === 'footstep' || clipKey.startsWith('footstep_');
+    const cooldown = opts?.cooldownMs ?? (isStep ? 320 : 50);
     const key = opts?.cooldownKey ?? `${domain}:${clipKey}`;
     const prev = this.lastPlayMs.get(key) ?? -Infinity;
     if (now - prev < cooldown) return;
@@ -378,11 +480,15 @@ class GameAudioManager {
 
     const volumeScale = Number.isFinite(opts?.volumeScale) ? Math.max(0, Math.min(2, opts!.volumeScale!)) : 1;
     const rateJitter = Number.isFinite(opts?.rateJitter) ? Math.max(0, Math.min(0.3, opts!.rateJitter!)) : 0.06;
+    const playbackRate = opts?.playbackRate;
 
     if (ctx.state === 'suspended') {
       void ctx
         .resume()
-        .then(() => this.flushPendingQueue())
+        .then(() => {
+          this.syncCoastalAmbience();
+          this.flushPendingQueue();
+        })
         .catch(() => {});
       this.enqueuePending({
         domain,
@@ -390,6 +496,7 @@ class GameAudioManager {
         fallbackUrl: opts?.fallbackUrl ?? null,
         volumeScale,
         rateJitter,
+        playbackRate,
         queuedAtMs: now,
       });
       void this.loadDomainSprite(domain);
@@ -397,21 +504,21 @@ class GameAudioManager {
     }
 
     const sprite = this.domainSprites.get(domain);
-    if (sprite && this.playFromSprite(ctx, sprite, clipKey, volumeScale, rateJitter)) {
+    if (sprite && this.playFromSprite(ctx, sprite, clipKey, volumeScale, rateJitter, playbackRate)) {
       return;
     }
 
     void this.loadDomainSprite(domain).then((loaded) => {
       if (this.settings.muted) return;
       if (loaded && this.ctx?.state === 'running') {
-        if (this.playFromSprite(this.ctx, loaded, clipKey, volumeScale, rateJitter)) {
+        if (this.playFromSprite(this.ctx, loaded, clipKey, volumeScale, rateJitter, playbackRate)) {
           return;
         }
       }
       if (opts?.fallbackUrl && this.ctx) {
         void this.loadBuffer(opts.fallbackUrl).then((buf) => {
           if (buf && this.ctx?.state === 'running' && !this.settings.muted) {
-            this.playBufferSlice(this.ctx, buf, 0, buf.duration, volumeScale, rateJitter);
+            this.playBufferSlice(this.ctx, buf, 0, buf.duration, volumeScale, rateJitter, playbackRate);
           }
         });
       }
@@ -433,18 +540,18 @@ class GameAudioManager {
     for (const item of items) {
       if (now - item.queuedAtMs > QUEUED_SFX_MAX_AGE_MS) continue;
       const sprite = this.domainSprites.get(item.domain);
-      if (sprite && this.playFromSprite(ctx, sprite, item.clipKey, item.volumeScale, item.rateJitter)) {
+      if (sprite && this.playFromSprite(ctx, sprite, item.clipKey, item.volumeScale, item.rateJitter, item.playbackRate)) {
         continue;
       }
       void this.loadDomainSprite(item.domain).then((loaded) => {
         if (this.settings.muted || !this.ctx || this.ctx.state !== 'running') return;
-        if (loaded && this.playFromSprite(this.ctx, loaded, item.clipKey, item.volumeScale, item.rateJitter)) {
+        if (loaded && this.playFromSprite(this.ctx, loaded, item.clipKey, item.volumeScale, item.rateJitter, item.playbackRate)) {
           return;
         }
         if (item.fallbackUrl) {
           void this.loadBuffer(item.fallbackUrl).then((buf) => {
             if (buf && this.ctx?.state === 'running' && !this.settings.muted) {
-              this.playBufferSlice(this.ctx, buf, 0, buf.duration, item.volumeScale, item.rateJitter);
+              this.playBufferSlice(this.ctx, buf, 0, buf.duration, item.volumeScale, item.rateJitter, item.playbackRate);
             }
           });
         }
@@ -458,6 +565,7 @@ class GameAudioManager {
     clipKey: string,
     scale: number,
     jitter: number,
+    explicitRate?: number,
   ): boolean {
     const range = sprite.manifest.spritemap[clipKey];
     if (!range) return false;
@@ -465,7 +573,7 @@ class GameAudioManager {
     const endSec = Math.min(sprite.buffer.duration, Number.isFinite(range.end) ? range.end : sprite.buffer.duration);
     const durationSec = Math.max(0.01, endSec - startSec);
     if (!Number.isFinite(durationSec) || durationSec <= 0) return false;
-    this.playBufferSlice(ctx, sprite.buffer, startSec, durationSec, scale, jitter);
+    this.playBufferSlice(ctx, sprite.buffer, startSec, durationSec, scale, jitter, explicitRate);
     return true;
   }
 
@@ -476,6 +584,7 @@ class GameAudioManager {
     durationSec: number,
     scale: number,
     jitter: number,
+    explicitRate?: number,
   ): void {
     const vol = clamp01(this.settings.masterVolume * this.settings.sfxVolume * scale, 0.6);
     if (vol <= 0.005 || ctx.state !== 'running') return;
@@ -485,7 +594,9 @@ class GameAudioManager {
     try {
       const src = ctx.createBufferSource();
       src.buffer = buf;
-      if (jitter > 0) {
+      if (typeof explicitRate === 'number' && Number.isFinite(explicitRate)) {
+        src.playbackRate.value = Math.max(0.5, Math.min(2, explicitRate));
+      } else if (jitter > 0) {
         src.playbackRate.value = Math.max(0.5, Math.min(2, 1 + (Math.random() * 2 - 1) * jitter));
       }
       const gain = ctx.createGain();
@@ -497,16 +608,90 @@ class GameAudioManager {
     }
   }
 
+  private syncCoastalAmbience(): void {
+    const wantSurf =
+      this.unlocked &&
+      !this.settings.muted &&
+      !this.overlayPaused &&
+      this.desiredTrackId === 'beach' &&
+      this.targetMusicVol() > 0.005;
+
+    if (!wantSurf) {
+      if (this.surfNodes) {
+        try {
+          this.surfNodes.src.stop();
+          this.surfNodes.lfo.stop();
+          this.surfNodes.gain.disconnect();
+        } catch {
+          /* ignore stop cleanup */
+        }
+        this.surfNodes = null;
+      }
+      return;
+    }
+
+    const ctx = this.ensureCtx();
+    if (!ctx || ctx.state !== 'running' || typeof ctx.createBiquadFilter !== 'function' || typeof ctx.createOscillator !== 'function') {
+      return;
+    }
+
+    const surfVol = clamp01(this.targetMusicVol() * 0.14, 0.04);
+    if (this.surfNodes) {
+      this.surfNodes.gain.gain.value = surfVol;
+      return;
+    }
+
+    try {
+      const len = ctx.sampleRate * 2;
+      const noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i += 1) {
+        const white = Math.random() * 2 - 1;
+        last = (last + 0.035 * white) / 1.035;
+        data[i] = last * 1.8;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 620;
+
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.12;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 240;
+      lfo.connect(lfoGain).connect(filter.frequency);
+
+      const gain = ctx.createGain();
+      gain.gain.value = surfVol;
+
+      src.connect(filter).connect(gain).connect(ctx.destination);
+      src.start();
+      lfo.start();
+      this.surfNodes = { src, lfo, gain };
+    } catch {
+      this.surfNodes = null;
+    }
+  }
+
   setZoneMusic(mapId: MapId): void {
     const track = musicTrackForMap(mapId);
     this.desiredTrackId = track;
-    if (!this.unlocked || this.overlayPaused) return;
+    if (!this.unlocked || this.overlayPaused) {
+      this.syncCoastalAmbience();
+      return;
+    }
     this.ensureMusicPlaying();
+    this.syncCoastalAmbience();
   }
 
   setOverlayPaused(paused: boolean): void {
     this.overlayPaused = paused;
     this.syncMusicVolume();
+    this.syncCoastalAmbience();
   }
 
   private targetMusicVol(): number {

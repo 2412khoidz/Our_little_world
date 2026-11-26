@@ -68,6 +68,7 @@ export function renderDonorCabacosShopInterior(
   pushLayer: (obj: Phaser.GameObjects.GameObject) => void,
 ): void {
   if (!scene.textures.exists('donor-cabacos-house-interior')) return;
+  scene.textures.get('donor-cabacos-house-interior').setFilter(Phaser.Textures.FilterMode.NEAREST);
   const img = scene.add.image(0, 0, 'donor-cabacos-house-interior').setOrigin(0, 0).setDepth(0);
   pushLayer(img);
 }
@@ -79,8 +80,16 @@ export function renderDonorCabacosImageInteriorFromMap(
 ): void {
   const textureKey = tiledMapPropertyValue(tilemap, 'olwDonorInteriorTextureKey');
   if (typeof textureKey !== 'string' || !scene.textures.exists(textureKey)) return;
+  scene.textures.get(textureKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
   const img = scene.add.image(0, 0, textureKey).setOrigin(0, 0).setDepth(0);
   pushLayer(img);
+  // Subtle warm-pastel harmonizing veil matching home cottage interior temperature without altering artwork
+  const warmth = scene.add
+    .rectangle(0, 0, img.width, img.height, 0xffe8c2, 0.06)
+    .setOrigin(0, 0)
+    .setBlendMode(Phaser.BlendModes.ADD)
+    .setDepth(3900);
+  pushLayer(warmth);
 }
 
 export function isDonorCabacosImageShop(tilemap: Phaser.Tilemaps.Tilemap): boolean {

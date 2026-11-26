@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Fish, Volume2, VolumeX, X } from 'lucide-react';
+import { gameAudio } from '../../game/audio/gameAudioManager';
 import type { AvatarConfig } from '../../shared/types';
 import {
   beginTidefallCast,
@@ -479,6 +480,7 @@ export function ChillFishingModal({
         } else {
           const rare = rarity === 'rare' || rarity === 'epic' || rarity === 'legendary';
           playCatchFanfare(rare);
+          gameAudio.playStinger(rare ? 'rare' : 'fish');
         }
         await onInventoryRefresh();
         void postDonorFishingSync(worldId, {

@@ -18,36 +18,46 @@
       "end": 5.2256,
       "loop": false
     },
-    "eat_crunch": {
+    "meow_short": {
       "start": 5.3456,
-      "end": 5.7956,
+      "end": 5.8561,
+      "loop": false
+    },
+    "meow_chirp": {
+      "start": 5.9761,
+      "end": 6.2724,
+      "loop": false
+    },
+    "eat_crunch": {
+      "start": 6.3924,
+      "end": 6.8424,
       "loop": false
     },
     "drink_lap": {
-      "start": 5.9156,
-      "end": 6.3066,
+      "start": 6.9624,
+      "end": 7.3534,
       "loop": false
     },
     "ball_bounce": {
-      "start": 6.4266,
-      "end": 6.6766,
+      "start": 7.4734,
+      "end": 7.7234,
       "loop": false
     },
     "bell_jingle": {
-      "start": 6.7966,
-      "end": 7.3466,
+      "start": 7.8434,
+      "end": 8.3934,
       "loop": false
     },
     "brush_fur": {
-      "start": 7.4666,
-      "end": 7.8666,
+      "start": 8.5134,
+      "end": 8.9134,
       "loop": false
     },
     "toy_swish": {
-      "start": 7.9866,
-      "end": 8.3366,
+      "start": 9.0334,
+      "end": 9.3834,
       "loop": false
     }
   },
-  "durationSec": 8.4566
+  "durationSec": 9.5034
 }

@@ -128,6 +128,7 @@ import {
 } from '../interaction/donorPydewToolController';
 import { playToolActionSfx } from '../interaction/toolActionAudio';
 import { gameAudio } from '../audio/gameAudioManager';
+import { resolveFootstepSurface } from '../../shared/audio/surfaceFootsteps';
 import { farmPlotIndexForTile } from '../../shared/farming/farmPlotIndex';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
@@ -1823,10 +1824,7 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:pet-reaction', ({ action }) => {
         this.petEntity?.triggerReaction(action);
-        gameAudio.playSfx(action === 'feed' ? 'meow_food' : 'meow_happy', {
-          volumeScale: 0.55,
-          cooldownMs: 1200,
-        });
+        gameAudio.playNaturalCatMeow(action === 'feed' ? 'hungry_food' : 'happy', { force: true });
       }),
 
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
@@ -2306,6 +2304,17 @@ export class WorldScene extends Phaser.Scene {
         nearestChickenDistPx,
       });
       this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
+      if (
+        !isNight &&
+        this.localPosture === 'none' &&
+        this.localSprite &&
+        this.petEntity.isOnMapVisible()
+      ) {
+        const petPos = this.petEntity.getWorldPosition();
+        if (Math.hypot(petPos.x - this.localSprite.x, petPos.y - this.localSprite.y) <= 42) {
+          gameAudio.playNaturalCatMeow('ambient', { isSleeping: isNight });
+        }
+      }
       if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
         this.lastLivingPetTelemetryAtMs = now;
         gameEventBus.emit(
@@ -2398,7 +2407,15 @@ export class WorldScene extends Phaser.Scene {
       const moved = this.tryMovePixel(stepX, stepY);
       this.playLocalMoveAnim(moved, running);
       if (moved) {
-        gameAudio.playSfx('footstep', { volumeScale: running ? 0.45 : 0.34, cooldownMs: running ? 240 : 340 });
+        const footTx = Math.floor(this.localSprite.x / this.tilePx());
+        const footTy = Math.floor((this.localSprite.y - 2) / this.tilePx());
+        const surface = resolveFootstepSurface({
+          mapId: this.currentMapId,
+          tileX: footTx,
+          tileY: footTy,
+          isFarmPlotTile: this.currentMapId === 'farm' && farmPlotIndexForTile(footTx, footTy) !== null,
+        });
+        gameAudio.playFootstepForSurface(surface, { running });
       }
       if (moved && running && this.time.now - this.lastRunDustAtMs > 170) {
         this.lastRunDustAtMs = this.time.now;
@@ -2433,7 +2450,15 @@ export class WorldScene extends Phaser.Scene {
         this.localSprite.y += my;
         this.localFacing = this.vectorToDirection(dx, dy);
         this.playLocalMoveAnim(true, running);
-        gameAudio.playSfx('footstep', { volumeScale: 0.34, cooldownMs: 340 });
+        const footTx = Math.floor(this.localSprite.x / this.tilePx());
+        const footTy = Math.floor((this.localSprite.y - 2) / this.tilePx());
+        const surface = resolveFootstepSurface({
+          mapId: this.currentMapId,
+          tileX: footTx,
+          tileY: footTy,
+          isFarmPlotTile: this.currentMapId === 'farm' && farmPlotIndexForTile(footTx, footTy) !== null,
+        });
+        gameAudio.playFootstepForSurface(surface, { running });
         this.emitCurrentTile(false);
         return true;
       }

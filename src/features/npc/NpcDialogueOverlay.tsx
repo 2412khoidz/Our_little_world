@@ -216,6 +216,7 @@ export function NpcDialogueOverlay({
           return next;
         });
       } else if (choice.action === 'complete_errand') {
+        gameAudio.playStinger('quest');
         setRelMap((prev) => {
           const next = setNpcErrandStatus(prev, profile.id, 'done', 2);
           saveNpcRelationshipState(worldId, userId, next);

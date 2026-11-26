@@ -391,6 +391,20 @@ function MainCoupleApp() {
     const meta = getIslandZoneMeta(mapId);
     const id = Date.now();
     setZoneBanner({ nameVi: meta.nameVi, subtitleVi: meta.subtitleVi, id });
+    if (mapId !== 'home') {
+      try {
+        const key = 'olw:discovered-zones:v1';
+        const raw = window.localStorage.getItem(key);
+        const visited = new Set<string>(raw ? (JSON.parse(raw) as string[]) : ['home']);
+        if (!visited.has(mapId)) {
+          visited.add(mapId);
+          window.localStorage.setItem(key, JSON.stringify([...visited]));
+          gameAudio.playStinger('area');
+        }
+      } catch {
+        /* ignore storage limits */
+      }
+    }
     if (zoneBannerTimerRef.current !== null) {
       window.clearTimeout(zoneBannerTimerRef.current);
     }
@@ -2274,6 +2288,7 @@ function MainCoupleApp() {
             applyFarmSnapshotToUi(res.data.snapshot, { plotId: plotIndex, action });
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
+              gameAudio.playStinger('item');
               showToast(
                 `Thu hoạch: ${res.data.harvested
                   .map((h) => getCropDefinition(h.sku)?.nameVi ?? h.sku)
@@ -2656,6 +2671,7 @@ function MainCoupleApp() {
                   }
                   setFarmWalletCoins(res.data.walletCoins);
                   gameAudio.playSfx('shop_sell');
+                  gameAudio.playStinger('quest');
                   await refreshInventorySnapshot(targetWorldId);
                   showToast(`Đã gửi nông sản (+${res.data.totalCoins} xu).`);
                   realtimeRef.current?.notifyWorldMutated('farm');

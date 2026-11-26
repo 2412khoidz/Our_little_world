@@ -27,7 +27,32 @@
       "start": 2.7499,
       "end": 3.1934,
       "loop": false
+    },
+    "stinger_item": {
+      "start": 3.3134,
+      "end": 3.8734,
+      "loop": false
+    },
+    "stinger_fish": {
+      "start": 3.9934,
+      "end": 4.6934,
+      "loop": false
+    },
+    "stinger_rare": {
+      "start": 4.8134,
+      "end": 5.8434,
+      "loop": false
+    },
+    "stinger_quest": {
+      "start": 5.9634,
+      "end": 6.9034,
+      "loop": false
+    },
+    "stinger_area": {
+      "start": 7.0234,
+      "end": 7.8434,
+      "loop": false
     }
   },
-  "durationSec": 3.3134
+  "durationSec": 7.9634
 }

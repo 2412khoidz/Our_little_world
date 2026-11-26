@@ -26,6 +26,12 @@ const DOMAIN_SPECS = {
   },
   world: {
     footstep: 'public/assets/audio/sfx/grassyStep.mp3',
+    footstep_grass: 'public/assets/audio/sfx/grassyStep.mp3',
+    footstep_soil: 'public/assets/audio/sfx/step_soil.mp3',
+    footstep_sand: 'public/assets/audio/sfx/step_sand.mp3',
+    footstep_wood: 'public/assets/audio/sfx/step_wood.mp3',
+    footstep_stone: 'public/assets/audio/sfx/step_stone.mp3',
+    footstep_water: 'public/assets/audio/sfx/step_water.mp3',
     door: 'public/assets/audio/sfx/doorOpen.mp3',
     interact: 'public/assets/audio/sfx/interaction.mp3',
     rod: 'public/assets/audio/sfx/toolSwap.mp3',
@@ -34,6 +40,8 @@ const DOMAIN_SPECS = {
     meow_soft: 'public/assets/pet-care-v2/audio/meow_soft.mp3',
     meow_happy: 'public/assets/pet-care-v2/audio/meow_happy.mp3',
     meow_food: 'public/assets/pet-care-v2/audio/meow_food.mp3',
+    meow_short: 'public/assets/pet-care-v2/audio/meow_short.mp3',
+    meow_chirp: 'public/assets/pet-care-v2/audio/meow_chirp.mp3',
     eat_crunch: 'public/assets/pet-care-v2/audio/eat_crunch.mp3',
     drink_lap: 'public/assets/pet-care-v2/audio/drink_lap.mp3',
     ball_bounce: 'public/assets/pet-care-v2/audio/ball_bounce.mp3',
@@ -47,6 +55,11 @@ const DOMAIN_SPECS = {
     shop_buy: 'public/assets/audio/sfx/purchaseClick.mp3',
     shop_sell: 'public/assets/audio/sfx/sell.mp3',
     fail: 'public/assets/audio/sfx/fail.mp3',
+    stinger_item: 'public/assets/audio/sfx/stinger_item.mp3',
+    stinger_fish: 'public/assets/audio/sfx/stinger_fish.mp3',
+    stinger_rare: 'public/assets/audio/sfx/stinger_rare.mp3',
+    stinger_quest: 'public/assets/audio/sfx/stinger_quest.mp3',
+    stinger_area: 'public/assets/audio/sfx/stinger_area.mp3',
   },
 };
 
