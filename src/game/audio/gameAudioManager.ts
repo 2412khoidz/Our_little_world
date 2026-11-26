@@ -5,6 +5,7 @@ export type AudioDomain = 'world' | 'farming' | 'pet' | 'ui';
 export type GameSfxName =
   | 'hoe'
   | 'water'
+  | 'get_water'
   | 'plant'
   | 'harvest'
   | 'axe'
@@ -46,6 +47,7 @@ export const SFX_DOMAIN_MAP: Readonly<Record<GameSfxName, { domain: AudioDomain;
   hoe: { domain: 'farming', clip: 'hoe', fallbackUrl: '/assets/audio/sfx/hoe.mp3' },
   plant: { domain: 'farming', clip: 'plant', fallbackUrl: '/assets/audio/sfx/plantSeed.mp3' },
   water: { domain: 'farming', clip: 'water', fallbackUrl: '/assets/audio/sfx/waterPlants.mp3' },
+  get_water: { domain: 'farming', clip: 'get_water', fallbackUrl: '/assets/audio/sfx/getWater.mp3' },
   harvest: { domain: 'farming', clip: 'harvest', fallbackUrl: '/assets/audio/sfx/sickle.mp3' },
   axe: { domain: 'farming', clip: 'hoe', fallbackUrl: '/assets/audio/sfx/hoe.mp3' },
   rod: { domain: 'world', clip: 'rod', fallbackUrl: '/assets/audio/sfx/toolSwap.mp3' },

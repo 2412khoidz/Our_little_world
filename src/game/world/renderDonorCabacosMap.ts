@@ -25,6 +25,26 @@ export function renderDonorCabacosMapLayers(
     const name = layerData.name;
     if (SKIP_LAYERS.has(name)) continue;
     if (!tilemap.getLayer(name)) continue;
+    if (name === 'olw_roof_overhang') {
+      const layer = tilemap.getLayer(name);
+      if (layer) {
+        for (let ty = 0; ty < layer.height; ty += 1) {
+          let rowLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+          for (let tx = 0; tx < layer.width; tx += 1) {
+            const tile = layer.data[ty]?.[tx];
+            if (!tile || tile.index <= 0) continue;
+            if (!rowLayer) {
+              rowLayer = tilemap.createBlankLayer(`olw_roof_row_${ty}`, tilesets, 0, 0);
+              if (!rowLayer) break;
+              rowLayer.setDepth((ty + 1.2) * TILE_SIZE);
+              pushLayer(rowLayer);
+            }
+            rowLayer.putTileAt(tile.index, tx, ty);
+          }
+        }
+      }
+      continue;
+    }
     const props = (layerData as { properties?: { name: string; value: number }[] }).properties ?? [];
     const olwDepth = props.find((p) => p.name === 'olwDepth')?.value;
     const depthProp = props.find((p) => p.name === 'gamemaker_depth')?.value;

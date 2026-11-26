@@ -187,6 +187,14 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
   }
 
   if (mapId === PRIMARY_FARM_MAP_ID || mapId === FARM_ZONE_MAP_ID) {
+    targets.push({
+      id: 'farm_wishing_well',
+      kind: 'water_source',
+      labelVi: 'Giếng đá trang trại — múc nước',
+      x: 30 * TILE_SIZE + TILE_SIZE / 2,
+      y: 14 * TILE_SIZE + TILE_SIZE / 2,
+      maxRadiusPx: 50,
+    });
     if (donorEconomyDev) {
       targets.push(...buildFarmSlicePlotInteractables());
       targets.push({
@@ -208,6 +216,36 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
         donorPlayable: true,
       });
     }
+  }
+
+  if (mapId === 'village') {
+    targets.push({
+      id: 'village_plaza_well',
+      kind: 'water_source',
+      labelVi: 'Giếng quảng trường Làng — múc nước',
+      x: 30.5 * TILE_SIZE,
+      y: 29.5 * TILE_SIZE,
+      maxRadiusPx: 52,
+    });
+    targets.push({
+      id: 'village_east_well',
+      kind: 'water_source',
+      labelVi: 'Giếng khu Đông Làng — múc nước',
+      x: 53.5 * TILE_SIZE,
+      y: 28.5 * TILE_SIZE,
+      maxRadiusPx: 52,
+    });
+  }
+
+  if (mapId === 'forest') {
+    targets.push({
+      id: 'forest_wishing_well',
+      kind: 'water_source',
+      labelVi: 'Giếng rừng sâu — múc nước',
+      x: 11 * TILE_SIZE + TILE_SIZE / 2,
+      y: 22 * TILE_SIZE + TILE_SIZE / 2,
+      maxRadiusPx: 50,
+    });
   }
 
   for (const p of placements) {

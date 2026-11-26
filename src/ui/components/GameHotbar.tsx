@@ -38,6 +38,9 @@ export function GameHotbar({
         const slot = slots.find((s) => s.slotIndex === idx);
         const isSelected = heldItem.slotIndex === idx && heldItem.itemKind !== 'none';
         const hasItem = Boolean(slot && slot.itemSku && slot.qty > 0);
+        const isWaterCarrier = Boolean(
+          hasItem && (slot!.itemKind === 'water_pitcher' || slot!.itemSku === 'tool_watering_can'),
+        );
         return (
           <button
             key={idx}
@@ -80,7 +83,7 @@ export function GameHotbar({
               if (slot!.iconId) return <ItemArtSvg iconId={slot!.iconId} size={24} />;
               return null;
             })()}
-            {hasItem && slot!.itemKind !== 'water_pitcher' && (
+            {hasItem && !isWaterCarrier && (
               <span
                 style={{
                   position: 'absolute',
@@ -96,7 +99,7 @@ export function GameHotbar({
                 {slot!.qty}
               </span>
             )}
-            {hasItem && slot!.itemKind === 'water_pitcher' && (
+            {isWaterCarrier && (
               <span
                 style={{
                   position: 'absolute',
@@ -113,7 +116,7 @@ export function GameHotbar({
                   style={{
                     display: 'block',
                     height: '100%',
-                    width: `${slot!.waterFillLevel ?? 0}%`,
+                    width: `${slot!.waterFillLevel ?? 100}%`,
                     background: '#4baee6',
                   }}
                 />

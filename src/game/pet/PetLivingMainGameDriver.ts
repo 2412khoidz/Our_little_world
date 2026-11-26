@@ -30,7 +30,9 @@ import {
   type PetMovementExecutorState,
 } from '../../shared/petLiving/petMovement/petMovementExecutor';
 import {
+  applyAcceptedDisplacementToLocomotion,
   createLocomotionSnapshot,
+  resolveFacingFromVector,
   stepPetLocomotion,
   type PetLocomotionSnapshot,
 } from '../../shared/petLiving/petMovement/petLocomotionModel';
@@ -77,7 +79,6 @@ const FOLLOW_OFFSETS: readonly [number, number][] = [
   [18, -8],
   [0, 16],
   [0, -14],
-  [0, 0],
 ];
 
 function isWorldPosWalkable(
@@ -104,12 +105,32 @@ function isWorldPosWalkable(
   return true;
 }
 
+function isSegmentWalkable(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  tilePx: number,
+  isTileBlocked?: (tileX: number, tileY: number) => boolean,
+): boolean {
+  if (!isTileBlocked || tilePx <= 0) return true;
+  const dist = Math.hypot(x1 - x0, y1 - y0);
+  const steps = Math.max(1, Math.ceil(dist / 2));
+  for (let i = 1; i <= steps; i += 1) {
+    const t = i / steps;
+    if (!isWorldPosWalkable(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tilePx, isTileBlocked)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function pickWalkableFollowTarget(
   ownerX: number,
   ownerY: number,
   tilePx: number,
   isTileBlocked?: (tileX: number, tileY: number) => boolean,
-): { x: number; y: number } {
+): { x: number; y: number } | null {
   for (const [ox, oy] of FOLLOW_OFFSETS) {
     const cx = ownerX + ox;
     const cy = ownerY + oy;
@@ -117,22 +138,39 @@ function pickWalkableFollowTarget(
       return { x: cx, y: cy };
     }
   }
-  return { x: ownerX, y: ownerY };
+  const baseTx = Math.floor(ownerX / tilePx);
+  const baseTy = Math.floor(ownerY / tilePx);
+  for (let r = 1; r <= 3; r += 1) {
+    for (let dy = -r; dy <= r; dy += 1) {
+      for (let dx = -r; dx <= r; dx += 1) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        const wx = (baseTx + dx + 0.5) * tilePx;
+        const wy = (baseTy + dy + 0.75) * tilePx;
+        if (isWorldPosWalkable(wx, wy, tilePx, isTileBlocked)) {
+          return { x: wx, y: wy };
+        }
+      }
+    }
+  }
+  if (isWorldPosWalkable(ownerX, ownerY, tilePx, isTileBlocked)) {
+    return { x: ownerX, y: ownerY };
+  }
+  return null;
 }
 
-function findNextTileWaypoint(
+function findWalkableTilePath(
   fromX: number,
   fromY: number,
   goalX: number,
   goalY: number,
   tilePx: number,
   isTileBlocked: (tileX: number, tileY: number) => boolean,
-): { x: number; y: number } | null {
+): { reached: boolean; waypoints: Array<{ x: number; y: number }> } {
   const sx = Math.floor(fromX / tilePx);
   const sy = Math.floor(fromY / tilePx);
   const gx = Math.floor(goalX / tilePx);
   const gy = Math.floor(goalY / tilePx);
-  if (sx === gx && sy === gy) return null;
+  if (sx === gx && sy === gy) return { reached: true, waypoints: [] };
 
   const startKey = `${sx},${sy}`;
   const goalKey = `${gx},${gy}`;
@@ -144,16 +182,15 @@ function findNextTileWaypoint(
     [0, 1],
     [0, -1],
   ];
-  let bestKey: string | null = null;
-  let bestDist = Infinity;
+  let reachedGoal = false;
   let head = 0;
-  const MAX_VISITED = 420;
+  const MAX_VISITED = 1600;
 
   while (head < queue.length && parent.size < MAX_VISITED) {
     const [cx, cy] = queue[head++]!;
     const ck = `${cx},${cy}`;
     if (ck === goalKey) {
-      bestKey = ck;
+      reachedGoal = true;
       break;
     }
     for (const [dx, dy] of dirs) {
@@ -163,29 +200,24 @@ function findNextTileWaypoint(
       if (parent.has(nk)) continue;
       if (isTileBlocked(nx, ny)) continue;
       parent.set(nk, ck);
-      const d = Math.hypot(nx - gx, ny - gy);
-      if (d < bestDist) {
-        bestDist = d;
-        bestKey = nk;
-      }
       queue.push([nx, ny]);
     }
   }
 
-  if (!bestKey || bestKey === startKey) return null;
-  let stepKey = bestKey;
-  while (true) {
-    const p = parent.get(stepKey);
-    if (!p) return null;
-    if (p === startKey) {
-      const [wx = sx, wy = sy] = stepKey.split(',').map(Number);
-      return {
-        x: (wx + 0.5) * tilePx,
-        y: (wy + 0.75) * tilePx,
-      };
-    }
-    stepKey = p;
+  if (!reachedGoal) return { reached: false, waypoints: [] };
+
+  const reversed: Array<{ x: number; y: number }> = [];
+  let curKey: string | null = goalKey;
+  while (curKey && curKey !== startKey) {
+    const [wx = sx, wy = sy] = curKey.split(',').map(Number);
+    reversed.push({
+      x: (wx + 0.5) * tilePx,
+      y: (wy + 0.75) * tilePx,
+    });
+    curKey = parent.get(curKey) ?? null;
   }
+  reversed.reverse();
+  return { reached: true, waypoints: reversed };
 }
 
 export interface PetLivingDriverOutput {
@@ -207,6 +239,10 @@ export class PetLivingMainGameDriver {
   private pendingFoodOffer: PetFoodOfferInput | null = null;
   private lastBubbleMs = 0;
   private foodOfferHandledTicks = 0;
+  private lastMapId: MapId | null = null;
+  private cachedPath: Array<{ x: number; y: number }> = [];
+  private cachedPathGoalKey = '';
+  private cachedPathAtMs = 0;
 
   constructor(startX: number, startY: number, traitId: string = 'curious_bong') {
     const preset = PET_PERSONALITY_PRESETS.find((p) => p.id === traitId) ?? PET_PERSONALITY_PRESETS[0]!;
@@ -240,8 +276,33 @@ export class PetLivingMainGameDriver {
 
   update(frame: PetLivingWorldFrame): PetLivingDriverOutput {
     if (!FOLLOW_CAT_MAPS.has(frame.mapId)) {
+      this.lastMapId = frame.mapId;
+      this.cachedPath = [];
       return { loco: this.movement.loco, ambientBubble: null, authority: this.authority };
     }
+
+    const tilePx = frame.tilePx ?? TILE_SIZE;
+    const isBlocked = frame.isTileBlocked;
+    const switchedMap = this.lastMapId !== null && this.lastMapId !== frame.mapId;
+    const currentUnwalkable = Boolean(
+      isBlocked && !isWorldPosWalkable(this.movement.loco.x, this.movement.loco.y, tilePx, isBlocked),
+    );
+    if (switchedMap || currentUnwalkable) {
+      this.cachedPath = [];
+      this.cachedPathGoalKey = '';
+      if (frame.localPlayerX !== null && frame.localPlayerY !== null) {
+        const safe = pickWalkableFollowTarget(
+          frame.localPlayerX,
+          frame.localPlayerY,
+          tilePx,
+          isBlocked,
+        );
+        if (safe) {
+          this.teleportTo(safe.x, safe.y);
+        }
+      }
+    }
+    this.lastMapId = frame.mapId;
 
     const px = this.movement.loco.x;
     const py = this.movement.loco.y;
@@ -249,44 +310,83 @@ export class PetLivingMainGameDriver {
 
     // Smoothly follow owner across both home (when owner walks away) and outdoor maps while strictly obeying walls/water/fences.
     if (frame.localPlayerX !== null && frame.localPlayerY !== null) {
-      const tilePx = frame.tilePx ?? TILE_SIZE;
-      const isBlocked = frame.isTileBlocked;
       const followTarget = pickWalkableFollowTarget(
         frame.localPlayerX,
         frame.localPlayerY,
         tilePx,
         isBlocked,
       );
-      const targetX = followTarget.x;
-      const targetY = followTarget.y;
+      const facingOwner = resolveFacingFromVector(
+        frame.localPlayerX - px,
+        frame.localPlayerY - py,
+        this.movement.loco.facing,
+      );
       const distToOwner = Math.hypot(frame.localPlayerX - px, frame.localPlayerY - py);
       const followStartDist = frame.mapId === 'home' ? 52 : 34;
 
-      // Never catch-up teleport across walls/water; steer via collision-aware pathfinding instead.
+      // Never catch-up teleport across walls/water; follow walkable BFS waypoints or sit calmly when blocked.
       if (distToOwner > followStartDist && !frame.isStudying && !this.pendingFoodOffer && !frame.foodOffer) {
+        if (!followTarget) {
+          const restLoco = applyAcceptedDisplacementToLocomotion(
+            this.movement.loco,
+            px,
+            py,
+            dtSec,
+            'sit',
+            frame.nowMs,
+            facingOwner,
+          );
+          this.movement = { ...this.movement, loco: restLoco };
+          return { loco: restLoco, ambientBubble: null, authority: this.authority };
+        }
+
         const intent = distToOwner > 86 ? 'run' : 'move';
+        const targetX = followTarget.x;
+        const targetY = followTarget.y;
         let steerX = targetX;
         let steerY = targetY;
 
-        if (isBlocked) {
-          const probe = stepPetLocomotion(this.movement.loco, {
-            intent,
-            targetX: steerX,
-            targetY: steerY,
-            dtSec,
-            nowMs: frame.nowMs,
-            runThresholdPx: 86,
-          });
-          if (!isWorldPosWalkable(probe.x, probe.y, tilePx, isBlocked)) {
-            const waypoint = findNextTileWaypoint(px, py, targetX, targetY, tilePx, isBlocked);
-            if (waypoint) {
-              steerX = waypoint.x;
-              steerY = waypoint.y;
-            }
+        if (isBlocked && !isSegmentWalkable(px, py, targetX, targetY, tilePx, isBlocked)) {
+          const goalKey = `${frame.mapId}:${Math.floor(targetX / tilePx)},${Math.floor(targetY / tilePx)}`;
+          if (
+            goalKey !== this.cachedPathGoalKey ||
+            frame.nowMs - this.cachedPathAtMs > 350 ||
+            this.cachedPath.length === 0
+          ) {
+            const pathRes = findWalkableTilePath(px, py, targetX, targetY, tilePx, isBlocked);
+            this.cachedPathGoalKey = goalKey;
+            this.cachedPathAtMs = frame.nowMs;
+            this.cachedPath = pathRes.reached ? pathRes.waypoints : [];
           }
+
+          while (
+            this.cachedPath.length > 0 &&
+            Math.hypot(this.cachedPath[0]!.x - px, this.cachedPath[0]!.y - py) < 6
+          ) {
+            this.cachedPath.shift();
+          }
+
+          if (this.cachedPath.length === 0) {
+            // Unreachable across river/walls: sit calmly facing owner rather than sliding into obstacle
+            const sitLoco = applyAcceptedDisplacementToLocomotion(
+              this.movement.loco,
+              px,
+              py,
+              dtSec,
+              'sit',
+              frame.nowMs,
+              facingOwner,
+            );
+            this.movement = { ...this.movement, loco: sitLoco };
+            return { loco: sitLoco, ambientBubble: null, authority: this.authority };
+          }
+          steerX = this.cachedPath[0]!.x;
+          steerY = this.cachedPath[0]!.y;
+        } else {
+          this.cachedPath = [];
         }
 
-        const nextLoco = stepPetLocomotion(this.movement.loco, {
+        const candLoco = stepPetLocomotion(this.movement.loco, {
           intent,
           targetX: steerX,
           targetY: steerY,
@@ -295,25 +395,45 @@ export class PetLivingMainGameDriver {
           runThresholdPx: 86,
         });
 
-        let resolvedLoco = nextLoco;
-        if (isBlocked && !isWorldPosWalkable(nextLoco.x, nextLoco.y, tilePx, isBlocked)) {
-          const canSlideX = isWorldPosWalkable(nextLoco.x, py, tilePx, isBlocked);
-          const canSlideY = isWorldPosWalkable(px, nextLoco.y, tilePx, isBlocked);
+        let acceptedX = candLoco.x;
+        let acceptedY = candLoco.y;
+        if (isBlocked && !isSegmentWalkable(px, py, candLoco.x, candLoco.y, tilePx, isBlocked)) {
+          const canSlideX =
+            Math.abs(candLoco.x - px) > 0.05 &&
+            isSegmentWalkable(px, py, candLoco.x, py, tilePx, isBlocked);
+          const canSlideY =
+            Math.abs(candLoco.y - py) > 0.05 &&
+            isSegmentWalkable(px, py, px, candLoco.y, tilePx, isBlocked);
           if (canSlideX) {
-            resolvedLoco = { ...nextLoco, y: py };
+            acceptedX = candLoco.x;
+            acceptedY = py;
           } else if (canSlideY) {
-            resolvedLoco = { ...nextLoco, x: px };
+            acceptedX = px;
+            acceptedY = candLoco.y;
           } else {
-            resolvedLoco = stepPetLocomotion(this.movement.loco, {
-              intent: 'sit',
-              targetX: px,
-              targetY: py,
-              preferredFacing: nextLoco.facing,
-              dtSec,
-              nowMs: frame.nowMs,
-            });
+            acceptedX = px;
+            acceptedY = py;
           }
         }
+
+        const resolvedLoco =
+          acceptedX === candLoco.x && acceptedY === candLoco.y
+            ? {
+                ...candLoco,
+                facing:
+                  Math.hypot(acceptedX - px, acceptedY - py) >= 0.15
+                    ? resolveFacingFromVector(acceptedX - px, acceptedY - py, candLoco.facing)
+                    : candLoco.facing,
+              }
+            : applyAcceptedDisplacementToLocomotion(
+                this.movement.loco,
+                acceptedX,
+                acceptedY,
+                dtSec,
+                intent,
+                frame.nowMs,
+                facingOwner,
+              );
 
         this.movement = { ...this.movement, loco: resolvedLoco };
         return { loco: resolvedLoco, ambientBubble: null, authority: this.authority };
@@ -410,7 +530,22 @@ export class PetLivingMainGameDriver {
       interrupt,
       targets: movementTargetFromAffordances(affordances),
     });
-    this.movement = mv.state;
+    if (
+      isBlocked &&
+      !isSegmentWalkable(px, py, mv.state.loco.x, mv.state.loco.y, tilePx, isBlocked)
+    ) {
+      const safeHomeLoco = applyAcceptedDisplacementToLocomotion(
+        this.movement.loco,
+        px,
+        py,
+        dtSec,
+        'sit',
+        frame.nowMs,
+      );
+      this.movement = { ...mv.state, loco: safeHomeLoco };
+    } else {
+      this.movement = mv.state;
+    }
     for (const p of mv.output.proposals) {
       this.authority.submitMovementProposal(p);
     }

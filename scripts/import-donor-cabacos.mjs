@@ -407,12 +407,14 @@ function exportVillage() {
   if (colLayer?.data) {
     // Explicit solid GIDs that lacked collision in upstream Cabacos_map.tmj (fences, crates, beach shack)
     const EXPLICIT_SOLID_DEC1_GIDS = new Set([
-      167, 168, 169, 170, 171, // wooden fences
-      615, 616, 679, 680, 681, 741, 743, // harbor crates & beach shack walls/roof
+      40, // wooden bridge south railing
+      167, 168, 169, 170, 171, // wooden fences & bridge north railings
+      615, 616, 617, 679, 680, 681, 741, 743, // harbor crates & beach shack walls/roof
     ]);
     // Bridge floor / pier / ladder / archway building GIDs that MUST stay walkable on roads
     const WALKABLE_BLD_OR_PATH_GIDS = new Set([0, 1, 649, 1501, 2128, 2129, 2204, 2320, 2321, 2322, 2386, 2448, 2449, 2520, 2525]);
     const RIVER_BANK_LAND_GIDS = new Set([471, 472, 473, 474, 475, 476, 535, 537, 539, 540, 541, 546, 547]);
+    const CLIFF_WALL_LAND_GIDS = new Set([148, 149, 204, 267, 268, 340, 341, 342, 404]);
     const BRIDGE_PATH_GIDS = new Set([295, 359, 423, 809]);
 
     for (let i = 0; i < colLayer.data.length; i += 1) {
@@ -423,8 +425,11 @@ function exportVillage() {
       const wellGid = (wellsLayer?.data?.[i] ?? 0) & 0x1fffffff;
       const wallGid = (wallsLayer?.data?.[i] ?? 0) & 0x1fffffff;
 
-      // Water/river channel tiles without bridge planks block player & pet
-      if ((RIVER_BANK_LAND_GIDS.has(landGid) || landGid <= 1) && !BRIDGE_PATH_GIDS.has(pathGid) && pathGid <= 1) {
+      // Water/river channel tiles without bridge planks, plus sheer cliff walls without paths, block player & pet
+      if (
+        ((RIVER_BANK_LAND_GIDS.has(landGid) || landGid <= 1) && !BRIDGE_PATH_GIDS.has(pathGid) && pathGid <= 1) ||
+        (CLIFF_WALL_LAND_GIDS.has(landGid) && pathGid <= 1)
+      ) {
         colLayer.data[i] = 66;
         continue;
       }
@@ -459,7 +464,7 @@ function exportVillage() {
       [15, 32, 16, 34], // crop_market door & return spawn (16,34)
       [33, 14, 34, 15], // town_hall door & return spawn (34,15) — keeps blue roof (33,12..13) blocked
       [37, 31, 39, 32], // wooden river bridge planks
-      [6, 21, 9, 23],   // village-to-garden west trail gate & arrival (8,22)
+      [6, 22, 8, 22],   // village-to-garden west trail gate & bridge deck arrival (8,22); keeps (9,21)/(9,23) rails & south cliff solid
       [50, 3, 53, 5],   // village-to-forest north plaza road & arrival (52,5)
       [41, 30, 44, 31], // community house front sidewalk & Bé Na path
     ];
@@ -472,6 +477,37 @@ function exportVillage() {
         }
       }
     }
+    const isSolidBuildingAt = (tx, ty) => {
+      if (!bldLayer?.data || tx < 0 || ty < 0 || tx >= src.width || ty >= src.height) return false;
+      const g = (bldLayer.data[ty * src.width + tx] ?? 0) & 0x1fffffff;
+      return !WALKABLE_BLD_OR_PATH_GIDS.has(g);
+    };
+    const roofData = new Array(src.width * src.height).fill(0);
+    for (let y = 0; y < src.height; y += 1) {
+      for (let x = 0; x < src.width; x += 1) {
+        if (isSolidBuildingAt(x, y) && isSolidBuildingAt(x, y + 1) && !isSolidBuildingAt(x, y - 1)) {
+          roofData[y * src.width + x] = bldLayer.data[y * src.width + x];
+        }
+      }
+    }
+    const maxLayerId = Math.max(...src.layers.map((l) => l.id ?? 0), 0);
+    src.layers = src.layers.filter((l) => l.name !== 'olw_roof_overhang');
+    const portIdx = src.layers.findIndex((l) => l.name === 'Collision');
+    const roofLayer = {
+      id: maxLayerId + 1,
+      name: 'olw_roof_overhang',
+      type: 'tilelayer',
+      width: src.width,
+      height: src.height,
+      data: roofData,
+      opacity: 1,
+      visible: true,
+      x: 0,
+      y: 0,
+      properties: [{ name: 'olwDepth', type: 'int', value: 850 }],
+    };
+    if (portIdx >= 0) src.layers.splice(portIdx, 0, roofLayer);
+    else src.layers.push(roofLayer);
   }
 
   src.layers = src.layers.filter((l) => l.name !== 'Portals' && l.name !== 'Interactables' && l.name !== 'NPCSpawns');

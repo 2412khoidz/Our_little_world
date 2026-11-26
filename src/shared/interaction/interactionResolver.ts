@@ -192,13 +192,21 @@ function actionForTarget(
       };
     }
     case 'water_source': {
+      const holdsWaterCarrier =
+        held.itemKind === 'water_pitcher' || held.itemSku === 'tool_watering_can';
+      const labelVi =
+        held.itemSku === 'tool_watering_can'
+          ? 'Múc nước vào bình tưới (0₫)'
+          : 'Múc nước sạch (0₫)';
       return {
         code: 'fill_water_pitcher',
         keyHint: 'J',
-        labelVi: 'Múc nước sạch (0₫)',
+        labelVi,
         targetId: target.id,
-        available: held.itemKind === 'water_pitcher',
-        reasonVi: held.itemKind !== 'water_pitcher' ? 'Cầm bình nước trước để lấy nước.' : undefined,
+        available: holdsWaterCarrier,
+        reasonVi: !holdsWaterCarrier
+          ? 'Cầm bình nước hoặc bình tưới cây trước để lấy nước.'
+          : undefined,
       };
     }
     case 'wardrobe':
@@ -241,6 +249,15 @@ function actionForTarget(
       return { code: 'sit_bench', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     }
     case 'door': {
+      if (target.id === 'cabacos_player_house_door') {
+        return {
+          code: 'inspect_prop',
+          keyHint: 'J',
+          labelVi: target.labelVi,
+          targetId: target.id,
+          available: true,
+        };
+      }
       if (target.id === 'farm_barn_door') {
         const open = Boolean(economyPlayable);
         return {
@@ -416,13 +433,13 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const ny = dist > 0.01 ? dy / dist : 0;
     const facingDot = nx * fVec.x + ny * fVec.y;
     // Lower score wins: distance penalized less when object is in front and action is directly usable.
-    // A trailing pet yields priority to farm plots, fishing spots, doors, shops, and furniture unless holding food/toy.
+    // Portals and idle trailing pets yield priority to NPCs, plots, water sources, props, shops, and furniture.
     const contextBonus = action.available ? -12 : 10;
     const facingBonus = -facingDot * 10;
-    const portalBoost = t.kind === 'portal' && dist < 14 ? -40 : 0;
+    const portalYield = t.kind === 'portal' ? 22 : 0;
     const petYield =
       t.kind === 'pet' && heldItem.itemKind !== 'food' && heldItem.itemKind !== 'toy' ? 28 : 0;
-    const score = dist + contextBonus + facingBonus + portalBoost + petYield;
+    const score = dist + contextBonus + facingBonus + portalYield + petYield;
     scored.push({ target: t, action, score });
   }
 

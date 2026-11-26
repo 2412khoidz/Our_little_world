@@ -1,5 +1,8 @@
 import { propsIconIdForCatalogSku } from '../art/catalogSkuPropsIcon';
 import { getCatalogItem } from '../catalog';
+import { resolveCanonicalFishBySku } from '../donor/fishing/canonicalFishRegistry';
+import { getItem } from '../economy/catalogConfig';
+import type { InventoryStackRef } from '../inventory/inventoryLayoutStore';
 import type { InventorySnapshot } from '../inventory/inventoryTypes';
 import { PET_FOOD_CATALOG } from '../petLiving/petFoodCatalog';
 import {
@@ -58,8 +61,12 @@ export function aggregateSharedStacksV015(snapshot: InventorySnapshot): Map<stri
 function labelForSku(sku: string, snapshot: InventorySnapshot): string {
   const fromFood = PET_FOOD_CATALOG.find((f) => f.sku === sku);
   if (fromFood) return fromFood.nameVi;
+  const fromFish = resolveCanonicalFishBySku(sku);
+  if (fromFish) return fromFish.labelVi;
   const fromCatalog = snapshot.catalog.find((c) => c.sku === sku);
   if (fromCatalog) return fromCatalog.nameVi;
+  const fromEconomy = getItem(sku);
+  if (fromEconomy) return fromEconomy.nameVi;
   const furn = getCatalogItem(sku);
   return furn?.nameVi ?? sku;
 }
@@ -78,9 +85,14 @@ function hotbarVisualForSku(sku: string): Pick<HotbarSlot, 'iconId' | 'propsIcon
 
 /**
  * Read-only projection of inventory into 8 hotbar slots (no client-side qty mutation).
- * Adapter surface for Mission 02 Unified Catalog — swap implementation when contract lands.
+ * Supports custom hotbar slot bindings from Nuvora bag while keeping `InventorySnapshot` authoritative.
  */
-export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null, userId?: string): HotbarSlot[] {
+export function buildHotbarSlotsFromInventory(
+  snapshot: InventorySnapshot | null,
+  userId?: string,
+  customBindings?: ReadonlyArray<InventoryStackRef | null>,
+  waterFillBySku?: Readonly<Record<string, number>>,
+): HotbarSlot[] {
   const base: HotbarSlot[] = Array.from({ length: 8 }, (_, slotIndex) => ({
     slotIndex,
     ...EMPTY_SLOT,
@@ -88,10 +100,9 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
 
   if (!snapshot) return base;
 
-  const allowed = new Set<string>(MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST);
   const stacks = new Map<string, { key: HotbarStackKey; qty: number }>();
   for (const row of snapshot.items) {
-    if (!allowed.has(row.itemSku)) continue;
+    if (row.qty <= 0) continue;
     if (row.ownerScope !== 'shared' && row.ownerScope !== 'user:' + userId) continue;
     const key: HotbarStackKey = {
       ownerScope: row.ownerScope,
@@ -103,21 +114,55 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
     stacks.set(id, { key, qty: (existing?.qty ?? 0) + row.qty });
   }
 
+  if (customBindings) {
+    for (let slotIndex = 0; slotIndex < base.length; slotIndex += 1) {
+      const bound = customBindings[slotIndex];
+      if (!bound) continue;
+      const boundId = stackKeyString({
+        ownerScope: bound.ownerScope,
+        itemSku: bound.itemSku,
+        quality: bound.quality,
+      });
+      const stack = stacks.get(boundId);
+      if (!stack || stack.qty <= 0) continue;
+      const sku = stack.key.itemSku;
+      const visual = hotbarVisualForSku(sku);
+      const isWaterTool = sku === 'water_pitcher' || sku === 'tool_watering_can';
+      base[slotIndex] = {
+        slotIndex,
+        ownerScope: stack.key.ownerScope,
+        itemSku: sku,
+        itemKind: hotbarSkuToHeldKind(sku),
+        iconId: visual.iconId,
+        propsIconId: visual.propsIconId,
+        labelVi: labelForSku(sku, snapshot),
+        qty: stack.qty,
+        quality: stack.key.quality,
+        ...(isWaterTool ? { waterFillLevel: waterFillBySku?.[sku] ?? 72 } : {}),
+      };
+    }
+    return base;
+  }
+
+  const allowed = new Set<string>(MAIN_GAME_HOTBAR_INITIAL_SKU_ALLOWLIST);
   const priorityIndex = new Map<string, number>(
     MAIN_GAME_HOTBAR_SLOT_PRIORITY.map((sku, index) => [sku, index]),
   );
-  const ordered = [...stacks.values()].sort((a, b) => {
-    const pa = priorityIndex.get(a.key.itemSku) ?? 999;
-    const pb = priorityIndex.get(b.key.itemSku) ?? 999;
-    if (pa !== pb) return pa - pb;
-    return (
-      a.key.ownerScope.localeCompare(b.key.ownerScope) ||
-      a.key.quality.localeCompare(b.key.quality)
-    );
-  });
+  const ordered = [...stacks.values()]
+    .filter((entry) => allowed.has(entry.key.itemSku))
+    .sort((a, b) => {
+      const pa = priorityIndex.get(a.key.itemSku) ?? 999;
+      const pb = priorityIndex.get(b.key.itemSku) ?? 999;
+      if (pa !== pb) return pa - pb;
+      return (
+        a.key.ownerScope.localeCompare(b.key.ownerScope) ||
+        a.key.quality.localeCompare(b.key.quality)
+      );
+    });
   for (const [slotIndex, stack] of ordered.slice(0, base.length).entries()) {
     const sku = stack.key.itemSku;
     const visual = hotbarVisualForSku(sku);
+    const isWaterTool = sku === 'water_pitcher' || sku === 'tool_watering_can';
     base[slotIndex] = {
       slotIndex,
       ownerScope: stack.key.ownerScope,
@@ -128,7 +173,7 @@ export function buildHotbarSlotsFromInventory(snapshot: InventorySnapshot | null
       labelVi: labelForSku(sku, snapshot),
       qty: stack.qty,
       quality: stack.key.quality,
-      ...(sku === 'water_pitcher' ? { waterFillLevel: 72 } : {}),
+      ...(isWaterTool ? { waterFillLevel: waterFillBySku?.[sku] ?? 72 } : {}),
     };
   }
 

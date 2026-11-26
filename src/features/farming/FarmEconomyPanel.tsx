@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { PackageCheck, Plus, Trash2 } from 'lucide-react';
-import { computeSellPriceBp, requireItem } from '../../shared/economy/catalogConfig';
+import { computeSellPriceBp, getItem, requireItem } from '../../shared/economy/catalogConfig';
+import { resolveCanonicalFishBySku } from '../../shared/donor/fishing/canonicalFishRegistry';
 import { getCropDefinition } from '../../shared/farming/crops';
-import { FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
+import { FARM_SELLABLE_ALL_SKUS } from '../../shared/farming/farmShipping';
 import {
   farmShopMetaForKind,
   farmShopSkusForKind,
@@ -60,10 +61,24 @@ function cropQty(
 
 function safeUnitSellPrice(sku: string, quality: 'normal' | 'silver' | 'gold'): number {
   try {
-    return Math.max(1, Math.floor(computeSellPriceBp(sku, quality) / 100));
+    return Math.max(1, Math.floor(computeSellPriceBp(sku, quality) / 10000));
   } catch {
+    const fish = resolveCanonicalFishBySku(sku);
+    if (fish) {
+      const qMul = quality === 'gold' ? 1.55 : quality === 'silver' ? 1.25 : 1;
+      return Math.max(1, Math.floor(fish.sellPrice * qMul));
+    }
     return 10;
   }
+}
+
+function sellableNameVi(sku: string): string {
+  return (
+    getCropDefinition(sku)?.nameVi ??
+    resolveCanonicalFishBySku(sku)?.labelVi ??
+    getItem(sku)?.nameVi ??
+    sku
+  );
 }
 
 export function FarmEconomyPanel({
@@ -84,7 +99,7 @@ export function FarmEconomyPanel({
 
   const sellableRows = useMemo((): readonly SellableProduceRow[] => {
     const out: SellableProduceRow[] = [];
-    for (const sku of FARM_SELLABLE_CROP_SKUS) {
+    for (const sku of FARM_SELLABLE_ALL_SKUS) {
       for (const quality of ['normal', 'silver', 'gold'] as const) {
         const stockQty = cropQty(inventory, sku, quality);
         if (stockQty <= 0) continue;
@@ -92,7 +107,7 @@ export function FarmEconomyPanel({
           key: `${sku}:${quality}`,
           sku,
           quality,
-          nameVi: getCropDefinition(sku)?.nameVi ?? sku,
+          nameVi: sellableNameVi(sku),
           stockQty,
           unitPrice: safeUnitSellPrice(sku, quality),
         });

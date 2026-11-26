@@ -12,10 +12,12 @@ import { OLW_MEADOWBROOK_MILL } from '../webfarmville-c420bc2/olwMeadowbrookMill
 import { OLW_HOLLOW_BAKERY } from '../harvest-hollow-9b23e1a/olwHollowBakery';
 import {
   MEADOWBROOK_FISH_TO_OLW_SKU,
-  resolveMeadowbrookCatch,
   previewMeadowbrookCatch,
+  resolveMeadowbrookCatch,
 } from '../webfarmville-c420bc2/meadowbrookNatureCatch';
 import { pickCanvasStreamFish } from '../canvas-games-fishing/streamFishSpecies';
+import { resolveCanonicalFishByCritterId } from '../fishing/canonicalFishRegistry';
+import type { TidefallFishRarity } from '../tidefall-phaser/tidefallFishCatalog';
 import type { DonorFishingSpotId } from '../donorFishingSpots';
 import { parseDonorFishingSpot } from '../donorFishingSpots';
 import {
@@ -177,26 +179,65 @@ export function donorCoopCollect(
   return { world: { ...world, coop: collected.coop }, items: nextItems, eggs: collected.eggs };
 }
 
+export interface DonorFishingPreviewResult {
+  readonly critterId: string;
+  readonly name: string;
+  readonly itemSku: string;
+  readonly labelVi: string;
+  readonly rarity: TidefallFishRarity;
+  readonly spriteUrl: string;
+  readonly spotId: DonorFishingSpotId;
+}
+
+export interface DonorFishingResolveResult {
+  readonly escaped: boolean;
+  readonly itemSku: string | null;
+  readonly critterId: string;
+  readonly labelVi: string;
+  readonly rarity: TidefallFishRarity;
+  readonly spriteUrl: string;
+  readonly qtyGranted: 0 | 1;
+  readonly spotId: DonorFishingSpotId;
+}
+
 export function donorFishingPreview(
   seed: number,
   nowMs: number,
   hour: number,
   spotRaw: unknown,
-): { critterId: string; name: string; spotId: DonorFishingSpotId } {
+): DonorFishingPreviewResult {
   const spotId = parseDonorFishingSpot(spotRaw);
-  if (spotId === 'east_stream') {
-    const rng = createRng(seed);
-    const fish = pickCanvasStreamFish(() => rng.next(), 0.55);
-    return { critterId: fish.id, name: fish.name, spotId };
-  }
   const rng = createRng(seed);
+  if (spotId === 'east_stream') {
+    const fish = pickCanvasStreamFish(() => rng.next(), 0.55);
+    const canonical = resolveCanonicalFishByCritterId(fish.id);
+    return {
+      critterId: fish.id,
+      name: fish.name,
+      itemSku: fish.olwSku || canonical.sku,
+      labelVi: canonical.labelVi,
+      rarity: canonical.rarity,
+      spriteUrl: canonical.spriteUrl,
+      spotId,
+    };
+  }
   const def = previewMeadowbrookCatch({
     kind: 'fish',
     hour,
     nowMs,
     rng01: () => rng.next(),
   });
-  return { critterId: def.id, name: def.name, spotId };
+  const canonical = resolveCanonicalFishByCritterId(def.id);
+  const itemSku = MEADOWBROOK_FISH_TO_OLW_SKU[def.id] ?? canonical.sku;
+  return {
+    critterId: def.id,
+    name: def.name,
+    itemSku,
+    labelVi: canonical.labelVi,
+    rarity: canonical.rarity,
+    spriteUrl: canonical.spriteUrl,
+    spotId,
+  };
 }
 
 export function donorFishingResolve(
@@ -205,31 +246,50 @@ export function donorFishingResolve(
   hour: number,
   progressPermille: number,
   spotRaw: unknown,
-): { escaped: boolean; itemSku: string | null; labelVi: string; spotId: DonorFishingSpotId } {
-  const spotId = parseDonorFishingSpot(spotRaw);
-  const score = Math.round((progressPermille / 1000) * 100);
-  if (spotId === 'east_stream') {
-    const rng = createRng(seed ^ progressPermille);
-    const fish = pickCanvasStreamFish(() => rng.next(), 0.55);
-    const escaped = score < 55 || progressPermille < 700;
-    if (escaped) {
-      return { escaped: true, itemSku: null, labelVi: fish.name, spotId };
-    }
-    return { escaped: false, itemSku: fish.olwSku, labelVi: fish.name, spotId };
+  lockedEncounter?: Partial<DonorFishingPreviewResult>,
+): DonorFishingResolveResult {
+  const rolled = donorFishingPreview(seed, nowMs, hour, spotRaw);
+  const spotId = rolled.spotId;
+  const enc: DonorFishingPreviewResult =
+    lockedEncounter?.critterId && lockedEncounter.itemSku
+      ? {
+          critterId: lockedEncounter.critterId,
+          name: lockedEncounter.name ?? rolled.name,
+          itemSku: lockedEncounter.itemSku,
+          labelVi: lockedEncounter.labelVi ?? rolled.labelVi,
+          rarity: lockedEncounter.rarity ?? rolled.rarity,
+          spriteUrl: lockedEncounter.spriteUrl ?? rolled.spriteUrl,
+          spotId,
+        }
+      : rolled;
+
+  // Authoritative reel completion gate: winning reel (>= 700 permille) always lands the exact hooked fish.
+  const score = Math.round((Number(progressPermille) / 1000) * 100);
+  const escaped = !Number.isFinite(progressPermille) || progressPermille < 700 || score < 55;
+  if (escaped) {
+    // Call resolveMeadowbrookCatch purely for contract awareness? No — preview & resolve must stay 1:1.
+    void resolveMeadowbrookCatch;
+    return {
+      escaped: true,
+      itemSku: null,
+      critterId: enc.critterId,
+      labelVi: enc.labelVi,
+      rarity: enc.rarity,
+      spriteUrl: enc.spriteUrl,
+      qtyGranted: 0,
+      spotId,
+    };
   }
-  const rng = createRng(seed ^ score);
-  const result = resolveMeadowbrookCatch({
-    kind: 'fish',
-    score,
-    hour,
-    nowMs,
-    rng01: () => rng.next(),
-  });
-  if (result.escaped) {
-    return { escaped: true, itemSku: null, labelVi: result.critterName, spotId };
-  }
-  const itemSku = MEADOWBROOK_FISH_TO_OLW_SKU[result.critterId] ?? 'carp_pond';
-  return { escaped: false, itemSku, labelVi: result.critterName, spotId };
+  return {
+    escaped: false,
+    itemSku: enc.itemSku,
+    critterId: enc.critterId,
+    labelVi: enc.labelVi,
+    rarity: enc.rarity,
+    spriteUrl: enc.spriteUrl,
+    qtyGranted: 1,
+    spotId,
+  };
 }
 
 export function creditSharedSku(

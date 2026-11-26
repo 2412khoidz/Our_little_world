@@ -638,7 +638,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.rebuildFurnitureAndCollisions();
     this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
-    if (this.petSnapshot && mapId !== 'home' && FOLLOW_CAT_MAPS.has(mapId)) {
+    if (this.petSnapshot && FOLLOW_CAT_MAPS.has(mapId)) {
       const petPos = this.findSafePetSpawnPx(spawn.tileX + partnerOffsetX, spawn.tileY, px, py);
       this.petEntity?.teleportNear(petPos.x, petPos.y);
     } else if (!this.petSnapshot && mapId === 'home') {
@@ -1581,6 +1581,10 @@ export class WorldScene extends Phaser.Scene {
         this.triggerNearbyInteraction();
       }),
 
+      gameEventBus.on('cmd:interact-npc', () => {
+        this.interactNearestNpc();
+      }),
+
       gameEventBus.on('evt:request-couple-posture', ({ kind, targetId }) => {
         if (kind === 'bench_sit' && targetId && this.tryEnterAnchorBench(targetId)) {
           return;
@@ -2182,37 +2186,49 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryMovePixel(dx: number, dy: number): boolean {
-    const startX = this.localSprite.x;
-    const startY = this.localSprite.y;
-    const canX = dx !== 0 && this.canStandAtPixel(startX + dx, startY);
-    const canY = dy !== 0 && this.canStandAtPixel(startX, startY + dy);
+    const maxStepPx = 2;
+    const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / maxStepPx));
+    const stepX = dx / steps;
+    const stepY = dy / steps;
+    let movedAny = false;
 
-    // Prevent diagonal corner cutting when either cardinal side of the corner is blocked
-    if (dx !== 0 && dy !== 0) {
-      if (canX && canY && this.canStandAtPixel(startX + dx, startY + dy)) {
-        this.localSprite.setPosition(startX + dx, startY + dy);
-        return true;
+    for (let i = 0; i < steps; i += 1) {
+      const curX = this.localSprite.x;
+      const curY = this.localSprite.y;
+      const canX = stepX !== 0 && this.canStandAtPixel(curX + stepX, curY);
+      const canY = stepY !== 0 && this.canStandAtPixel(curX, curY + stepY);
+
+      if (stepX !== 0 && stepY !== 0) {
+        if (canX && canY && this.canStandAtPixel(curX + stepX, curY + stepY)) {
+          this.localSprite.setPosition(curX + stepX, curY + stepY);
+          movedAny = true;
+          continue;
+        }
+        if (canX) {
+          this.localSprite.x = curX + stepX;
+          movedAny = true;
+          continue;
+        }
+        if (canY) {
+          this.localSprite.y = curY + stepY;
+          movedAny = true;
+          continue;
+        }
+        break;
       }
+
       if (canX) {
-        this.localSprite.x = startX + dx;
-        return true;
+        this.localSprite.x = curX + stepX;
+        movedAny = true;
+      } else if (canY) {
+        this.localSprite.y = curY + stepY;
+        movedAny = true;
+      } else {
+        break;
       }
-      if (canY) {
-        this.localSprite.y = startY + dy;
-        return true;
-      }
-      return false;
     }
 
-    if (canX) {
-      this.localSprite.x = startX + dx;
-      return true;
-    }
-    if (canY) {
-      this.localSprite.y = startY + dy;
-      return true;
-    }
-    return false;
+    return movedAny;
   }
 
   private canStandAtPixel(px: number, py: number): boolean {
@@ -2510,17 +2526,17 @@ export class WorldScene extends Phaser.Scene {
 
     const tileXi = Math.floor(this.localSprite.x / this.tilePx());
     const tileYi = Math.floor((this.localSprite.y - 2) / this.tilePx());
+    const npc = nearestTiledNpc(this.tiledNpcs, tileXi, tileYi);
+    if (npc) {
+      return { kind: 'npc_talk', labelVi: `Trò chuyện · ${npc.labelVi}` };
+    }
+
     for (const portal of def.portals) {
       if (portal.targetMapId === this.currentMapId) continue;
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
       if (dist <= portal.radiusTiles) {
         return { kind: 'portal', labelVi: portal.labelVi };
       }
-    }
-
-    const npc = nearestTiledNpc(this.tiledNpcs, tileXi, tileYi);
-    if (npc) {
-      return { kind: 'npc_talk', labelVi: `Trò chuyện · ${npc.labelVi}` };
     }
 
     if (FOLLOW_CAT_MAPS.has(this.currentMapId) && this.petEntity?.isNearbyTile(tileX, tileY)) {
@@ -2652,16 +2668,7 @@ export class WorldScene extends Phaser.Scene {
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
     } else if (near.kind === 'npc_talk') {
-      const tileX = Math.floor(this.localSprite.x / this.tilePx());
-      const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
-      const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
-      if (npc) {
-        gameEventBus.emit('evt:preview-notice', {
-          title: npc.labelVi,
-          version: 'Làng · V0.2 preview',
-          body: npc.dialogueVi,
-        });
-      }
+      this.interactNearestNpc();
     } else if (
       near.kind === 'sofa_sit' ||
       near.kind === 'bench_sit' ||
@@ -2675,6 +2682,20 @@ export class WorldScene extends Phaser.Scene {
         body: 'Trình phát phim đồng bộ qua Jellyfin/Tailscale đang được thử nghiệm riêng trong Menu → Spike 0 Lab và sẽ tích hợp vào sofa ở V0.4.',
       });
     }
+  }
+
+  private interactNearestNpc(): boolean {
+    if (!this.localSprite) return false;
+    const tileX = Math.floor(this.localSprite.x / this.tilePx());
+    const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
+    const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
+    if (!npc) return false;
+    gameEventBus.emit('evt:preview-notice', {
+      title: npc.labelVi,
+      version: 'Làng · V0.2 preview',
+      body: npc.dialogueVi,
+    });
+    return true;
   }
 
   private clearLocalPosture(emit: boolean): void {

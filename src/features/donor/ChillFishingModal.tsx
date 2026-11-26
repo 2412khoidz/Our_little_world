@@ -219,15 +219,16 @@ function MotionTargetRow({ fish }: { fish: TidefallFishEntry }) {
 }
 
 function CatchRevealCard({
-  fish,
+  rarity,
+  spriteUrl,
   escaped,
   labelVi,
 }: {
-  fish: TidefallFishEntry;
+  rarity: import('../../shared/donor/tidefall-phaser/tidefallFishCatalog').TidefallFishRarity;
+  spriteUrl: string;
   escaped: boolean;
-  labelVi: string | null;
+  labelVi: string;
 }) {
-  const nameVi = labelVi ?? tidefallFishNameVi(fish.id, fish.name);
   return (
     <div
       data-testid="fishing-frenzy-catch-reveal"
@@ -238,13 +239,13 @@ function CatchRevealCard({
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        border: `2px solid ${FISHING_FRENZY_RARITY_BORDER[fish.rarity]}`,
-        boxShadow: fishingFrenzyRarityGlow(fish.rarity),
+        border: `2px solid ${FISHING_FRENZY_RARITY_BORDER[rarity]}`,
+        boxShadow: fishingFrenzyRarityGlow(rarity),
         background: escaped ? 'rgba(180, 90, 70, 0.12)' : 'rgba(255, 247, 224, 0.92)',
       }}
     >
       <img
-        src={fishingFrenzySpritePathForFish(fish.id, { biome: fish.biome, rarity: fish.rarity })}
+        src={spriteUrl}
         alt=""
         width={64}
         height={36}
@@ -252,10 +253,10 @@ function CatchRevealCard({
       />
       <div style={{ textAlign: 'left' }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: '#422614' }}>
-          {escaped ? `${nameVi} tuột mất…` : `Tuyệt vời! Bắt được ${nameVi}`}
+          {escaped ? `${labelVi} tuột mất…` : `Tuyệt vời! Bắt được ${labelVi}`}
         </div>
         <div style={{ fontSize: 11.5, color: '#6b4428' }}>
-          Độ hiếm: {tidefallFishRarityLabelVi(fish.rarity)} · {escaped ? 'Thử quăng lại nhé!' : 'Đã thêm vào túi đồ'}
+          Độ hiếm: {tidefallFishRarityLabelVi(rarity)} · {escaped ? 'Thử quăng lại nhé!' : '+1 đã thêm vào túi chung'}
         </div>
       </div>
     </div>
@@ -288,7 +289,12 @@ export function ChillFishingModal({
   const [art, setArt] = useState<TidefallFishingArtBundle | null>(null);
   const [frenzyArt, setFrenzyArt] = useState<FishingFrenzyArtBundle | null>(null);
   const [localAvatarCanvas, setLocalAvatarCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [catchLabelVi, setCatchLabelVi] = useState<string | null>(null);
+  const [catchOutcome, setCatchOutcome] = useState<{
+    escaped: boolean;
+    labelVi: string;
+    rarity: import('../../shared/donor/tidefall-phaser/tidefallFishCatalog').TidefallFishRarity;
+    spriteUrl: string;
+  } | null>(null);
   const [muted, setMuted] = useState(() => isFishingAudioMuted());
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -451,20 +457,27 @@ export function ChillFishingModal({
       setBusy(true);
       try {
         const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state));
-        const displayVi = activeCatalogFish
+        const fallbackLabel = activeCatalogFish
           ? tidefallFishNameVi(activeCatalogFish.id, activeCatalogFish.name)
-          : resolved.labelVi;
+          : 'Cá ao';
+        const displayVi = resolved.labelVi || fallbackLabel;
+        const rarity = resolved.rarity ?? activeCatalogFish?.rarity ?? 'common';
+        const spriteUrl =
+          resolved.spriteUrl ??
+          (activeCatalogFish
+            ? fishingFrenzySpritePathForFish(activeCatalogFish.id, {
+                biome: activeCatalogFish.biome,
+                rarity: activeCatalogFish.rarity,
+              })
+            : fishingFrenzySpritePathForFish('carp'));
         const text = resolved.escaped ? `${displayVi} tuột mất…` : `Bắt được ${displayVi}!`;
-        setCatchLabelVi(displayVi);
+        setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl });
         setOutcomeVi(text);
         setMessage(text);
         if (resolved.escaped) {
           playEscapeSplash();
         } else {
-          const rare =
-            activeCatalogFish?.rarity === 'rare' ||
-            activeCatalogFish?.rarity === 'epic' ||
-            activeCatalogFish?.rarity === 'legendary';
+          const rare = rarity === 'rare' || rarity === 'epic' || rarity === 'legendary';
           playCatchFanfare(rare);
         }
         await onInventoryRefresh();
@@ -546,20 +559,37 @@ export function ChillFishingModal({
     setBusy(true);
     setError(null);
     setOutcomeVi(null);
-    setCatchLabelVi(null);
+    setCatchOutcome(null);
     setObserveMode(false);
     resolveGuard.current = false;
     try {
       const data = await postDonorFishingStart(worldId, spotId as SpotId);
       setPreview(data.preview.name);
-      const matched = matchTidefallCatalogByPreviewName(data.preview.name);
+      const matched =
+        matchTidefallCatalogByPreviewName(data.preview.critterId ?? data.preview.name) ??
+        matchTidefallCatalogByPreviewName(data.preview.name);
+      const resolvedEntry: TidefallFishEntry | null = matched
+        ? {
+            ...matched,
+            rarity: data.preview.rarity ?? matched.rarity,
+          }
+        : data.preview.rarity
+          ? {
+              id: data.preview.critterId ?? 'carp',
+              name: data.preview.name,
+              rarity: data.preview.rarity,
+              biome: spotId === 'gull_bay' ? 'sea' : spotId === 'east_stream' ? 'river' : 'lake',
+              size: 'medium',
+              difficulty: 1,
+            }
+          : null;
       let seedState = data.seed | 0 || 1;
       const rng = () => {
         seedState = (seedState * 1664525 + 1013904223) >>> 0;
         return (seedState & 0xffff_ffff) / 0x1_0000_0000;
       };
       const waitMs = 1350 + Math.floor(rng() * 1400);
-      const tuning = speciesParamsForFish(matched, rng);
+      const tuning = speciesParamsForFish(resolvedEntry, rng);
       const next = beginTidefallCast(createTidefallFishingIdle(), {
         waitMs,
         targetWidth: tuning.targetWidth,
@@ -659,8 +689,13 @@ export function ChillFishingModal({
           onPointerDown={onCanvasTap}
         />
 
-        {(fsm.phase === 'landed' || fsm.phase === 'escaped') && activeCatalogFish && (
-          <CatchRevealCard fish={activeCatalogFish} escaped={fsm.phase === 'escaped'} labelVi={catchLabelVi} />
+        {(fsm.phase === 'landed' || fsm.phase === 'escaped') && catchOutcome && (
+          <CatchRevealCard
+            rarity={catchOutcome.rarity}
+            spriteUrl={catchOutcome.spriteUrl}
+            escaped={catchOutcome.escaped}
+            labelVi={catchOutcome.labelVi}
+          />
         )}
 
         <p

@@ -20,6 +20,7 @@ const DOMAIN_SPECS = {
     hoe: 'public/assets/audio/sfx/hoe.mp3',
     plant: 'public/assets/audio/sfx/plantSeed.mp3',
     water: 'public/assets/audio/sfx/waterPlants.mp3',
+    get_water: 'public/assets/audio/sfx/getWater.mp3',
     harvest: 'public/assets/audio/sfx/sickle.mp3',
     fail: 'public/assets/audio/sfx/fail.mp3',
   },

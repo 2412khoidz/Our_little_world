@@ -5,11 +5,19 @@ import { EMPTY_HELD_ITEM, selectHotbarSlot } from '../../shared/interaction/inte
 import { reconcileHeldItemWithHotbar } from '../../shared/interaction/heldItemIdentity';
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
 
+const DEFAULT_WATER_FILL_BY_SKU: Record<string, number> = {
+  water_pitcher: 100,
+  tool_watering_can: 100,
+};
+
 /**
  * Holds player intent (anchor); displayed/synced held item is always reconciled by SKU+quality.
  */
 export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
   const [heldAnchor, setHeldAnchor] = useState<HeldItemState>(EMPTY_HELD_ITEM);
+  const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>(
+    DEFAULT_WATER_FILL_BY_SKU,
+  );
 
   const heldItem = useMemo(
     () => reconcileHeldItemWithHotbar(heldAnchor, slots),
@@ -25,12 +33,27 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
   }, [heldAnchor.itemSku, heldItem.itemKind]);
 
   useEffect(() => {
-    return gameEventBus.on('evt:held-water-adjust', ({ level, iconId }) => {
-      setHeldAnchor((cur) =>
-        cur.itemKind === 'water_pitcher' ? { ...cur, waterFillLevel: level, iconId } : cur,
-      );
+    return gameEventBus.on('evt:held-water-adjust', ({ level, iconId, itemSku }) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(level)));
+      setWaterFillBySku((prev) => {
+        const targetSku =
+          itemSku ??
+          (heldAnchor.itemSku === 'tool_watering_can' ? 'tool_watering_can' : 'water_pitcher');
+        return { ...prev, [targetSku]: clamped };
+      });
+      setHeldAnchor((cur) => {
+        const matchesPitcher = cur.itemKind === 'water_pitcher';
+        const matchesCan = cur.itemSku === 'tool_watering_can';
+        if (!matchesPitcher && !matchesCan) return cur;
+        if (itemSku && cur.itemSku && cur.itemSku !== itemSku) return cur;
+        return {
+          ...cur,
+          waterFillLevel: clamped,
+          iconId: matchesPitcher ? (iconId ?? (clamped > 0 ? 'water_pitcher_full' : 'water_pitcher_empty')) : cur.iconId,
+        };
+      });
     });
-  }, []);
+  }, [heldAnchor.itemSku]);
 
   useEffect(() => {
     return gameEventBus.on('cmd:select-hotbar-slot', ({ slotIndex }) => {
@@ -48,5 +71,5 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
     setHeldAnchor(EMPTY_HELD_ITEM);
   };
 
-  return { heldItem, selectSlot, clearHeld };
+  return { heldItem, waterFillBySku, selectSlot, clearHeld };
 }

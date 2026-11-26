@@ -1,7 +1,8 @@
 /**
  * Pure TypeScript SKU -> Hybrid Art Direction sprite URL resolver.
- * Uses Kiln Harvest Free Sampler crisp 16x16 item icons and Sprout Lands emotes.
+ * Uses Kiln Harvest Free Sampler crisp 16x16 item icons, Fishing Frenzy fish sprites, and Sprout Lands emotes.
  */
+import { fishSpriteUrlForSku } from '../donor/fishing/canonicalFishRegistry';
 
 const BASE = '/assets/ui/hybrid/items';
 const EMOTES = '/assets/ui/hybrid/emotes';
@@ -45,12 +46,18 @@ export const KILN_SKU_ICON_URLS: Readonly<Record<string, string>> = {
   ribbon: `${BASE}/letter.png`,
   wild_herb: `${EMOTES}/clover.png`,
   wood_branch: `${BASE}/wood.png`,
+  wood_chair: `${BASE}/wood.png`,
+
+  bait_free_worm: `${EMOTES}/clover.png`,
+  bait_shrimp: `${EMOTES}/sprout.png`,
 
   egg_white: `${BASE}/egg_white.png`,
   milk: `${BASE}/milk.png`,
   carrot_soup: `${BASE}/carrot.png`,
   peach_tea: `${BASE}/energy_potion.png`,
   strawberry_tart: `${BASE}/strawberry.png`,
+  herb_carp: '/assets/donor/fishing-frenzy/sprites/carp.png',
+  koinori_platter: '/assets/donor/fishing-frenzy/sprites/goldfish.png',
   sakura_bouquet: `${EMOTES}/flower.png`,
 
   coin: `${BASE}/coin.png`,
@@ -73,6 +80,8 @@ export const KILN_SKU_ICON_URLS: Readonly<Record<string, string>> = {
 export function kilnItemIconUrlForSku(sku: string): string | null {
   const colon = sku.indexOf(':');
   const base = colon >= 0 ? sku.slice(0, colon) : sku;
+  const fishUrl = fishSpriteUrlForSku(base);
+  if (fishUrl) return fishUrl;
   return KILN_SKU_ICON_URLS[base] ?? null;
 }
 

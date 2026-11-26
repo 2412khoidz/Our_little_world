@@ -179,16 +179,147 @@
 }
 
 .nuvora-cur {
-  position: absolute;
+  position: fixed;
   pointer-events: none;
-  z-index: 5;
+  z-index: 9999;
   width: var(--nuvora-slot);
   height: var(--nuvora-slot);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.92;
+  opacity: 0.94;
+  filter: drop-shadow(0 4px 8px rgba(24, 12, 6, 0.45));
+}
+
+.nuvora-sl--inspected {
+  box-shadow:
+    inset 0 0 0 2px #fff2c2,
+    0 0 0 2px #d98c2b;
+  z-index: 2;
+}
+
+.nuvora-sl--drop-target {
+  box-shadow:
+    inset 0 0 0 2px #a6f2a6,
+    0 0 0 2px #429a48;
+  transform: scale(1.04);
+  z-index: 2;
+}
+
+.nuvora-sl__quality {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font: 800 8px monospace;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  pointer-events: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.nuvora-sl__quality--silver {
+  background: #d7e4ef;
+  color: #203142;
+}
+
+.nuvora-sl__quality--gold {
+  background: #ffd659;
+  color: #4d2e00;
+}
+
+.nuvora-sl__key {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font: 800 9px monospace;
+  line-height: 1;
+  color: rgba(45, 25, 12, 0.72);
+  pointer-events: none;
+}
+
+.nuvora-desk__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nuvora-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f5e6c8;
+  box-shadow:
+    inset 0 0 0 2px #e5c694,
+    0 0 0 2px #7c4c29;
+  border-radius: 6px;
+  color: #3e2313;
+}
+
+.nuvora-inspector__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nuvora-inspector__icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  border-radius: 4px;
+}
+
+.nuvora-inspector__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.nuvora-inspector__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e6cc9e;
+  color: #462818;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.nuvora-inspector__hotbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.nuvora-hotbar-num-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  border: 1.5px solid #8a5a2e;
+  background: #f7ebcf;
+  color: #3e2313;
+  font: 800 12px monospace;
+  cursor: pointer;
+}
+
+.nuvora-hotbar-num-btn--active {
+  background: #ffda7b;
+  border-color: #7c4c29;
+  box-shadow: 0 0 0 1.5px #7c4c29;
+}
+
+.nuvora-inv-backdrop .modal-panel {
+  max-width: min(98vw, 560px);
 }
 
 .nuvora-mat {

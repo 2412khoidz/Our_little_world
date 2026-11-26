@@ -100,9 +100,9 @@ function gardenBlocked(tx, ty) {
   if (ty === 2 && (tx === 7 || tx === 9)) return true;
   // Bushes
   if (ty === 3 && (tx === 2 || tx === 3 || tx === 14 || tx === 15)) return true;
-  // Stream/pond water at x=5..11, y=9..10 (only bridge x=7..8, y=10 is walkable)
+  // Stream/pond water at x=5..11, y=9..10 (only vertical bridge x=7..8, y=9..10 is walkable)
   if ((ty === 9 || ty === 10) && tx >= 5 && tx <= 11) {
-    const isBridge = ty === 10 && (tx === 7 || tx === 8);
+    const isBridge = (ty === 9 || ty === 10) && (tx === 7 || tx === 8);
     if (!isBridge) return true;
   }
   return false;

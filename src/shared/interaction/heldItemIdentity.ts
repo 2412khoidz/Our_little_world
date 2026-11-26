@@ -59,7 +59,14 @@ export function reconcileHeldItemWithHotbar(
     return EMPTY_HELD_ITEM;
   }
 
-  if (held.slotIndex === match.slotIndex && held.itemSku === match.itemSku && held.quality === (match.quality ?? 'normal')) {
+  if (
+    held.slotIndex === match.slotIndex &&
+    held.itemSku === match.itemSku &&
+    held.quality === (match.quality ?? 'normal')
+  ) {
+    if (match.waterFillLevel !== undefined && held.waterFillLevel !== match.waterFillLevel) {
+      return { ...held, waterFillLevel: match.waterFillLevel };
+    }
     return held;
   }
 

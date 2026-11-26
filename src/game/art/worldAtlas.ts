@@ -5,6 +5,7 @@ import extIds from './worldExtendedArtIds.json';
 
 export const WORLD_ART_KEY = 'world-atlas';
 export const WORLD_PROPS_KEY = 'world-props-atlas';
+export const SAKURA_POT_OVERRIDE_KEY = 'olw-sakura-pot-override';
 const WORLD_ART_MANIFEST = 'world-atlas-manifest';
 const WORLD_PROPS_MANIFEST = 'world-props-manifest';
 
@@ -89,6 +90,62 @@ export function registerWorldAtlas(scene: Phaser.Scene): void {
       registerExtendedSheetAnimations(scene, sheet);
     }
   }
+
+  ensureSakuraPotOverrideTexture(scene);
+}
+
+/**
+ * Ensures `flowerpot_sakura` always displays genuine pink cherry blossoms in a warm pot
+ * across both public starter and private-unified atlases (never a mismatched blue/green flower).
+ */
+function ensureSakuraPotOverrideTexture(scene: Phaser.Scene): void {
+  if (scene.textures.exists(SAKURA_POT_OVERRIDE_KEY)) return;
+  const tex = scene.textures.createCanvas(SAKURA_POT_OVERRIDE_KEY, 16, 24);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  ctx.clearRect(0, 0, 16, 24);
+  ctx.imageSmoothingEnabled = false;
+
+  // Draw crisp terracotta pot body (bottom half y=13..22)
+  ctx.fillStyle = '#3d2214';
+  ctx.fillRect(4, 13, 8, 9);
+  ctx.fillStyle = '#8b4d2b';
+  ctx.fillRect(5, 14, 6, 7);
+  ctx.fillStyle = '#b97349';
+  ctx.fillRect(4, 12, 8, 3);
+  ctx.fillStyle = '#d99567';
+  ctx.fillRect(5, 12, 6, 2);
+
+  // Stamp genuine pink sakura bush blossoms if available in props atlas, else crisp pastel pink canopy
+  const bushSrc = scene.textures.exists(WORLD_PROPS_KEY) && scene.textures.get(WORLD_PROPS_KEY).has('prop.sakura_bush')
+    ? scene.textures.get(WORLD_PROPS_KEY).get('prop.sakura_bush')
+    : null;
+  if (bushSrc) {
+    const srcImg = scene.textures.get(WORLD_PROPS_KEY).getSourceImage() as CanvasImageSource;
+    ctx.drawImage(
+      srcImg,
+      bushSrc.cutX,
+      bushSrc.cutY,
+      bushSrc.cutWidth,
+      bushSrc.cutHeight,
+      1,
+      1,
+      14,
+      14,
+    );
+  } else {
+    ctx.fillStyle = '#6f324c';
+    ctx.fillRect(3, 3, 10, 9);
+    ctx.fillStyle = '#f28eb2';
+    ctx.fillRect(4, 4, 8, 7);
+    ctx.fillStyle = '#ffc7dc';
+    ctx.fillRect(5, 4, 5, 4);
+    ctx.fillStyle = '#fff0f7';
+    ctx.fillRect(6, 5, 2, 2);
+  }
+
+  tex.refresh();
+  tex.add('flowerpot_sakura', 0, 0, 0, 16, 24);
 }
 
 function registerExtendedSheetAnimations(scene: Phaser.Scene, sheet: Phaser.Textures.Texture): void {
@@ -140,6 +197,13 @@ function registerExtendedSheetAnimations(scene: Phaser.Scene, sheet: Phaser.Text
 }
 
 export function worldFurnitureFrame(scene: Phaser.Scene, sku: string): { key: string; frame: string } {
+  if (sku === 'flowerpot_sakura') {
+    ensureSakuraPotOverrideTexture(scene);
+    if (scene.textures.exists(SAKURA_POT_OVERRIDE_KEY) && scene.textures.get(SAKURA_POT_OVERRIDE_KEY).has('flowerpot_sakura')) {
+      return { key: SAKURA_POT_OVERRIDE_KEY, frame: 'flowerpot_sakura' };
+    }
+    return { key: 'furniture-cozy', frame: 'flowerpot_sakura' };
+  }
   const frame = (ids.furniture as Record<string, string>)[sku];
   if (frame && scene.textures.exists(WORLD_ART_KEY) && scene.textures.get(WORLD_ART_KEY).has(frame)) {
     return { key: WORLD_ART_KEY, frame };

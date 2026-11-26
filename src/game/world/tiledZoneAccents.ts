@@ -5,6 +5,7 @@ import extIds from '../art/worldExtendedArtIds.json';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
 import { createAmbientMotes, placeSoftShadow, placeWarmLight, type FloatingMote } from '../artDemos/demoHelpers';
 import { createChickenActorState, type ChickenActorState } from '../../shared/world/emergentWorldBehavior';
+import { getStaticZonePropSpecs } from '../../shared/world/zonePropColliders';
 
 export interface AmbientChickenHandle {
   sprite: Phaser.GameObjects.Sprite;
@@ -81,18 +82,15 @@ export function applyTiledZoneAccents(
   const hasProps = scene.textures.exists(WORLD_PROPS_KEY);
   const chickens: AmbientChickenHandle[] = [];
 
-  if (mapId === 'farm') {
-    // Greenhouse on NW overlook + Barn / Farmhouse & Meadowbrook Windmill
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-greenhouse', 18, 8, 0.44, { shadowW: 72 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-farmhouse', 8, 9, 0.46, { shadowW: 66 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-shipping-bin', 13, 5, 0.55, { shadowW: 18 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-windmill', 9.5, 21.5, 0.72, { shadowW: 24 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-scarecrow', 22, 9, 0.62, { shadowW: 14 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-wishing-well', 30, 14, 0.55, { shadowW: 20 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-hay-bale', 8, 24, 0.55, { shadowW: 16 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-hay-bale', 10, 24, 0.55, { shadowW: 16 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-bench', 35, 11, 0.55, { shadowW: 22 });
+  for (const spec of getStaticZonePropSpecs(mapId)) {
+    addHollowmereProp(scene, pushLayer, spec.textureKey, spec.tileX, spec.tileY, spec.scale, {
+      shadowW: spec.shadowW,
+      depthOffset: spec.depthOffset,
+      bobAmp: spec.bobAmp,
+    });
+  }
 
+  if (mapId === 'farm') {
     // Pond animations + farm animals
     if (hasProps) {
       if (scene.anims.exists('olw-duck')) {
@@ -145,8 +143,6 @@ export function applyTiledZoneAccents(
 
   if (mapId === 'village') {
     // Cozy bakery / cafe patio in Hollow nook + warm streetlamps
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-cafe', 19, 30, 0.36, { shadowW: 54 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-string-lights', 42, 26, 0.65, { depthOffset: 40 });
     for (const [lx, ly] of [[42, 28], [32, 24], [27, 36], [15, 33], [79, 25]] as const) {
       pushLayer(placeWarmLight(scene, (lx + 0.5) * TILE_SIZE, (ly + 0.5) * TILE_SIZE, 42, 0xffd584, 0.24, 860));
     }
@@ -176,16 +172,6 @@ export function applyTiledZoneAccents(
   }
 
   if (mapId === 'beach') {
-    // Coastal harbor & shoreline landmarks from Hollowmere (MIT) + cozy sunset bench props
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-ferry', 39, 21, 0.72, { shadowW: 56, bobAmp: 2.2 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-cafe', 14, 11, 0.44, { shadowW: 68 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-palm', 11, 14, 0.72, { shadowW: 20 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-palm', 24, 11, 0.75, { shadowW: 20 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-palm', 17, 24, 0.7, { shadowW: 20 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-crab-pot', 34.5, 19.2, 0.6, { shadowW: 10, bobAmp: 1.0 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-crab-pot', 28, 28, 0.6, { shadowW: 12 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-bench', 21, 16, 0.62, { shadowW: 22 });
-
     if (hasProps) {
       const pic = pxAt(15, 22);
       place(extIds.props.picnic_blanket, pic.x, pic.y, 0.5, 0.5, 3);
@@ -219,8 +205,6 @@ export function applyTiledZoneAccents(
   }
 
   if (mapId === 'forest') {
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-bench', 21, 18, 0.58, { shadowW: 20 });
-    addHollowmereProp(scene, pushLayer, 'donor-hollowmere-wishing-well', 11, 22, 0.52, { shadowW: 18 });
     pushLayer(placeWarmLight(scene, 21.5 * TILE_SIZE, 18 * TILE_SIZE, 40, 0xdcf79e, 0.2, 860));
     pushLayer(placeWarmLight(scene, 11.5 * TILE_SIZE, 22 * TILE_SIZE, 36, 0xffe49e, 0.18, 860));
     const bounds = { x: 16, y: 16, w: worldWidthPx - 32, h: worldHeightPx - 32 };

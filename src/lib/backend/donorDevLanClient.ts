@@ -1,6 +1,7 @@
 import type { DonorFishSessionView } from '../../shared/donor/donorFishSessionTypes';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
 import type { TidefallFishingPhase } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
+import type { TidefallFishRarity } from '../../shared/donor/tidefall-phaser/tidefallFishCatalog';
 import { devLanRequestHeaders } from './devLanSessionHeaders';
 
 export type { DonorFishingSpotId };
@@ -72,7 +73,18 @@ export function postDonorWorkshopCollect(worldId: string) {
 }
 
 export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId) {
-  return donorDevLanJson<{ seed: number; preview: { name: string }; spotId: DonorFishingSpotId }>(
+  return donorDevLanJson<{
+    seed: number;
+    spotId: DonorFishingSpotId;
+    preview: {
+      name: string;
+      critterId?: string;
+      itemSku?: string;
+      labelVi?: string;
+      rarity?: TidefallFishRarity;
+      spriteUrl?: string;
+    };
+  }>(
     `/donor/fishing/start?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',
@@ -101,7 +113,17 @@ export function postDonorFishingSync(
 }
 
 export function postDonorFishingResolve(worldId: string, reelProgressPermille: number) {
-  return donorDevLanJson<{ escaped: boolean; itemSku: string | null; labelVi: string }>(
+  return donorDevLanJson<{
+    escaped: boolean;
+    itemSku: string | null;
+    critterId?: string;
+    labelVi: string;
+    rarity?: TidefallFishRarity;
+    spriteUrl?: string;
+    qtyGranted?: number;
+    spotId?: DonorFishingSpotId;
+    alreadyResolved?: boolean;
+  }>(
     `/donor/fishing/resolve?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',

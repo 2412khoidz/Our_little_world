@@ -1,4 +1,6 @@
 import { computeSellPrice, requireItem } from '../economy/catalogConfig';
+import { QUALITY_MULTIPLIER_BP } from '../economy/types';
+import { canonicalFishItemDefinition } from '../donor/fishing/canonicalFishRegistry';
 import { createRng } from '../rng';
 import type { InventoryEntry } from '../inventory/inventoryTypes';
 import {
@@ -192,7 +194,15 @@ export function sellCropLine(
     unit = computeSellPrice(sku, quality, 0);
     if (unit <= 0) return { ok: false, code: 'NOT_SELLABLE', messageVi: 'Món này không bán được.' };
   } catch {
-    return { ok: false, code: 'UNKNOWN_SKU', messageVi: 'Không tìm thấy món trong catalog.' };
+    const fishDef = canonicalFishItemDefinition(sku);
+    if (!fishDef || fishDef.sellPrice <= 0) {
+      return { ok: false, code: 'UNKNOWN_SKU', messageVi: 'Không tìm thấy món trong catalog.' };
+    }
+    const qBp = fishDef.qualityTiers.includes(quality)
+      ? QUALITY_MULTIPLIER_BP[quality]
+      : QUALITY_MULTIPLIER_BP.normal;
+    unit = Math.floor((fishDef.sellPrice * qBp) / 10_000);
+    if (unit <= 0) return { ok: false, code: 'NOT_SELLABLE', messageVi: 'Món này không bán được.' };
   }
   const idx = items.findIndex(
     (r) => r.ownerScope === 'shared' && r.itemSku === sku && (r.quality ?? 'normal') === quality,

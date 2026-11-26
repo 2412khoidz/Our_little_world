@@ -8,6 +8,7 @@ import {
 import { buildHotbarSlotsFromInventory } from '../../shared/interaction/inventoryHotbarAdapter';
 import type { ContextualResolution } from '../../shared/interaction/interactionTypes';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
+import type { InventoryStackRef } from '../../shared/inventory/inventoryLayoutStore';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import type { PetSnapshot } from '../../shared/pet/petTypes';
 import type { MapId } from '../../shared/types';
@@ -48,6 +49,8 @@ export interface MainGameInteractionLayerProps {
   onNotice: (message: string, isError?: boolean) => void;
   /** Keeps hotbar + touch J above pet-care vignette. */
   petCareOverlayActive?: boolean;
+  /** Live hotbar bindings projected from user's persistent inventory layout. */
+  hotbarBindings?: ReadonlyArray<InventoryStackRef | null>;
 }
 
 export function MainGameInteractionLayer({
@@ -76,12 +79,23 @@ export function MainGameInteractionLayer({
   farmServerNowMs,
   onNotice,
   petCareOverlayActive = false,
+  hotbarBindings,
 }: MainGameInteractionLayerProps) {
-  const hotbarSlots = useMemo(
-    () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId),
-    [inventorySnapshot, localUserId],
+  const {
+    heldItem,
+    waterFillBySku,
+    selectSlot,
+    clearHeld,
+  } = useHeldItemFromHotbar(
+    useMemo(
+      () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
+      [inventorySnapshot, localUserId, hotbarBindings],
+    ),
   );
-  const { heldItem, selectSlot, clearHeld } = useHeldItemFromHotbar(hotbarSlots);
+  const hotbarSlots = useMemo(
+    () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
+    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku],
+  );
 
   const [resolution, setResolution] = useState<ContextualResolution>({
     targetId: null,

@@ -75,6 +75,7 @@ export interface GameEventMap {
   'cmd:set-decorate': DecorateStatePayload;
   'cmd:set-joystick': { vx: number; vy: number };
   'cmd:trigger-interact': undefined;
+  'cmd:interact-npc': undefined;
   'cmd:set-paused': { paused: boolean };
   'cmd:sync-pet': PetSnapshot | null;
   'cmd:pet-reaction': { action: PetActionType };
@@ -140,7 +141,11 @@ export interface GameEventMap {
   'cmd:apply-home-bowl': { kind: 'food' | 'water' | 'fill_pitcher' };
   'evt:local-home-bowl-changed': HomeBowlPresentation;
   'cmd:sync-partner-home-bowl': HomeBowlPresentation;
-  'evt:held-water-adjust': { level: number; iconId: 'water_pitcher_full' | 'water_pitcher_empty' };
+  'evt:held-water-adjust': {
+    level: number;
+    iconId?: 'water_pitcher_full' | 'water_pitcher_empty';
+    itemSku?: string;
+  };
   'cmd:play-partner-env-transition': {
     userId: string;
     mapId: MapId;

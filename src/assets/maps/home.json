@@ -37,11 +37,6 @@
       "name": "olwPrivateArtPrefer",
       "type": "string",
       "value": "demo-e"
-    },
-    {
-      "name": "olwRecovery",
-      "type": "string",
-      "value": "map-recovery-v1-8e4454d"
     }
   ],
   "tilesets": [

@@ -85,10 +85,26 @@ export function playReelTick(inSweetSpot: boolean): void {
 export function playCatchFanfare(rare = false): void {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const notes = rare ? [523, 659, 784, 1046, 1318] : [523, 659, 784, 1046];
-  notes.forEach((f, idx) => {
-    tone(ctx, 'triangle', f, f * 1.02, 0.16, 0.09, idx * 0.075);
-  });
+  // Original JRPG-inspired bright item-get fanfare (dotted uplift motif)
+  const melody: ReadonlyArray<readonly [number, number, number]> = rare
+    ? [
+        [523.25, 0.0, 0.09],
+        [523.25, 0.085, 0.08],
+        [659.25, 0.17, 0.11],
+        [783.99, 0.28, 0.11],
+        [987.77, 0.39, 0.11],
+        [1046.5, 0.51, 0.28],
+        [1318.5, 0.52, 0.26],
+      ]
+    : [
+        [523.25, 0.0, 0.09],
+        [659.25, 0.085, 0.09],
+        [783.99, 0.17, 0.11],
+        [1046.5, 0.28, 0.24],
+      ];
+  for (const [freq, delay, dur] of melody) {
+    tone(ctx, 'triangle', freq, freq * 1.01, dur, 0.095, delay);
+  }
 }
 
 export function playEscapeSplash(): void {

@@ -16,7 +16,8 @@
  *   is atomic.
  */
 
-import { computeSellPriceBp, requireItem } from './catalogConfig.ts';
+import { computeSellPriceBp, getItem, requireItem } from './catalogConfig.ts';
+import { canonicalFishItemDefinition } from '../donor/fishing/canonicalFishRegistry.ts';
 import {
   applyItemDelta,
   applyLedgerEntry,
@@ -25,9 +26,11 @@ import {
   EconomyError,
   hasIdempotencyKey,
   inventoryQty,
+  mulBp,
+  saturationMultiplierBp,
 } from './ledgerMath.ts';
 import type { CoinLedgerEntry, InventoryState, WalletState } from './ledgerMath.ts';
-import { DEFAULT_SATURATION } from './types.ts';
+import { DEFAULT_SATURATION, QUALITY_MULTIPLIER_BP } from './types.ts';
 import type { ItemQuality, SaturationConfig } from './types.ts';
 
 /** Fixed UTC+7 offset; Vietnam has no DST, so this is exact and deterministic. */
@@ -149,16 +152,16 @@ export function quoteShippingBinSale(
   const quotes: SellLineQuote[] = [];
   let totalCoins = 0;
   for (const line of prepared.lines) {
-    const definition = requireItem(line.sku);
+    const definition = requireItemSafe(line.sku)!;
     const start = soldByGroup[definition.group] ?? 0;
     const unitCoins: number[] = [];
     let lineTotal = 0;
     for (let index = 0; index < line.qty; index += 1) {
-      const bp = computeSellPriceBp(
-        line.sku,
+      const bp = computeItemSellPriceBp(
+        definition,
         line.quality,
         start + index,
-        { saturation },
+        saturation,
       );
       const coins = divFloor(bp, 10_000);
       unitCoins.push(coins);
@@ -240,8 +243,8 @@ function prepareLines(state: ShippingBinState, lines: readonly SellLine[]): Prep
   // best quality first (so gold units take the least-saturated slots), then SKU.
   const qualityRank: Record<ItemQuality, number> = { gold: 3, silver: 2, normal: 1 };
   prepared.sort((left, right) => {
-    const leftGroup = requireItem(left.sku).group;
-    const rightGroup = requireItem(right.sku).group;
+    const leftGroup = requireItemSafe(left.sku)?.group ?? 'misc';
+    const rightGroup = requireItemSafe(right.sku)?.group ?? 'misc';
     if (leftGroup !== rightGroup) {
       return leftGroup < rightGroup ? -1 : 1;
     }
@@ -258,8 +261,24 @@ function requireItemSafe(sku: string): ReturnType<typeof requireItem> | null {
   try {
     return requireItem(sku);
   } catch {
-    return null;
+    return canonicalFishItemDefinition(sku);
   }
+}
+
+function computeItemSellPriceBp(
+  definition: ReturnType<typeof requireItem>,
+  quality: ItemQuality,
+  saturationCount: number,
+  saturation: SaturationConfig,
+): number {
+  if (getItem(definition.sku)) {
+    return computeSellPriceBp(definition.sku, quality, saturationCount, { saturation });
+  }
+  const qualityBp = definition.qualityTiers.includes(quality)
+    ? QUALITY_MULTIPLIER_BP[quality]
+    : QUALITY_MULTIPLIER_BP.normal;
+  const satBp = saturationMultiplierBp(saturationCount, saturation);
+  return mulBp(mulBp(definition.sellPrice * 10_000, qualityBp), satBp);
 }
 
 /**

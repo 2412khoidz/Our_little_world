@@ -127,4 +127,33 @@ export function applyFarmShippingBinSale(
 /** @deprecated import `farmShopSeedSkus` — kept for tests & grep stability. */
 export const FARM_SHOP_SEED_SKUS = farmShopSeedSkus('V0.2.0') as readonly string[];
 
-export const FARM_SELLABLE_CROP_SKUS = ['wheat', 'carrot', 'tomato', 'strawberry', 'sunflower', 'cabbage'] as const;
+export const FARM_SELLABLE_CROP_SKUS = [
+  'wheat',
+  'carrot',
+  'tomato',
+  'strawberry',
+  'sunflower',
+  'rose_pink',
+  'rose_sakura',
+  'cabbage',
+  'peach',
+] as const;
+
+export const FARM_SELLABLE_FISH_SKUS = [
+  'carp_pond',
+  'fish_minnow',
+  'fish_catfish',
+  'fish_bass',
+  'donor_trout_stream',
+  'koi_pastel',
+  'lotus_trout',
+  'fish_pike',
+  'fish_puffer',
+  'fish_swordfish',
+  'fish_golden_koi',
+] as const;
+
+export const FARM_SELLABLE_ALL_SKUS = [
+  ...FARM_SELLABLE_CROP_SKUS,
+  ...FARM_SELLABLE_FISH_SKUS,
+] as const;

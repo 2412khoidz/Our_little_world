@@ -72,6 +72,12 @@ import type { DonorWorkshopFocus } from '../shared/donor/donorWorkshopFocus';
 import { getCropDefinition } from '../shared/farming/crops';
 import type { FarmPlotView, FarmSnapshot } from '../shared/farming/farmSnapshotTypes';
 import { InventoryModal } from '../features/inventory/InventoryModal';
+import {
+  loadInventoryLayout,
+  reconcileInventoryLayout,
+  saveInventoryLayout,
+  type InventoryLayoutState,
+} from '../shared/inventory/inventoryLayoutStore';
 import { buildHotbarSlotsFromInventory } from '../shared/interaction/inventoryHotbarAdapter';
 import { MailboxModal } from '../features/mailbox/MailboxModal';
 import { InviteModal } from '../features/pairing/InviteModal';
@@ -313,9 +319,55 @@ function MainCoupleApp() {
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
+  const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>({
+    water_pitcher: 100,
+    tool_watering_can: 100,
+  });
+  const [savedLayoutEntry, setSavedLayoutEntry] = useState<{
+    key: string;
+    layout: InventoryLayoutState;
+  } | null>(null);
+  const layoutWorldId = worldSnapshot?.world.id;
+  const layoutUserId = currentUser?.userId;
+  const layoutScopeKey =
+    layoutWorldId && layoutUserId ? `${layoutWorldId}:${layoutUserId}` : null;
+  const inventoryLayout = useMemo(() => {
+    const rawBase =
+      savedLayoutEntry && savedLayoutEntry.key === layoutScopeKey
+        ? savedLayoutEntry.layout
+        : layoutWorldId && layoutUserId
+          ? loadInventoryLayout(layoutWorldId, layoutUserId)
+          : null;
+    return reconcileInventoryLayout(
+      rawBase,
+      inventorySnapshot,
+      layoutUserId ?? '',
+    );
+  }, [savedLayoutEntry, layoutScopeKey, layoutWorldId, layoutUserId, inventorySnapshot]);
+
+  const handleChangeInventoryLayout = useCallback(
+    (next: InventoryLayoutState) => {
+      if (!layoutUserId) return;
+      const reconciled = reconcileInventoryLayout(next, inventorySnapshot, layoutUserId);
+      if (layoutScopeKey) {
+        setSavedLayoutEntry({ key: layoutScopeKey, layout: reconciled });
+      }
+      if (layoutWorldId) {
+        saveInventoryLayout(layoutWorldId, layoutUserId, reconciled);
+      }
+    },
+    [layoutUserId, inventorySnapshot, layoutScopeKey, layoutWorldId],
+  );
+
   const inventoryHotbarSlots = useMemo(
-    () => buildHotbarSlotsFromInventory(inventorySnapshot, currentUser?.userId),
-    [inventorySnapshot, currentUser?.userId],
+    () =>
+      buildHotbarSlotsFromInventory(
+        inventorySnapshot,
+        currentUser?.userId,
+        inventoryLayout.hotbarBindings,
+        waterFillBySku,
+      ),
+    [inventorySnapshot, currentUser?.userId, inventoryLayout.hotbarBindings, waterFillBySku],
   );
   const [farmWalletCoins, setFarmWalletCoins] = useState(0);
   const farmVersionRef = useRef(0);
@@ -810,6 +862,18 @@ function MainCoupleApp() {
     () =>
       gameEventBus.on('cmd:sync-held-item', (held) => {
         setHeldHotbarIndex(held.itemKind === 'none' ? null : held.slotIndex);
+      }),
+    [],
+  );
+
+  useEffect(
+    () =>
+      gameEventBus.on('evt:held-water-adjust', ({ level, itemSku }) => {
+        const clamped = Math.max(0, Math.min(100, Math.round(level)));
+        setWaterFillBySku((prev) => ({
+          ...prev,
+          [itemSku ?? 'water_pitcher']: clamped,
+        }));
       }),
     [],
   );
@@ -2109,6 +2173,7 @@ function MainCoupleApp() {
         enabled={Boolean(backend.inventory)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}
+        hotbarBindings={inventoryLayout.hotbarBindings}
         petSnapshot={petSnapshot}
         decorateActive={decorateActive}
         modalOpen={isAnyModalOpen}
@@ -2399,6 +2464,8 @@ function MainCoupleApp() {
       {activeModal === 'inventory' && backend.inventory && currentUser && (
         <InventoryModal
           snapshot={inventorySnapshot}
+          layout={inventoryLayout}
+          onChangeLayout={handleChangeInventoryLayout}
           localUserId={currentUser.userId}
           hotbarSlots={inventoryHotbarSlots}
           heldHotbarIndex={heldHotbarIndex}

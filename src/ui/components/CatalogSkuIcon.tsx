@@ -30,9 +30,9 @@ export function CatalogSkuIcon({ sku, size = 28 }: CatalogSkuIconProps) {
       />
     );
   }
-  const propsIconId = propsIconIdForCatalogSku(base);
-  if (propsIconId) return <CatalogPropsIcon iconId={propsIconId} size={size} />;
   const petFood = PET_FOOD_CATALOG.find((f) => f.sku === base);
   if (petFood) return <ItemArtSvg iconId={petFood.iconId} size={size} />;
-  return null;
+  const propsIconId = propsIconIdForCatalogSku(base);
+  if (propsIconId) return <CatalogPropsIcon iconId={propsIconId} size={size} />;
+  return <ItemArtSvg iconId="food_kibble" size={size} />;
 }

@@ -85,13 +85,33 @@ export function resolveMeadowbrookCatch(input: MeadowbrookCatchInput): Meadowbro
   return { escaped: false, critterId: def.id, critterName: def.name, sizeCm: size };
 }
 
-/** Map Meadowbrook fish ids → OLW economy SKUs (partial; unknown → carp_pond). */
+import { resolveCanonicalFishByCritterId } from '../fishing/canonicalFishRegistry';
+
+/** Map Meadowbrook fish ids → canonical OLW fish SKUs (never worm bait). */
 export const MEADOWBROOK_FISH_TO_OLW_SKU: Record<string, string> = {
   carp: 'carp_pond',
   koi: 'koi_pastel',
-  minnow: 'bait_free_worm',
+  minnow: 'fish_minnow',
   bluegill: 'carp_pond',
-  catfish: 'carp_pond',
-  bass: 'lotus_trout',
+  perch: 'carp_pond',
+  tadpole: 'fish_minnow',
+  pumpkinseed: 'fish_bass',
+  crawfish: 'fish_bass',
+  catfish: 'fish_catfish',
+  bass: 'fish_bass',
+  rainbow_trout: 'lotus_trout',
   salmon: 'lotus_trout',
+  goldfish: 'koi_pastel',
+  pike: 'fish_pike',
+  eel: 'fish_pike',
+  pond_smelt: 'fish_pike',
+  sturgeon: 'fish_puffer',
+  golden_trout: 'fish_golden_koi',
+  starfin: 'fish_golden_koi',
+  golden_koi: 'fish_golden_koi',
+  coelacanth: 'fish_golden_koi',
 };
+
+export function resolveMeadowbrookFishSku(critterId: string): string {
+  return MEADOWBROOK_FISH_TO_OLW_SKU[critterId] ?? resolveCanonicalFishByCritterId(critterId).sku;
+}

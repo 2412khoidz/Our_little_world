@@ -9,19 +9,29 @@ import {
   donorQueueBakeryRecipe,
   donorQueueMillRecipe,
   emptyDonorWorkshopState,
+  type DonorFishingPreviewResult,
+  type DonorFishingResolveResult,
   type DonorWorkshopWorldState,
 } from '../shared/donor/adapter/olwDonorAuthority';
 import { emptyHollowCoopState } from '../shared/donor/harvest-hollow-9b23e1a/hollowCoopCycle';
 import type { DonorFishSessionView } from '../shared/donor/donorFishSessionTypes';
 import { parseDonorFishingSpot, type DonorFishingSpotId } from '../shared/donor/donorFishingSpots';
 import type { TidefallFishingPhase } from '../shared/donor/tidefall-phaser/tidefallFishingFsm';
+import type { TidefallFishRarity } from '../shared/donor/tidefall-phaser/tidefallFishCatalog';
 import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
 
 export interface DonorFishSessionRecord {
   seed: number;
   startedAtMs: number;
   spotId: DonorFishingSpotId;
+  critterId?: string;
+  itemSku?: string;
   previewName: string;
+  labelVi?: string;
+  rarity?: TidefallFishRarity;
+  spriteUrl?: string;
+  resolved?: boolean;
+  resolvedResult?: DonorFishingResolveResult | null;
   phase: TidefallFishingPhase;
   progressPermille: number;
   pointerNorm: number;
@@ -219,7 +229,14 @@ export async function tryHandleDonorDevLan(ctx: {
       seed,
       startedAtMs: nowMs,
       spotId: preview.spotId,
+      critterId: preview.critterId,
+      itemSku: preview.itemSku,
       previewName: preview.name,
+      labelVi: preview.labelVi,
+      rarity: preview.rarity,
+      spriteUrl: preview.spriteUrl,
+      resolved: false,
+      resolvedResult: null,
       phase: 'casting',
       progressPermille: 0,
       pointerNorm: 0.12,
@@ -227,7 +244,21 @@ export async function tryHandleDonorDevLan(ctx: {
       updatedAtMs: nowMs,
     };
     saveDb();
-    sendJson(res, 200, { ok: true, data: { seed, spotId: preview.spotId, preview: { name: preview.name, critterId: preview.critterId } } });
+    sendJson(res, 200, {
+      ok: true,
+      data: {
+        seed,
+        spotId: preview.spotId,
+        preview: {
+          name: preview.name,
+          critterId: preview.critterId,
+          itemSku: preview.itemSku,
+          labelVi: preview.labelVi,
+          rarity: preview.rarity,
+          spriteUrl: preview.spriteUrl,
+        },
+      },
+    });
     return true;
   }
 
@@ -238,15 +269,33 @@ export async function tryHandleDonorDevLan(ctx: {
       sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa câu — hãy quăng cần trước.' });
       return true;
     }
+    // Idempotency guard: replay exact authoritative result without duplicate inventory grant.
+    if (session.resolved && session.resolvedResult) {
+      sendJson(res, 200, { ok: true, data: { ...session.resolvedResult, alreadyResolved: true } });
+      return true;
+    }
     const progress = Number(body.reelProgressPermille ?? 0);
     const hour = new Date(nowMs).getHours();
-    const resolved = donorFishingResolve(session.seed, nowMs, hour, progress, session.spotId);
+    const lockedEncounter: Partial<DonorFishingPreviewResult> | undefined =
+      session.critterId && session.itemSku
+        ? {
+            critterId: session.critterId,
+            name: session.previewName,
+            itemSku: session.itemSku,
+            labelVi: session.labelVi,
+            rarity: session.rarity,
+            spriteUrl: session.spriteUrl,
+          }
+        : undefined;
+    const resolved = donorFishingResolve(session.seed, nowMs, hour, progress, session.spotId, lockedEncounter);
     session.phase = resolved.escaped ? 'escaped' : 'landed';
     session.progressPermille = progress;
     session.updatedAtMs = nowMs;
+    session.resolved = true;
+    session.resolvedResult = resolved;
     let items = getInventoryList(worldId);
     if (!resolved.escaped && resolved.itemSku) {
-      items = creditSharedSku(worldId, items, resolved.itemSku, 1, nowMs);
+      items = creditSharedSku(worldId, items, resolved.itemSku, resolved.qtyGranted, nowMs);
       setInventoryList(worldId, items);
     }
     saveDb();

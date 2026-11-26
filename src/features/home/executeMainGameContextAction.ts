@@ -1,3 +1,4 @@
+import { gameAudio } from '../../game/audio/gameAudioManager';
 import { gameEventBus } from '../../game/eventBus';
 import { getMapDefinition } from '../../shared/maps';
 import type { MapId } from '../../shared/types';
@@ -176,29 +177,41 @@ export async function executeMainGameContextAction(
   const mainGameBowlPlayable =
     ctx.mapId === 'home' && (ctx.livingPetLocalSimulation || ctx.donorLanPlayable);
 
-  if (code === 'pour_water_bowl' || code === 'fill_water_pitcher') {
+  if (code === 'fill_water_pitcher') {
     if (isPetCareModeActive()) {
       gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
-      ctx.onNotice(
-        code === 'fill_water_pitcher'
-          ? 'Bình đầy — rót vào bát gần (mô phỏng, chưa RPC bát).'
-          : 'Rót nước vào bát gần (mô phỏng, chưa RPC bát).',
-      );
+      ctx.onNotice('Bình đầy — rót vào bát gần (mô phỏng, chưa RPC bát).');
+      return;
+    }
+    const sku =
+      ctx.heldItem.itemSku === 'tool_watering_can' ? 'tool_watering_can' : 'water_pitcher';
+    void gameAudio.unlock();
+    gameAudio.playSfx('get_water', { volumeScale: 0.85 });
+    gameEventBus.emit('evt:held-water-adjust', {
+      level: waterPitcherAfterFill(),
+      iconId: 'water_pitcher_full',
+      itemSku: sku,
+    });
+    ctx.onNotice(
+      sku === 'tool_watering_can'
+        ? 'Đã múc đầy bình tưới cây (0₫)!'
+        : 'Đã múc đầy bình nước mát (0₫)!',
+    );
+    return;
+  }
+
+  if (code === 'pour_water_bowl') {
+    if (isPetCareModeActive()) {
+      gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
+      ctx.onNotice('Rót nước vào bát gần (mô phỏng, chưa RPC bát).');
       return;
     }
     if (mainGameBowlPlayable) {
-      if (code === 'fill_water_pitcher') {
-        gameEventBus.emit('evt:held-water-adjust', {
-          level: waterPitcherAfterFill(),
-          iconId: 'water_pitcher_full',
-        });
-        ctx.onNotice('Đã múc đầy bình nước mát (0₫)!');
-        return;
-      }
       const nextLevel = waterPitcherPourDelta(ctx.heldItem.waterFillLevel);
       gameEventBus.emit('evt:held-water-adjust', {
         level: nextLevel,
         iconId: nextLevel > 0 ? 'water_pitcher_full' : 'water_pitcher_empty',
+        itemSku: 'water_pitcher',
       });
       gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
       ctx.onNotice('Đã rót nước vào bát — bé có thể uống khi khát.');
@@ -245,7 +258,7 @@ export async function executeMainGameContextAction(
   }
 
   if (code === 'talk_npc') {
-    gameEventBus.emit('cmd:trigger-interact');
+    gameEventBus.emit('cmd:interact-npc');
     return;
   }
 
@@ -277,6 +290,15 @@ export async function executeMainGameContextAction(
     }
     if (code === 'water_crop') {
       await ctx.onFarmApply(plotId, 'water');
+      const carrierSku = ctx.heldItem.itemSku;
+      if (carrierSku === 'tool_watering_can' || carrierSku === 'water_pitcher') {
+        const nextLevel = Math.max(0, (ctx.heldItem.waterFillLevel || 100) - 10);
+        gameEventBus.emit('evt:held-water-adjust', {
+          level: nextLevel,
+          iconId: nextLevel > 0 ? 'water_pitcher_full' : 'water_pitcher_empty',
+          itemSku: carrierSku,
+        });
+      }
       return;
     }
     if (code === 'harvest_crop') {

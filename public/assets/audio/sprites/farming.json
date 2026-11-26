@@ -18,16 +18,21 @@
       "end": 1.9931,
       "loop": false
     },
-    "harvest": {
+    "get_water": {
       "start": 2.1131,
-      "end": 2.6131,
+      "end": 3.0692,
+      "loop": false
+    },
+    "harvest": {
+      "start": 3.1892,
+      "end": 3.6892,
       "loop": false
     },
     "fail": {
-      "start": 2.7331,
-      "end": 3.1766,
+      "start": 3.8092,
+      "end": 4.2527,
       "loop": false
     }
   },
-  "durationSec": 3.2966
+  "durationSec": 4.3727
 }
