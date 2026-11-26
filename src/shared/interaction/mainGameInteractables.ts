@@ -76,17 +76,17 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
       y: anchors.photoFramePx.y,
       maxRadiusPx: 40,
     });
+  }
 
-    if (petVisible && petWorldPosition) {
-      targets.push({
-        id: 'pet',
-        kind: 'pet',
-        labelVi: 'Bé mèo',
-        x: petWorldPosition.x,
-        y: petWorldPosition.y,
-        maxRadiusPx: 44,
-      });
-    }
+  if (petVisible && petWorldPosition) {
+    targets.push({
+      id: 'pet',
+      kind: 'pet',
+      labelVi: 'Bé mèo',
+      x: petWorldPosition.x,
+      y: petWorldPosition.y,
+      maxRadiusPx: 44,
+    });
   }
 
   if (mapId === 'outdoor') {

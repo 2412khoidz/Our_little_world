@@ -224,6 +224,20 @@ function actionForTarget(
           reasonVi: 'Hotseat PvP chưa mở (V0.3). Hai bạn vẫn có thể ngồi ghế khác hoặc ôm nhau gần đó.',
         };
       }
+      if (
+        target.id === 'cabacos_plaza_well' ||
+        target.id === 'cabacos_interior_town_hall_counter' ||
+        target.id === 'beach_gull_bay_sign' ||
+        target.id === 'beach_lifebuoy_post'
+      ) {
+        return {
+          code: 'inspect_prop',
+          keyHint: 'J',
+          labelVi: target.labelVi,
+          targetId: target.id,
+          available: true,
+        };
+      }
       return { code: 'sit_bench', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     }
     case 'door': {
@@ -250,6 +264,16 @@ function actionForTarget(
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'crop_plot': {
       const plot = plotViewForTarget(target, farmPlotByIndex);
+      // Harvest ripe crop regardless of which tool/seed is currently held
+      if (plot?.soil === 'planted' && plot.ready) {
+        return {
+          code: 'harvest_crop',
+          keyHint: 'J',
+          labelVi: 'Thu hoạch',
+          targetId: target.id,
+          available: true,
+        };
+      }
       if (held.itemSku === 'tool_hoe') {
         if (plot && plot.soil !== 'empty') {
           return inspectCropPlotAction(target, plot, serverNowMs);
@@ -292,15 +316,6 @@ function actionForTarget(
           targetId: target.id,
           available: false,
           reasonVi: 'Không có cây đang lớn trên ô này.',
-        };
-      }
-      if (plot?.soil === 'planted' && plot.ready) {
-        return {
-          code: 'harvest_crop',
-          keyHint: 'J',
-          labelVi: 'Thu hoạch',
-          targetId: target.id,
-          available: true,
         };
       }
       if (plot) {
@@ -400,11 +415,14 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const nx = dist > 0.01 ? dx / dist : 0;
     const ny = dist > 0.01 ? dy / dist : 0;
     const facingDot = nx * fVec.x + ny * fVec.y;
-    // Lower score wins: distance penalized less when object is in front and action is directly usable
+    // Lower score wins: distance penalized less when object is in front and action is directly usable.
+    // A trailing pet yields priority to farm plots, fishing spots, doors, shops, and furniture unless holding food/toy.
     const contextBonus = action.available ? -12 : 10;
     const facingBonus = -facingDot * 10;
     const portalBoost = t.kind === 'portal' && dist < 14 ? -40 : 0;
-    const score = dist + contextBonus + facingBonus + portalBoost;
+    const petYield =
+      t.kind === 'pet' && heldItem.itemKind !== 'food' && heldItem.itemKind !== 'toy' ? 28 : 0;
+    const score = dist + contextBonus + facingBonus + portalBoost + petYield;
     scored.push({ target: t, action, score });
   }
 

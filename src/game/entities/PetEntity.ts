@@ -21,7 +21,7 @@ import {
   livingCatWorldScale,
   livingCatWorldTextureKey,
 } from '../pet/livingCatWorldSprite';
-import type { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
+import { FOLLOW_CAT_MAPS, type PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 
 const HOME_WAYPOINTS = [
   { x: 13.5 * TILE_SIZE, y: 10.2 * TILE_SIZE }, // Coral pet rug
@@ -61,6 +61,7 @@ export class PetEntity {
   private bubbleTimerMs = 0;
   private livingDriver: PetLivingMainGameDriver | null = null;
   private careCloseUp = false;
+  private lastLocoAtMs = 0;
 
   constructor(scene: Phaser.Scene, onTap: () => void) {
     this.scene = scene;
@@ -176,20 +177,37 @@ export class PetEntity {
   }
 
   applyLivingLocomotion(loco: PetLocomotionSnapshot, bubbleText: string | null): void {
+    const now = Date.now();
+    const dtSec = this.lastLocoAtMs > 0 ? Math.min(0.1, Math.max(0.008, (now - this.lastLocoAtMs) / 1000)) : 0.016;
+    this.lastLocoAtMs = now;
     this.loco = loco;
     this.sprite.setPosition(Math.round(loco.x), Math.round(loco.y));
     this.syncShadowAndLabel();
     this.playAnimState(loco.animState);
-    if (bubbleText) this.spawnFloatingBubble(bubbleText);
+    if (bubbleText) {
+      this.spawnFloatingBubble(bubbleText);
+    } else {
+      this.tickFloatingBubble(dtSec);
+    }
+  }
+
+  teleportNear(x: number, y: number): void {
+    this.loco = createLocomotionSnapshot(x, y);
+    this.targetX = x;
+    this.targetY = y;
+    this.livingDriver?.teleportTo(x, y);
+    this.sprite.setPosition(Math.round(x), Math.round(y));
+    this.syncShadowAndLabel();
   }
 
   syncSnapshot(pet: PetSnapshot | null, currentMapId: import('../../shared/types').MapId): void {
     this.petSnapshot = pet;
     this.livingDriver?.seedFromSnapshot(pet);
-    const show = currentMapId === 'home';
+    const show = pet === null ? currentMapId === 'home' : FOLLOW_CAT_MAPS.has(currentMapId);
     this.nameTag.setText(pet ? pet.name : 'Mèo con');
     this.setVisible(show);
     if (show) {
+      this.syncShadowAndLabel();
       this.playAnimState(pet ? this.loco.animState : 'sleep');
     }
   }
@@ -229,7 +247,7 @@ export class PetEntity {
 
   update(dtSec: number): void {
     if (!this.visible) return;
-    if (this.livingDriver) return;
+    if (this.livingDriver && this.petSnapshot) return;
     const now = Date.now();
 
     if (!this.petSnapshot) {
@@ -243,7 +261,8 @@ export class PetEntity {
       this.sprite.setPosition(13.6 * TILE_SIZE, 10.3 * TILE_SIZE);
       this.syncShadowAndLabel();
       this.playAnimState(this.loco.animState);
-      this.tickAmbientBubble(dtSec, 'zz');
+      this.tickAmbientBubble(dtSec, 'Zzz');
+      this.tickFloatingBubble(dtSec);
       return;
     }
 
@@ -287,9 +306,13 @@ export class PetEntity {
     this.syncShadowAndLabel();
     this.playAnimState(this.loco.animState);
 
+    this.tickFloatingBubble(dtSec);
+  }
+
+  private tickFloatingBubble(dtSec: number): void {
     if (this.bubble && this.bubble.active) {
       this.bubble.y -= 10 * dtSec;
-      this.bubble.alpha = Math.max(0, this.bubble.alpha - 0.45 * dtSec);
+      this.bubble.alpha = Math.max(0, this.bubble.alpha - 0.55 * dtSec);
       if (this.bubble.alpha <= 0.02) {
         this.bubble.destroy();
         this.bubble = null;

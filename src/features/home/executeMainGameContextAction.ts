@@ -251,7 +251,7 @@ export async function executeMainGameContextAction(
 
   if (code === 'use_portal') {
     const def = getMapDefinition(ctx.mapId);
-    const portal = def.portals.find((p) => p.id === action.targetId) ?? def.portals[0];
+    const portal = def.portals.find((p) => p.id === action.targetId);
     if (portal) {
       gameEventBus.emit('evt:request-map-change', {
         targetMapId: portal.targetMapId,

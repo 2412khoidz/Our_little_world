@@ -1173,3 +1173,479 @@
   font-size: 14px;
   margin-top: 2px;
 }
+
+/* === Cozy Hybrid UI Panels (Workshop, Shipping Bin, Fishing) === */
+.cozy-fishing-panel {
+  gap: 8px;
+}
+
+.cozy-fishing-cue-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(246, 232, 198, 0.92);
+  border: 1.5px solid #a6723e;
+  font-size: 11.5px;
+  color: #462818;
+}
+
+.cozy-fishing-cue-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cozy-fishing-cue-pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fff9ec;
+  border: 1px solid #d5ac74;
+  font-weight: 700;
+}
+
+.cozy-fishing-cue-close {
+  border: none;
+  background: transparent;
+  color: #5c351e;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.cozy-fishing-catalog-drawer {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(246, 232, 198, 0.72);
+  border: 1px solid #b88852;
+  font-size: 12px;
+  color: #462818;
+}
+
+.cozy-fishing-catalog-drawer summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cozy-fishing-catalog-grid {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 6px;
+  max-height: 116px;
+  overflow-y: auto;
+}
+
+.cozy-fishing-catalog-grid li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1.5px solid #b88852;
+  background: #fff8eb;
+  font-size: 11px;
+}
+
+.cozy-workshop-section {
+  background: #f8ecd2;
+  border: 2px solid #8a5a2e;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  color: #3f2412;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.cozy-workshop-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.cozy-workshop-section__head > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cozy-workshop-pill {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #6f421f;
+  color: #fff6e4;
+}
+
+.cozy-workshop-recipe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #fff9eb;
+  border: 1.5px solid #d5ad76;
+  margin-bottom: 6px;
+}
+
+.cozy-workshop-recipe__flow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cozy-workshop-slot {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #efe0bc;
+  border: 1.5px solid #b28149;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cozy-workshop-slot--out {
+  background: #e9f3df;
+  border-color: #6b9f5b;
+}
+
+.cozy-workshop-slot b {
+  position: absolute;
+  bottom: -2px;
+  right: 1px;
+  font-size: 10px;
+  background: #4b2d15;
+  color: #fff8eb;
+  padding: 0 3px;
+  border-radius: 4px;
+}
+
+.cozy-workshop-arrow {
+  color: #8a5a2e;
+  flex-shrink: 0;
+}
+
+.cozy-workshop-recipe__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.cozy-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.cozy-badge--ok {
+  background: #daf2de;
+  color: #1f5c2d;
+  border: 1px solid #82c891;
+}
+
+.cozy-badge--warm {
+  background: #fdecc8;
+  color: #7c450d;
+  border: 1px solid #e6b868;
+}
+
+.cozy-badge--warn {
+  background: #fbe1db;
+  color: #872b1f;
+  border: 1px solid #de9686;
+}
+
+.cozy-badge--muted {
+  background: #eee3cc;
+  color: #654a32;
+}
+
+.cozy-workshop-queue {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #c89d65;
+}
+
+.cozy-workshop-empty {
+  font-size: 12px;
+  color: #6b4c30;
+  margin-bottom: 6px;
+}
+
+.cozy-workshop-queue-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cozy-workshop-job {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #fff8ea;
+  border: 1px solid #d7b27d;
+}
+
+.cozy-workshop-job__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cozy-workshop-job__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cozy-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #e1cfb0;
+  overflow: hidden;
+}
+
+.cozy-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e59746, #f4c158);
+  transition: width 0.35s ease;
+}
+
+.cozy-progress-fill--done {
+  background: linear-gradient(90deg, #49ab64, #70cb85);
+}
+
+.cozy-workshop-collect-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cozy-coop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cozy-coop-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #fff9eb;
+  border: 1.5px solid #d5ad76;
+  font-size: 12px;
+}
+
+.cozy-coop-stat strong,
+.cozy-coop-stat small {
+  display: block;
+}
+
+.cozy-coop-wait {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #7c450d;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cozy-shipping-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cozy-shipping-card {
+  background: #f8ecd2;
+  border: 2px solid #8a5a2e;
+  border-radius: 12px;
+  padding: 10px;
+  color: #3f2412;
+}
+
+.cozy-shipping-card--bin {
+  background: #f2e0ba;
+}
+
+.cozy-shipping-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  margin-bottom: 8px;
+}
+
+.cozy-shipping-est {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #5c351e;
+}
+
+.cozy-shipping-empty-illust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff8eb;
+  border: 1px dashed #c89d65;
+  font-size: 12px;
+}
+
+.cozy-shipping-empty-illust strong,
+.cozy-shipping-empty-illust small {
+  display: block;
+}
+
+.cozy-shipping-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.cozy-shipping-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1.5px solid #c6965e;
+  background: #fff9ec;
+  color: #3f2412;
+  cursor: pointer;
+}
+
+.cozy-shipping-item:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.cozy-shipping-item__icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #efe0bc;
+  border: 1px solid #b5844a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cozy-shipping-item__qty {
+  position: absolute;
+  bottom: -2px;
+  right: 1px;
+  font-size: 10px;
+  background: #4b2d15;
+  color: #fff8eb;
+  padding: 0 3px;
+  border-radius: 4px;
+}
+
+.cozy-shipping-item__meta {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+}
+
+.cozy-shipping-item__meta strong,
+.cozy-shipping-item__meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cozy-shipping-item__meta span {
+  font-size: 11px;
+  color: #6b4428;
+}
+
+.cozy-shipping-add-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #6f421f;
+  color: #fff8eb;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cozy-shipping-empty-bin {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px dashed #b28149;
+  background: rgba(255, 249, 235, 0.72);
+  font-size: 12px;
+  text-align: center;
+  color: #664225;
+}
+
+.cozy-shipping-staged-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.cozy-shipping-staged-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #fff9ec;
+  border: 1px solid #c6965e;
+}
+
+.cozy-shipping-staged-row__text {
+  flex: 1;
+  font-size: 12.5px;
+}
+
+.cozy-shipping-staged-row__text strong,
+.cozy-shipping-staged-row__text small {
+  display: block;
+}
+
+.cozy-shipping-footer {
+  margin-top: 8px;
+}

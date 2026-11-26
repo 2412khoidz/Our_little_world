@@ -1,3 +1,4 @@
+import { Backpack } from 'lucide-react';
 import type { HeldItemState, HotbarSlot } from '../../shared/interaction/interactionTypes';
 import { kilnItemIconUrlForSku } from '../../shared/art/kilnItemIcons';
 import { CatalogPropsIcon } from './CatalogPropsIcon';
@@ -9,13 +10,23 @@ interface GameHotbarProps {
   slots: readonly HotbarSlot[];
   heldItem: HeldItemState;
   onSelectSlot: (slotIndex: number) => void;
+  onOpenInventory?: () => void;
+  inventoryItemCount?: number;
   /** Larger slots when pet-care overlay needs iPhone-friendly taps. */
   touchFriendly?: boolean;
   /** NUVORA wooden hotbar skin (donor presentation). */
   skin?: 'cozy' | 'nuvora';
 }
 
-export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = false, skin = 'nuvora' }: GameHotbarProps) {
+export function GameHotbar({
+  slots,
+  heldItem,
+  onSelectSlot,
+  onOpenInventory,
+  inventoryItemCount = 0,
+  touchFriendly = false,
+  skin = 'nuvora',
+}: GameHotbarProps) {
   return (
     <div
       className={`olw-hotbar-tray ${skin === 'nuvora' ? 'olw-hotbar-tray--nuvora' : ''} ${touchFriendly ? 'olw-hotbar-tray--touch' : ''}`}
@@ -111,6 +122,54 @@ export function GameHotbar({ slots, heldItem, onSelectSlot, touchFriendly = fals
           </button>
         );
       })}
+      {onOpenInventory ? (
+        <button
+          type="button"
+          className="olw-hotbar-slot olw-hotbar-slot--inventory"
+          data-testid="hotbar-open-inventory-btn"
+          title="Mở túi đồ dạng lưới (Phím I)"
+          aria-label="Mở túi đồ"
+          onClick={onOpenInventory}
+          style={{
+            touchAction: 'manipulation',
+            background: 'linear-gradient(180deg, #e7c082 0%, #c68e49 100%)',
+            borderColor: '#6f421f',
+            color: '#3a210f',
+            marginLeft: 2,
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: 2,
+              left: 4,
+              fontSize: 9,
+              fontWeight: 800,
+              opacity: 0.78,
+            }}
+          >
+            I
+          </span>
+          <Backpack size={20} strokeWidth={2.3} />
+          {inventoryItemCount > 0 ? (
+            <span
+              style={{
+                position: 'absolute',
+                bottom: 1,
+                right: 3,
+                fontSize: 9.5,
+                fontWeight: 800,
+                background: 'rgba(255, 248, 239, 0.94)',
+                color: '#4b2d15',
+                borderRadius: 4,
+                padding: '0 3px',
+              }}
+            >
+              {inventoryItemCount}
+            </span>
+          ) : null}
+        </button>
+      ) : null}
     </div>
   );
 }

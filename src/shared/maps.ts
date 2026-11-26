@@ -105,7 +105,7 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
       )?.value ?? 22,
   }),
   forest: buildTiledZoneDefinition('forest', 'Khu rừng', '/assets/maps/forest.json', { tileX: 14, tileY: 32 }),
-  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 5, tileY: 16 }),
+  beach: buildTiledZoneDefinition('beach', 'Bãi biển', '/assets/maps/beach.json', { tileX: 3, tileY: 16 }),
   shop: buildTiledZoneDefinition('shop', 'Cửa hàng Bác Hai', '/assets/maps/shop.json', { tileX: 12, tileY: 14 }),
   shop_seed: buildTiledZoneDefinition(
     'shop_seed',

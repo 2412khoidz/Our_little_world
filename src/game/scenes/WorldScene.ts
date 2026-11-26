@@ -121,7 +121,7 @@ function preferDemoEHomeGarden(
 import { WorldLightingOverlay } from '../world/WorldLightingOverlay';
 import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
-import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
+import { FOLLOW_CAT_MAPS, PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
 import { getPersistedPetCareV2State } from '../pet/care/petCareBridgeState';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
@@ -351,9 +351,9 @@ export class WorldScene extends Phaser.Scene {
 
   private buildCozyQuilt(x: number, y: number, fillHex: number): Phaser.GameObjects.Container {
     const s = this.avatarScale();
-    const quilt = this.add.rectangle(0, 0, 15, 9, fillHex, 0.96).setStrokeStyle(0.75, 0xfff8ef, 0.92);
-    const fold = this.add.rectangle(0, -3.5, 14.5, 2.2, 0xfff6eb, 0.95);
-    const seam = this.add.rectangle(0, 1.5, 13, 0.7, 0xffffff, 0.32);
+    const quilt = this.add.rectangle(0, 0, 15, 13, fillHex, 0.98).setStrokeStyle(0.85, 0xfff8ef, 0.95);
+    const fold = this.add.rectangle(0, -5.2, 14.4, 2.6, 0xfff6eb, 0.96);
+    const seam = this.add.rectangle(0, 1.5, 13, 0.75, 0xffffff, 0.36);
     const container = this.add.container(x, y, [quilt, fold, seam]);
     container.setScale(s);
     return container;
@@ -525,6 +525,9 @@ export class WorldScene extends Phaser.Scene {
     const px = (spawn.tileX + partnerOffsetX + 0.5) * this.tilePx();
     const py = (spawn.tileY + 0.85) * this.tilePx();
     const s = this.avatarScale();
+    this.tweens.killTweensOf(this.localSprite);
+    this.localSprite.setRotation(0);
+    this.localSprite.setOrigin(0.5, 0.88);
     this.localSprite.setScale(s);
     this.localSprite.setPosition(px, py);
     this.localShadow.setDisplaySize(14 * s, 5 * s);
@@ -541,9 +544,15 @@ export class WorldScene extends Phaser.Scene {
 
     this.rebuildFurnitureAndCollisions();
     this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
+    if (this.petSnapshot && mapId !== 'home' && FOLLOW_CAT_MAPS.has(mapId)) {
+      this.petEntity?.teleportNear(px - 16, py + 4);
+    } else if (!this.petSnapshot && mapId === 'home') {
+      this.petEntity?.teleportNear(13.5 * this.tilePx(), 10.2 * this.tilePx());
+    }
     this.reconcileRemoteVisibility();
     this.redrawDecorateOverlay();
     this.handleResize(true);
+    this.cameras?.main?.fadeIn(160, 26, 20, 24);
     this.syncCameraDataset();
     this.refreshDiscoverabilityMarkers();
 
@@ -1551,7 +1560,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.scene.setVisible(true);
       this.scene.resume();
-      if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {
+      if (this.petEntity && (this.petSnapshot ? FOLLOW_CAT_MAPS.has(this.currentMapId) : this.currentMapId === 'home')) {
         this.petEntity.setCareCloseUp(false);
         this.petEntity.setVisible(true);
       }
@@ -1660,7 +1669,7 @@ export class WorldScene extends Phaser.Scene {
       this.livingPetDriver &&
       this.petEntity &&
       this.petSnapshot &&
-      this.currentMapId === 'home'
+      FOLLOW_CAT_MAPS.has(this.currentMapId)
     ) {
       const memberIds = this.members.map((m) => m.userId);
       const caregiverPair: [string, string] = [
@@ -1842,7 +1851,7 @@ export class WorldScene extends Phaser.Scene {
     const activePosture: CouplePostureKind = moving ? 'none' : this.localPosture;
     const isLying = activePosture === 'lie_bed';
     const isSitting = activePosture.startsWith('sit_');
-    const depthBoost = activePosture === 'lie_bed' ? 24 : activePosture === 'sit_sofa' ? 14 : 0;
+    const depthBoost = activePosture === 'lie_bed' ? 42 : activePosture === 'sit_sofa' ? 42 : activePosture === 'sit_bench' ? 28 : 0;
     this.localShadow.setPosition(this.localSprite.x, this.localSprite.y - 1 * s);
     this.localShadow.setDisplaySize((isSitting ? 12 : 14) * s, 5 * s);
     this.localShadow.setVisible(!isLying);
@@ -1879,11 +1888,11 @@ export class WorldScene extends Phaser.Scene {
 
     if (this.localPosture === 'lie_bed') {
       if (!this.localBlanket) {
-        this.localBlanket = this.buildCozyQuilt(this.localSprite.x, this.localSprite.y - 5 * s, 0xf2b7c6);
+        this.localBlanket = this.buildCozyQuilt(this.localSprite.x, this.localSprite.y - 3 * s, 0xf2b7c6);
       }
       this.localBlanket
-        .setPosition(this.localSprite.x, this.localSprite.y - 4 * s)
-        .setDepth(this.localSprite.y + 26)
+        .setPosition(this.localSprite.x, this.localSprite.y - 3 * s)
+        .setDepth(this.localSprite.y + 44)
         .setScale(s)
         .setVisible(true);
       this.syncLocalRestAura(true, 'zzz…');
@@ -1993,6 +2002,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryEnterAnchorBench(targetId: string): boolean {
+    if (
+      targetId === 'cabacos_plaza_well' ||
+      targetId === 'cabacos_interior_town_hall_counter' ||
+      targetId === 'beach_gull_bay_sign' ||
+      targetId === 'beach_lifebuoy_post'
+    ) {
+      return false;
+    }
     let slot0: { x: number; y: number } | null = null;
     let slot1: { x: number; y: number } | null = null;
 
@@ -2063,32 +2080,31 @@ export class WorldScene extends Phaser.Scene {
     hook: EnvInteractionHook,
     mirrorPartner = false,
   ): void {
-    const yFrom = sprite.scaleY;
-    const isLadder = hook.kind === 'ladder';
-    this.tweens.add({
-      targets: sprite,
-      scaleY: isLadder ? yFrom * 0.82 : yFrom * 0.9,
-      y: sprite.y + (isLadder ? -6 : 0),
-      duration: isLadder ? 180 : 140,
-      yoyo: true,
-      ease: 'Sine.Out',
-      onComplete: () => {
-        sprite.setScale(sprite.scaleX, yFrom);
-      },
-    });
+    // Do NOT animate sprite.y / scaleY during transitions — map switches rebuild the scene cleanly via camera fade.
+    if (mirrorPartner) {
+      this.tweens.add({
+        targets: sprite,
+        alpha: 0.45,
+        duration: 140,
+        yoyo: true,
+        ease: 'Sine.Out',
+        onComplete: () => {
+          if (sprite.scene) sprite.setAlpha(1);
+        },
+      });
+      return;
+    }
 
-    if (!mirrorPartner) {
-      this.game.canvas.dataset.envTransitionHook = hook.hookId;
-      this.game.canvas.dataset.envTransitionKind = hook.kind;
-      if (hook.kind === 'door' && this.homeDoorGfx && hook.hookId.includes('garden_door')) {
-        this.tweens.add({
-          targets: this.homeDoorGfx,
-          scaleX: 0.88,
-          duration: 130,
-          yoyo: true,
-          ease: 'Sine.Out',
-        });
-      }
+    this.game.canvas.dataset.envTransitionHook = hook.hookId;
+    this.game.canvas.dataset.envTransitionKind = hook.kind;
+    if (hook.kind === 'door' && this.homeDoorGfx && hook.hookId.includes('garden_door')) {
+      this.tweens.add({
+        targets: this.homeDoorGfx,
+        scaleX: 0.78,
+        duration: 130,
+        yoyo: true,
+        ease: 'Sine.Out',
+      });
     }
   }
 
@@ -2112,7 +2128,7 @@ export class WorldScene extends Phaser.Scene {
       return { kind: 'npc_talk', labelVi: `Trò chuyện · ${npc.labelVi}` };
     }
 
-    if (this.currentMapId === 'home' && this.petEntity?.isNearbyTile(tileX, tileY)) {
+    if (FOLLOW_CAT_MAPS.has(this.currentMapId) && this.petEntity?.isNearbyTile(tileX, tileY)) {
       return {
         kind: 'pet',
         labelVi: this.petSnapshot ? `Chăm ${this.petSnapshot.name}` : 'Nhận nuôi bé mèo',
@@ -2296,16 +2312,16 @@ export class WorldScene extends Phaser.Scene {
     const footY = (item.tileY + item.heightTiles) * this.tilePx();
     const slot0 =
       kind === 'bed_lie'
-        ? { x: centerX - 7, y: (item.tileY + 1.38) * this.tilePx() }
+        ? { x: centerX - 7.5, y: (item.tileY + 1.5) * this.tilePx() }
         : kind === 'bench_sit'
           ? { x: centerX - 8, y: footY + 2 }
-          : { x: centerX - 9, y: footY - 1 };
+          : { x: centerX - 8, y: footY - 3 };
     const slot1 =
       kind === 'bed_lie'
-        ? { x: centerX + 7, y: slot0.y }
+        ? { x: centerX + 7.5, y: slot0.y }
         : kind === 'bench_sit'
           ? { x: centerX + 8, y: footY + 2 }
-          : { x: centerX + 9, y: footY - 1 };
+          : { x: centerX + 8, y: footY - 3 };
 
     const occupiedSlots: number[] = [];
     for (const remote of this.remoteEntities.values()) {
@@ -2321,7 +2337,10 @@ export class WorldScene extends Phaser.Scene {
     const chosen = slotIndex === 0 ? slot0 : slot1;
     this.pathQueue = [];
     this.tapMarker?.clear();
+    this.tweens.killTweensOf(this.localSprite);
+    this.localSprite.setRotation(0);
     this.localSprite.setPosition(chosen.x, chosen.y);
+    this.localSprite.setVisible(true);
     this.localFacing = 'down';
     this.localPosture = targetPosture;
     this.playLocalMoveAnim(false);
@@ -2415,8 +2434,8 @@ export class WorldScene extends Phaser.Scene {
         entity.blanket = this.buildCozyQuilt(entity.sprite.x, entity.sprite.y - 5 * s, 0xb8d9ee);
       }
       entity.blanket
-        .setPosition(entity.sprite.x, entity.sprite.y - 4 * s)
-        .setDepth(entity.sprite.y + 26)
+        .setPosition(entity.sprite.x, entity.sprite.y - 3 * s)
+        .setDepth(entity.sprite.y + 44)
         .setScale(s)
         .setVisible(true);
     } else if (entity.blanket) {
@@ -2639,7 +2658,7 @@ export class WorldScene extends Phaser.Scene {
         entity.blanket?.setVisible(false);
       }
       const activePosture: CouplePostureKind = remoteMoving ? 'none' : entity.posture;
-      const depthBoost = activePosture === 'lie_bed' ? 24 : activePosture === 'sit_sofa' ? 14 : 0;
+      const depthBoost = activePosture === 'lie_bed' ? 42 : activePosture === 'sit_sofa' ? 42 : activePosture === 'sit_bench' ? 28 : 0;
       entity.sprite.setPosition(next.x, next.y);
       entity.sprite.setDepth(next.y + depthBoost);
       entity.shadow.setPosition(next.x, next.y - 1 * s);

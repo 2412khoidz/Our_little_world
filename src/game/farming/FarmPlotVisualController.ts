@@ -118,6 +118,11 @@ export class FarmPlotVisualController {
             .image(cx, cy - Math.max(12, Math.round(this.tilePixelSize * 0.85)), indicatorKey)
             .setDepth(3.55)
             .setScale(1);
+          if (plot.ready) {
+            next.indicator.setTint(0xffe066);
+          } else {
+            next.indicator.setTint(0x4fc3f7);
+          }
           this.pushObject(next.indicator);
         }
       }

@@ -52,22 +52,20 @@ export function playCozyActionMotion(
 ): void {
   if (!sprite.scene) return;
   scene.tweens.killTweensOf(sprite);
-  const dx = facing === 'left' ? -2 : facing === 'right' ? 2 : 0;
-  const dy = facing === 'up' ? -2 : facing === 'down' ? 1.5 : 0;
-  const baseX = sprite.x;
-  const baseY = sprite.y;
-  const tilt = action === 'fish' ? (facing === 'left' ? -0.06 : 0.06) : facing === 'left' ? -0.09 : 0.09;
+  const baseScaleY = sprite.scaleY || 1;
+  sprite.setRotation(0);
+  const tilt = action === 'fish' ? (facing === 'left' ? -0.06 : 0.06) : facing === 'left' ? -0.1 : 0.1;
   scene.tweens.add({
     targets: sprite,
-    x: baseX + dx,
-    y: baseY + dy,
+    scaleY: baseScaleY * 0.92,
     rotation: tilt,
-    duration: 130,
+    duration: 115,
     yoyo: true,
     ease: 'Sine.easeInOut',
     onComplete: () => {
       if (sprite.scene) {
         sprite.setRotation(0);
+        sprite.setScale(sprite.scaleX, baseScaleY);
       }
     },
   });

@@ -13,7 +13,7 @@ const TW = 16;
 const W = 56;
 const H = 36;
 
-const SPAWN_X = 5;
+const SPAWN_X = 3;
 const SPAWN_Y = 16;
 
 const CABACOS_TILESETS = [
@@ -120,8 +120,26 @@ function buildBeachMap() {
     }
   }
 
-  // 2. West gateway coastal boardwalk trail (0..14, y=15..17) into Main Wooden Fishing Pier
-  for (let x = 0; x <= 14; x += 1) {
+  // 2. West gateway coastal harbor wooden pier over sea inlet (0..8, y=15..17) matching Cabacos east pier!
+  for (let x = 0; x <= 8; x += 1) {
+    for (let y = 13; y <= 19; y += 1) {
+      // Clear grass/sand on inlet channel so pier spans sparkling coastal water just like Cabacos east exit
+      land[idx(x, y)] = 0;
+      decoration01[idx(x, y)] = 0;
+      collision[idx(x, y)] = 1;
+    }
+    setTile(paths, x, 15, 295);
+    setTile(paths, x, 16, 359);
+    setTile(paths, x, 17, 423);
+    collision[idx(x, 15)] = 0;
+    collision[idx(x, 16)] = 0;
+    collision[idx(x, 17)] = 0;
+    if (x % 2 === 1) {
+      setTile(decoration01, x, 18, 102);
+      setTile(decoration01, x, 19, 166);
+    }
+  }
+  for (let x = 9; x <= 14; x += 1) {
     setTile(paths, x, 15, 459);
     setTile(paths, x, 16, 460);
     setTile(paths, x, 17, 460);
@@ -235,7 +253,7 @@ function buildBeachMap() {
         height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'village' },
-          { name: 'spawnX', type: 'int', value: 78 },
+          { name: 'spawnX', type: 'int', value: 80 },
           { name: 'spawnY', type: 'int', value: 32 },
           { name: 'labelVi', type: 'string', value: 'Về thị trấn Cabacos' },
         ],
@@ -425,7 +443,7 @@ function patchVillageBeachPortal() {
     id: 9105,
     name: 'village-to-beach',
     type: 'portal',
-    x: 81 * TW,
+    x: 83 * TW,
     y: 32 * TW,
     width: TW * 2,
     height: TW * 2,

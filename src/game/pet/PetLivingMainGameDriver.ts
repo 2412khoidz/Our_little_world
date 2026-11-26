@@ -29,12 +29,24 @@ import {
   tickPetMovement,
   type PetMovementExecutorState,
 } from '../../shared/petLiving/petMovement/petMovementExecutor';
-import type { PetLocomotionSnapshot } from '../../shared/petLiving/petMovement/petLocomotionModel';
+import {
+  createLocomotionSnapshot,
+  stepPetLocomotion,
+  type PetLocomotionSnapshot,
+} from '../../shared/petLiving/petMovement/petLocomotionModel';
 import type { FurniturePlacement, MapId } from '../../shared/types';
 import { TILE_SIZE } from '../../shared/maps';
 import type { LivingPetDevTelemetry } from '../../shared/petLiving/mainGame/livingPetDevTelemetry';
 
 const BRAIN_TICK_MS = 2000;
+export const FOLLOW_CAT_MAPS: ReadonlySet<MapId> = new Set([
+  'home',
+  'garden',
+  'farm',
+  'village',
+  'beach',
+  'forest',
+]);
 
 export interface PetLivingWorldFrame {
   mapId: MapId;
@@ -92,16 +104,70 @@ export class PetLivingMainGameDriver {
     this.pendingFoodOffer = offer;
   }
 
+  teleportTo(x: number, y: number): void {
+    this.movement = {
+      ...this.movement,
+      loco: createLocomotionSnapshot(x, y),
+    };
+  }
+
   update(frame: PetLivingWorldFrame): PetLivingDriverOutput {
-    if (frame.mapId !== 'home') {
+    if (!FOLLOW_CAT_MAPS.has(frame.mapId)) {
       return { loco: this.movement.loco, ambientBubble: null, authority: this.authority };
+    }
+
+    const px = this.movement.loco.x;
+    const py = this.movement.loco.y;
+    const dtSec = Math.max(0.008, Math.min(0.1, frame.dtMs / 1000));
+
+    // Smoothly follow owner across both home (when owner walks away) and outdoor maps.
+    if (frame.localPlayerX !== null && frame.localPlayerY !== null) {
+      const targetX = frame.localPlayerX - 16;
+      const targetY = frame.localPlayerY + 4;
+      const distToOwner = Math.hypot(frame.localPlayerX - px, frame.localPlayerY - py);
+      const followStartDist = frame.mapId === 'home' ? 52 : 34;
+
+      if (distToOwner > 260) {
+        const snapped = createLocomotionSnapshot(targetX, targetY);
+        this.movement = { ...this.movement, loco: snapped };
+        return { loco: snapped, ambientBubble: 'Mrow!', authority: this.authority };
+      }
+
+      if (distToOwner > followStartDist && !frame.isStudying && !this.pendingFoodOffer && !frame.foodOffer) {
+        const nextLoco = stepPetLocomotion(this.movement.loco, {
+          intent: distToOwner > 86 ? 'run' : 'move',
+          targetX,
+          targetY,
+          dtSec,
+          nowMs: frame.nowMs,
+          runThresholdPx: 86,
+        });
+        this.movement = { ...this.movement, loco: nextLoco };
+        return { loco: nextLoco, ambientBubble: null, authority: this.authority };
+      }
+
+      if (frame.mapId !== 'home') {
+        const sitPhase = Math.floor(frame.nowMs / 6500) % 2 === 0;
+        const idleLoco = stepPetLocomotion(this.movement.loco, {
+          intent: sitPhase ? 'sit' : 'idle',
+          targetX: px,
+          targetY: py,
+          preferredFacing: 'south',
+          dtSec,
+          nowMs: frame.nowMs,
+        });
+        this.movement = { ...this.movement, loco: idleLoco };
+        let outdoorBubble: string | null = null;
+        if (frame.nowMs - this.lastBubbleMs > 7500) {
+          this.lastBubbleMs = frame.nowMs;
+          outdoorBubble = sitPhase ? 'Purr~' : 'Mrow?';
+        }
+        return { loco: idleLoco, ambientBubble: outdoorBubble, authority: this.authority };
+      }
     }
 
     const blocked = buildMainGameBlockedGrid(frame.mapId, frame.placements);
     this.movement = { ...this.movement, blocked };
-
-    const px = this.movement.loco.x;
-    const py = this.movement.loco.y;
 
     const hints: MainGamePetWorldHints = {
       mapId: frame.mapId,

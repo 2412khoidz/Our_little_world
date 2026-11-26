@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { requireItem } from '../../shared/economy/catalogConfig';
+import { useMemo, useState } from 'react';
+import { PackageCheck, Plus, Trash2 } from 'lucide-react';
+import { computeSellPriceBp, requireItem } from '../../shared/economy/catalogConfig';
 import { getCropDefinition } from '../../shared/farming/crops';
 import { FARM_SELLABLE_CROP_SKUS } from '../../shared/farming/farmShipping';
 import {
@@ -8,8 +9,6 @@ import {
   type FarmShopKind,
 } from '../../shared/shop/farmShopCatalog';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
-import { inventoryRowsToNuvoraGrid } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
-import type { NuvoraGridCell } from '../../shared/donor/nuvora/nuvoraPresentationBridge';
 import { formatFarmChainSummaryVi } from '../../shared/farming/farmDonorChainPresentation';
 import type { FarmWorldClockFarmContext } from '../../shared/farming/farmWorldClockBridge';
 import { farmSeedRecommendedThisSeason } from '../../shared/farming/farmWorldClockBridge';
@@ -30,10 +29,19 @@ export interface FarmEconomyPanelProps {
   onClose: () => void;
 }
 
-const QUALITY_LABEL: Record<'normal' | 'silver' | 'gold', string> = {
+interface SellableProduceRow {
+  key: string;
+  sku: string;
+  quality: 'normal' | 'silver' | 'gold';
+  nameVi: string;
+  stockQty: number;
+  unitPrice: number;
+}
+
+const QUALITY_BADGE: Record<'normal' | 'silver' | 'gold', string> = {
   normal: '',
-  silver: ' (bạc)',
-  gold: ' (vàng)',
+  silver: 'Bạc',
+  gold: 'Vàng',
 };
 
 function cropQty(
@@ -50,6 +58,14 @@ function cropQty(
   );
 }
 
+function safeUnitSellPrice(sku: string, quality: 'normal' | 'silver' | 'gold'): number {
+  try {
+    return Math.max(1, Math.floor(computeSellPriceBp(sku, quality) / 100));
+  } catch {
+    return 10;
+  }
+}
+
 export function FarmEconomyPanel({
   walletCoins,
   inventory,
@@ -64,30 +80,63 @@ export function FarmEconomyPanel({
   const shopMeta = farmShopMetaForKind(shopKind);
   const title = mode === 'shop' ? shopMeta.titleVi : 'Thùng giao hàng';
 
-  const shippingCells = useMemo((): readonly NuvoraGridCell[] => {
-    const rows: { itemSku: string; qty: number; quality: 'normal' | 'silver' | 'gold' }[] = [];
+  const [stagedCrate, setStagedCrate] = useState<Record<string, number>>({});
+
+  const sellableRows = useMemo((): readonly SellableProduceRow[] => {
+    const out: SellableProduceRow[] = [];
     for (const sku of FARM_SELLABLE_CROP_SKUS) {
       for (const quality of ['normal', 'silver', 'gold'] as const) {
-        const qty = cropQty(inventory, sku, quality);
-        if (qty > 0) {
-          rows.push({ itemSku: `${sku}:${quality}`, qty, quality });
-        }
+        const stockQty = cropQty(inventory, sku, quality);
+        if (stockQty <= 0) continue;
+        out.push({
+          key: `${sku}:${quality}`,
+          sku,
+          quality,
+          nameVi: getCropDefinition(sku)?.nameVi ?? sku,
+          stockQty,
+          unitPrice: safeUnitSellPrice(sku, quality),
+        });
       }
     }
-    return inventoryRowsToNuvoraGrid(
-      rows.map((r) => ({ itemSku: r.itemSku, qty: r.qty })),
-      (key) => {
-        const [sku, quality] = key.split(':') as [string, 'normal' | 'silver' | 'gold'];
-        const label = getCropDefinition(sku)?.nameVi ?? sku;
-        return `${label}${QUALITY_LABEL[quality] ?? ''}`;
-      },
-      27,
-    );
+    return out;
   }, [inventory]);
 
-  const parseShipKey = (key: string) => {
-    const [sku, quality] = key.split(':') as [string, 'normal' | 'silver' | 'gold'];
-    return { sku, quality: quality ?? 'normal' };
+  const stagedEntries = useMemo(() => {
+    return sellableRows
+      .map((row) => {
+        const qty = Math.min(row.stockQty, stagedCrate[row.key] ?? 0);
+        return qty > 0 ? { ...row, stagedQty: qty, subtotal: qty * row.unitPrice } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [sellableRows, stagedCrate]);
+
+  const totalEstimatedCoins = stagedEntries.reduce((sum, e) => sum + e.subtotal, 0);
+  const totalStagedQty = stagedEntries.reduce((sum, e) => sum + e.stagedQty, 0);
+
+  const stageOne = (key: string, maxQty: number) => {
+    setStagedCrate((prev) => ({
+      ...prev,
+      [key]: Math.min(maxQty, (prev[key] ?? 0) + 1),
+    }));
+  };
+
+  const unstageOne = (key: string) => {
+    setStagedCrate((prev) => {
+      const cur = prev[key] ?? 0;
+      if (cur <= 1) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: cur - 1 };
+    });
+  };
+
+  const commitShipAll = async () => {
+    for (const entry of stagedEntries) {
+      await onShip(entry.sku, entry.stagedQty, entry.quality);
+    }
+    setStagedCrate({});
   };
 
   const deskClass = mode === 'shipping' ? 'nuvora-ship-desk' : 'nuvora-desk';
@@ -106,22 +155,26 @@ export function FarmEconomyPanel({
       }
       data-shop-kind={mode === 'shop' ? shopKind : undefined}
     >
-      <div className={mode === 'shop' ? 'nuvora-desk__title-row' : 'nuvora-desk__title-row'}>
-        <h2 id="farm-economy-title" className={mode === 'shop' ? 'nuvora-desk__title' : undefined} style={mode === 'shipping' ? { margin: 0 } : undefined}>
+      <div className="nuvora-desk__title-row">
+        <h2
+          id="farm-economy-title"
+          className="nuvora-desk__title"
+          style={mode === 'shipping' ? { margin: 0 } : undefined}
+        >
           {title}
         </h2>
         <button
           type="button"
-          className={mode === 'shop' ? 'btn btn--secondary btn--sm' : 'btn btn--secondary btn--sm'}
+          className="btn btn--secondary btn--sm"
           onClick={onClose}
           aria-label="Đóng"
         >
           {mode === 'shipping' ? 'Đóng' : '×'}
         </button>
       </div>
+
       {farmClockContext ? (
         <p
-          className={mode === 'shop' ? 'nuvora-desk__title' : undefined}
           data-testid="farm-world-clock-context"
           style={{ fontSize: 12, margin: '0 0 6px', color: '#5c351e', fontWeight: 600 }}
         >
@@ -129,18 +182,38 @@ export function FarmEconomyPanel({
           {farmClockContext.weatherLabelVi}
         </p>
       ) : null}
+
       <p
         data-testid="farm-economy-wallet"
-        style={{ fontSize: 13, margin: '0 0 8px', color: '#462818', fontWeight: 600 }}
+        style={{
+          fontSize: 13,
+          margin: '0 0 8px',
+          color: '#462818',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'wrap',
+        }}
       >
-        Ví chung: <strong data-testid="farm-wallet-coins">{walletCoins}</strong> xu
+        <img
+          src="/assets/ui/hybrid/items/coin.png"
+          alt=""
+          width={16}
+          height={16}
+          style={{ imageRendering: 'pixelated' }}
+        />
+        <span>
+          Ví chung: <strong data-testid="farm-wallet-coins">{walletCoins}</strong> xu
+        </span>
         {mode === 'shop' ? (
-          <small style={{ display: 'block', marginTop: 4, fontSize: 11, opacity: 0.85 }}>
+          <small style={{ display: 'block', width: '100%', fontSize: 11, opacity: 0.85 }}>
             Chuỗi: {formatFarmChainSummaryVi()}
           </small>
         ) : null}
       </p>
-      <div className={mode === 'shop' ? 'nuvora-shop-list' : ''}>
+
+      <div className={mode === 'shop' ? 'nuvora-shop-list' : 'cozy-shipping-zones'}>
         {mode === 'shop' && shopMeta.layout === 'row' &&
           farmShopSkusForKind(shopKind).map((itemSku) => {
             let def;
@@ -168,6 +241,7 @@ export function FarmEconomyPanel({
               />
             );
           })}
+
         {mode === 'shop' && shopMeta.layout === 'grid' && (
           <NuvoraShopGrid
             busy={busy}
@@ -191,46 +265,124 @@ export function FarmEconomyPanel({
             onBuy={(sku) => void onBuyStoreItem(sku, 1)}
           />
         )}
+
         {mode === 'shipping' && (
           <>
-            <p style={{ fontSize: 12, color: '#4e2e1a', margin: 0 }}>
-              Chạm ô nông sản để gửi 1 phần qua đêm — giá do server tính theo ngày.
-            </p>
-            {shippingCells.every((c) => !c.sku) ? (
-              <div className="cozy-alert" style={{ fontSize: 13, background: '#f0e4c8', color: '#4a3320' }}>
-                Chưa có nông sản trong túi chung để gửi.
+            <section className="cozy-shipping-card" aria-label="Nông sản có thể gửi">
+              <div className="cozy-shipping-card__head">
+                <strong>Nông sản trong túi</strong>
+                <span>Chạm để bỏ vào thùng</span>
               </div>
-            ) : (
-              <div className="nuvora-tray">
-                <div className="nuvora-g9">
-                  {shippingCells.map((cell, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      className="nuvora-sl"
-                      disabled={busy || !cell.sku}
-                      data-testid={cell.sku ? `nuvora-ship-${cell.sku}` : `nuvora-ship-empty-${idx}`}
-                      title={cell.labelVi}
-                      onClick={() => {
-                        if (!cell.sku) return;
-                        const { sku, quality } = parseShipKey(cell.sku);
-                        void onShip(sku, 1, quality);
-                      }}
-                    >
-                      {cell.sku ? (
-                        <>
-                          <span className="nuvora-sl__icon">
-                            <CatalogSkuIcon sku={cell.sku} size={28} />
+
+              {sellableRows.length === 0 ? (
+                <div className="cozy-shipping-empty-illust">
+                  <CatalogSkuIcon sku="wheat" size={30} />
+                  <div>
+                    <strong>Chưa có nông sản để giao</strong>
+                    <small>Thu hoạch lúa mì, cà rốt, cà chua hoặc dâu tây ngoài ruộng rồi mang tới đây nhé!</small>
+                  </div>
+                </div>
+              ) : (
+                <div className="cozy-shipping-grid">
+                  {sellableRows.map((row) => {
+                    const staged = stagedCrate[row.key] ?? 0;
+                    const remain = Math.max(0, row.stockQty - staged);
+                    return (
+                      <button
+                        key={row.key}
+                        type="button"
+                        className="cozy-shipping-item"
+                        disabled={busy || remain <= 0}
+                        data-testid={`nuvora-ship-${row.key}`}
+                        onClick={() => stageOne(row.key, row.stockQty)}
+                      >
+                        <div className="cozy-shipping-item__icon">
+                          <CatalogSkuIcon sku={row.sku} size={28} />
+                          <b className="cozy-shipping-item__qty">×{remain}</b>
+                        </div>
+                        <div className="cozy-shipping-item__meta">
+                          <strong>
+                            {row.nameVi}
+                            {QUALITY_BADGE[row.quality] ? ` (${QUALITY_BADGE[row.quality]})` : ''}
+                          </strong>
+                          <span>
+                            <img
+                              src="/assets/ui/hybrid/items/coin.png"
+                              alt=""
+                              width={12}
+                              height={12}
+                              style={{ imageRendering: 'pixelated' }}
+                            />
+                            {row.unitPrice} xu/phần
                           </span>
-                          {cell.qty > 1 ? <b className="nuvora-sl__qty">{cell.qty}</b> : null}
-                        </>
-                      ) : null}
-                    </button>
+                        </div>
+                        <span className="cozy-shipping-add-pill">
+                          <Plus size={13} /> Bỏ vào thùng
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section className="cozy-shipping-card cozy-shipping-card--bin" aria-label="Trong thùng chờ gửi">
+              <div className="cozy-shipping-card__head">
+                <strong>Trong thùng chờ gửi ({totalStagedQty})</strong>
+                <span className="cozy-shipping-est">
+                  <img
+                    src="/assets/ui/hybrid/items/coin.png"
+                    alt=""
+                    width={13}
+                    height={13}
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                  Ước tính: {totalEstimatedCoins} xu
+                </span>
+              </div>
+
+              {stagedEntries.length === 0 ? (
+                <div className="cozy-shipping-empty-bin">
+                  Thùng gỗ đang trống — chọn nông sản bên trên để xếp vào thùng nhé!
+                </div>
+              ) : (
+                <div className="cozy-shipping-staged-list">
+                  {stagedEntries.map((entry) => (
+                    <div key={entry.key} className="cozy-shipping-staged-row">
+                      <CatalogSkuIcon sku={entry.sku} size={24} />
+                      <div className="cozy-shipping-staged-row__text">
+                        <strong>
+                          {entry.nameVi} ×{entry.stagedQty}
+                        </strong>
+                        <small>+{entry.subtotal} xu</small>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        disabled={busy}
+                        onClick={() => unstageOne(entry.key)}
+                      >
+                        <Trash2 size={13} /> Lấy ra
+                      </button>
+                    </div>
                   ))}
                 </div>
-                <div className="nuvora-plate">THÙNG GOM</div>
+              )}
+
+              <div className="cozy-shipping-footer">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  style={{ width: '100%' }}
+                  disabled={busy || totalStagedQty === 0}
+                  data-testid="cozy-ship-submit-btn"
+                  onClick={() => void commitShipAll()}
+                >
+                  <PackageCheck size={16} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
+                  Gửi qua đêm ({totalStagedQty > 0 ? `+${totalEstimatedCoins} xu` : 'chọn nông sản'})
+                </button>
               </div>
-            )}
+            </section>
           </>
         )}
       </div>

@@ -76,27 +76,12 @@ function exportVillage() {
         name: 'village-to-garden',
         type: 'portal',
         x: 45 * TW,
-        y: 32 * TW,
+        y: 34 * TW,
         width: TW,
         height: TW,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
-          { name: 'labelVi', type: 'string', value: 'Về vườn' },
-          { name: 'spawnX', type: 'int', value: 9 },
-          { name: 'spawnY', type: 'int', value: 11 },
-        ],
-      },
-      {
-        id: 9102,
-        name: 'garden-to-village',
-        type: 'portal',
-        x: 10 * TW,
-        y: 30 * TW,
-        width: TW * 2,
-        height: TW,
-        properties: [
-          { name: 'targetMapId', type: 'string', value: 'garden' },
-          { name: 'labelVi', type: 'string', value: 'Đường về vườn' },
+          { name: 'labelVi', type: 'string', value: 'Về vườn nhà' },
           { name: 'spawnX', type: 'int', value: 9 },
           { name: 'spawnY', type: 'int', value: 11 },
         ],
@@ -126,7 +111,7 @@ function exportVillage() {
         height: 14,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'home' },
-          { name: 'labelVi', type: 'string', value: 'Về nhà' },
+          { name: 'labelVi', type: 'string', value: 'Vào nhà của hai đứa' },
           { name: 'spawnX', type: 'int', value: 8 },
           { name: 'spawnY', type: 'int', value: 9 },
         ],
@@ -135,14 +120,14 @@ function exportVillage() {
         id: 9105,
         name: 'village-to-beach',
         type: 'portal',
-        x: 81 * TW,
+        x: 83 * TW,
         y: 32 * TW,
         width: TW * 2,
         height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'beach' },
           { name: 'labelVi', type: 'string', value: 'Ra Bãi biển Vịnh Hải Âu' },
-          { name: 'spawnX', type: 'int', value: 5 },
+          { name: 'spawnX', type: 'int', value: 3 },
           { name: 'spawnY', type: 'int', value: 16 },
         ],
       },
@@ -159,8 +144,8 @@ function exportVillage() {
               properties: [
                 { name: 'targetMapId', type: 'string', value: 'forest' },
                 { name: 'labelVi', type: 'string', value: 'Vào rừng thông Tuxemon' },
-                { name: 'spawnX', type: 'int', value: 4 },
-                { name: 'spawnY', type: 'int', value: 32 },
+                { name: 'spawnX', type: 'int', value: 8 },
+                { name: 'spawnY', type: 'int', value: 36 },
               ],
             },
           ]
@@ -437,18 +422,57 @@ function exportVillage() {
     ],
   };
 
-  // Ensure east harbor path to village-to-beach (78..82, 32..33) is cleanly walkable
   const colLayer = src.layers.find((l) => l.name === 'Collision' && l.type === 'tilelayer');
+  const pathsLayer = src.layers.find((l) => l.name === 'paths' && l.type === 'tilelayer');
+  const bldLayer = src.layers.find((l) => l.name === 'building' && l.type === 'tilelayer');
+  const wallsLayer = src.layers.find((l) => l.name === 'walls' && l.type === 'tilelayer');
+  const wellsLayer = src.layers.find((l) => l.name === 'wells' && l.type === 'tilelayer');
   if (colLayer?.data) {
-    for (let y = 31; y <= 33; y += 1) {
-      for (let x = 78; x <= 82; x += 1) {
-        colLayer.data[y * src.width + x] = 0;
+    // 1. Clear ALL stray invisible walls sitting directly on walkable road/path tiles
+    if (pathsLayer?.data) {
+      for (let i = 0; i < colLayer.data.length; i += 1) {
+        const hasPath = (pathsLayer.data[i] ?? 0) > 0;
+        const hasSolid =
+          (bldLayer?.data?.[i] ?? 0) > 0 ||
+          (wallsLayer?.data?.[i] ?? 0) > 0 ||
+          (wellsLayer?.data?.[i] ?? 0) > 0;
+        if (hasPath && !hasSolid) {
+          colLayer.data[i] = 0;
+        }
       }
     }
-    colLayer.data[2 * src.width + 12] = 0;
-    colLayer.data[2 * src.width + 13] = 0;
-    colLayer.data[3 * src.width + 12] = 0;
-    colLayer.data[3 * src.width + 13] = 0;
+
+    // 2. Extend east wooden harbor pier cleanly all the way to east map boundary (x=78..85, y=31..33)
+    const pierRowGids = { 31: 295, 32: 359, 33: 423 };
+    for (let y = 31; y <= 33; y += 1) {
+      for (let x = 78; x < src.width; x += 1) {
+        const i = y * src.width + x;
+        colLayer.data[i] = 0;
+        if (pathsLayer?.data && (pathsLayer.data[i] ?? 0) === 0) {
+          pathsLayer.data[i] = pierRowGids[y];
+        }
+      }
+    }
+
+    // 3. Clear generous walkable aprons around every door entrance, spawn tile & portal gate
+    const clearAprons = [
+      [32, 23, 33, 26], // seed_shop door & sidewalk
+      [27, 35, 30, 38], // tool_shop door & East road
+      [15, 32, 17, 34], // crop_market door & Plaza
+      [32, 13, 35, 16], // town_hall door & North square
+      [40, 30, 46, 35], // player_house_door & garden gate
+      [1, 28, 5, 31],   // village-to-farm west road
+      [11, 1, 14, 6],   // village-to-forest north trail
+    ];
+    for (const [x0, y0, x1, y1] of clearAprons) {
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          if (x >= 0 && y >= 0 && x < src.width && y < src.height) {
+            colLayer.data[y * src.width + x] = 0;
+          }
+        }
+      }
+    }
   }
 
   src.layers = src.layers.filter((l) => l.name !== 'Portals' && l.name !== 'Interactables' && l.name !== 'NPCSpawns');
@@ -766,9 +790,9 @@ const INTERIOR_SPECS = [
 
 const VILLAGE_DOOR_SPAWN = {
   player_seed_shop_door: { tileX: 32, tileY: 25 },
-  player_tool_shop_door: { tileX: 28, tileY: 37 },
-  player_crop_market_door: { tileX: 15, tileY: 34 },
-  player_town_hall_door: { tileX: 33, tileY: 14 },
+  player_tool_shop_door: { tileX: 29, tileY: 36 },
+  player_crop_market_door: { tileX: 16, tileY: 34 },
+  player_town_hall_door: { tileX: 34, tileY: 15 },
 };
 
 function findInteractionObject(interior, name) {

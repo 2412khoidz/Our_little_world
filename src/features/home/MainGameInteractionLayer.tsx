@@ -177,6 +177,8 @@ export function MainGameInteractionLayer({
           mapIdRef.current,
           heldRef.current,
           which,
+          farmPlotByIndex,
+          farmServerNowMs,
         )
       ) {
         return;
@@ -195,7 +197,7 @@ export function MainGameInteractionLayer({
         setLocalActionBusy(false);
       }
     },
-    [showHud, interactionMutationBusy, actionCtx, clearHeld],
+    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs],
   );
 
   const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
@@ -321,6 +323,8 @@ export function MainGameInteractionLayer({
           slots={hotbarSlots}
           heldItem={heldItem}
           onSelectSlot={selectSlot}
+          onOpenInventory={onOpenInventory}
+          inventoryItemCount={inventorySnapshot?.items.reduce((sum, item) => sum + item.qty, 0) ?? 0}
           touchFriendly={petCareHud}
         />
       </div>

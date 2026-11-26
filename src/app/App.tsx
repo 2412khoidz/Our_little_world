@@ -405,6 +405,7 @@ function MainCoupleApp() {
   const sharedPetCareSessionRef = useRef<SharedPetCareSession | null>(null);
   const sceneReadyRef = useRef(false);
   const pendingEnterPetCareRef = useRef(false);
+  const homeReturnTargetRef = useRef<{ mapId: 'village'; spawnX: number; spawnY: number } | null>(null);
 
   const localTileRef = useRef<{ mapId: MapId; tileX: number; tileY: number; facing: Direction }>({
     mapId: 'home',
@@ -1340,7 +1341,22 @@ function MainCoupleApp() {
       setActiveSku(null);
       setSelectedPlacementId(null);
       const fromMapId = currentMapIdRef.current;
-      const hook = resolveEnvHookForTravel(fromMapId, targetMapId, portalId);
+      let resolvedTargetMapId = targetMapId;
+      let resolvedSpawnX = spawnX;
+      let resolvedSpawnY = spawnY;
+
+      if (fromMapId === 'village' && targetMapId === 'home') {
+        homeReturnTargetRef.current = { mapId: 'village', spawnX: 41, spawnY: 31 };
+      } else if (fromMapId === 'home' && targetMapId === 'garden' && homeReturnTargetRef.current) {
+        resolvedTargetMapId = homeReturnTargetRef.current.mapId;
+        resolvedSpawnX = homeReturnTargetRef.current.spawnX;
+        resolvedSpawnY = homeReturnTargetRef.current.spawnY;
+        homeReturnTargetRef.current = null;
+      } else if (targetMapId === 'home') {
+        homeReturnTargetRef.current = null;
+      }
+
+      const hook = resolveEnvHookForTravel(fromMapId, resolvedTargetMapId, portalId);
       if (hook) {
         gameEventBus.emit('cmd:env-transition', hook);
         const targetWorldId = snapshotRef.current?.world.id;
@@ -1352,15 +1368,15 @@ function MainCoupleApp() {
             mapId: fromMapId,
             kind: hook.kind,
             hookId: hook.hookId,
-            toMapId: targetMapId,
+            toMapId: resolvedTargetMapId,
             atMs: Date.now(),
           });
         }
       }
-      setCurrentMapId(targetMapId);
+      setCurrentMapId(resolvedTargetMapId);
       gameEventBus.emit('cmd:set-map', {
-        mapId: targetMapId,
-        spawnTile: { tileX: spawnX, tileY: spawnY },
+        mapId: resolvedTargetMapId,
+        spawnTile: { tileX: resolvedSpawnX, tileY: resolvedSpawnY },
       });
     });
 
@@ -1952,6 +1968,7 @@ function MainCoupleApp() {
   function handleSelectMap(target: MapId) {
     const mapId =
       isExtendedWorldDevEnabled() && target === 'outdoor' ? 'village' : target;
+    homeReturnTargetRef.current = null;
     setDecorateActive(false);
     setActiveSku(null);
     setSelectedPlacementId(null);
@@ -2455,6 +2472,7 @@ function MainCoupleApp() {
         <DonorWorkshopModal
           worldId={worldId}
           focusSection={donorWorkshopFocus}
+          inventory={inventorySnapshot}
           onClose={() => {
             setActiveModal(null);
             setDonorWorkshopFocus(undefined);
@@ -2467,6 +2485,8 @@ function MainCoupleApp() {
         <ChillFishingModal
           worldId={worldId}
           spotId={donorChillFishingSpot}
+          localUserId={currentUser.userId}
+          localAvatarConfig={localMember?.avatarConfig}
           onClose={() => setActiveModal(null)}
           onInventoryRefresh={async () => refreshInventorySnapshot(worldId)}
         />
