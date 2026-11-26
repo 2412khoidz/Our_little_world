@@ -75,45 +75,15 @@ function exportVillage() {
         id: 9101,
         name: 'village-to-garden',
         type: 'portal',
-        x: 44 * TW,
-        y: 31 * TW,
-        width: TW,
-        height: TW,
-        properties: [
-          { name: 'targetMapId', type: 'string', value: 'garden' },
-          { name: 'labelVi', type: 'string', value: 'Về vườn nhà' },
-          { name: 'spawnX', type: 'int', value: 9 },
-          { name: 'spawnY', type: 'int', value: 11 },
-        ],
-      },
-      {
-        id: 9103,
-        name: 'village-to-farm',
-        type: 'portal',
-        x: 1 * TW,
-        y: 29 * TW,
+        x: 6 * TW,
+        y: 22 * TW,
         width: TW,
         height: TW * 2,
         properties: [
-          { name: 'targetMapId', type: 'string', value: 'farm' },
-          { name: 'labelVi', type: 'string', value: 'Ra Nông trại' },
-          { name: 'spawnX', type: 'int', value: 59 },
-          { name: 'spawnY', type: 'int', value: 22 },
-        ],
-      },
-      {
-        id: 9104,
-        name: 'player_house_door',
-        type: 'portal',
-        x: 41 * TW,
-        y: 30 * TW,
-        width: 30,
-        height: 14,
-        properties: [
-          { name: 'targetMapId', type: 'string', value: 'home' },
-          { name: 'labelVi', type: 'string', value: 'Vào nhà của hai đứa' },
-          { name: 'spawnX', type: 'int', value: 8 },
-          { name: 'spawnY', type: 'int', value: 9 },
+          { name: 'targetMapId', type: 'string', value: 'garden' },
+          { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
+          { name: 'spawnX', type: 'int', value: 9 },
+          { name: 'spawnY', type: 'int', value: 11 },
         ],
       },
       {
@@ -137,8 +107,8 @@ function exportVillage() {
               id: 9106,
               name: 'village-to-forest',
               type: 'portal',
-              x: 12 * TW,
-              y: 2 * TW,
+              x: 51 * TW,
+              y: 3 * TW,
               width: TW * 2,
               height: TW,
               properties: [
@@ -195,10 +165,10 @@ function exportVillage() {
 
   const donorDoorLabels = MAP_RECOVERY_MODE
     ? {
-        player_house_door: 'Cửa nhà — về nhà',
+        player_house_door: 'Nhà cộng đồng làng — đọc sách & nghỉ chân',
       }
     : {
-        player_house_door: 'Cửa nhà — vào bên trong (E)',
+        player_house_door: 'Nhà cộng đồng làng — đọc sách & nghỉ chân',
         player_crop_market_door: 'Chợ nông sản Cabacos',
         player_seed_shop_door: 'Hạt giống & dụng cụ',
         player_town_hall_door: 'Tòa thị chính — chưa mở',
@@ -429,9 +399,41 @@ function exportVillage() {
 
   const colLayer = src.layers.find((l) => l.name === 'Collision' && l.type === 'tilelayer');
   const pathsLayer = src.layers.find((l) => l.name === 'paths' && l.type === 'tilelayer');
+  const landLayer = src.layers.find((l) => l.name === 'land' && l.type === 'tilelayer');
+  const bldLayer = src.layers.find((l) => l.name === 'building' && l.type === 'tilelayer');
+  const dec1Layer = src.layers.find((l) => l.name === 'decoration_01' && l.type === 'tilelayer');
+  const wellsLayer = src.layers.find((l) => l.name === 'wells' && l.type === 'tilelayer');
+  const wallsLayer = src.layers.find((l) => l.name === 'walls' && l.type === 'tilelayer');
   if (colLayer?.data) {
-    // 1. Keep Cabacos Collision intact so fences, trees, cliffs & houses cannot be walked through,
-    //    and explicitly block roof edges that lacked collision in upstream TMJ.
+    // Explicit solid GIDs that lacked collision in upstream Cabacos_map.tmj (fences, crates, beach shack)
+    const EXPLICIT_SOLID_DEC1_GIDS = new Set([
+      167, 168, 169, 170, 171, // wooden fences
+      615, 616, 679, 680, 681, 741, 743, // harbor crates & beach shack walls/roof
+    ]);
+    // Bridge floor / pier / ladder / archway building GIDs that MUST stay walkable on roads
+    const WALKABLE_BLD_OR_PATH_GIDS = new Set([0, 1, 649, 1501, 2128, 2129, 2204, 2320, 2321, 2322, 2386, 2448, 2449, 2520, 2525]);
+    const RIVER_BANK_LAND_GIDS = new Set([471, 472, 473, 474, 475, 476, 535, 537, 539, 540, 541, 546, 547]);
+    const BRIDGE_PATH_GIDS = new Set([295, 359, 423, 809]);
+
+    for (let i = 0; i < colLayer.data.length; i += 1) {
+      const pathGid = (pathsLayer?.data?.[i] ?? 0) & 0x1fffffff;
+      const landGid = (landLayer?.data?.[i] ?? 0) & 0x1fffffff;
+      const bldGid = (bldLayer?.data?.[i] ?? 0) & 0x1fffffff;
+      const dec1Gid = (dec1Layer?.data?.[i] ?? 0) & 0x1fffffff;
+      const wellGid = (wellsLayer?.data?.[i] ?? 0) & 0x1fffffff;
+      const wallGid = (wallsLayer?.data?.[i] ?? 0) & 0x1fffffff;
+
+      // Water/river channel tiles without bridge planks block player & pet
+      if ((RIVER_BANK_LAND_GIDS.has(landGid) || landGid <= 1) && !BRIDGE_PATH_GIDS.has(pathGid) && pathGid <= 1) {
+        colLayer.data[i] = 66;
+        continue;
+      }
+      if (!WALKABLE_BLD_OR_PATH_GIDS.has(bldGid) || wellGid > 1 || wallGid > 1 || EXPLICIT_SOLID_DEC1_GIDS.has(dec1Gid)) {
+        colLayer.data[i] = 66;
+      }
+    }
+
+    // Explicitly block roof overhangs that lacked collision in upstream TMJ
     for (let x = 20; x <= 27; x += 1) {
       colLayer.data[33 * src.width + x] = 66; // tool_shop red roof north edge
     }
@@ -450,15 +452,16 @@ function exportVillage() {
       }
     }
 
-    // 3. Clear ONLY exact doorway thresholds, return sidewalk spawns & gate trails (never overlap roofs or fences)
+    // 3. Clear ONLY exact doorway thresholds, return spawns, bridges & gate trails
     const clearAprons = [
       [32, 24, 33, 25], // seed_shop door & return spawn (32,25)
-      [28, 36, 30, 37], // tool_shop door (28,36) & return spawn (30,36) — keeps (27,35) red roof blocked
+      [28, 36, 30, 37], // tool_shop door (28,36) & return spawn (30,36)
       [15, 32, 16, 34], // crop_market door & return spawn (16,34)
-      [33, 13, 34, 15], // town_hall door & return spawn (34,15)
-      [41, 30, 44, 31], // player_house_door & open road beside garden portal (44,31)
-      [1, 29, 3, 30],   // village-to-farm west road
-      [12, 1, 13, 4],   // village-to-forest north trail
+      [33, 14, 34, 15], // town_hall door & return spawn (34,15) — keeps blue roof (33,12..13) blocked
+      [37, 31, 39, 32], // wooden river bridge planks
+      [6, 21, 9, 23],   // village-to-garden west trail gate & arrival (8,22)
+      [50, 3, 53, 5],   // village-to-forest north plaza road & arrival (52,5)
+      [41, 30, 44, 31], // community house front sidewalk & Bé Na path
     ];
     for (const [x0, y0, x1, y1] of clearAprons) {
       for (let y = y0; y <= y1; y += 1) {

@@ -5,6 +5,12 @@ import { PetLivingMainGameDriver } from '../../src/game/pet/PetLivingMainGameDri
 import { CatAnimationAdapter } from '../../src/game/pet/care/CatAnimationAdapter';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import { isTileBlockedFromParsed } from '../../src/shared/world/parseTiledWorldMap';
+import { getMapDefinition } from '../../src/shared/maps';
+import { buildMovementCollisionGrid } from '../../src/shared/placement';
+import { getStaticZonePropBlockedTiles } from '../../src/shared/world/zonePropColliders';
+import { farmPlotIndexForTile, farmPlotTileForIndex } from '../../src/shared/farming/farmPlotIndex';
+import { TIDEFALL_FISH_CATALOG } from '../../src/shared/donor/tidefall-phaser/tidefallFishCatalog';
+import { speciesParamsForFish } from '../../src/features/donor/ChillFishingModal';
 
 function makeMockVuenaRigBones() {
   const root = new THREE.Group();
@@ -17,6 +23,8 @@ function makeMockVuenaRigBones() {
   spine.name = 'Spine';
   const head = new THREE.Bone();
   head.name = 'Head';
+  const neck = new THREE.Bone();
+  neck.name = 'Neck';
   const lids = new THREE.Bone();
   lids.name = 'Lids';
   const flU = new THREE.Bone();
@@ -42,7 +50,8 @@ function makeMockVuenaRigBones() {
 
   animRoot.add(hips);
   hips.add(spine);
-  spine.add(head, flU, frU);
+  spine.add(neck, flU, frU);
+  neck.add(head);
   head.add(lids);
   flU.add(flL);
   frU.add(frL);
@@ -53,6 +62,7 @@ function makeMockVuenaRigBones() {
   const bones: Record<string, THREE.Bone> = {
     Hips: hips,
     Spine: spine,
+    Neck: neck,
     Head: head,
     Lids: lids,
     FrontUpperLeg_L: flU,
@@ -75,9 +85,56 @@ describe('Integrated regression fixes (Collisions, Cat walls, PyDew tool lock & 
     expect(isTileBlockedFromParsed(village, 45, 34)).toBe(true); // green house edge
     expect(isTileBlockedFromParsed(village, 53, 31)).toBe(true); // fence row
     const gardenPortal = village.portals.find((p) => p.targetMapId === 'garden')!;
-    expect(gardenPortal.tileX).toBe(44);
-    expect(gardenPortal.tileY).toBe(31);
+    expect(gardenPortal.tileX).toBe(6);
+    expect(gardenPortal.tileY).toBe(22);
     expect(isTileBlockedFromParsed(village, gardenPortal.tileX, gardenPortal.tileY)).toBe(false);
+    // Bogus central-blue-house -> home teleport must not exist
+    expect(village.portals.some((p) => p.targetMapId === 'home')).toBe(false);
+  });
+
+  it('enforces Hollowmere overlay prop colliders & reciprocal Mission P topology', () => {
+    const farmBlocked = buildMovementCollisionGrid('farm', []);
+    expect(farmBlocked.has('18,7')).toBe(true); // greenhouse
+    expect(farmBlocked.has('9,20')).toBe(true); // windmill
+    expect(getStaticZonePropBlockedTiles('village').has('18,30')).toBe(true); // cafe
+    expect(getStaticZonePropBlockedTiles('beach').has('14,10')).toBe(true); // beach cafe
+
+    const garden = getMapDefinition('garden');
+    const farm = getMapDefinition('farm');
+    const village = getMapDefinition('village');
+    const forest = getMapDefinition('forest');
+
+    expect(garden.portals.find((p) => p.targetMapId === 'village')?.targetSpawnX).toBe(8);
+    expect(garden.portals.find((p) => p.targetMapId === 'village')?.targetSpawnY).toBe(22);
+    expect(farm.portals.some((p) => p.targetMapId === 'garden')).toBe(true);
+    expect(farm.portals.some((p) => p.targetMapId === 'village')).toBe(false);
+    expect(forest.portals.some((p) => p.targetMapId === 'beach')).toBe(false);
+    expect(village.portals.find((p) => p.targetMapId === 'forest')?.tileX).toBe(51);
+  });
+
+  it('round-trips farmPlotIndexForTile across all 184 plots and scales fishing difficulty by rarity', () => {
+    const t0 = farmPlotTileForIndex(0)!;
+    const tLast = farmPlotTileForIndex(183)!;
+    expect(farmPlotIndexForTile(t0.tileX, t0.tileY)).toBe(0);
+    expect(farmPlotIndexForTile(tLast.tileX, tLast.tileY)).toBe(183);
+    expect(farmPlotIndexForTile(0, 0)).toBeNull();
+
+    const commonFish = TIDEFALL_FISH_CATALOG.find((f) => f.rarity === 'common')!;
+    const rareFish = TIDEFALL_FISH_CATALOG.find((f) => f.rarity === 'rare')!;
+    const legendaryFish = TIDEFALL_FISH_CATALOG.find((f) => f.rarity === 'legendary')!;
+    const rng = () => 0.5;
+    const c = speciesParamsForFish(commonFish, rng);
+    const r = speciesParamsForFish(rareFish, rng);
+    const l = speciesParamsForFish(legendaryFish, rng);
+
+    expect(c.targetWidth).toBeGreaterThan(r.targetWidth);
+    expect(r.targetWidth).toBeGreaterThan(l.targetWidth);
+    expect(l.pointerSpeed).toBeGreaterThan(r.pointerSpeed);
+    expect(r.pointerSpeed).toBeGreaterThan(c.pointerSpeed);
+    expect(l.targetDriftAmp).toBeGreaterThan(0);
+    expect(l.speedSurgeAmp).toBeGreaterThan(0);
+    expect(c.hitGain).toBeGreaterThan(l.hitGain);
+    expect(l.biteWindowMs).toBeLessThan(c.biteWindowMs);
   });
 
   it('2D pet driver strictly avoids blocked wall/fence tiles when following owner', () => {
@@ -159,12 +216,18 @@ describe('Integrated regression fixes (Collisions, Cat walls, PyDew tool lock & 
     adapter.update(0.016);
     expect(bones.FrontUpperLeg_R!.quaternion.angleTo(restRot)).toBeGreaterThan(0.15);
 
-    // Smooth hug_kick side roll applies root roll without death freeze clip
+    // Smooth hug_kick side roll applies bounded root roll without flipping upside-down or sinking below floor
     adapter.pawSwipe.active = false;
     adapter.setPose('hug_kick');
     adapter.hugKick = { active: true, phase: 0.45 };
-    adapter.update(0.2);
+    for (let f = 0; f < 120; f += 1) {
+      adapter.update(0.016);
+      expect(animRoot.position.y).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(bones.Neck!.rotation.y)).toBeLessThan(1.0);
+      expect(Math.abs(bones.Head!.rotation.y)).toBeLessThan(1.0);
+    }
     expect(adapter.activeClip).toBe('idle');
-    expect(animRoot.rotation.z).toBeGreaterThan(0.3);
+    expect(animRoot.rotation.z).toBeGreaterThan(0.12);
+    expect(animRoot.rotation.z).toBeLessThanOrEqual(0.3);
   });
 });

@@ -182,6 +182,7 @@ export class CatAnimationAdapter implements IPetCareRig {
   private wagPhase = 0;
   private readonly restLidsPos = new THREE.Vector3(0, 0, 0);
   private readonly restHipsPos = new THREE.Vector3(0, 0, 0);
+  private readonly restBoneTransforms: Array<{ bone: THREE.Bone; pos: THREE.Vector3; quat: THREE.Quaternion }> = [];
   private hugRollCur = 0;
 
   constructor(
@@ -191,6 +192,14 @@ export class CatAnimationAdapter implements IPetCareRig {
     private readonly bones: Record<string, THREE.Bone>,
   ) {
     this.mixer = new THREE.AnimationMixer(animRoot);
+    for (const bone of Object.values(bones)) {
+      if (!bone) continue;
+      this.restBoneTransforms.push({
+        bone,
+        pos: bone.position.clone(),
+        quat: bone.quaternion.clone(),
+      });
+    }
     for (const clip of clips) {
       const key = clip.name as VuenaClipName;
       if (VUENA_CLIP_NAMES.includes(key)) {
@@ -266,6 +275,13 @@ export class CatAnimationAdapter implements IPetCareRig {
     this.elapsed += dt;
     this.poseElapsed += dt;
 
+    // Reset all bones to clean rest poses before sampling mixer + additive overlays (prevents quaternion accumulation / 360-deg neck spins)
+    for (let i = 0; i < this.restBoneTransforms.length; i += 1) {
+      const entry = this.restBoneTransforms[i]!;
+      entry.bone.position.copy(entry.pos);
+      entry.bone.quaternion.copy(entry.quat);
+    }
+
     // Subtle idle variation between `idle` and `idle_alt`
     if (this.pose === 'stand' && this.speed <= 0.04) {
       this.idleAltTimer -= dt;
@@ -286,14 +302,14 @@ export class CatAnimationAdapter implements IPetCareRig {
     this.switchClip(selection);
     this.mixer.update(dt);
 
-    // Apply vertical jump lift / hug side-roll cleanly on animation root
+    // Apply vertical jump lift / playful crouch tilt without ever penetrating the floor (y >= 0) or flipping upside down
     const wantHugRoll = this.hugKick.active
       ? Math.min(1, this.hugKick.phase / 0.28) *
         (this.hugKick.phase > 1.25 ? Math.max(0, 1 - (this.hugKick.phase - 1.25) / 0.3) : 1)
       : 0;
     this.hugRollCur += (wantHugRoll - this.hugRollCur) * (1 - Math.exp(-14 * dt));
-    this.animRoot.position.y = this.rootLift - 0.042 * this.hugRollCur;
-    this.animRoot.rotation.z = this.rootRoll + 1.12 * this.hugRollCur;
+    this.animRoot.position.y = Math.max(0, this.rootLift);
+    this.animRoot.rotation.z = THREE.MathUtils.clamp(this.rootRoll + 0.28 * this.hugRollCur, -0.35, 0.35);
 
     this.applyAdditiveOverlays(dt);
   }
@@ -343,14 +359,20 @@ export class CatAnimationAdapter implements IPetCareRig {
     const ovYaw = headOv ? headOv[1] : 0;
     const ovRoll = headOv ? headOv[2] : 0;
 
+    const neckYaw = THREE.MathUtils.clamp((this.lookYaw + ovYaw) * 0.42, -0.35, 0.35);
+    const neckPitch = THREE.MathUtils.clamp((this.lookPitch + ovPitch) * 0.35, -0.22, 0.22);
+    const headYaw = THREE.MathUtils.clamp((this.lookYaw + ovYaw) * 0.58, -0.48, 0.48);
+    const headPitch = THREE.MathUtils.clamp((this.lookPitch + ovPitch) * 0.55, -0.28, 0.28);
+    const headRoll = THREE.MathUtils.clamp(this.headTiltCur + ovRoll, -0.26, 0.26);
+
     if (this.bones.Neck) {
-      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(0, 1, 0), (this.lookYaw + ovYaw) * 0.42);
-      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(1, 0, 0), (this.lookPitch + ovPitch) * 0.35);
+      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(0, 1, 0), neckYaw);
+      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(1, 0, 0), neckPitch);
     }
     if (this.bones.Head) {
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 1, 0), (this.lookYaw + ovYaw) * 0.58);
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(1, 0, 0), (this.lookPitch + ovPitch) * 0.55);
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 0, 1), this.headTiltCur + ovRoll);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 1, 0), headYaw);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(1, 0, 0), headPitch);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 0, 1), headRoll);
     }
 
     // 3. Stalk crouch & butt-wiggle overlay

@@ -7,6 +7,7 @@ import { isOutdoorBlocked, isOutdoorNoPlace } from './world/outdoorCollision';
 import { isExtendedWorldDevEnabled } from './worldIntegration/extendedWorldDevFlag';
 import { isTileBlockedFromParsed, type ParsedTiledPortal } from './world/parseTiledWorldMap';
 import { getParsedTiledWorld } from './world/tiledMapRegistry';
+import { getStaticZonePropBlockedTiles } from './world/zonePropColliders';
 import farmWorldJson from '../assets/maps/farm.json';
 import type { MapId } from './types';
 
@@ -92,7 +93,7 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     'village',
     'Làng',
     '/assets/maps/village.json',
-    { tileX: 39, tileY: 31 },
+    { tileX: 8, tileY: 22 },
   ),
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', {
     tileX:
@@ -163,6 +164,7 @@ function buildTiledZoneDefinition(
   if (!parsed) {
     throw new Error(`Missing parsed Tiled map for ${id}`);
   }
+  const propBlocked = getStaticZonePropBlockedTiles(id);
   return {
     id,
     nameVi,
@@ -172,10 +174,12 @@ function buildTiledZoneDefinition(
     defaultSpawn,
     portals: parsed.portals,
     isStaticBlocked(tileX, tileY) {
-      return isTileBlockedFromParsed(parsed, tileX, tileY);
+      if (isTileBlockedFromParsed(parsed, tileX, tileY)) return true;
+      return propBlocked.has(`${tileX},${tileY}`);
     },
     isNoPlaceZone(tileX, tileY) {
       if (portalBlocksDecorate(parsed.portals, tileX, tileY)) return true;
+      if (propBlocked.has(`${tileX},${tileY}`)) return true;
       return isTileBlockedFromParsed(parsed, tileX, tileY);
     },
   };
@@ -185,28 +189,30 @@ const GARDEN_TO_VILLAGE_PORTAL: MapPortal = {
   id: 'garden-to-village',
   labelVi: 'Vào làng',
   tileX: 9,
-  tileY: 12,
+  tileY: 13,
   radiusTiles: 1.6,
   targetMapId: 'village',
-  targetSpawnX: 39,
-  targetSpawnY: 31,
+  targetSpawnX: 8,
+  targetSpawnY: 22,
 };
 
 const GARDEN_TO_FARM_PORTAL: MapPortal = {
   id: 'garden-to-farm',
   labelVi: 'Ra nông trại',
-  tileX: 3,
-  tileY: 12,
+  tileX: 1,
+  tileY: 7,
   radiusTiles: 1.6,
   targetMapId: 'farm',
-  targetSpawnX: 29,
-  targetSpawnY: 4,
+  targetSpawnX: 59,
+  targetSpawnY: 22,
 };
 
 export function getMapDefinition(mapId: MapId): MapDefinition {
   const base = MAP_DEFINITIONS[mapId];
   if (mapId === 'garden' && isExtendedWorldDevEnabled()) {
-    return { ...base, portals: [...base.portals, GARDEN_TO_VILLAGE_PORTAL, GARDEN_TO_FARM_PORTAL] };
+    const existingIds = new Set(base.portals.map((p) => p.id));
+    const extras = [GARDEN_TO_VILLAGE_PORTAL, GARDEN_TO_FARM_PORTAL].filter((p) => !existingIds.has(p.id));
+    return extras.length > 0 ? { ...base, portals: [...base.portals, ...extras] } : base;
   }
   return base;
 }

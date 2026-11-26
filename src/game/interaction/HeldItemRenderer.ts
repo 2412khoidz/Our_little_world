@@ -135,31 +135,31 @@ export class HeldItemRenderer {
       return;
     }
 
-    // Carried non-tool items (gifts, flowers, food, crops, seeds): natural hands/waist carry pose
+    // Carried non-tool items (gifts, flowers, food, crops, seeds): anchored cleanly at hands/waist below chest, never covering face
     const seedHeld = Boolean(held.itemSku?.startsWith('seed_'));
     this.image.setOrigin(0.5, 0.5);
     this.image.setFlipX(false);
     this.image.setRotation(0);
-    this.image.setScale((seedHeld ? 0.2 : 0.54) * avatarScale);
+    this.image.setScale((seedHeld ? 0.19 : 0.42) * avatarScale);
 
-    const walkBob = moving ? Math.sin(timeMs * 0.014) * 0.7 * avatarScale : 0;
+    const walkBob = moving ? Math.sin(timeMs * 0.014) * 0.65 * avatarScale : 0;
     let ox: number;
     let oy: number;
     let depth = avatarDepth + 3;
 
     if (facing === 'left') {
-      ox = -5.5 * avatarScale;
-      oy = -5 * avatarScale + walkBob;
+      ox = -6.5 * avatarScale;
+      oy = -2.5 * avatarScale + walkBob;
     } else if (facing === 'right') {
-      ox = 5.5 * avatarScale;
-      oy = -5 * avatarScale + walkBob;
+      ox = 6.5 * avatarScale;
+      oy = -2.5 * avatarScale + walkBob;
     } else if (facing === 'up') {
       ox = 0;
-      oy = -6.5 * avatarScale + walkBob;
+      oy = -4.5 * avatarScale + walkBob;
       depth = avatarDepth - 4;
     } else {
       ox = 0;
-      oy = -4.5 * avatarScale + walkBob;
+      oy = -2.5 * avatarScale + walkBob;
       depth = avatarDepth + 4;
     }
 

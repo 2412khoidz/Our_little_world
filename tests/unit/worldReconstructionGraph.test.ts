@@ -88,7 +88,7 @@ describe('Mission N world reconstruction invariants', () => {
   });
 
   it('ensures BFS reachability from defaultSpawn to portals, shops, and 184 farm plots', () => {
-    for (const mapId of ['home', 'farm', 'village', 'forest', 'beach'] as const) {
+    for (const mapId of ['home', 'garden', 'farm', 'village', 'forest', 'beach'] as const) {
       const def = getMapDefinition(mapId);
       const seen = reachableTiles(mapId);
       for (const portal of def.portals) {

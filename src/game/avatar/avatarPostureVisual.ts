@@ -84,10 +84,24 @@ export function playAvatarPostureAnim(
     return;
   }
 
-  if (posture === 'sit_study' || posture === 'sit_sofa' || posture === 'sit_bench') {
+  if (posture === 'sit_sofa' || posture === 'sit_bench') {
+    // Horizontal sofas & benches face South toward camera; use front-facing frame instead of profile sit sprite
+    sprite.setOrigin(0.5, 0.82);
+    const frontIdleKey = `${textureKey}:idle-down`;
+    if (scene.anims.exists(frontIdleKey)) {
+      if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== frontIdleKey) {
+        sprite.play(frontIdleKey, true);
+      }
+      return;
+    }
+    sprite.stop();
+    sprite.setFrame(avatarIdleFrame(textureKey, 'down'));
+    return;
+  }
+
+  if (posture === 'sit_study') {
     resetAvatarSpriteOrigin(sprite);
-    const sitFacing = posture === 'sit_study' ? 'up' : posture === 'sit_sofa' || posture === 'sit_bench' ? 'down' : cardinal;
-    const sitKey = `${textureKey}:sit-${sitFacing}`;
+    const sitKey = `${textureKey}:sit-up`;
     if (scene.anims.exists(sitKey)) {
       if (!sprite.anims.isPlaying || sprite.anims.currentAnim?.key !== sitKey) {
         sprite.play(sitKey, true);

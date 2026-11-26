@@ -1,6 +1,7 @@
 import { getCatalogItem } from './catalog';
 import { getMapDefinition } from './maps';
 import type { FurniturePlacement, MapId, MutationErrorCode } from './types';
+import { getStaticZonePropBlockedTiles } from './world/zonePropColliders';
 
 export interface TileCoord {
   tileX: number;
@@ -174,6 +175,10 @@ export function buildMovementCollisionGrid(
         blocked.add(`${x},${y}`);
       }
     }
+  }
+
+  for (const key of getStaticZonePropBlockedTiles(mapId)) {
+    blocked.add(key);
   }
 
   for (const placement of placements) {

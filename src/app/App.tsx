@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gameEventBus, type GameDiagnosticsSnapshot } from '../game/eventBus';
+import { gameAudio } from '../game/audio/gameAudioManager';
 import { getWorldBackend } from '../lib/backend';
 import type {
   AuthSessionUser,
@@ -2142,17 +2143,14 @@ function MainCoupleApp() {
               idempotencyKey: makeIdempotencyKey(`farm-${action}-${plotIndex}`),
             });
             if (!res.ok) {
+              gameAudio.playSfx('fail', { volumeScale: 0.6 });
               showToast(res.message ?? 'Không thực hiện được.', true);
               if (res.code === 'VERSION_CONFLICT') await refreshFarmWallet();
               return;
             }
             setFarmWalletCoins(res.data.snapshot.walletCoins);
             farmVersionRef.current = res.data.snapshot.version;
-            if (action === 'till' || action === 'water') {
-              applyFarmSnapshotToUi(res.data.snapshot, { plotId: plotIndex, action });
-            } else {
-              applyFarmSnapshotToUi(res.data.snapshot);
-            }
+            applyFarmSnapshotToUi(res.data.snapshot, { plotId: plotIndex, action });
             await refreshInventorySnapshot();
             if (res.data.harvested?.length) {
               showToast(
@@ -2519,6 +2517,7 @@ function MainCoupleApp() {
                     return;
                   }
                   setFarmWalletCoins(res.data.walletCoins);
+                  gameAudio.playSfx('shop_sell');
                   await refreshInventorySnapshot(targetWorldId);
                   showToast(`Đã gửi nông sản (+${res.data.totalCoins} xu).`);
                   realtimeRef.current?.notifyWorldMutated('farm');
@@ -2542,6 +2541,7 @@ function MainCoupleApp() {
                     return;
                   }
                   setFarmWalletCoins(res.data.walletCoins);
+                  gameAudio.playSfx('shop_buy');
                   await refreshInventorySnapshot(targetWorldId);
                   showToast(
                     itemSku.startsWith('seed_') ? 'Đã mua hạt giống.' : 'Đã mua vật phẩm.',

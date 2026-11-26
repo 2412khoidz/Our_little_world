@@ -110,6 +110,8 @@ import {
   type DonorToolKind,
 } from '../interaction/donorPydewToolController';
 import { playToolActionSfx } from '../interaction/toolActionAudio';
+import { gameAudio } from '../audio/gameAudioManager';
+import { farmPlotIndexForTile } from '../../shared/farming/farmPlotIndex';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
 import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
@@ -259,7 +261,11 @@ export class WorldScene extends Phaser.Scene {
   private heldRenderer: HeldItemRenderer | null = null;
   private readonly donorToolController = new DonorPydewToolController();
   private localMoving = false;
+  private prePosturePos: { x: number; y: number } | null = null;
   private farmPlotVisual: FarmPlotVisualController | null = null;
+  private farmHoverGraphics: Phaser.GameObjects.Graphics | null = null;
+  private hoveredFarmPlotId: number | null = null;
+  private pendingFarmPlotClick: { plotId: number; tileX: number; tileY: number } | null = null;
   private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
   private worldLighting: WorldLightingOverlay | null = null;
   private worldClockPresentation: WorldClockPresentation | null = null;
@@ -275,6 +281,14 @@ export class WorldScene extends Phaser.Scene {
     this.decorateGridGraphics = this.add.graphics().setDepth(9000);
     this.decoratePreviewGraphics = this.add.graphics().setDepth(9050);
     this.tapMarker = this.add.graphics().setDepth(4);
+    this.farmHoverGraphics = this.add.graphics().setDepth(4.2);
+
+    this.input.once('pointerdown', () => {
+      void gameAudio.unlock();
+    });
+    this.input.keyboard?.once('keydown', () => {
+      void gameAudio.unlock();
+    });
 
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
@@ -387,9 +401,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnDonorToolHitParticles(kind: DonorToolKind, wx: number, wy: number): void {
-    const color = kind === 'water' ? 0x6fd3ff : kind === 'axe' ? 0xd9a066 : 0x9c6b43;
+    const color =
+      kind === 'water'
+        ? 0x6fd3ff
+        : kind === 'axe'
+          ? 0xd9a066
+          : kind === 'plant'
+            ? 0xf2cf66
+            : kind === 'harvest'
+              ? 0x7ad66b
+              : 0x9c6b43;
     const s = this.avatarScale();
-    for (let i = 0; i < 4; i += 1) {
+    const count = kind === 'harvest' ? 6 : 4;
+    for (let i = 0; i < count; i += 1) {
       const p = this.add.circle(
         wx + (Math.random() - 0.5) * 6 * s,
         wy + (Math.random() - 0.5) * 4 * s,
@@ -480,8 +504,13 @@ export class WorldScene extends Phaser.Scene {
   private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
     this.buildingMap = true;
     this.currentMapId = mapId;
+    gameAudio.setZoneMusic(mapId);
     this.clearLocalPosture(true);
+    this.prePosturePos = null;
     this.pathQueue = [];
+    this.pendingFarmPlotClick = null;
+    this.hoveredFarmPlotId = null;
+    this.farmHoverGraphics?.clear();
     this.tapMarker?.clear();
     this.mailboxBadge?.destroy();
     this.mailboxBadge = null;
@@ -596,9 +625,11 @@ export class WorldScene extends Phaser.Scene {
     this.rebuildFurnitureAndCollisions();
     this.petEntity?.syncSnapshot(this.petSnapshot, mapId);
     if (this.petSnapshot && mapId !== 'home' && FOLLOW_CAT_MAPS.has(mapId)) {
-      this.petEntity?.teleportNear(px - 16, py + 4);
+      const petPos = this.findSafePetSpawnPx(spawn.tileX + partnerOffsetX, spawn.tileY, px, py);
+      this.petEntity?.teleportNear(petPos.x, petPos.y);
     } else if (!this.petSnapshot && mapId === 'home') {
-      this.petEntity?.teleportNear(13.5 * this.tilePx(), 10.2 * this.tilePx());
+      const petPos = this.findSafePetSpawnPx(13, 10, 13.5 * this.tilePx(), 10.2 * this.tilePx());
+      this.petEntity?.teleportNear(petPos.x, petPos.y);
     }
     this.reconcileRemoteVisibility();
     this.redrawDecorateOverlay();
@@ -1013,12 +1044,151 @@ export class WorldScene extends Phaser.Scene {
     this.redrawDecorateOverlay();
   }
 
+  private findSafePetSpawnPx(
+    anchorTileX: number,
+    anchorTileY: number,
+    fallbackX: number,
+    fallbackY: number,
+  ): { x: number; y: number } {
+    const def = getMapDefinition(this.currentMapId);
+    const preferredOffsets = [
+      [-1, 0],
+      [1, 0],
+      [0, 1],
+      [0, -1],
+      [-1, 1],
+      [1, 1],
+      [-1, -1],
+      [1, -1],
+      [-2, 0],
+      [2, 0],
+      [0, 2],
+      [0, -2],
+    ] as const;
+    for (const [dx, dy] of preferredOffsets) {
+      const tx = anchorTileX + dx;
+      const ty = anchorTileY + dy;
+      if (tx >= 0 && ty >= 0 && tx < def.widthTiles && ty < def.heightTiles && !this.blockedGrid.has(`${tx},${ty}`)) {
+        return { x: (tx + 0.5) * this.tilePx(), y: (ty + 0.85) * this.tilePx() };
+      }
+    }
+    return this.findNearestWalkableNearPx(fallbackX, fallbackY);
+  }
+
+  private findNearestWalkableNearPx(px: number, py: number): { x: number; y: number } {
+    if (this.canStandAtPixel(px, py)) return { x: px, y: py };
+    const tPx = this.tilePx();
+    const baseTx = Math.floor(px / tPx);
+    const baseTy = Math.floor((py - 2) / tPx);
+    for (let radius = 0; radius <= 3; radius += 1) {
+      for (let dy = -radius; dy <= radius; dy += 1) {
+        for (let dx = -radius; dx <= radius; dx += 1) {
+          const candX = (baseTx + dx + 0.5) * tPx;
+          const candY = (baseTy + dy + 0.85) * tPx;
+          if (this.canStandAtPixel(candX, candY)) {
+            return { x: candX, y: candY };
+          }
+        }
+      }
+    }
+    return { x: px, y: py };
+  }
+
+  private capturePrePostureAnchor(): void {
+    if (this.localPosture !== 'none' || !this.localSprite) return;
+    if (this.canStandAtPixel(this.localSprite.x, this.localSprite.y)) {
+      this.prePosturePos = { x: this.localSprite.x, y: this.localSprite.y };
+    }
+  }
+
+  private resolveClickFarmAction(
+    plotId: number,
+  ): { action: 'till' | 'plant' | 'water' | 'harvest'; seedSku?: string | null } | null {
+    const plot = this.farmPlotsCache.find((p) => p.plotId === plotId);
+    if (!plot) return null;
+    if (plot.soil === 'planted' && plot.ready) {
+      return { action: 'harvest' };
+    }
+    if (this.heldItem.itemSku === 'tool_hoe' && plot.soil === 'empty') {
+      return { action: 'till' };
+    }
+    if (this.heldItem.itemSku?.startsWith('seed_') && plot.soil === 'tilled') {
+      return { action: 'plant', seedSku: this.heldItem.itemSku };
+    }
+    if (
+      (this.heldItem.itemKind === 'water_pitcher' || this.heldItem.itemSku === 'tool_watering_can') &&
+      plot.soil === 'planted' &&
+      !plot.ready
+    ) {
+      return { action: 'water' };
+    }
+    return null;
+  }
+
+  private redrawFarmHoverHighlight(tileX: number | null, tileY: number | null): void {
+    if (!this.farmHoverGraphics) return;
+    this.farmHoverGraphics.clear();
+    if (this.currentMapId !== 'farm' || this.decorateState.active || tileX === null || tileY === null) {
+      this.hoveredFarmPlotId = null;
+      return;
+    }
+    const plotId = farmPlotIndexForTile(tileX, tileY);
+    this.hoveredFarmPlotId = plotId;
+    if (plotId === null) return;
+    const action = this.resolveClickFarmAction(plotId);
+    const tPx = this.tilePx();
+    const x = tileX * tPx;
+    const y = tileY * tPx;
+    if (action) {
+      this.farmHoverGraphics.fillStyle(0xf9df7b, 0.22);
+      this.farmHoverGraphics.fillRect(x, y, tPx, tPx);
+      this.farmHoverGraphics.lineStyle(1.2, 0xf7cf52, 0.95);
+    } else {
+      this.farmHoverGraphics.fillStyle(0xfff4d9, 0.12);
+      this.farmHoverGraphics.fillRect(x, y, tPx, tPx);
+      this.farmHoverGraphics.lineStyle(1, 0xffe8c7, 0.6);
+    }
+    this.farmHoverGraphics.strokeRect(x + 0.5, y + 0.5, tPx - 1, tPx - 1);
+  }
+
+  private tryTriggerPendingFarmPlotClick(): boolean {
+    const pending = this.pendingFarmPlotClick;
+    if (!pending || this.currentMapId !== 'farm' || !this.localSprite) return false;
+    const tPx = this.tilePx();
+    const plotCenterX = (pending.tileX + 0.5) * tPx;
+    const plotCenterY = (pending.tileY + 0.5) * tPx;
+    if (Math.hypot(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2)) > tPx * 1.95) {
+      return false;
+    }
+    this.pendingFarmPlotClick = null;
+    this.pathQueue = [];
+    this.tapMarker?.clear();
+    this.localFacing = this.vectorToDirection(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
+    this.playLocalMoveAnim(false, false);
+    const resolved = this.resolveClickFarmAction(pending.plotId);
+    if (resolved) {
+      gameEventBus.emit('evt:farm-plot-click-request', {
+        plotId: pending.plotId,
+        action: resolved.action,
+        seedSku: resolved.seedSku,
+      });
+    }
+    return true;
+  }
+
   private setupPointerInput(): void {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!this.decorateState.active) return;
       const worldPt = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       const tileX = Math.floor(worldPt.x / this.tilePx());
       const tileY = Math.floor(worldPt.y / this.tilePx());
+      if (!this.decorateState.active) {
+        if (this.currentMapId === 'farm') {
+          this.redrawFarmHoverHighlight(tileX, tileY);
+        } else if (this.hoveredFarmPlotId !== null) {
+          this.redrawFarmHoverHighlight(null, null);
+        }
+        return;
+      }
       if (!this.hoverTile || this.hoverTile.tileX !== tileX || this.hoverTile.tileY !== tileY) {
         this.hoverTile = { tileX, tileY };
         this.redrawDecoratePreview();
@@ -1026,6 +1196,7 @@ export class WorldScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      void gameAudio.unlock();
       if (this.paused || document.hidden) return;
       // Ignore slight drag gestures
       if (pointer.getDistance() > 14) return;
@@ -1043,6 +1214,57 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
 
+      if (this.currentMapId === 'farm') {
+        const plotId = farmPlotIndexForTile(tileX, tileY);
+        const farmAction = plotId !== null ? this.resolveClickFarmAction(plotId) : null;
+        if (plotId !== null && farmAction) {
+          const tPx = this.tilePx();
+          const plotCenterX = (tileX + 0.5) * tPx;
+          const plotCenterY = (tileY + 0.5) * tPx;
+          const dist = Math.hypot(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
+          if (dist <= tPx * 1.95) {
+            this.clearLocalPosture(true);
+            this.pendingFarmPlotClick = null;
+            this.pathQueue = [];
+            this.tapMarker?.clear();
+            this.localFacing = this.vectorToDirection(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
+            this.playLocalMoveAnim(false, false);
+            gameEventBus.emit('evt:farm-plot-click-request', {
+              plotId,
+              action: farmAction.action,
+              seedSku: farmAction.seedSku,
+            });
+            return;
+          }
+          const startTile = {
+            tileX: Math.floor(this.localSprite.x / tPx),
+            tileY: Math.floor((this.localSprite.y - 2) / tPx),
+          };
+          const candidates = [
+            { tileX, tileY },
+            { tileX, tileY: tileY + 1 },
+            { tileX: tileX - 1, tileY },
+            { tileX: tileX + 1, tileY },
+            { tileX, tileY: tileY - 1 },
+          ];
+          for (const cand of candidates) {
+            if (cand.tileX < 0 || cand.tileY < 0 || cand.tileX >= mapDef.widthTiles || cand.tileY >= mapDef.heightTiles) {
+              continue;
+            }
+            if (this.blockedGrid.has(`${cand.tileX},${cand.tileY}`)) continue;
+            const path = findTilePath(startTile, cand, mapDef.widthTiles, mapDef.heightTiles, this.blockedGrid);
+            if (path.length > 0) {
+              this.clearLocalPosture(true);
+              this.pathQueue = path;
+              this.pendingFarmPlotClick = { plotId, tileX, tileY };
+              this.drawTapMarker(tileX, tileY);
+              return;
+            }
+          }
+        }
+      }
+
+      this.pendingFarmPlotClick = null;
       const startTile = {
         tileX: Math.floor(this.localSprite.x / this.tilePx()),
         tileY: Math.floor((this.localSprite.y - 2) / this.tilePx()),
@@ -1390,14 +1612,15 @@ export class WorldScene extends Phaser.Scene {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
             this.triggerDonorToolSwing('hoe');
           }
+          if (highlightPlotId != null && highlightAction === 'plant') {
+            this.triggerDonorToolSwing('plant');
+          }
           if (highlightPlotId != null && highlightAction === 'water') {
             playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
             this.triggerDonorToolSwing('water');
           }
           if (highlightPlotId != null && highlightAction === 'harvest') {
-            if (this.localSprite) {
-              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'harvest');
-            }
+            this.triggerDonorToolSwing('harvest');
           }
         }
       }),
@@ -1444,7 +1667,9 @@ export class WorldScene extends Phaser.Scene {
         }
         const desk = this.placements.find((p) => p.mapId === 'home' && p.sku === 'desk_study');
         if (!desk) return;
+        this.capturePrePostureAnchor();
         this.pathQueue = [];
+        this.pendingFarmPlotClick = null;
         this.tapMarker?.clear();
         const seatX = (desk.tileX + (seat === 'left' ? 0.5 : 1.5)) * this.tilePx();
         const seatY = (desk.tileY + desk.heightTiles + 0.65) * this.tilePx();
@@ -1462,7 +1687,9 @@ export class WorldScene extends Phaser.Scene {
           this.clearLocalPosture(false);
           return;
         }
+        this.capturePrePostureAnchor();
         this.pathQueue = [];
+        this.pendingFarmPlotClick = null;
         this.tapMarker?.clear();
         if (typeof x === 'number' && typeof y === 'number') {
           this.localSprite.setPosition(x, y);
@@ -1577,6 +1804,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.petCareMode === active) return;
     this.petCareMode = active;
     setPetCareModeActive(active);
+    gameAudio.setOverlayPaused(active);
 
     if (active) {
       this.pathQueue = [];
@@ -1819,6 +2047,7 @@ export class WorldScene extends Phaser.Scene {
     if (manualMag > 0.15) {
       this.clearLocalPosture(true);
       this.pathQueue = [];
+      this.pendingFarmPlotClick = null;
       this.tapMarker?.clear();
 
       const nx = vx / Math.max(1, manualMag);
@@ -1829,6 +2058,9 @@ export class WorldScene extends Phaser.Scene {
       this.localFacing = this.vectorToDirection(nx, ny);
       const moved = this.tryMovePixel(stepX, stepY);
       this.playLocalMoveAnim(moved, running);
+      if (moved) {
+        gameAudio.playSfx('footstep', { volumeScale: running ? 0.45 : 0.34, cooldownMs: running ? 240 : 340 });
+      }
       if (moved && running && this.time.now - this.lastRunDustAtMs > 170) {
         this.lastRunDustAtMs = this.time.now;
         this.spawnRunDust(this.localSprite.x, this.localSprite.y);
@@ -1838,6 +2070,9 @@ export class WorldScene extends Phaser.Scene {
     }
 
     if (this.pathQueue.length > 0) {
+      if (this.tryTriggerPendingFarmPlotClick()) {
+        return false;
+      }
       const target = this.pathQueue[0]!;
       const tx = (target.tileX + 0.5) * this.tilePx();
       const ty = (target.tileY + 0.85) * this.tilePx();
@@ -1848,6 +2083,9 @@ export class WorldScene extends Phaser.Scene {
       if (dist <= 2) {
         this.localSprite.setPosition(tx, ty);
         this.pathQueue.shift();
+        if (this.tryTriggerPendingFarmPlotClick()) {
+          return false;
+        }
         if (this.pathQueue.length === 0) {
           this.tapMarker?.clear();
           this.playLocalMoveAnim(false, false);
@@ -1862,6 +2100,7 @@ export class WorldScene extends Phaser.Scene {
         this.localSprite.y += my;
         this.localFacing = this.vectorToDirection(dx, dy);
         this.playLocalMoveAnim(true, running);
+        gameAudio.playSfx('footstep', { volumeScale: 0.34, cooldownMs: 340 });
         this.emitCurrentTile(false);
         return true;
       }
@@ -1872,18 +2111,37 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryMovePixel(dx: number, dy: number): boolean {
-    let moved = false;
-    const nextX = this.localSprite.x + dx;
-    if (this.canStandAtPixel(nextX, this.localSprite.y)) {
-      this.localSprite.x = nextX;
-      moved = true;
+    const startX = this.localSprite.x;
+    const startY = this.localSprite.y;
+    const canX = dx !== 0 && this.canStandAtPixel(startX + dx, startY);
+    const canY = dy !== 0 && this.canStandAtPixel(startX, startY + dy);
+
+    // Prevent diagonal corner cutting when either cardinal side of the corner is blocked
+    if (dx !== 0 && dy !== 0) {
+      if (canX && canY && this.canStandAtPixel(startX + dx, startY + dy)) {
+        this.localSprite.setPosition(startX + dx, startY + dy);
+        return true;
+      }
+      if (canX) {
+        this.localSprite.x = startX + dx;
+        return true;
+      }
+      if (canY) {
+        this.localSprite.y = startY + dy;
+        return true;
+      }
+      return false;
     }
-    const nextY = this.localSprite.y + dy;
-    if (this.canStandAtPixel(this.localSprite.x, nextY)) {
-      this.localSprite.y = nextY;
-      moved = true;
+
+    if (canX) {
+      this.localSprite.x = startX + dx;
+      return true;
     }
-    return moved;
+    if (canY) {
+      this.localSprite.y = startY + dy;
+      return true;
+    }
+    return false;
   }
 
   private canStandAtPixel(px: number, py: number): boolean {
@@ -2115,7 +2373,9 @@ export class WorldScene extends Phaser.Scene {
     const slotIndex = pickAvailableSharedSlot(occupiedSlots, 0);
     const chosen = slotIndex === 0 ? slot0 : slot1;
 
+    this.capturePrePostureAnchor();
     this.pathQueue = [];
+    this.pendingFarmPlotClick = null;
     this.tapMarker?.clear();
     this.localSprite.setPosition(chosen.x, chosen.y);
     this.localFacing = 'down';
@@ -2267,6 +2527,7 @@ export class WorldScene extends Phaser.Scene {
         const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
         if (dist <= 0.95) {
           this.lastPortalAtMs = now;
+          gameAudio.playSfx('door', { volumeScale: 0.72 });
           gameEventBus.emit('evt:request-map-change', {
             targetMapId: portal.targetMapId,
             spawnX: portal.targetSpawnX,
@@ -2301,6 +2562,7 @@ export class WorldScene extends Phaser.Scene {
           return dist <= p.radiusTiles + 0.5;
         });
       if (portal) {
+        gameAudio.playSfx('door', { volumeScale: 0.72 });
         gameEventBus.emit('evt:request-map-change', {
           targetMapId: portal.targetMapId,
           spawnX: portal.targetSpawnX,
@@ -2350,7 +2612,22 @@ export class WorldScene extends Phaser.Scene {
     if (this.localBlanket) {
       this.localBlanket.setVisible(false);
     }
+    if (hadPosture && this.localSprite) {
+      resetAvatarSpriteOrigin(this.localSprite);
+      this.localSprite.setRotation(0);
+      if (!this.canStandAtPixel(this.localSprite.x, this.localSprite.y)) {
+        const safe =
+          this.prePosturePos && this.canStandAtPixel(this.prePosturePos.x, this.prePosturePos.y)
+            ? this.prePosturePos
+            : this.findNearestWalkableNearPx(this.localSprite.x, this.localSprite.y);
+        this.localSprite.setPosition(safe.x, safe.y);
+      }
+      this.prePosturePos = null;
+      this.syncLocalRestAura(false);
+      this.coupleAffectionIcon?.setVisible(false);
+    }
     if (emit && hadPosture) {
+      this.emitLocalMovement('idle', true);
       gameEventBus.emit('evt:local-posture-changed', {
         posture: 'none',
         slotIndex: 0,
@@ -2399,7 +2676,9 @@ export class WorldScene extends Phaser.Scene {
 
     const slotIndex = pickAvailableSharedSlot(occupiedSlots, 0);
     const chosen = slotIndex === 0 ? slot0 : slot1;
+    this.capturePrePostureAnchor();
     this.pathQueue = [];
+    this.pendingFarmPlotClick = null;
     this.tapMarker?.clear();
     this.tweens.killTweensOf(this.localSprite);
     this.localSprite.setRotation(0);
@@ -2835,6 +3114,8 @@ export class WorldScene extends Phaser.Scene {
   private cleanup(): void {
     this.coupleAffectionIcon?.destroy();
     this.coupleAffectionIcon = null;
+    this.farmHoverGraphics?.destroy();
+    this.farmHoverGraphics = null;
     this.mapDebugOverlay?.destroy();
     this.mapDebugOverlay = null;
     this.worldLighting?.destroy();

@@ -113,8 +113,8 @@ function buildBeachMap() {
         else land[idx(x, y)] = 0x80000000 | 212;
       }
 
-      // Block ocean water beyond shore edge & northern/southern perimeter cliff
-      if (x >= cx + 1 || y === 0 || y >= H - 2 || x === W - 1) {
+      // Strictly block ocean beyond coastline (x >= cx) & northern/southern perimeter cliff
+      if (x >= cx || y === 0 || y >= H - 2 || x === W - 1) {
         collision[idx(x, y)] = 1;
       }
     }

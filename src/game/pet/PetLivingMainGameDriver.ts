@@ -140,7 +140,7 @@ function findNextTileWaypoint(
   let bestKey: string | null = null;
   let bestDist = Infinity;
   let head = 0;
-  const MAX_VISITED = 160;
+  const MAX_VISITED = 420;
 
   while (head < queue.length && parent.size < MAX_VISITED) {
     const [cx, cy] = queue[head++]!;
@@ -255,12 +255,7 @@ export class PetLivingMainGameDriver {
       const distToOwner = Math.hypot(frame.localPlayerX - px, frame.localPlayerY - py);
       const followStartDist = frame.mapId === 'home' ? 52 : 34;
 
-      if (distToOwner > 260 && isWorldPosWalkable(targetX, targetY, tilePx, isBlocked)) {
-        const snapped = createLocomotionSnapshot(targetX, targetY);
-        this.movement = { ...this.movement, loco: snapped };
-        return { loco: snapped, ambientBubble: 'Mrow!', authority: this.authority };
-      }
-
+      // Never catch-up teleport across walls/water; steer via collision-aware pathfinding instead.
       if (distToOwner > followStartDist && !frame.isStudying && !this.pendingFoodOffer && !frame.foodOffer) {
         const intent = distToOwner > 86 ? 'run' : 'move';
         let steerX = targetX;

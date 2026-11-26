@@ -48,12 +48,57 @@ export function playCozyActionMotion(
   sprite: Phaser.GameObjects.Sprite,
   _textureKey: string,
   facing: Direction,
-  action: PydewFarmerAction | 'tool' = 'hoe',
+  action: PydewFarmerAction | 'tool' | 'plant' | 'harvest' = 'hoe',
 ): void {
   if (!sprite.scene) return;
   scene.tweens.killTweensOf(sprite);
+  const baseScaleX = sprite.scaleX || 1;
   const baseScaleY = sprite.scaleY || 1;
   sprite.setRotation(0);
+
+  if (action === 'plant') {
+    const nudgeX = facing === 'left' ? -1.5 : facing === 'right' ? 1.5 : 0;
+    const origX = sprite.x;
+    scene.tweens.add({
+      targets: sprite,
+      scaleX: baseScaleX * 1.06,
+      scaleY: baseScaleY * 0.84,
+      x: origX + nudgeX,
+      duration: 110,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        if (sprite.scene) {
+          sprite.setPosition(origX, sprite.y);
+          sprite.setScale(baseScaleX, baseScaleY);
+        }
+      },
+    });
+    return;
+  }
+
+  if (action === 'harvest') {
+    const origY = sprite.y;
+    scene.tweens.add({
+      targets: sprite,
+      scaleX: baseScaleX * 0.94,
+      scaleY: baseScaleY * 1.1,
+      y: origY - 2.5,
+      rotation: facing === 'left' ? -0.05 : 0.05,
+      duration: 120,
+      yoyo: true,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        if (sprite.scene) {
+          sprite.setPosition(sprite.x, origY);
+          sprite.setRotation(0);
+          sprite.setScale(baseScaleX, baseScaleY);
+        }
+      },
+    });
+    return;
+  }
+
   const tilt = action === 'fish' ? (facing === 'left' ? -0.06 : 0.06) : facing === 'left' ? -0.1 : 0.1;
   scene.tweens.add({
     targets: sprite,
@@ -65,7 +110,7 @@ export function playCozyActionMotion(
     onComplete: () => {
       if (sprite.scene) {
         sprite.setRotation(0);
-        sprite.setScale(sprite.scaleX, baseScaleY);
+        sprite.setScale(baseScaleX, baseScaleY);
       }
     },
   });
@@ -77,7 +122,7 @@ export function playDonorToolUseAnim(
   sprite: Phaser.GameObjects.Sprite,
   textureKey: string,
   facing: Direction,
-  action: PydewFarmerAction | 'tool' = 'hoe',
+  action: PydewFarmerAction | 'tool' | 'plant' | 'harvest' = 'hoe',
 ): void {
   playCozyActionMotion(scene, sprite, textureKey, facing, action);
 }

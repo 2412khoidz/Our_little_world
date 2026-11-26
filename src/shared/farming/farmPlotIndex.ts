@@ -32,6 +32,20 @@ const ANCHOR_INDEX_MAP: ReadonlyMap<string, number> = (() => {
   return m;
 })();
 
+const TILE_INDEX_MAP: ReadonlyMap<string, number> = (() => {
+  const m = new Map<string, number>();
+  const anchors = enumerateFarmPlotAnchors();
+  for (let i = 0; i < anchors.length; i += 1) {
+    const a = anchors[i]!;
+    m.set(`${a.tileX},${a.tileY}`, i);
+  }
+  return m;
+})();
+
+export function farmPlotIndexForTile(tileX: number, tileY: number): number | null {
+  return TILE_INDEX_MAP.get(`${tileX},${tileY}`) ?? null;
+}
+
 export function farmPlotRegionAndLocal(
   plotIndex: number,
 ): { regionId: FarmPlotRegion['id']; localIndex: number } | null {

@@ -232,6 +232,18 @@ export function MainGameInteractionLayer({
   }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs]);
 
   useEffect(() => {
+    return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
+      if (!showHud || !onFarmApply || interactionMutationBusy || actionInFlight.current) return;
+      actionInFlight.current = true;
+      setLocalActionBusy(true);
+      void Promise.resolve(onFarmApply(plotId, action, seedSku)).finally(() => {
+        actionInFlight.current = false;
+        setLocalActionBusy(false);
+      });
+    });
+  }, [showHud, onFarmApply, interactionMutationBusy]);
+
+  useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.code === 'Escape') {

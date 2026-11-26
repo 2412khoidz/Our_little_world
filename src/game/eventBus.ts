@@ -199,6 +199,11 @@ export interface GameEventMap {
   'evt:nearby-interactable': NearbyInteractable | null;
   'evt:interaction-frame': InteractionFramePayload;
   'evt:diagnostics': GameDiagnosticsSnapshot;
+  'evt:farm-plot-click-request': {
+    plotId: number;
+    action: 'till' | 'plant' | 'water' | 'harvest';
+    seedSku?: string | null;
+  };
   /** DEV living-pet acceptance — sampled ~2 Hz from WorldScene. */
   'evt:living-pet-dev-telemetry': LivingPetDevTelemetry;
 }

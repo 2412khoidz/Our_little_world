@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { gameAudio } from '../../game/audio/gameAudioManager';
 import { gameEventBus } from '../../game/eventBus';
 import { EMPTY_HELD_ITEM, selectHotbarSlot } from '../../shared/interaction/interactionResolver';
 import { reconcileHeldItemWithHotbar } from '../../shared/interaction/heldItemIdentity';
@@ -38,6 +39,8 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
   }, [slots]);
 
   const selectSlot = (index: number) => {
+    void gameAudio.unlock();
+    gameAudio.playSfx('tool_swap', { volumeScale: 0.65 });
     setHeldAnchor((cur) => selectHotbarSlot(slots, cur, index));
   };
 

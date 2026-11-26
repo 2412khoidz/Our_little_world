@@ -8,6 +8,7 @@ import { buildGardenMap, buildHomeMap, buildSproutTilesets } from './lib/sproutH
 
 const REPO = path.resolve(import.meta.dirname, '..');
 const MANIFEST = path.join(REPO, 'public/maps/donor/sprout-lands/MANIFEST.json');
+const SHA_FILE = path.join(REPO, 'public/maps/donor/sprout-lands/UPSTREAM_SHA.txt');
 const HOME_OUT = path.join(REPO, 'src/assets/maps/home.json');
 const GARDEN_OUT = path.join(REPO, 'src/assets/maps/garden.json');
 const MAPS_TS = path.join(REPO, 'src/shared/maps.ts');
@@ -26,12 +27,16 @@ function ensureSproutMapDefinitions() {
 }
 
 function main() {
-  if (!fs.existsSync(MANIFEST)) {
-    console.error('Run: node scripts/vendor-donor-sprout-home-garden.mjs');
+  let sha = 'unknown';
+  if (fs.existsSync(MANIFEST)) {
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+    sha = manifest.sprout?.commit ?? 'unknown';
+  } else if (fs.existsSync(SHA_FILE)) {
+    sha = fs.readFileSync(SHA_FILE, 'utf8').trim() || 'unknown';
+  } else {
+    console.error('Missing public/maps/donor/sprout-lands metadata.');
     process.exit(1);
   }
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
-  const sha = manifest.sprout?.commit ?? 'unknown';
   const recovery = recoveryProps();
 
   const tilesets = buildSproutTilesets(REPO);

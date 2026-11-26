@@ -1,7 +1,7 @@
 import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import type { Direction } from '../../shared/types';
 
-export type DonorToolKind = 'hoe' | 'water' | 'axe' | 'rod';
+export type DonorToolKind = 'hoe' | 'water' | 'axe' | 'rod' | 'plant' | 'harvest';
 
 export interface DonorToolActionState {
   active: boolean;
@@ -26,6 +26,8 @@ const TOOL_DURATION_MS: Record<DonorToolKind, number> = {
   water: 420,
   axe: 360,
   rod: 340,
+  plant: 280,
+  harvest: 320,
 };
 
 export function toolKindFromItemSku(

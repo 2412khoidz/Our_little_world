@@ -36,7 +36,14 @@ export interface TidefallFishingState {
   readonly pointerDir: number;
   readonly pointerSpeed: number;
   readonly targetCenter: number;
+  readonly baseTargetCenter: number;
   readonly targetWidth: number;
+  readonly targetDriftAmp: number;
+  readonly targetDriftFreq: number;
+  readonly speedSurgeAmp: number;
+  readonly hitGain: number;
+  readonly missPenalty: number;
+  readonly maxBiteMs: number;
   readonly bobberDip: number;
   readonly personality: TidefallFishPersonality;
   readonly hookFlash: boolean;
@@ -47,13 +54,19 @@ export interface TidefallFishingConfig {
   readonly targetWidth: number;
   readonly pointerSpeed: number;
   readonly personality: TidefallFishPersonality;
+  readonly targetDriftAmp?: number;
+  readonly targetDriftFreq?: number;
+  readonly speedSurgeAmp?: number;
+  readonly hitGain?: number;
+  readonly missPenalty?: number;
+  readonly biteWindowMs?: number;
 }
 
 const personalityDecay: Record<TidefallFishPersonality, number> = {
-  TIMID: 0.92,
+  TIMID: 0.85,
   NORMAL: 1,
-  AGGRESSIVE: 1.08,
-  LEGENDARY: 1.15,
+  AGGRESSIVE: 1.12,
+  LEGENDARY: 1.24,
 };
 
 export function pickWaitMs(rng01: () => number): number {
@@ -63,9 +76,9 @@ export function pickWaitMs(rng01: () => number): number {
 
 export function pickPersonality(rng01: () => number): TidefallFishPersonality {
   const r = rng01();
-  if (r < 0.12) return 'AGGRESSIVE';
-  if (r < 0.28) return 'TIMID';
   if (r < 0.04) return 'LEGENDARY';
+  if (r < 0.16) return 'AGGRESSIVE';
+  if (r < 0.34) return 'TIMID';
   return 'NORMAL';
 }
 
@@ -81,7 +94,14 @@ export function createTidefallFishingIdle(): TidefallFishingState {
     pointerDir: 1,
     pointerSpeed: TIDEFALL_POINTER_SPEED,
     targetCenter: 0.5,
+    baseTargetCenter: 0.5,
     targetWidth: 0.32,
+    targetDriftAmp: 0,
+    targetDriftFreq: 1.4,
+    speedSurgeAmp: 0,
+    hitGain: TIDEFALL_MINIGAME_HIT,
+    missPenalty: TIDEFALL_MINIGAME_MISS,
+    maxBiteMs: TIDEFALL_BITE_MS,
     bobberDip: 0,
     personality: 'NORMAL',
     hookFlash: false,
@@ -90,6 +110,7 @@ export function createTidefallFishingIdle(): TidefallFishingState {
 
 export function beginTidefallCast(state: TidefallFishingState, config: TidefallFishingConfig): TidefallFishingState {
   if (state.phase !== 'idle' && state.phase !== 'landed' && state.phase !== 'escaped') return state;
+  const baseCenter = 0.48 + (config.personality === 'AGGRESSIVE' ? 0.06 : config.personality === 'LEGENDARY' ? -0.05 : 0);
   return {
     ...createTidefallFishingIdle(),
     phase: 'casting',
@@ -97,7 +118,15 @@ export function beginTidefallCast(state: TidefallFishingState, config: TidefallF
     targetWidth: config.targetWidth,
     pointerSpeed: config.pointerSpeed,
     personality: config.personality,
-    targetCenter: 0.48 + (config.personality === 'AGGRESSIVE' ? 0.06 : 0),
+    targetCenter: baseCenter,
+    baseTargetCenter: baseCenter,
+    targetDriftAmp: config.targetDriftAmp ?? 0,
+    targetDriftFreq: config.targetDriftFreq ?? 1.4,
+    speedSurgeAmp: config.speedSurgeAmp ?? 0,
+    hitGain: config.hitGain ?? TIDEFALL_MINIGAME_HIT,
+    missPenalty: config.missPenalty ?? TIDEFALL_MINIGAME_MISS,
+    maxBiteMs: config.biteWindowMs ?? TIDEFALL_BITE_MS,
+    biteRemainingMs: config.biteWindowMs ?? TIDEFALL_BITE_MS,
   };
 }
 
@@ -121,7 +150,7 @@ export function tickTidefallFishing(state: TidefallFishingState, dtSec: number):
     case 'waiting': {
       const elapsedMs = state.elapsedMs + dtMs;
       if (elapsedMs >= state.waitTotalMs) {
-        return withPhase(state, 'bite', { elapsedMs: 0, biteRemainingMs: TIDEFALL_BITE_MS, bobberDip: 0.35, hookFlash: true });
+        return withPhase(state, 'bite', { elapsedMs: 0, biteRemainingMs: state.maxBiteMs, bobberDip: 0.35, hookFlash: true });
       }
       const bobberDip = 0.04 + Math.sin(elapsedMs * 0.004) * 0.03;
       return { ...state, elapsedMs, bobberDip };
@@ -136,7 +165,9 @@ export function tickTidefallFishing(state: TidefallFishingState, dtSec: number):
       return { ...state, biteRemainingMs, bobberDip, elapsedMs, hookFlash: biteRemainingMs % 800 < 120 };
     }
     case 'minigame': {
-      let pointerNorm = state.pointerNorm + state.pointerDir * speed * dtSec * 0.55;
+      const elapsedMs = state.elapsedMs + dtMs;
+      const surge = state.speedSurgeAmp > 0 ? 1 + Math.sin(elapsedMs * 0.0055) * state.speedSurgeAmp : 1;
+      let pointerNorm = state.pointerNorm + state.pointerDir * speed * surge * dtSec * 0.55;
       let pointerDir = state.pointerDir;
       if (pointerNorm >= 0.96) {
         pointerNorm = 0.96;
@@ -145,18 +176,24 @@ export function tickTidefallFishing(state: TidefallFishingState, dtSec: number):
         pointerNorm = 0.04;
         pointerDir = 1;
       }
+      const driftOffset =
+        state.targetDriftAmp > 0
+          ? Math.sin((elapsedMs / 1000) * state.targetDriftFreq) * state.targetDriftAmp
+          : 0;
+      const halfW = state.targetWidth / 2;
+      const targetCenter = Math.min(0.92 - halfW, Math.max(0.08 + halfW, state.baseTargetCenter + driftOffset));
       const minigameRemainingMs = state.minigameRemainingMs - dtMs;
       const progress = Math.max(0, state.progress - decay * dtSec);
       if (progress <= 0) {
-        return withPhase(state, 'escaped', { pointerNorm, pointerDir, progress: 0, minigameRemainingMs: 0, hookFlash: false });
+        return withPhase(state, 'escaped', { elapsedMs, pointerNorm, pointerDir, targetCenter, progress: 0, minigameRemainingMs: 0, hookFlash: false });
       }
       if (progress >= 1) {
-        return withPhase(state, 'landed', { pointerNorm, pointerDir, progress: 1, minigameRemainingMs, hookFlash: false });
+        return withPhase(state, 'landed', { elapsedMs, pointerNorm, pointerDir, targetCenter, progress: 1, minigameRemainingMs, hookFlash: false });
       }
       if (minigameRemainingMs <= 0) {
-        return withPhase(state, 'escaped', { pointerNorm, pointerDir, progress, minigameRemainingMs: 0, hookFlash: false });
+        return withPhase(state, 'escaped', { elapsedMs, pointerNorm, pointerDir, targetCenter, progress, minigameRemainingMs: 0, hookFlash: false });
       }
-      return { ...state, pointerNorm, pointerDir, progress, minigameRemainingMs, hookFlash: false };
+      return { ...state, elapsedMs, pointerNorm, pointerDir, targetCenter, progress, minigameRemainingMs, hookFlash: false };
     }
     default:
       return state;
@@ -179,7 +216,7 @@ export function tidefallMinigameTap(state: TidefallFishingState): TidefallFishin
   if (state.phase !== 'minigame') return state;
   const half = state.targetWidth / 2;
   const inZone = state.pointerNorm >= state.targetCenter - half && state.pointerNorm <= state.targetCenter + half;
-  let progress = state.progress + (inZone ? TIDEFALL_MINIGAME_HIT : -TIDEFALL_MINIGAME_MISS);
+  let progress = state.progress + (inZone ? state.hitGain : -state.missPenalty);
   progress = Math.min(1, Math.max(0, progress));
   if (progress >= 1) return withPhase(state, 'landed', { progress: 1, hookFlash: false });
   if (progress <= 0) return withPhase(state, 'escaped', { progress: 0, hookFlash: false });

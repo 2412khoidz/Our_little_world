@@ -22725,44 +22725,13 @@
       "y": 0,
       "objects": [
         {
-          "id": 3101,
-          "name": "farm-to-village",
+          "id": 3102,
+          "name": "farm-to-garden",
           "type": "portal",
           "x": 992,
           "y": 352,
           "width": 32,
           "height": 32,
-          "properties": [
-            {
-              "name": "targetMapId",
-              "type": "string",
-              "value": "village"
-            },
-            {
-              "name": "spawnX",
-              "type": "int",
-              "value": 4
-            },
-            {
-              "name": "spawnY",
-              "type": "int",
-              "value": 29
-            },
-            {
-              "name": "labelVi",
-              "type": "string",
-              "value": "Về thị trấn Cabacos"
-            }
-          ]
-        },
-        {
-          "id": 3102,
-          "name": "farm-to-garden",
-          "type": "portal",
-          "x": 464,
-          "y": 16,
-          "width": 32,
-          "height": 16,
           "properties": [
             {
               "name": "targetMapId",
@@ -22777,12 +22746,12 @@
             {
               "name": "spawnY",
               "type": "int",
-              "value": 11
+              "value": 7
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Về vườn nhà"
+              "value": "Về Vườn nhà"
             }
           ]
         }

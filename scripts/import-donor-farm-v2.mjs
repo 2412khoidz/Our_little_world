@@ -305,33 +305,18 @@ function buildFarmMap() {
     y: 0,
     objects: [
       {
-        id: 3101,
-        name: 'farm-to-village',
+        id: 3102,
+        name: 'farm-to-garden',
         type: 'portal',
         x: 62 * TW,
         y: 22 * TW,
         width: TW * 2,
         height: TW * 2,
         properties: [
-          { name: 'targetMapId', type: 'string', value: 'village' },
-          { name: 'spawnX', type: 'int', value: 4 },
-          { name: 'spawnY', type: 'int', value: 29 },
-          { name: 'labelVi', type: 'string', value: 'Về thị trấn Cabacos' },
-        ],
-      },
-      {
-        id: 3102,
-        name: 'farm-to-garden',
-        type: 'portal',
-        x: 29 * TW,
-        y: 1 * TW,
-        width: TW * 2,
-        height: TW,
-        properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
           { name: 'spawnX', type: 'int', value: 3 },
-          { name: 'spawnY', type: 'int', value: 11 },
-          { name: 'labelVi', type: 'string', value: 'Về vườn nhà' },
+          { name: 'spawnY', type: 'int', value: 7 },
+          { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
         ],
       },
     ],
@@ -516,26 +501,12 @@ function buildFarmMap() {
 }
 
 function patchVillageFarmPortal() {
+  // Topology enforces Home <-> Garden <-> Village and Farm <-> Garden (no direct Farm <-> Village bypass).
   if (!fs.existsSync(VILLAGE_JSON)) return;
   const village = JSON.parse(fs.readFileSync(VILLAGE_JSON, 'utf8'));
   const portalsLayer = village.layers.find((l) => l.name === 'Portals');
   if (!portalsLayer) return;
   portalsLayer.objects = portalsLayer.objects.filter((o) => o.name !== 'village-to-farm');
-  portalsLayer.objects.push({
-    id: 9103,
-    name: 'village-to-farm',
-    type: 'portal',
-    x: 1 * TW,
-    y: 29 * TW,
-    width: TW,
-    height: TW * 2,
-    properties: [
-      { name: 'targetMapId', type: 'string', value: 'farm' },
-      { name: 'labelVi', type: 'string', value: 'Ra Nông trại' },
-      { name: 'spawnX', type: 'int', value: 59 },
-      { name: 'spawnY', type: 'int', value: 22 },
-    ],
-  });
   fs.writeFileSync(VILLAGE_JSON, JSON.stringify(village, null, 2));
 }
 

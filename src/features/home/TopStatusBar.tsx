@@ -3,6 +3,7 @@ import type { ConnectionStatus } from '../../lib/backend/types';
 import { getMapDefinition } from '../../shared/maps';
 import { selectLatestPresenceByUser } from '../../shared/realtime';
 import type { BackendMode, MapId, PresencePayload, WorldMember } from '../../shared/types';
+import { AudioControlsChip } from './AudioControlsChip';
 
 interface TopStatusBarProps {
   worldName: string;
@@ -89,6 +90,7 @@ export function TopStatusBar({
           {connectionStatus === 'offline' ? <WifiOff size={13} /> : <span className={dotClass} />}
           <span>{connLabel}</span>
         </span>
+        <AudioControlsChip />
       </div>
     </header>
   );

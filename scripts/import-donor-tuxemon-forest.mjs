@@ -42,6 +42,30 @@ function tmxForSlug(slug) {
 
 function patchForestInteractables(forest) {
   const water = forest.layers.find((l) => l.name === 'Water');
+  const veg = forest.layers.find((l) => l.name === 'Vegetation');
+  const col = forest.layers.find((l) => l.name === 'Collision');
+  const portals = forest.layers.find((l) => l.name === 'Portals');
+
+  // Ensure reciprocal topology (Forest connects strictly to Village)
+  if (portals?.objects) {
+    portals.objects = portals.objects.filter((o) => o.name !== 'forest-to-beach');
+  }
+
+  // Bake all Water tiles & solid Vegetation (trees, felled logs, boulders, stumps — preserving walkable ferns/grass)
+  const SOLID_FOREST_VEG_GIDS = new Set([
+    2107, 2157, 2158, 2159, 2160, 2235, 2294, 2299, 2300, 3256, 3257, 3324, 3382, 3383, 3385,
+  ]);
+  if (col?.data) {
+    for (let i = 0; i < col.data.length; i += 1) {
+      if ((water?.data?.[i] ?? 0) > 0) {
+        col.data[i] = 1;
+      } else {
+        const vg = (veg?.data?.[i] ?? 0) & 0x1fffffff;
+        if (SOLID_FOREST_VEG_GIDS.has(vg)) col.data[i] = 1;
+      }
+    }
+  }
+
   const w = forest.width;
   let fx = 14;
   let fy = 28;

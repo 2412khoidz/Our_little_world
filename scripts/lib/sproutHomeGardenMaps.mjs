@@ -91,10 +91,20 @@ function homeBlocked(tx, ty) {
 
 function gardenBlocked(tx, ty) {
   if (tx < 0 || ty < 0 || tx >= 18 || ty >= 14) return true;
-  if (tx === 0 || tx === 17 || ty === 0 || ty === 13) return true;
+  // Physical west gate to Farm at y=7..8, x=0..1 and south gate to Village at x=8..9, y=13
+  const westGate = (tx === 0 || tx === 1) && (ty === 7 || ty === 8);
+  const southGate = (tx === 8 || tx === 9) && ty === 13;
+  if (!westGate && !southGate && (tx === 0 || tx === 17 || ty === 0 || ty === 13)) return true;
+  // Cottage roof & wall silhouette
   if (ty === 1 && tx >= 7 && tx <= 9) return true;
   if (ty === 2 && (tx === 7 || tx === 9)) return true;
+  // Bushes
   if (ty === 3 && (tx === 2 || tx === 3 || tx === 14 || tx === 15)) return true;
+  // Stream/pond water at x=5..11, y=9..10 (only bridge x=7..8, y=10 is walkable)
+  if ((ty === 9 || ty === 10) && tx >= 5 && tx <= 11) {
+    const isBridge = ty === 10 && (tx === 7 || tx === 8);
+    if (!isBridge) return true;
+  }
   return false;
 }
 
@@ -241,6 +251,9 @@ export function buildGardenMap(tilesets, sha, recoveryProps = []) {
 
   paintRect(waterLayer, w, 5, 9, 11, 10, water);
   paintRect(paths, w, 1, 8, 4, 10, path);
+  // West dirt path leading smoothly to Farm gate (0..1, 7..8) & south trail leading to Village gate (8..9, 11..13)
+  paintRect(paths, w, 0, 7, 6, 8, path);
+  paintRect(paths, w, 8, 11, 9, 13, path);
   paintRect(paths, w, 7, 10, 8, 10, bridge);
 
   decor[2 * w + 8] = house;
@@ -270,6 +283,36 @@ export function buildGardenMap(tilesets, sha, recoveryProps = []) {
         { name: 'spawnX', type: 'int', value: 8 },
         { name: 'spawnY', type: 'int', value: 9 },
         { name: 'labelVi', type: 'string', value: 'Vào trong nhà' },
+      ],
+    },
+    {
+      id: 3,
+      name: 'garden-to-farm',
+      type: 'portal',
+      x: 1 * TW,
+      y: 7 * TW,
+      width: TW,
+      height: TW * 2,
+      properties: [
+        { name: 'targetMapId', type: 'string', value: 'farm' },
+        { name: 'spawnX', type: 'int', value: 59 },
+        { name: 'spawnY', type: 'int', value: 22 },
+        { name: 'labelVi', type: 'string', value: 'Ra Nông trại' },
+      ],
+    },
+    {
+      id: 4,
+      name: 'garden-to-village',
+      type: 'portal',
+      x: 9 * TW,
+      y: 13 * TW,
+      width: TW,
+      height: TW,
+      properties: [
+        { name: 'targetMapId', type: 'string', value: 'village' },
+        { name: 'spawnX', type: 'int', value: 8 },
+        { name: 'spawnY', type: 'int', value: 22 },
+        { name: 'labelVi', type: 'string', value: 'Vào Làng Cabacos' },
       ],
     },
   ];

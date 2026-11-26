@@ -91,17 +91,17 @@ export function solveVuenaFrontPawIk(params: VuenaPawIkParams): void {
 
     // Elevation angle relative to rest vertical down (-Y axis -> forward +Z is negative X rotation in actor frame)
     const elevAngle = Math.atan2(dy, flatDist); // >0 above shoulder, <0 floor level
-    aimPitch = THREE.MathUtils.clamp(-0.78 - elevAngle * 0.92, -1.55, -0.35);
-    aimYaw = THREE.MathUtils.clamp(Math.atan2(dx, dz) * 0.72, -0.58, 0.58);
+    aimPitch = THREE.MathUtils.clamp(-0.78 - elevAngle * 0.85, -1.32, -0.3);
+    aimYaw = THREE.MathUtils.clamp(Math.atan2(dx, dz) * 0.65, -0.45, 0.45);
 
-    // 2-bone reach extension vs bend (law of cosines proxy clamped for cozy proportions)
+    // 2-bone reach extension vs bend (law of cosines proxy clamped for anatomical limits)
     const reachRatio = THREE.MathUtils.clamp(totalDist / (VUENA_UPPER_LEN + VUENA_LOWER_LEN), 0.35, 1.0);
-    elbowExtend = THREE.MathUtils.lerp(-0.42, 0.38, reachRatio);
+    elbowExtend = THREE.MathUtils.clamp(THREE.MathUtils.lerp(-0.4, 0.34, reachRatio), -0.42, 0.34);
   }
 
   // Subtle torso lean & counter-stabilized support paw
-  rotateBoneAxis(spine, actorGroup, _axisX, 0.12 * weight);
-  rotateBoneAxis(spine, actorGroup, _axisY, aimYaw * 0.28 * weight);
+  rotateBoneAxis(spine, actorGroup, _axisX, THREE.MathUtils.clamp(0.11 * weight, -0.14, 0.14));
+  rotateBoneAxis(spine, actorGroup, _axisY, THREE.MathUtils.clamp(aimYaw * 0.25 * weight, -0.18, 0.18));
   rotateBoneAxis(upperSupport, actorGroup, _axisX, 0.08 * weight);
   rotateBoneAxis(upperSupport, actorGroup, _axisZ, -sideSign * 0.12 * weight);
 
