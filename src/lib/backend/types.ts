@@ -315,6 +315,7 @@ export interface WorldBackend {
     tileX: number;
     tileY: number;
     rotated?: boolean;
+    devSandbox?: boolean;
     expectedLayoutVersion: number;
     idempotencyKey: string;
   }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;

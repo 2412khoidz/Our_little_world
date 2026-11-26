@@ -24,6 +24,7 @@ interface GameViewportProps {
   activeSku: string | null;
   selectedPlacementId: string | null;
   decoratePreviewRotated: boolean;
+  decorateDevSandbox?: boolean;
   showJoystick: boolean;
   isModalOpen: boolean;
   /** When true, legacy E/nearby button is hidden (main game J/K HUD). */
@@ -44,6 +45,7 @@ export function GameViewport({
   activeSku,
   selectedPlacementId,
   decoratePreviewRotated,
+  decorateDevSandbox = false,
   showJoystick,
   isModalOpen,
   contextualInteractionHud = false,
@@ -137,8 +139,9 @@ export function GameViewport({
       activeSku,
       selectedPlacementId,
       previewRotated: decoratePreviewRotated,
+      devSandbox: decorateDevSandbox,
     });
-  }, [sceneReady, decorateActive, activeSku, selectedPlacementId, decoratePreviewRotated]);
+  }, [sceneReady, decorateActive, activeSku, selectedPlacementId, decoratePreviewRotated, decorateDevSandbox]);
 
   useEffect(() => {
     if (!sceneReady) return;

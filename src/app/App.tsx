@@ -294,6 +294,7 @@ function MainCoupleApp() {
   const [activeSku, setActiveSku] = useState<string | null>(null);
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
   const [decoratePreviewRotated, setDecoratePreviewRotated] = useState(false);
+  const [decorateSandboxUnlocked, setDecorateSandboxUnlocked] = useState(false);
   const [outdoorNavOpen, setOutdoorNavOpen] = useState(false);
   const [mutationBusy, setMutationBusy] = useState(false);
 
@@ -1799,6 +1800,7 @@ function MainCoupleApp() {
         tileX,
         tileY,
         rotated: rotated === true,
+        devSandbox: Boolean(import.meta.env.DEV && decorateSandboxUnlocked),
         expectedLayoutVersion: snap.world.layoutVersion,
         idempotencyKey: makeIdempotencyKey('place'),
       });
@@ -1829,7 +1831,7 @@ function MainCoupleApp() {
       setDecoratePreviewRotated(false);
       showToast(`Đã đặt ${item.nameVi}`);
     },
-    [backend, connectionStatus, currentUser, mutationBusy, refreshWorldSnapshot, showToast],
+    [backend, connectionStatus, currentUser, decorateSandboxUnlocked, mutationBusy, refreshWorldSnapshot, showToast],
   );
 
   const handleRotatePlacement = useCallback(
@@ -2197,6 +2199,7 @@ function MainCoupleApp() {
         activeSku={activeSku}
         selectedPlacementId={selectedPlacementId}
         decoratePreviewRotated={decoratePreviewRotated}
+        decorateDevSandbox={Boolean(import.meta.env.DEV && decorateSandboxUnlocked)}
         showJoystick={showJoystick}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
@@ -2341,6 +2344,20 @@ function MainCoupleApp() {
           selectedPlacementId={selectedPlacementId}
           previewRotated={decoratePreviewRotated}
           busy={mutationBusy}
+          devSandboxUnlocked={Boolean(import.meta.env.DEV && decorateSandboxUnlocked)}
+          onToggleDevSandbox={
+            import.meta.env.DEV
+              ? () => {
+                  setDecorateSandboxUnlocked((prev) => {
+                    const next = !prev;
+                    if (!next && activeSku && getCatalogItem(activeSku)?.devSandboxOnly) {
+                      setActiveSku(null);
+                    }
+                    return next;
+                  });
+                }
+              : undefined
+          }
           onSelectDecorateMap={(mapId: DecorateMapId) => {
             if (currentMapId !== mapId) handleSelectMap(mapId);
           }}

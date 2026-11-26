@@ -78,6 +78,8 @@ export interface SpriteRect {
   h: number;
 }
 
+export type FurnitureCategory = 'furniture' | 'flowers' | 'garden' | 'lighting' | 'rugs';
+
 export interface FurnitureCatalogItem {
   sku: string;
   nameVi: string;
@@ -90,6 +92,11 @@ export interface FurnitureCatalogItem {
   starterQuantity: number;
   sprite: SpriteRect;
   interactTag?: 'wardrobe' | 'study_preview' | 'cinema_preview';
+  category?: FurnitureCategory;
+  devSandboxOnly?: boolean;
+  propsFrameId?: string;
+  donorTextureKey?: string;
+  previewImageUrl?: string;
 }
 
 export interface FurniturePlacement {

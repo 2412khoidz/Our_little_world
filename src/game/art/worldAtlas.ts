@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getCatalogItem } from '../../shared/catalog';
 import { ART_ATLAS_PATH } from './atlasProfile';
 import ids from './worldArtIds.json';
 import extIds from './worldExtendedArtIds.json';
@@ -196,7 +197,7 @@ function registerExtendedSheetAnimations(scene: Phaser.Scene, sheet: Phaser.Text
   }
 }
 
-export function worldFurnitureFrame(scene: Phaser.Scene, sku: string): { key: string; frame: string } {
+export function worldFurnitureFrame(scene: Phaser.Scene, sku: string): { key: string; frame?: string } {
   if (sku === 'flowerpot_sakura') {
     ensureSakuraPotOverrideTexture(scene);
     if (scene.textures.exists(SAKURA_POT_OVERRIDE_KEY) && scene.textures.get(SAKURA_POT_OVERRIDE_KEY).has('flowerpot_sakura')) {
@@ -204,9 +205,48 @@ export function worldFurnitureFrame(scene: Phaser.Scene, sku: string): { key: st
     }
     return { key: 'furniture-cozy', frame: 'flowerpot_sakura' };
   }
+  if (sku === 'bench_garden' && scene.textures.exists('donor-hollowmere-bench')) {
+    scene.textures.get('donor-hollowmere-bench').setFilter(Phaser.Textures.FilterMode.NEAREST);
+    return { key: 'donor-hollowmere-bench' };
+  }
+  const catalogItem = getCatalogItem(sku);
+  if (
+    catalogItem?.propsFrameId &&
+    scene.textures.exists(WORLD_PROPS_KEY) &&
+    scene.textures.get(WORLD_PROPS_KEY).has(catalogItem.propsFrameId)
+  ) {
+    return { key: WORLD_PROPS_KEY, frame: catalogItem.propsFrameId };
+  }
+  if (catalogItem?.donorTextureKey && scene.textures.exists(catalogItem.donorTextureKey)) {
+    scene.textures.get(catalogItem.donorTextureKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    return { key: catalogItem.donorTextureKey };
+  }
   const frame = (ids.furniture as Record<string, string>)[sku];
   if (frame && scene.textures.exists(WORLD_ART_KEY) && scene.textures.get(WORLD_ART_KEY).has(frame)) {
     return { key: WORLD_ART_KEY, frame };
   }
   return { key: 'furniture-cozy', frame: sku };
+}
+
+export function applyWorldFurnitureDisplaySize(
+  img: Phaser.GameObjects.Image,
+  sku: string,
+  widthTiles: number,
+  heightTiles: number,
+  tilePx: number,
+): void {
+  if (sku === 'bench_garden' && img.texture?.key === 'donor-hollowmere-bench') {
+    img.setDisplaySize(widthTiles * tilePx + 2, heightTiles * tilePx + 1);
+    return;
+  }
+  const catalogItem = getCatalogItem(sku);
+  if (catalogItem?.donorTextureKey && img.texture?.key === catalogItem.donorTextureKey) {
+    const texW = Math.max(1, img.width || widthTiles * tilePx);
+    const texH = Math.max(1, img.height || heightTiles * tilePx);
+    const targetW = widthTiles * tilePx;
+    const scale = targetW / texW;
+    img.setDisplaySize(Math.round(targetW), Math.max(tilePx, Math.round(texH * scale)));
+    return;
+  }
+  img.setScale(1);
 }

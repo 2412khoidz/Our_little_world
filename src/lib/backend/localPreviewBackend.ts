@@ -562,6 +562,7 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         placements,
         footprintWidth: footprint.widthTiles,
         footprintHeight: footprint.heightTiles,
+        devSandboxUnlimitedStock: Boolean(import.meta.env.DEV && params.devSandbox),
       });
       if (!validation.ok) {
         return { ok: false, code: validation.code, message: validation.message };

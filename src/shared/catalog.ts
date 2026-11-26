@@ -1,4 +1,4 @@
-import type { FurnitureCatalogItem, FurniturePlacement, MapId } from './types';
+import type { FurnitureCatalogItem, FurnitureCategory, FurniturePlacement, MapId } from './types';
 
 export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
   {
@@ -12,6 +12,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 1,
     sprite: { x: 0, y: 0, w: 32, h: 32 },
+    category: 'furniture',
   },
   {
     sku: 'wardrobe_oak',
@@ -25,6 +26,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     starterQuantity: 1,
     sprite: { x: 32, y: 0, w: 16, h: 32 },
     interactTag: 'wardrobe',
+    category: 'furniture',
   },
   {
     sku: 'bookshelf_warm',
@@ -37,6 +39,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 1,
     sprite: { x: 48, y: 0, w: 16, h: 32 },
+    category: 'furniture',
   },
   {
     sku: 'lamp_floor',
@@ -49,6 +52,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 2,
     sprite: { x: 64, y: 0, w: 16, h: 32 },
+    category: 'lighting',
   },
   {
     sku: 'sofa_cream',
@@ -62,6 +66,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     starterQuantity: 1,
     sprite: { x: 80, y: 0, w: 32, h: 24 },
     interactTag: 'cinema_preview',
+    category: 'furniture',
   },
   {
     sku: 'table_wood',
@@ -74,6 +79,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 1,
     sprite: { x: 112, y: 0, w: 32, h: 24 },
+    category: 'furniture',
   },
   {
     sku: 'desk_study',
@@ -87,6 +93,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     starterQuantity: 1,
     sprite: { x: 144, y: 0, w: 32, h: 24 },
     interactTag: 'study_preview',
+    category: 'furniture',
   },
   {
     sku: 'plant_monstera',
@@ -99,6 +106,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 3,
     sprite: { x: 32, y: 32, w: 16, h: 24 },
+    category: 'flowers',
   },
   {
     sku: 'rug_peach',
@@ -111,6 +119,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: false,
     starterQuantity: 2,
     sprite: { x: 0, y: 32, w: 32, h: 32 },
+    category: 'rugs',
   },
   {
     sku: 'bench_garden',
@@ -123,6 +132,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 2,
     sprite: { x: 176, y: 0, w: 32, h: 24 },
+    category: 'garden',
   },
   {
     sku: 'lantern_garden',
@@ -135,6 +145,7 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 3,
     sprite: { x: 48, y: 32, w: 16, h: 24 },
+    category: 'lighting',
   },
   {
     sku: 'flowerpot_sakura',
@@ -147,19 +158,255 @@ export const STARTER_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
     blocksMovement: true,
     starterQuantity: 3,
     sprite: { x: 64, y: 32, w: 16, h: 24 },
+    category: 'flowers',
   },
 ] as const;
 
+export const DEV_SANDBOX_DECOR_CATALOG: readonly FurnitureCatalogItem[] = [
+  {
+    sku: 'sakura_bush_decor',
+    nameVi: 'Bụi hoa anh đào',
+    descriptionVi: 'Bụi hoa anh đào hồng rực rỡ cho vườn hoa riêng.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 10,
+    sprite: { x: 0, y: 0, w: 24, h: 24 },
+    category: 'flowers',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.sakura_bush',
+  },
+  {
+    sku: 'sakura_petals_decor',
+    nameVi: 'Thảm cánh hoa đào',
+    descriptionVi: 'Cánh hoa anh đào rơi nhẹ trên thảm cỏ (đi qua được).',
+    allowedMaps: ['garden'],
+    layerSlot: 'floor',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: false,
+    starterQuantity: 20,
+    sprite: { x: 0, y: 0, w: 16, h: 16 },
+    category: 'flowers',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.sakura_petals',
+  },
+  {
+    sku: 'planter_box_decor',
+    nameVi: 'Bồn hoa gỗ vườn',
+    descriptionVi: 'Bồn hoa nhiều sắc màu trang trí lối đi sân vườn.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 10,
+    sprite: { x: 0, y: 0, w: 24, h: 20 },
+    category: 'flowers',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.planter_box',
+  },
+  {
+    sku: 'sunflower_cluster_decor',
+    nameVi: 'Khóm hoa hướng dương',
+    descriptionVi: 'Hoa hướng dương rực rỡ đón nắng ban mai.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 10,
+    sprite: { x: 0, y: 0, w: 16, h: 24 },
+    category: 'flowers',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.sunflower',
+  },
+  {
+    sku: 'picnic_blanket_decor',
+    nameVi: 'Thảm dã ngoại caro',
+    descriptionVi: 'Thảm hồng trắng cho những buổi trà chiều ngoài vườn.',
+    allowedMaps: ['garden'],
+    layerSlot: 'floor',
+    widthTiles: 2,
+    heightTiles: 2,
+    blocksMovement: false,
+    starterQuantity: 4,
+    sprite: { x: 0, y: 0, w: 32, h: 32 },
+    category: 'rugs',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.picnic_blanket',
+  },
+  {
+    sku: 'picnic_basket_decor',
+    nameVi: 'Giỏ dã ngoại mây',
+    descriptionVi: 'Giỏ bánh ngọt và trái cây mang ra vườn.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 4,
+    sprite: { x: 0, y: 0, w: 16, h: 16 },
+    category: 'garden',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.picnic_basket',
+  },
+  {
+    sku: 'beehive_garden',
+    nameVi: 'Tổ ong mật vườn',
+    descriptionVi: 'Tổ ong gỗ xinh xắn cạnh khóm hoa vườn nhà.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 4,
+    sprite: { x: 0, y: 0, w: 16, h: 20 },
+    category: 'garden',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.beehive',
+  },
+  {
+    sku: 'fence_wood_post',
+    nameVi: 'Cọc rào gỗ vườn',
+    descriptionVi: 'Hàng rào gỗ chia luống hoa trong sân.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 20,
+    sprite: { x: 0, y: 0, w: 16, h: 16 },
+    category: 'garden',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.fence_1w',
+  },
+  {
+    sku: 'mailbox_garden',
+    nameVi: 'Hộp thư đỏ cổ điển',
+    descriptionVi: 'Hộp thư gỗ nhỏ đặt trước cổng vườn hoa.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 2,
+    sprite: { x: 0, y: 0, w: 16, h: 24 },
+    category: 'garden',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.mailbox_red',
+  },
+  {
+    sku: 'wishing_well_garden',
+    nameVi: 'Giếng ước sân vườn',
+    descriptionVi: 'Giếng đá mái gỗ mang lại cảm giác yên bình.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 2,
+    heightTiles: 2,
+    blocksMovement: true,
+    starterQuantity: 2,
+    sprite: { x: 0, y: 0, w: 32, h: 32 },
+    category: 'garden',
+    devSandboxOnly: true,
+    donorTextureKey: 'donor-hollowmere-wishing-well',
+    previewImageUrl: '/maps/donor/hollowmere/sprites/wishing_well.png',
+  },
+  {
+    sku: 'hay_bale_decor',
+    nameVi: 'Cuộn rơm ấm áp',
+    descriptionVi: 'Đụn rơm vàng trang trí góc vườn mộc mạc.',
+    allowedMaps: ['garden'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 6,
+    sprite: { x: 0, y: 0, w: 16, h: 16 },
+    category: 'garden',
+    devSandboxOnly: true,
+    donorTextureKey: 'donor-hollowmere-hay-bale',
+    previewImageUrl: '/maps/donor/hollowmere/sprites/hay_bale.png',
+  },
+  {
+    sku: 'rug_coral_decor',
+    nameVi: 'Thảm san hô dệt tay',
+    descriptionVi: 'Thảm ấm áp trải giữa phòng khách.',
+    allowedMaps: ['home'],
+    layerSlot: 'floor',
+    widthTiles: 2,
+    heightTiles: 2,
+    blocksMovement: false,
+    starterQuantity: 4,
+    sprite: { x: 0, y: 0, w: 32, h: 32 },
+    category: 'rugs',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.rug_coral',
+  },
+  {
+    sku: 'bookshelf_wide_decor',
+    nameVi: 'Tủ sách gỗ lớn',
+    descriptionVi: 'Tủ sách dài lưu giữ bộ sưu tập sách và ảnh.',
+    allowedMaps: ['home'],
+    layerSlot: 'object',
+    widthTiles: 2,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 3,
+    sprite: { x: 0, y: 0, w: 32, h: 24 },
+    category: 'furniture',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.bookshelf_wide',
+  },
+  {
+    sku: 'photo_frame_decor',
+    nameVi: 'Khung ảnh kỷ niệm',
+    descriptionVi: 'Khung ảnh nhỏ lưu khoảnh khắc đáng nhớ.',
+    allowedMaps: ['home'],
+    layerSlot: 'object',
+    widthTiles: 1,
+    heightTiles: 1,
+    blocksMovement: true,
+    starterQuantity: 4,
+    sprite: { x: 0, y: 0, w: 16, h: 16 },
+    category: 'furniture',
+    devSandboxOnly: true,
+    propsFrameId: 'prop.photo_frame',
+  },
+] as const;
+
+export const ALL_FURNITURE_CATALOG: readonly FurnitureCatalogItem[] = [
+  ...STARTER_FURNITURE_CATALOG,
+  ...DEV_SANDBOX_DECOR_CATALOG,
+];
+
 export const CATALOG_BY_SKU: ReadonlyMap<string, FurnitureCatalogItem> = new Map(
-  STARTER_FURNITURE_CATALOG.map((item) => [item.sku, item]),
+  ALL_FURNITURE_CATALOG.map((item) => [item.sku, item]),
 );
 
 export function getCatalogItem(sku: string): FurnitureCatalogItem | undefined {
   return CATALOG_BY_SKU.get(sku);
 }
 
-export function getCatalogForMap(mapId: MapId): FurnitureCatalogItem[] {
-  return STARTER_FURNITURE_CATALOG.filter((item) => item.allowedMaps.includes(mapId));
+export function getCatalogForMap(
+  mapId: MapId,
+  options?: { includeDevSandbox?: boolean },
+): FurnitureCatalogItem[] {
+  const includeDev = options?.includeDevSandbox === true;
+  return ALL_FURNITURE_CATALOG.filter(
+    (item) => item.allowedMaps.includes(mapId) && (includeDev || item.devSandboxOnly !== true),
+  );
+}
+
+export function getCatalogCategory(item: FurnitureCatalogItem): FurnitureCategory {
+  if (item.category) return item.category;
+  if (item.layerSlot === 'floor') return 'rugs';
+  if (item.sku.includes('lamp') || item.sku.includes('lantern')) return 'lighting';
+  if (item.sku.includes('flower') || item.sku.includes('plant') || item.sku.includes('sakura')) return 'flowers';
+  if (item.allowedMaps.includes('garden')) return 'garden';
+  return 'furniture';
 }
 
 export interface DefaultPlacementSpec {

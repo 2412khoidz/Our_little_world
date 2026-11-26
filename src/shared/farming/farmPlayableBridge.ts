@@ -4,6 +4,7 @@
 
 import { TILE_SIZE } from '../maps';
 import type { InteractableTarget } from '../interaction/interactionTypes';
+import { FARM_PLOT_INTERACT_RADIUS_PX } from './farmAdjacency';
 import { FARM_ZONE_MAP_ID } from '../world/farmPlotContract';
 import {
   buildAllFarmPlotInteractableCenters,
@@ -27,7 +28,7 @@ export function buildFarmSlicePlotInteractables(): InteractableTarget[] {
     labelVi: `Luống #${plotIndex + 1} — J khi cầm cuốc/hạt/tưới`,
     x: tileX * TILE_SIZE + TILE_SIZE / 2,
     y: tileY * TILE_SIZE + TILE_SIZE / 2,
-    maxRadiusPx: 22,
+    maxRadiusPx: FARM_PLOT_INTERACT_RADIUS_PX,
   }));
 }
 

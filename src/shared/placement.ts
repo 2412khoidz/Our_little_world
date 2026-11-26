@@ -56,6 +56,8 @@ export interface ValidatePlacementInput {
   /** When set, overrides catalog footprint (decorate rotate / persisted layout). */
   footprintWidth?: number;
   footprintHeight?: number;
+  /** DEV-only decoration sandbox toggle; ignored in production backends. */
+  devSandboxUnlimitedStock?: boolean;
 }
 
 export type ValidatePlacementResult =
@@ -80,6 +82,14 @@ export function validatePlacement(input: ValidatePlacementInput): ValidatePlacem
     };
   }
 
+  if (catalogItem.devSandboxOnly && input.devSandboxUnlimitedStock !== true) {
+    return {
+      ok: false,
+      code: 'FORBIDDEN',
+      message: `${catalogItem.nameVi} hiện chỉ mở ở chế độ thử nghiệm.`,
+    };
+  }
+
   if (!catalogItem.allowedMaps.includes(input.mapId)) {
     return {
       ok: false,
@@ -88,13 +98,15 @@ export function validatePlacement(input: ValidatePlacementInput): ValidatePlacem
     };
   }
 
-  const placedCount = countPlacedBySku(input.placements, input.sku, input.ignorePlacementId);
-  if (placedCount >= catalogItem.starterQuantity) {
-    return {
-      ok: false,
-      code: 'STOCK_EXCEEDED',
-      message: `Bạn đã đặt hết ${catalogItem.starterQuantity} món ${catalogItem.nameVi}.`,
-    };
+  if (input.devSandboxUnlimitedStock !== true) {
+    const placedCount = countPlacedBySku(input.placements, input.sku, input.ignorePlacementId);
+    if (placedCount >= catalogItem.starterQuantity) {
+      return {
+        ok: false,
+        code: 'STOCK_EXCEEDED',
+        message: `Bạn đã đặt hết ${catalogItem.starterQuantity} món ${catalogItem.nameVi}.`,
+      };
+    }
   }
 
   const mapDef = getMapDefinition(input.mapId);

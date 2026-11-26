@@ -39,6 +39,7 @@ const ACTION_CLIPS: readonly {
   { suffix: 'lie', action: 'lie', frameRate: 3, repeat: -1, maxFrames: 1 },
   { suffix: 'hoe', action: 'hoe', frameRate: 10, repeat: 0, maxFrames: 2 },
   { suffix: 'water', action: 'water', frameRate: 10, repeat: 0, maxFrames: 2 },
+  { suffix: 'plant', action: 'harvest', frameRate: 11, repeat: 0, maxFrames: 2 },
   { suffix: 'harvest', action: 'harvest', frameRate: 10, repeat: 0, maxFrames: 2 },
   { suffix: 'fish', action: 'fish', frameRate: 10, repeat: 0, maxFrames: 2 },
   { suffix: 'hold', action: 'hold', frameRate: 4, repeat: -1, maxFrames: 1 },

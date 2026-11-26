@@ -526,15 +526,22 @@
 .main-game-interaction-stack {
   position: fixed;
   left: 50%;
-  bottom: calc(128px + var(--safe-bottom));
+  bottom: calc(74px + var(--safe-bottom));
   transform: translateX(-50%);
   z-index: var(--z-game-hud);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   max-width: calc(100vw - 20px);
   pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .main-game-interaction-stack {
+    bottom: calc(70px + var(--safe-bottom));
+    max-width: calc(100vw - 12px);
+  }
 }
 
 .main-game-interaction-stack .olw-hotbar-tray,
@@ -591,11 +598,52 @@
 .main-game-touch-actions {
   position: fixed;
   right: calc(12px + var(--safe-right));
-  bottom: calc(124px + var(--safe-bottom));
+  bottom: calc(144px + var(--safe-bottom));
   z-index: 24;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.decorate-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.decorate-search-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-honey);
+  background: var(--surface-card);
+  color: var(--ink-main);
+  min-width: 170px;
+}
+
+.decorate-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12.5px;
+  color: var(--ink-main);
+  width: 100%;
+}
+
+.decorate-card-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 246, 232, 0.9);
+  border: 1px solid rgba(154, 108, 62, 0.25);
+  flex-shrink: 0;
 }
 
 .main-game-touch-btn {

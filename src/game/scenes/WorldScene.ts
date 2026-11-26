@@ -75,7 +75,9 @@ import {
 } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
 import { USE_PRIVATE_ART } from '../art/atlasProfile';
-import { WORLD_ART_KEY, WORLD_PROPS_KEY, worldFurnitureFrame } from '../art/worldAtlas';
+import { WORLD_ART_KEY, WORLD_PROPS_KEY, applyWorldFurnitureDisplaySize, worldFurnitureFrame } from '../art/worldAtlas';
+import { facingTowardPoint, isFarmPlotPixelAdjacent } from '../../shared/farming/farmAdjacency';
+import { resolveSharedPostureSeat } from '../../shared/interaction/furnitureSeatAnchors';
 import { isPrivateAtlasReady } from '../world/privateArtCapability';
 import artIds from '../art/worldArtIds.json';
 import extIds from '../art/worldExtendedArtIds.json';
@@ -268,7 +270,7 @@ export class WorldScene extends Phaser.Scene {
   private farmPlotVisual: FarmPlotVisualController | null = null;
   private farmHoverGraphics: Phaser.GameObjects.Graphics | null = null;
   private hoveredFarmPlotId: number | null = null;
-  private pendingFarmPlotClick: { plotId: number; tileX: number; tileY: number } | null = null;
+  private hoveredFarmTile: GridPoint | null = null;
   private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
   private worldLighting: WorldLightingOverlay | null = null;
   private worldClockPresentation: WorldClockPresentation | null = null;
@@ -405,25 +407,97 @@ export class WorldScene extends Phaser.Scene {
     if (triggered) {
       const animAction = kind === 'axe' ? 'tool' : kind === 'rod' ? 'fish' : kind;
       playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, animAction);
+      if (kind === 'plant' || kind === 'harvest') {
+        const baseScale = this.avatarScale();
+        this.tweens.add({
+          targets: this.localSprite,
+          scaleY: baseScale * 0.91,
+          scaleX: baseScale * 1.07,
+          duration: 95,
+          yoyo: true,
+          ease: 'Sine.Out',
+          onComplete: () => {
+            if (this.localSprite) {
+              this.localSprite.setScale(this.avatarScale());
+            }
+          },
+        });
+      }
     } else if (forceRestart) {
       playToolActionSfx(kind);
     }
   }
 
   private spawnDonorToolHitParticles(kind: DonorToolKind, wx: number, wy: number): void {
+    const s = this.avatarScale();
+    if (kind === 'plant') {
+      const seedColors = [0xfbbf24, 0xfde68a, 0xd97706];
+      const startX = this.localSprite ? this.localSprite.x : wx;
+      const startY = this.localSprite ? this.localSprite.y - 6 * s : wy - 6 * s;
+      for (let i = 0; i < 7; i += 1) {
+        const seedDot = this.add.circle(startX, startY, 1.3 * s, seedColors[i % seedColors.length]!, 0.95);
+        seedDot.setDepth(wy + 32);
+        this.tweens.add({
+          targets: seedDot,
+          x: wx + (Math.random() - 0.5) * 9 * s,
+          y: wy + (Math.random() - 0.5) * 6 * s,
+          duration: 210 + (i % 3) * 28,
+          ease: 'Quad.Out',
+          onComplete: () => {
+            this.tweens.add({
+              targets: seedDot,
+              alpha: 0,
+              duration: 100,
+              onComplete: () => seedDot.destroy(),
+            });
+          },
+        });
+      }
+      for (let i = 0; i < 3; i += 1) {
+        const puff = this.add.circle(wx + (i - 1) * 3 * s, wy + 1 * s, 1.5 * s, 0xd6b588, 0.55);
+        puff.setDepth(wy + 29);
+        this.tweens.add({
+          targets: puff,
+          y: puff.y - 4 * s,
+          alpha: 0,
+          duration: 220,
+          onComplete: () => puff.destroy(),
+        });
+      }
+      return;
+    }
+
+    if (kind === 'harvest') {
+      const harvestColors = [0x4ade80, 0xfef08a, 0xfbbf24, 0xfb7185];
+      for (let i = 0; i < 9; i += 1) {
+        const spark = this.add.circle(
+          wx + (Math.random() - 0.5) * 6 * s,
+          wy + (Math.random() - 0.5) * 4 * s,
+          (i % 2 === 0 ? 1.7 : 1.2) * s,
+          harvestColors[i % harvestColors.length]!,
+          0.95,
+        );
+        spark.setDepth(wy + 34);
+        this.tweens.add({
+          targets: spark,
+          x: spark.x + (Math.random() - 0.5) * 14 * s,
+          y: spark.y - (5 + Math.random() * 8) * s,
+          alpha: 0,
+          duration: 300,
+          ease: 'Cubic.Out',
+          onComplete: () => spark.destroy(),
+        });
+      }
+      return;
+    }
+
     const color =
       kind === 'water'
         ? 0x6fd3ff
         : kind === 'axe'
           ? 0xd9a066
-          : kind === 'plant'
-            ? 0xf2cf66
-            : kind === 'harvest'
-              ? 0x7ad66b
-              : 0x9c6b43;
-    const s = this.avatarScale();
-    const count = kind === 'harvest' ? 6 : 4;
-    for (let i = 0; i < count; i += 1) {
+          : 0x9c6b43;
+    for (let i = 0; i < 4; i += 1) {
       const p = this.add.circle(
         wx + (Math.random() - 0.5) * 6 * s,
         wy + (Math.random() - 0.5) * 4 * s,
@@ -524,8 +598,8 @@ export class WorldScene extends Phaser.Scene {
     this.clearLocalPosture(true);
     this.prePosturePos = null;
     this.pathQueue = [];
-    this.pendingFarmPlotClick = null;
     this.hoveredFarmPlotId = null;
+    this.hoveredFarmTile = null;
     this.farmHoverGraphics?.clear();
     this.tapMarker?.clear();
     this.mailboxBadge?.destroy();
@@ -1038,9 +1112,10 @@ export class WorldScene extends Phaser.Scene {
         );
       }
 
-      const img = this.add
-        .image(centerX, footY, key, frame)
-        .setOrigin(0.5, 1);
+      const img = frame !== undefined
+        ? this.add.image(centerX, footY, key, frame).setOrigin(0.5, 1)
+        : this.add.image(centerX, footY, key).setOrigin(0.5, 1);
+      applyWorldFurnitureDisplaySize(img, placement.sku, placement.widthTiles, placement.heightTiles, this.tilePx());
 
       if (placement.layerSlot === 'floor') {
         img.setDepth(2);
@@ -1148,52 +1223,38 @@ export class WorldScene extends Phaser.Scene {
   private redrawFarmHoverHighlight(tileX: number | null, tileY: number | null): void {
     if (!this.farmHoverGraphics) return;
     this.farmHoverGraphics.clear();
-    if (this.currentMapId !== 'farm' || this.decorateState.active || tileX === null || tileY === null) {
+    if (
+      this.currentMapId !== 'farm' ||
+      this.decorateState.active ||
+      tileX === null ||
+      tileY === null ||
+      !this.localSprite
+    ) {
       this.hoveredFarmPlotId = null;
       return;
     }
     const plotId = farmPlotIndexForTile(tileX, tileY);
-    this.hoveredFarmPlotId = plotId;
-    if (plotId === null) return;
-    const action = this.resolveClickFarmAction(plotId);
+    if (plotId === null) {
+      this.hoveredFarmPlotId = null;
+      return;
+    }
     const tPx = this.tilePx();
+    if (!isFarmPlotPixelAdjacent(this.localSprite.x, this.localSprite.y - 2, tileX, tileY, tPx)) {
+      this.hoveredFarmPlotId = null;
+      return;
+    }
+    const action = this.resolveClickFarmAction(plotId);
+    if (!action) {
+      this.hoveredFarmPlotId = null;
+      return;
+    }
+    this.hoveredFarmPlotId = plotId;
     const x = tileX * tPx;
     const y = tileY * tPx;
-    if (action) {
-      this.farmHoverGraphics.fillStyle(0xf9df7b, 0.22);
-      this.farmHoverGraphics.fillRect(x, y, tPx, tPx);
-      this.farmHoverGraphics.lineStyle(1.2, 0xf7cf52, 0.95);
-    } else {
-      this.farmHoverGraphics.fillStyle(0xfff4d9, 0.12);
-      this.farmHoverGraphics.fillRect(x, y, tPx, tPx);
-      this.farmHoverGraphics.lineStyle(1, 0xffe8c7, 0.6);
-    }
+    this.farmHoverGraphics.fillStyle(0xf9df7b, 0.24);
+    this.farmHoverGraphics.fillRect(x, y, tPx, tPx);
+    this.farmHoverGraphics.lineStyle(1.3, 0xf7cf52, 0.95);
     this.farmHoverGraphics.strokeRect(x + 0.5, y + 0.5, tPx - 1, tPx - 1);
-  }
-
-  private tryTriggerPendingFarmPlotClick(): boolean {
-    const pending = this.pendingFarmPlotClick;
-    if (!pending || this.currentMapId !== 'farm' || !this.localSprite) return false;
-    const tPx = this.tilePx();
-    const plotCenterX = (pending.tileX + 0.5) * tPx;
-    const plotCenterY = (pending.tileY + 0.5) * tPx;
-    if (Math.hypot(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2)) > tPx * 1.95) {
-      return false;
-    }
-    this.pendingFarmPlotClick = null;
-    this.pathQueue = [];
-    this.tapMarker?.clear();
-    this.localFacing = this.vectorToDirection(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
-    this.playLocalMoveAnim(false, false);
-    const resolved = this.resolveClickFarmAction(pending.plotId);
-    if (resolved) {
-      gameEventBus.emit('evt:farm-plot-click-request', {
-        plotId: pending.plotId,
-        action: resolved.action,
-        seedSku: resolved.seedSku,
-      });
-    }
-    return true;
   }
 
   private setupPointerInput(): void {
@@ -1204,12 +1265,17 @@ export class WorldScene extends Phaser.Scene {
       const tileY = Math.floor(worldPt.y / this.tilePx());
       if (!this.decorateState.active) {
         if (this.currentMapId === 'farm') {
+          this.hoveredFarmTile = { tileX, tileY };
           this.redrawFarmHoverHighlight(tileX, tileY);
-        } else if (this.hoveredFarmPlotId !== null) {
-          this.redrawFarmHoverHighlight(null, null);
+        } else {
+          this.hoveredFarmTile = null;
+          if (this.hoveredFarmPlotId !== null) {
+            this.redrawFarmHoverHighlight(null, null);
+          }
         }
         return;
       }
+      this.hoveredFarmTile = null;
       if (!this.hoverTile || this.hoverTile.tileX !== tileX || this.hoverTile.tileY !== tileY) {
         this.hoverTile = { tileX, tileY };
         this.redrawDecoratePreview();
@@ -1243,13 +1309,18 @@ export class WorldScene extends Phaser.Scene {
           const tPx = this.tilePx();
           const plotCenterX = (tileX + 0.5) * tPx;
           const plotCenterY = (tileY + 0.5) * tPx;
-          const dist = Math.hypot(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
-          if (dist <= tPx * 1.95) {
+          if (isFarmPlotPixelAdjacent(this.localSprite.x, this.localSprite.y - 2, tileX, tileY, tPx)) {
             this.clearLocalPosture(true);
-            this.pendingFarmPlotClick = null;
             this.pathQueue = [];
             this.tapMarker?.clear();
-            this.localFacing = this.vectorToDirection(plotCenterX - this.localSprite.x, plotCenterY - (this.localSprite.y - 2));
+            this.localFacing = facingTowardPoint(
+              this.localSprite.x,
+              this.localSprite.y - 2,
+              plotCenterX,
+              plotCenterY,
+              this.localFacing,
+            );
+            this.localFacing8 = this.localFacing;
             this.playLocalMoveAnim(false, false);
             gameEventBus.emit('evt:farm-plot-click-request', {
               plotId,
@@ -1258,16 +1329,17 @@ export class WorldScene extends Phaser.Scene {
             });
             return;
           }
+          // Non-adjacent click: walk toward nearest reachable tile only, NEVER auto-farm on arrival.
           const startTile = {
             tileX: Math.floor(this.localSprite.x / tPx),
             tileY: Math.floor((this.localSprite.y - 2) / tPx),
           };
           const candidates = [
-            { tileX, tileY },
             { tileX, tileY: tileY + 1 },
             { tileX: tileX - 1, tileY },
             { tileX: tileX + 1, tileY },
             { tileX, tileY: tileY - 1 },
+            { tileX, tileY },
           ];
           for (const cand of candidates) {
             if (cand.tileX < 0 || cand.tileY < 0 || cand.tileX >= mapDef.widthTiles || cand.tileY >= mapDef.heightTiles) {
@@ -1278,15 +1350,14 @@ export class WorldScene extends Phaser.Scene {
             if (path.length > 0) {
               this.clearLocalPosture(true);
               this.pathQueue = path;
-              this.pendingFarmPlotClick = { plotId, tileX, tileY };
-              this.drawTapMarker(tileX, tileY);
+              const destTile = path[path.length - 1]!;
+              this.drawTapMarker(destTile.tileX, destTile.tileY);
               return;
             }
           }
         }
       }
 
-      this.pendingFarmPlotClick = null;
       const startTile = {
         tileX: Math.floor(this.localSprite.x / this.tilePx()),
         tileY: Math.floor((this.localSprite.y - 2) / this.tilePx()),
@@ -1463,6 +1534,7 @@ export class WorldScene extends Phaser.Scene {
       ignorePlacementId: ignoreId,
       footprintWidth: footprint.widthTiles,
       footprintHeight: footprint.heightTiles,
+      devSandboxUnlimitedStock: Boolean(import.meta.env.DEV && this.decorateState.devSandbox),
     });
 
     const color = check.ok ? 0x6b9b76 : 0xe05b5b;
@@ -1497,15 +1569,25 @@ export class WorldScene extends Phaser.Scene {
     });
 
     if (!this.decoratePreviewGhost) {
-      this.decoratePreviewGhost = this.add
-        .image(anchor.centerX, anchor.footY, key, frame)
-        .setOrigin(0.5, 1)
-        .setDepth(9045);
+      this.decoratePreviewGhost = frame !== undefined
+        ? this.add.image(anchor.centerX, anchor.footY, key, frame).setOrigin(0.5, 1).setDepth(9045)
+        : this.add.image(anchor.centerX, anchor.footY, key).setOrigin(0.5, 1).setDepth(9045);
     } else {
-      this.decoratePreviewGhost.setTexture(key, frame);
+      if (frame !== undefined) {
+        this.decoratePreviewGhost.setTexture(key, frame);
+      } else {
+        this.decoratePreviewGhost.setTexture(key);
+      }
       this.decoratePreviewGhost.setPosition(anchor.centerX, anchor.footY);
       this.decoratePreviewGhost.setVisible(true);
     }
+    applyWorldFurnitureDisplaySize(
+      this.decoratePreviewGhost,
+      previewSku,
+      footprint.widthTiles,
+      footprint.heightTiles,
+      this.tilePx(),
+    );
     this.decoratePreviewGhost.setDepth(9045);
     this.decoratePreviewGhost.setAlpha(check.ok ? 0.62 : 0.48);
     this.decoratePreviewGhost.setTint(check.ok ? 0xffffff : 0xffb0b0);
@@ -1628,12 +1710,18 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
+        if (this.currentMapId === 'farm' && this.hoveredFarmTile) {
+          this.redrawFarmHoverHighlight(this.hoveredFarmTile.tileX, this.hoveredFarmTile.tileY);
+        }
       }),
 
       gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId, highlightAction }) => {
         this.farmPlotsCache = plots;
         if (this.currentMapId === 'farm') {
           this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
+          if (this.hoveredFarmTile) {
+            this.redrawFarmHoverHighlight(this.hoveredFarmTile.tileX, this.hoveredFarmTile.tileY);
+          }
           if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
             this.triggerDonorToolSwing('hoe', true);
@@ -1699,7 +1787,6 @@ export class WorldScene extends Phaser.Scene {
         if (!desk) return;
         this.capturePrePostureAnchor();
         this.pathQueue = [];
-        this.pendingFarmPlotClick = null;
         this.tapMarker?.clear();
         const seatX = (desk.tileX + (seat === 'left' ? 0.5 : 1.5)) * this.tilePx();
         const seatY = (desk.tileY + desk.heightTiles + 0.65) * this.tilePx();
@@ -1719,7 +1806,6 @@ export class WorldScene extends Phaser.Scene {
         }
         this.capturePrePostureAnchor();
         this.pathQueue = [];
-        this.pendingFarmPlotClick = null;
         this.tapMarker?.clear();
         if (typeof x === 'number' && typeof y === 'number') {
           this.localSprite.setPosition(x, y);
@@ -2128,7 +2214,6 @@ export class WorldScene extends Phaser.Scene {
     if (manualMag > 0.15) {
       this.clearLocalPosture(true);
       this.pathQueue = [];
-      this.pendingFarmPlotClick = null;
       this.tapMarker?.clear();
 
       const nx = vx / Math.max(1, manualMag);
@@ -2151,9 +2236,6 @@ export class WorldScene extends Phaser.Scene {
     }
 
     if (this.pathQueue.length > 0) {
-      if (this.tryTriggerPendingFarmPlotClick()) {
-        return false;
-      }
       const target = this.pathQueue[0]!;
       const tx = (target.tileX + 0.5) * this.tilePx();
       const ty = (target.tileY + 0.85) * this.tilePx();
@@ -2164,9 +2246,6 @@ export class WorldScene extends Phaser.Scene {
       if (dist <= 2) {
         this.localSprite.setPosition(tx, ty);
         this.pathQueue.shift();
-        if (this.tryTriggerPendingFarmPlotClick()) {
-          return false;
-        }
         if (this.pathQueue.length === 0) {
           this.tapMarker?.clear();
           this.playLocalMoveAnim(false, false);
@@ -2468,7 +2547,6 @@ export class WorldScene extends Phaser.Scene {
 
     this.capturePrePostureAnchor();
     this.pathQueue = [];
-    this.pendingFarmPlotClick = null;
     this.tapMarker?.clear();
     this.localSprite.setPosition(chosen.x, chosen.y);
     this.localFacing = 'down';
@@ -2747,20 +2825,8 @@ export class WorldScene extends Phaser.Scene {
     );
     if (!item) return;
 
-    const centerX = (item.tileX + item.widthTiles / 2) * this.tilePx();
-    const footY = (item.tileY + item.heightTiles) * this.tilePx();
-    const slot0 =
-      kind === 'bed_lie'
-        ? { x: centerX - 6.4, y: (item.tileY + 1.38) * this.tilePx() }
-        : kind === 'bench_sit'
-          ? { x: centerX - 8, y: footY + 2 }
-          : { x: centerX - 6.5, y: footY - 5.5 };
-    const slot1 =
-      kind === 'bed_lie'
-        ? { x: centerX + 6.4, y: slot0.y }
-        : kind === 'bench_sit'
-          ? { x: centerX + 8, y: footY + 2 }
-          : { x: centerX + 6.5, y: footY - 5.5 };
+    const slot0 = resolveSharedPostureSeat(kind, item, 0, this.tilePx());
+    const slot1 = resolveSharedPostureSeat(kind, item, 1, this.tilePx());
 
     const occupiedSlots: number[] = [];
     for (const remote of this.remoteEntities.values()) {
@@ -2776,13 +2842,12 @@ export class WorldScene extends Phaser.Scene {
     const chosen = slotIndex === 0 ? slot0 : slot1;
     this.capturePrePostureAnchor();
     this.pathQueue = [];
-    this.pendingFarmPlotClick = null;
     this.tapMarker?.clear();
     this.tweens.killTweensOf(this.localSprite);
     this.localSprite.setRotation(0);
     this.localSprite.setPosition(chosen.x, chosen.y);
     this.localSprite.setVisible(true);
-    this.localFacing = 'down';
+    this.localFacing = chosen.facing;
     this.localPosture = targetPosture;
     this.playLocalMoveAnim(false);
     this.emitCurrentTile(true);
@@ -2890,6 +2955,9 @@ export class WorldScene extends Phaser.Scene {
     const key = `${this.currentMapId}:${tileX},${tileY}:${this.localFacing}`;
     if (force || key !== this.lastTileEmitKey) {
       this.lastTileEmitKey = key;
+      if (this.currentMapId === 'farm' && this.hoveredFarmTile) {
+        this.redrawFarmHoverHighlight(this.hoveredFarmTile.tileX, this.hoveredFarmTile.tileY);
+      }
       gameEventBus.emit('evt:local-tile-changed', {
         mapId: this.currentMapId,
         tileX,

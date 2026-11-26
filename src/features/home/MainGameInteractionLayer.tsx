@@ -103,6 +103,51 @@ export function MainGameInteractionLayer({
     secondary: null,
   });
   const [noticeText, setNoticeText] = useState<string | null>(null);
+  const [hotbarCompact, setHotbarCompact] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem('olw:hud-hotbar-compact:v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [hotbarIdleDimmed, setHotbarIdleDimmed] = useState(false);
+  const idleTimerRef = useRef<number | null>(null);
+
+  const resetIdleTimerOnly = useCallback(() => {
+    if (idleTimerRef.current !== null) {
+      window.clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = window.setTimeout(() => {
+      setHotbarIdleDimmed(true);
+    }, 5500);
+  }, []);
+
+  const noteHotbarActivity = useCallback(() => {
+    setHotbarIdleDimmed(false);
+    resetIdleTimerOnly();
+  }, [resetIdleTimerOnly]);
+
+  const toggleHotbarCompact = useCallback(() => {
+    setHotbarCompact((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem('olw:hud-hotbar-compact:v1', next ? '1' : '0');
+      } catch {
+        // ignore storage restrictions
+      }
+      return next;
+    });
+    noteHotbarActivity();
+  }, [noteHotbarActivity]);
+
+  useEffect(() => {
+    resetIdleTimerOnly();
+    return () => {
+      if (idleTimerRef.current !== null) {
+        window.clearTimeout(idleTimerRef.current);
+      }
+    };
+  }, [resetIdleTimerOnly]);
 
   const heldRef = useRef(heldItem);
   const lastFrameRef = useRef<InteractionFramePayload | null>(null);
@@ -273,6 +318,11 @@ export function MainGameInteractionLayer({
         onOpenInventory();
         return;
       }
+      if (e.code === 'KeyH') {
+        e.preventDefault();
+        toggleHotbarCompact();
+        return;
+      }
       if (e.code === 'KeyJ') {
         e.preventDefault();
         void executePrimary();
@@ -286,13 +336,14 @@ export function MainGameInteractionLayer({
       const num = Number(e.key);
       if (Number.isInteger(num) && num >= 1 && num <= 8) {
         e.preventDefault();
+        noteHotbarActivity();
         selectSlot(num - 1);
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld]);
+  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld, toggleHotbarCompact, noteHotbarActivity]);
 
   if (!showHud) return null;
 
@@ -348,6 +399,10 @@ export function MainGameInteractionLayer({
           onOpenInventory={onOpenInventory}
           inventoryItemCount={inventorySnapshot?.items.reduce((sum, item) => sum + item.qty, 0) ?? 0}
           touchFriendly={petCareHud}
+          compact={hotbarCompact && !petCareHud}
+          onToggleCompact={!petCareHud ? toggleHotbarCompact : undefined}
+          idleDimmed={hotbarIdleDimmed && !petCareHud}
+          onUserActivity={noteHotbarActivity}
         />
       </div>
     </>

@@ -6,6 +6,7 @@ import {
   shouldOmitEconomyTargetFromResolve,
 } from './economyInteractablePolicy';
 import { parseDonorFishingSpot } from '../donor/donorFishingSpots';
+import { isFarmPlotPixelAdjacent } from '../farming/farmAdjacency';
 import { farmPlotInspectLabelVi } from '../farming/farmPlotInspect';
 import { shopRecoveryEntryForTarget } from '../world/shopRecoveryCoordination';
 import type { FarmPlotView } from '../farming/farmSnapshotTypes';
@@ -426,6 +427,13 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const dy = t.y - playerY;
     const dist = Math.hypot(dx, dy);
     if (dist > t.maxRadiusPx) continue;
+    if (t.kind === 'crop_plot') {
+      const plotTileX = Math.floor(t.x / 16);
+      const plotTileY = Math.floor(t.y / 16);
+      if (!isFarmPlotPixelAdjacent(playerX, playerY, plotTileX, plotTileY, 16)) {
+        continue;
+      }
+    }
 
     const action = actionForTarget(t, heldItem, economyPlayable, input.farmPlotByIndex, serverNowMs);
     if (shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;

@@ -30,6 +30,8 @@ export interface DecorateStatePayload {
   selectedPlacementId: string | null;
   /** Flip footprint before place (cozy-space `isFlipped` / cocoworking `R`). */
   previewRotated: boolean;
+  /** DEV-only sandbox stock unlock (always false in production). */
+  devSandbox?: boolean;
 }
 
 export interface NearbyInteractable {

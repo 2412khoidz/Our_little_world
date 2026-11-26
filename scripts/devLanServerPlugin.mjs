@@ -65,6 +65,20 @@ const FURNITURE_CATALOG = new Map([
   ['bench_garden', { nameVi: 'Ghế gỗ sân vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 2, h: 1, stock: 2 }],
   ['lantern_garden', { nameVi: 'Đèn lồng đá vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 3 }],
   ['flowerpot_sakura', { nameVi: 'Chậu hoa anh đào', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 3 }],
+  ['sakura_bush_decor', { nameVi: 'Bụi hoa anh đào', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['sakura_petals_decor', { nameVi: 'Thảm cánh hoa đào', allowedMaps: ['garden'], layerSlot: 'floor', w: 1, h: 1, stock: 20, devSandboxOnly: true }],
+  ['planter_box_decor', { nameVi: 'Bồn hoa gỗ vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['sunflower_cluster_decor', { nameVi: 'Khóm hoa hướng dương', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['picnic_blanket_decor', { nameVi: 'Thảm dã ngoại caro', allowedMaps: ['garden'], layerSlot: 'floor', w: 2, h: 2, stock: 4, devSandboxOnly: true }],
+  ['picnic_basket_decor', { nameVi: 'Giỏ dã ngoại mây', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
+  ['beehive_garden', { nameVi: 'Tổ ong mật vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
+  ['fence_wood_post', { nameVi: 'Cọc rào gỗ vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 20, devSandboxOnly: true }],
+  ['mailbox_garden', { nameVi: 'Hộp thư đỏ cổ điển', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 2, devSandboxOnly: true }],
+  ['wishing_well_garden', { nameVi: 'Giếng ước sân vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 2, h: 2, stock: 2, devSandboxOnly: true }],
+  ['hay_bale_decor', { nameVi: 'Cuộn rơm ấm áp', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 6, devSandboxOnly: true }],
+  ['rug_coral_decor', { nameVi: 'Thảm san hô dệt tay', allowedMaps: ['home'], layerSlot: 'floor', w: 2, h: 2, stock: 4, devSandboxOnly: true }],
+  ['bookshelf_wide_decor', { nameVi: 'Tủ sách gỗ lớn', allowedMaps: ['home'], layerSlot: 'object', w: 2, h: 1, stock: 3, devSandboxOnly: true }],
+  ['photo_frame_decor', { nameVi: 'Khung ảnh kỷ niệm', allowedMaps: ['home'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
 ]);
 
 const DEFAULT_STARTER_SPECS = [
@@ -155,6 +169,7 @@ function validatePlacementOnServer({
   ignorePlacementId,
   footprintW,
   footprintH,
+  devSandbox = false,
 }) {
   if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Vị trí đặt đồ chưa hợp lệ.' };
@@ -163,20 +178,25 @@ function validatePlacementOnServer({
   if (!item) {
     return { ok: false, code: 'NOT_FOUND', message: 'Món nội thất không có trong danh sách.' };
   }
+  if (item.devSandboxOnly && !devSandbox) {
+    return { ok: false, code: 'FORBIDDEN', message: `${item.nameVi} hiện chỉ mở ở chế độ thử nghiệm.` };
+  }
   if (!item.allowedMaps.includes(mapId)) {
     return { ok: false, code: 'WRONG_MAP', message: `${item.nameVi} không đặt được ở khu vực này.` };
   }
 
-  let count = 0;
-  for (const p of placements) {
-    if (p.sku === sku && p.id !== ignorePlacementId) count += 1;
-  }
-  if (count >= item.stock) {
-    return {
-      ok: false,
-      code: 'STOCK_EXCEEDED',
-      message: `Bạn đã dùng hết ${item.stock} món ${item.nameVi}.`,
-    };
+  if (!devSandbox) {
+    let count = 0;
+    for (const p of placements) {
+      if (p.sku === sku && p.id !== ignorePlacementId) count += 1;
+    }
+    if (count >= item.stock) {
+      return {
+        ok: false,
+        code: 'STOCK_EXCEEDED',
+        message: `Bạn đã dùng hết ${item.stock} món ${item.nameVi}.`,
+      };
+    }
   }
 
   const occupied = new Set();
@@ -756,7 +776,7 @@ export function createDevLanHandler({
       }
 
       if (req.method === 'POST' && route === '/furniture/place') {
-        const { worldId, mapId, sku, tileX, tileY, rotated, expectedLayoutVersion, idempotencyKey } = body;
+        const { worldId, mapId, sku, tileX, tileY, rotated, devSandbox, expectedLayoutVersion, idempotencyKey } = body;
         if (!isWorldMember(worldId, userId)) {
           sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
           return;
@@ -791,6 +811,7 @@ export function createDevLanHandler({
           placements,
           footprintW,
           footprintH,
+          devSandbox: devSandbox === true,
         });
         if (!check.ok) {
           sendJson(res, 400, { ok: false, code: check.code, message: check.message });
