@@ -1,7 +1,17 @@
 // Adapted from SawyerHood/nintendogs-threejs@43d231c:src/dog/actor.ts
 import * as THREE from 'three';
-import type { CatAccessoryId } from '../../shared/petLiving/petVisualTypes';
+import type {
+  BoundsRect,
+  CatHit,
+  CatLodLevel,
+  CatModelDebugInfo,
+  IPetCareCatActor,
+  MoveOpts,
+  TaggedCircle,
+} from '../../game/pet/care/petCareActorTypes';
+import type { CatAccessoryId, CatCoatVariantId } from '../../shared/petLiving/petVisualTypes';
 import type { CatBreed } from './catBreeds';
+import { CAT_BREEDS } from './catBreeds';
 import { CatModel } from './catModel';
 import { CatRig } from './catRig';
 
@@ -20,18 +30,9 @@ export type CatRegion =
   | 'hindPaw'
   | 'side';
 
-export interface Bounds {
-  minX: number;
-  maxX: number;
-  minZ: number;
-  maxZ: number;
-}
-
-export interface Circle {
-  x: number;
-  z: number;
-  r: number;
-}
+export type Bounds = BoundsRect;
+export type Circle = TaggedCircle;
+export type { CatHit, MoveOpts };
 
 interface Capsule {
   a: THREE.Bone;
@@ -42,27 +43,12 @@ interface Capsule {
   region: CatRegion;
 }
 
-export interface CatHit {
-  point: THREE.Vector3;
-  normal: THREE.Vector3;
-  region: CatRegion;
-  distance: number;
-  bone: THREE.Bone;
-}
-
-export interface MoveOpts {
-  speed?: number;
-  arrive?: number;
-  onArrive?: () => void;
-  faceAfter?: THREE.Vector3 | null;
-}
-
 const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 
-export class CatActor {
+export class CatActor implements IPetCareCatActor {
   readonly model: CatModel;
   readonly rig: CatRig;
   readonly group: THREE.Group;
@@ -76,6 +62,7 @@ export class CatActor {
   bounds: Bounds | null = null;
   obstacles: Circle[] = [];
   floorY = 0;
+  ignoreObstacleTag: string | null = null;
   faceTarget: THREE.Vector3 | null = null;
   readonly mouth = new THREE.Object3D();
   held: THREE.Object3D | null = null;
@@ -207,6 +194,7 @@ export class CatActor {
   private collide() {
     const r = this.model.design.dims.BL * 0.45;
     for (const o of this.obstacles) {
+      if (this.ignoreObstacleTag && o.tag === this.ignoreObstacleTag) continue;
       const dx = this.position.x - o.x, dz = this.position.z - o.z;
       const d = Math.hypot(dx, dz);
       const min = o.r + r * 0.58;
@@ -239,6 +227,41 @@ export class CatActor {
 
   headWorld(out = new THREE.Vector3()) {
     return this.model.bones.head!.getWorldPosition(out);
+  }
+
+  frontPawWorld(side: 'L' | 'R' = 'L', out = new THREE.Vector3()) {
+    const b = this.model.bones[`fpaw_${side}`] ?? this.model.bones.chest ?? this.group;
+    return b.getWorldPosition(out);
+  }
+
+  setAccessory(accessory: CatAccessoryId) {
+    this.model.setAccessory(accessory);
+  }
+
+  setCoatVariant(_variant: CatCoatVariantId) {
+    // Procedural model selects breed at construction; caller re-creates actor if breed changes.
+    void CAT_BREEDS;
+  }
+
+  setLod(_lod: CatLodLevel) {
+    // Procedural model uses single LOD; GLTF actor switches LOD0 / LOD1 dynamically.
+  }
+
+  setCoatAppearance(opts: { fluff?: number; dirt?: number; comb?: number }) {
+    if (typeof opts.fluff === 'number') this.model.uniforms.uFluff.value = opts.fluff;
+    if (typeof opts.dirt === 'number') this.model.uniforms.uDirt.value = opts.dirt;
+    if (typeof opts.comb === 'number') this.model.uniforms.uComb.value = opts.comb;
+  }
+
+  getModelDebugInfo(): CatModelDebugInfo {
+    const tris = this.model.base.geometry.index ? this.model.base.geometry.index.count / 3 : 0;
+    return {
+      modelKind: 'procedural',
+      lod: 'lod0',
+      activeClip: this.rig.pose,
+      clipNames: [],
+      triangles: Math.round(tris),
+    };
   }
 
   private buildProxy() {

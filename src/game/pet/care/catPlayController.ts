@@ -2,10 +2,11 @@
 // Direct 3D pointer/touch interaction: petting by anatomical zone, 3D brush gliding,
 // bell ball / yarn ball grab & flick throwing, Verlet feather cat wand waving, and bowl clicks.
 import * as THREE from 'three';
-import type { CatActor, CatHit, CatRegion } from '../../../donors/nintendogs-cat-v2/catActor';
+import type { CatRegion } from '../../../donors/nintendogs-cat-v2/catActor';
 import type { BowlHandle, CatWandHandle } from '../../../donors/nintendogs-cat-v2/catProps';
 import type { ToyWorld, WorldToy } from '../../../donors/nintendogs-cat-v2/toyPhysics';
 import type { CatBrain } from './catBrain';
+import type { CatHit, IPetCareCatActor } from './petCareActorTypes';
 
 export type CarePlayTool = 'hand' | 'brush' | 'wand';
 
@@ -23,6 +24,7 @@ export interface CatPlayCallbacks {
   onFoodBowlClicked?: () => void;
   onWaterBowlClicked?: () => void;
   onToolChange?: (tool: CarePlayTool) => void;
+  onPointerInteract?: () => void;
 }
 
 export class CatPlayController {
@@ -51,7 +53,7 @@ export class CatPlayController {
     private readonly domElement: HTMLElement,
     private readonly camera: THREE.PerspectiveCamera,
     private readonly scene: THREE.Scene,
-    private readonly actor: CatActor,
+    private readonly actor: IPetCareCatActor,
     private readonly brain: CatBrain,
     private readonly toyWorld: ToyWorld,
     private readonly wand: CatWandHandle,
@@ -162,6 +164,7 @@ export class CatPlayController {
 
   private pointerDown(e: PointerEvent) {
     if (!this.enabled || e.button > 0) return;
+    this.callbacks.onPointerInteract?.();
     this.setRay(e);
     this.down = true;
     this.samples = [{ t: performance.now(), x: e.clientX, y: e.clientY }];
@@ -268,8 +271,7 @@ export class CatPlayController {
           }
         } else {
           this.brain.setPet({ point: hit.point, region: hit.region, speed, idle: 0 });
-          // Comb shader response
-          this.actor.model.uniforms.uComb.value = THREE.MathUtils.clamp(0.65 + moveDist * 3.5, 0.3, 1.0);
+          this.actor.setCoatAppearance?.({ comb: THREE.MathUtils.clamp(0.65 + moveDist * 3.5, 0.3, 1.0) });
           this.strokeAccum += moveDist;
           if (this.strokeAccum >= 0.09) {
             this.strokeAccum = 0;

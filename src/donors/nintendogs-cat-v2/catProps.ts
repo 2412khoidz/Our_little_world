@@ -297,6 +297,8 @@ export function makeYarnBall(): ToyProp {
 export function makeCardboardBox(pos: THREE.Vector3): {
   object: THREE.Group;
   pos: THREE.Vector3;
+  interiorFloorY: number;
+  entrySpot: THREE.Vector3;
   wiggle: () => void;
   update: (dt: number) => void;
   dispose: () => void;
@@ -308,10 +310,11 @@ export function makeCardboardBox(pos: THREE.Vector3): {
   const insideMat = new THREE.MeshStandardMaterial({ color: '#9c734b', roughness: 0.92, side: THREE.DoubleSide });
   const tapeMat = new THREE.MeshStandardMaterial({ color: '#e5cfac', roughness: 0.55 });
 
-  const W = 0.34;
-  const H = 0.14;
-  const D = 0.28;
-  const T = 0.008;
+  // Generous interior clearance for the scaled Vuena GLB cat (no mesh clipping during sit/peek)
+  const W = 0.48;
+  const H = 0.16;
+  const D = 0.42;
+  const T = 0.01;
 
   const base = new THREE.Mesh(new THREE.BoxGeometry(W, T, D), insideMat);
   base.position.y = T / 2;
@@ -340,20 +343,24 @@ export function makeCardboardBox(pos: THREE.Vector3): {
   right.castShadow = true;
   g.add(right);
 
-  // Open side flaps
-  const flapGeo = new THREE.BoxGeometry(0.08, T, D * 0.92);
+  // Open side flaps attached cleanly at left & right top rims (-W/2, H) and (+W/2, H)
+  const flapLen = 0.095;
+  const flapAngle = 0.45;
+  const flapDx = Math.cos(flapAngle) * (flapLen * 0.5);
+  const flapDy = Math.sin(flapAngle) * (flapLen * 0.5);
+  const flapGeo = new THREE.BoxGeometry(flapLen, T, D * 0.92);
   const flapL = new THREE.Mesh(flapGeo, cardMat);
-  flapL.position.set(-W / 2 - 0.025, H + 0.015, 0);
-  flapL.rotation.z = 0.52;
+  flapL.position.set(-W / 2 - flapDx, H + flapDy, 0);
+  flapL.rotation.z = -flapAngle;
   g.add(flapL);
 
   const flapR = new THREE.Mesh(flapGeo, cardMat);
-  flapR.position.set(W / 2 + 0.025, H + 0.015, 0);
-  flapR.rotation.z = -0.52;
+  flapR.position.set(W / 2 + flapDx, H + flapDy, 0);
+  flapR.rotation.z = flapAngle;
   g.add(flapR);
 
-  const tape = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.055, 0.004), tapeMat);
-  tape.position.set(0, H * 0.58, D / 2 + 0.005);
+  const tape = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.005), tapeMat);
+  tape.position.set(0, H * 0.58, D / 2 + 0.006);
   g.add(tape);
 
   let wiggleT = 0;
@@ -361,6 +368,8 @@ export function makeCardboardBox(pos: THREE.Vector3): {
   return {
     object: g,
     pos: g.position,
+    interiorFloorY: T + 0.002,
+    entrySpot: new THREE.Vector3(pos.x, 0, pos.z + D * 0.5 + 0.2),
     wiggle: () => {
       wiggleT = 0.8;
     },

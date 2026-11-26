@@ -717,12 +717,69 @@
   transform: translateY(-1px);
 }
 
-.pet-care-overlay__exit {
+.pet-care-overlay__top-controls {
   position: absolute;
-  top: calc(18px + var(--safe-top));
-  right: calc(16px + var(--safe-right));
+  top: calc(16px + var(--safe-top));
+  right: calc(14px + var(--safe-right));
   z-index: 4;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: calc(100vw - 180px);
   pointer-events: auto;
+}
+
+.pet-care-audio-bar,
+.pet-care-quality-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(44, 30, 24, 0.78);
+  border: 1px solid rgba(255, 224, 189, 0.32);
+  backdrop-filter: blur(6px);
+}
+
+.pet-care-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #ffe8c7;
+  cursor: pointer;
+}
+
+.pet-care-volume-slider {
+  width: 64px;
+  accent-color: #e2835a;
+  cursor: pointer;
+}
+
+.pet-care-quality-pill {
+  border: none;
+  background: transparent;
+  color: rgba(255, 232, 199, 0.82);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.pet-care-quality-pill--active {
+  background: #e2835a;
+  color: #fffaf4;
+}
+
+.pet-care-overlay__exit {
   min-height: 40px;
   padding: 8px 16px;
   border-radius: 999px;
@@ -732,6 +789,19 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .pet-care-overlay__top-controls {
+    top: calc(14px + var(--safe-top));
+    right: calc(10px + var(--safe-right));
+    max-width: 60vw;
+    gap: 6px;
+  }
+
+  .pet-care-volume-slider {
+    width: 46px;
+  }
 }
 
 .pet-care-zones {

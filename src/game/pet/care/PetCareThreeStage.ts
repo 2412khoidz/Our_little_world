@@ -1,4 +1,4 @@
-// Live 3D Three.js Pet Care Stage hosting Quýt + sunlit couple living room + 2P synchronized care.
+// Live 3D Three.js Pet Care Stage hosting Quýt (Vuena CC0 GLB + fallback) + sunlit couple room + 2P sync + CC0 audio.
 import * as THREE from 'three';
 import { CatActor, type CatRegion } from '../../../donors/nintendogs-cat-v2/catActor';
 import { CAT_BREEDS } from '../../../donors/nintendogs-cat-v2/catBreeds';
@@ -20,7 +20,10 @@ import type { SharedPetCarePatch, SharedPetCareSession } from '../../../shared/p
 import type { CatCoatVariantId } from '../../../shared/petLiving/petVisualTypes';
 import { gameEventBus } from '../../eventBus';
 import { CatBrain } from './catBrain';
+import { CatGltfActor, VUENA_CAT_GLB_URL } from './CatGltfActor';
 import { CatPlayController, type CarePlayTool } from './catPlayController';
+import type { IPetCareCatActor } from './petCareActorTypes';
+import { PetCareAudioEngine } from './petCareAudio';
 import {
   getLatestSharedPetCareSession,
   getPersistedPetCareV2State,
@@ -29,6 +32,12 @@ import {
   type PetCareBridgeIdentity,
 } from './petCareBridgeState';
 import { PetCareEmoteSystem } from './petCareEffects';
+import {
+  detectDefaultPetCareQuality,
+  PET_CARE_QUALITY_CONFIG,
+  savePetCareQuality,
+  type PetCareQualityPreset,
+} from './petCareQuality';
 
 export interface PetCareThreeStageOptions {
   host: HTMLElement;
@@ -42,6 +51,11 @@ export interface PetCareThreeStageOptions {
 
 function breedForVariant(variant: CatCoatVariantId) {
   return CAT_BREEDS[variant] ?? CAT_BREEDS['ginger-tabby'];
+}
+
+function wantsProceduralFallback(): boolean {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('cat-model') === 'procedural';
 }
 
 export class PetCareThreeStage {
@@ -58,15 +72,21 @@ export class PetCareThreeStage {
   private readonly wandHandle: CatWandHandle;
   private readonly emotes: PetCareEmoteSystem;
   private readonly partnerAura: THREE.Mesh;
+  private readonly audio: PetCareAudioEngine;
   private readonly focusPoint = new THREE.Vector3(0, 0.16, 0.05);
 
-  private actor!: CatActor;
-  private brain!: CatBrain;
-  private play!: CatPlayController;
+  private actor: IPetCareCatActor | null = null;
+  private brain: CatBrain | null = null;
+  private play: CatPlayController | null = null;
   private yarnToy: WorldToy;
   private ballToy: WorldToy;
   private boxPlaced = true;
   private variant: CatCoatVariantId = 'ginger-tabby';
+  private accessory: PetCareBridgeIdentity['accessory'] = 'ribbon_rose';
+  private traitId: string | undefined = 'curious_bong';
+  private latestSnapshot: PetCareBridgeIdentity['petSnapshot'] = null;
+  private pendingIdentityApplied = false;
+  private qualityPreset: PetCareQualityPreset;
   private localUserId: string;
   private rafId = 0;
   private disposed = false;
@@ -84,12 +104,21 @@ export class PetCareThreeStage {
   private lastWandPatchMs = 0;
   private partnerAuraTimer = 0;
 
+  // Lightweight rolling FPS metrics (published in DEV telemetry only)
+  private fpsFrames = 0;
+  private fpsWindowMs = 0;
+  private measuredFps = 60;
+  private measuredAvgFrameMs = 16.6;
+
   constructor(private readonly opts: PetCareThreeStageOptions) {
     this.localUserId = opts.localUserId || 'local-user';
+    this.qualityPreset = detectDefaultPetCareQuality();
+    this.audio = new PetCareAudioEngine();
+
     const w = Math.max(320, opts.host.clientWidth || 800);
     const h = Math.max(240, opts.host.clientHeight || 600);
+    const qCfg = PET_CARE_QUALITY_CONFIG[this.qualityPreset];
 
-    // Explicitly create WebGL2 context with alpha: false so shell-fur alphaToCoverage renders cleanly.
     const canvas = document.createElement('canvas');
     canvas.setAttribute('data-testid', 'pet-care-three-canvas');
     canvas.dataset.petCareV2 = 'three-cat';
@@ -113,10 +142,10 @@ export class PetCareThreeStage {
       context: gl,
       ...contextAttrs,
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, qCfg.maxDpr));
     this.renderer.setSize(w, h, false);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = qCfg.shadows;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -125,6 +154,8 @@ export class PetCareThreeStage {
     this.scene.fog = new THREE.Fog('#f7e8d2', 4.6, 8.2);
 
     this.room = buildCatLivingRoom();
+    this.room.setShadowsEnabled(qCfg.shadows, qCfg.shadowMapSize);
+    this.room.setDustCount(qCfg.dustMotes);
     this.scene.add(this.room.group);
 
     this.camera = new THREE.PerspectiveCamera(46, w / h, 0.05, 25);
@@ -132,6 +163,14 @@ export class PetCareThreeStage {
     this.unsubs.push(this.followCam.attachWheel(canvas));
 
     this.toyWorld = new ToyWorld(this.scene, this.room.bounds, this.room.obstacles);
+    this.toyWorld.onBounce = (toy, impact) => {
+      const intensity = THREE.MathUtils.clamp(impact / 2.2, 0.25, 1.0);
+      this.audio.play('ball_bounce', { intensity });
+      if (toy.kind === 'ball') {
+        this.audio.play('bell_jingle', { intensity: THREE.MathUtils.clamp(intensity * 0.9, 0.25, 0.95) });
+      }
+    };
+
     this.foodBowl = makeFoodBowl(this.room.foodBowlSpot, 0);
     this.waterBowl = makeWaterBowl(this.room.waterBowlSpot, 0.55);
     this.scene.add(this.foodBowl.object);
@@ -150,7 +189,6 @@ export class PetCareThreeStage {
 
     this.emotes = new PetCareEmoteSystem(this.scene);
 
-    // Glowing partner hand ring aura shown when partner interacts concurrently
     const auraGeo = new THREE.RingGeometry(0.11, 0.145, 28);
     const auraMat = new THREE.MeshBasicMaterial({
       color: '#ff7fa6',
@@ -164,34 +202,96 @@ export class PetCareThreeStage {
     this.partnerAura.position.set(0, 0.012, 0);
     this.scene.add(this.partnerAura);
 
-    this.initCatActor('ginger-tabby', 'ribbon_rose', 'curious_bong');
-    this.hydrateFromPersistence();
-    const initialShared = opts.initialSharedSession ?? getLatestSharedPetCareSession();
-    if (initialShared) {
-      this.applySharedSession(initialShared, false);
-    }
-
     this.resizeObserver = new ResizeObserver(() => this.handleResize());
     this.resizeObserver.observe(opts.host);
 
     this.bindEvents();
-    this.followCam.update(0.016, this.actor.headWorld(), true);
-    this.publishDevState();
+    this.followCam.update(0.016, this.focusPoint, true);
+    void this.mountInitialActor();
     this.rafId = requestAnimationFrame(this.loop);
   }
 
-  private initCatActor(variant: CatCoatVariantId, accessory: PetCareBridgeIdentity['accessory'], traitId?: string) {
+  getQualityPreset(): PetCareQualityPreset {
+    return this.qualityPreset;
+  }
+
+  setQualityPreset(preset: PetCareQualityPreset): void {
+    this.qualityPreset = preset;
+    savePetCareQuality(preset);
+    const cfg = PET_CARE_QUALITY_CONFIG[preset];
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cfg.maxDpr));
+    this.handleResize();
+    this.renderer.shadowMap.enabled = cfg.shadows;
+    this.renderer.shadowMap.needsUpdate = true;
+    this.room.setShadowsEnabled(cfg.shadows, cfg.shadowMapSize);
+    this.room.setDustCount(cfg.dustMotes);
+    this.actor?.setLod(cfg.lod);
+    this.publishDevState();
+  }
+
+  getAudioState(): { volume: number; muted: boolean } {
+    return {
+      volume: this.audio.getVolume(),
+      muted: this.audio.isMuted(),
+    };
+  }
+
+  setAudioVolume(volume: number): void {
+    this.audio.unlock();
+    this.audio.setVolume(volume);
+    this.publishDevState();
+  }
+
+  setAudioMuted(muted: boolean): void {
+    this.audio.unlock();
+    this.audio.setMuted(muted);
+    this.publishDevState();
+  }
+
+  unlockAudio(): void {
+    this.audio.unlock();
+  }
+
+  private async mountInitialActor(): Promise<void> {
+    const qCfg = PET_CARE_QUALITY_CONFIG[this.qualityPreset];
+    if (wantsProceduralFallback()) {
+      const procedural = new CatActor(breedForVariant(this.variant), 0.85, this.accessory);
+      this.attachActor(procedural);
+      return;
+    }
+
+    try {
+      const loaded = await CatGltfActor.load(VUENA_CAT_GLB_URL, {
+        variant: this.variant,
+        accessory: this.accessory,
+        lod: qCfg.lod,
+      });
+      if (this.disposed) {
+        loaded.dispose();
+        return;
+      }
+      this.attachActor(loaded);
+    } catch {
+      if (this.disposed) return;
+      const fallback = new CatActor(breedForVariant(this.variant), 0.85, this.accessory);
+      this.attachActor(fallback);
+    }
+  }
+
+  private attachActor(nextActor: IPetCareCatActor): void {
     if (this.actor) {
       this.play?.dispose();
       this.actor.group.removeFromParent();
       this.actor.dispose();
     }
 
-    this.variant = variant;
-    this.actor = new CatActor(breedForVariant(variant), 0.85, accessory);
+    this.actor = nextActor;
     this.actor.bounds = this.room.bounds;
     this.actor.obstacles = this.room.obstacles;
     this.actor.place(0, 0.12, 0.12);
+    this.actor.setLod(PET_CARE_QUALITY_CONFIG[this.qualityPreset].lod);
+    this.actor.setCoatVariant(this.variant);
+    this.actor.setAccessory(this.accessory);
     this.scene.add(this.actor.group);
 
     this.brain = new CatBrain(this.actor, {
@@ -201,6 +301,8 @@ export class PetCareThreeStage {
       sunSpot: this.room.sunSpot,
       boxSpot: this.boxHandle.pos,
       boxPlaced: () => this.boxPlaced,
+      boxEntrySpot: () => this.boxHandle.entrySpot,
+      boxInteriorFloorY: () => this.boxHandle.interiorFloorY,
       wiggleBox: () => this.boxHandle.wiggle(),
       foodBowl: this.foodBowl,
       waterBowl: this.waterBowl,
@@ -209,7 +311,9 @@ export class PetCareThreeStage {
       wandLurePos: () => this.wandHandle.sim.lurePos,
       wandLureSpeed: () => this.play?.getWandLureSpeed() ?? 0,
       impulseWand: (v) => this.wandHandle.sim.impulseLure(v),
-      emote: (kind, pos) => this.emotes.spawn(kind, pos ?? this.actor.headWorld()),
+      emote: (kind, pos) => this.emotes.spawn(kind, pos ?? this.actor!.headWorld()),
+      sound: (ev, opts) => this.audio.play(ev, opts),
+      setPurr: (mode) => this.audio.setPurr(mode),
       onActivityChange: (activity, reasonVi) => {
         gameEventBus.emit('evt:pet-care-autonomy-cue', {
           action: activity,
@@ -223,10 +327,13 @@ export class PetCareThreeStage {
         this.opts.onHint?.('Quýt cần chút không gian riêng…');
       },
       onCoatDirtyOrFluff: () => {
-        this.actor.model.uniforms.uFluff.value = this.brain.coatFluff;
+        if (this.actor && this.brain) {
+          this.actor.setCoatAppearance({ fluff: this.brain.coatFluff });
+        }
       },
     });
-    if (traitId) this.brain.applyPersonality(traitId);
+    if (this.traitId) this.brain.applyPersonality(this.traitId);
+    if (this.latestSnapshot) this.brain.syncSnapshot(this.latestSnapshot);
 
     this.play = new CatPlayController(
       this.renderer.domElement,
@@ -240,10 +347,17 @@ export class PetCareThreeStage {
       this.foodBowl,
       this.waterBowl,
       {
+        onPointerInteract: () => this.audio.unlock(),
         onStrokeDone: (region) => this.handleLocalStrokeDone(region),
         onBrushStroke: () => this.handleLocalBrushStroke(),
-        onToyThrown: (toy) => this.emitToyPatch(toy),
+        onToyThrown: (toy) => {
+          this.audio.play('toy_swish', { intensity: 0.85 });
+          this.emitToyPatch(toy);
+        },
         onWandMoved: (tip) => {
+          if ((this.play?.getWandLureSpeed() ?? 0) > 0.65) {
+            this.audio.play('toy_swish', { intensity: 0.55 });
+          }
           const now = Date.now();
           if (now - this.lastWandPatchMs > 280) {
             this.lastWandPatchMs = now;
@@ -258,6 +372,7 @@ export class PetCareThreeStage {
           }
         },
         onFoodBowlClicked: () => {
+          this.audio.unlock();
           if (this.opts.onFoodBowlClick) {
             this.opts.onFoodBowlClick();
           } else {
@@ -265,14 +380,26 @@ export class PetCareThreeStage {
           }
         },
         onWaterBowlClicked: () => {
+          this.audio.unlock();
           gameEventBus.emit('cmd:pet-care-action', { kind: 'pour_water' });
         },
         onToolChange: (t) => this.opts.onToolChange?.(t),
       },
     );
+
+    this.hydrateFromPersistence();
+    const initialShared = this.opts.initialSharedSession ?? getLatestSharedPetCareSession();
+    if (initialShared && !this.pendingIdentityApplied) {
+      this.pendingIdentityApplied = true;
+      this.applySharedSession(initialShared, false);
+    }
+
+    this.followCam.update(0.016, this.actor.headWorld(this.focusPoint), true);
+    this.publishDevState();
   }
 
   private hydrateFromPersistence() {
+    if (!this.actor || !this.brain) return;
     const saved = getPersistedPetCareV2State();
     if (!saved) return;
     this.actor.place(saved.catX, saved.catZ, saved.heading);
@@ -280,7 +407,7 @@ export class PetCareThreeStage {
     this.brain.memory = saved.memory;
     this.brain.affection = saved.affection;
     this.brain.coatFluff = saved.coatFluff;
-    this.actor.model.uniforms.uFluff.value = saved.coatFluff;
+    this.actor.setCoatAppearance({ fluff: saved.coatFluff });
     this.foodBowl.setFill(saved.foodFill);
     this.waterBowl.setFill(saved.waterFill);
     this.boxPlaced = saved.boxPlaced;
@@ -291,6 +418,7 @@ export class PetCareThreeStage {
   }
 
   private savePersistence() {
+    if (!this.actor || !this.brain) return;
     savePersistedPetCareV2State({
       catX: this.actor.position.x,
       catZ: this.actor.position.z,
@@ -313,18 +441,30 @@ export class PetCareThreeStage {
   private bindEvents() {
     this.unsubs.push(
       subscribePetCareBridgeIdentity((id) => {
-        if (id.variant !== this.variant) {
-          this.initCatActor(id.variant, id.accessory, id.traitId);
-        } else {
-          this.actor.model.setAccessory(id.accessory);
+        this.variant = id.variant;
+        this.accessory = id.accessory;
+        this.traitId = id.traitId;
+        this.latestSnapshot = id.petSnapshot;
+
+        if (this.actor && this.brain) {
+          if (this.actor.getModelDebugInfo().modelKind === 'procedural' && wantsProceduralFallback()) {
+            const procedural = new CatActor(breedForVariant(id.variant), 0.85, id.accessory);
+            this.attachActor(procedural);
+          } else {
+            this.actor.setCoatVariant(id.variant);
+            this.actor.setAccessory(id.accessory);
+          }
           if (id.traitId) this.brain.applyPersonality(id.traitId);
+          this.brain.syncSnapshot(id.petSnapshot);
         }
-        this.brain.syncSnapshot(id.petSnapshot);
       }),
       gameEventBus.on('cmd:sync-pet', (pet) => {
-        this.brain.syncSnapshot(pet);
+        this.latestSnapshot = pet;
+        this.brain?.syncSnapshot(pet);
       }),
       gameEventBus.on('cmd:pet-care-stroke', ({ zone }) => {
+        if (!this.actor || !this.brain) return;
+        this.audio.unlock();
         this.brain.setPet({
           point: this.actor.headWorld(),
           region: zone === 'chin' ? 'chin' : zone === 'back' ? 'back' : 'head',
@@ -334,6 +474,7 @@ export class PetCareThreeStage {
         this.handleLocalStrokeDone(zone);
       }),
       gameEventBus.on('cmd:pet-care-action', (payload) => {
+        this.audio.unlock();
         this.handleCommandAction(payload.kind);
       }),
       gameEventBus.on('cmd:sync-shared-pet-care-session', (session) => {
@@ -343,16 +484,17 @@ export class PetCareThreeStage {
   }
 
   private handleLocalStrokeDone(region: CatRegion) {
+    if (!this.brain) return;
     this.strokeCount += 1;
     this.brain.recordMemory('petted');
     const normalizedZone: 'head' | 'chin' | 'back' | 'belly' =
       region === 'chin' ? 'chin' : region === 'back' || region === 'rump' ? 'back' : region === 'belly' ? 'belly' : 'head';
-    // evt:pet-care-stroke-done triggers App.tsx's shared stroke patch — emit once here.
     gameEventBus.emit('evt:pet-care-stroke-done', { zone: normalizedZone });
   }
 
   private handleLocalBrushStroke(fromCommandButton = false) {
     this.brushCount += 1;
+    this.audio.play('brush_fur', { intensity: 0.85 });
     if (!fromCommandButton) {
       this.emitLocalPatch({
         kind: 'brush',
@@ -380,6 +522,7 @@ export class PetCareThreeStage {
   }
 
   private handleCommandAction(kind: PetCareActionKind) {
+    if (!this.actor || !this.brain || !this.play) return;
     if (kind === 'call') {
       this.play.setTool('hand');
       this.brain.callToPlayer();
@@ -394,7 +537,6 @@ export class PetCareThreeStage {
     if (kind === 'brush') {
       const nextTool = this.play.tool === 'brush' ? 'hand' : 'brush';
       this.play.setTool(nextTool);
-      // Apply immediate tactile brush pass when entering brush mode so single click visibly works too
       if (nextTool === 'brush') {
         this.brain.brushStroke(0.08);
         this.handleLocalBrushStroke(true);
@@ -404,6 +546,7 @@ export class PetCareThreeStage {
     if (kind === 'pour_water') {
       this.play.setTool('hand');
       this.waterBowl.setFill(1);
+      this.audio.play('drink_lap', { intensity: 0.75 });
       this.brain.noticeWater();
       this.emitLocalPatch({
         kind: 'water',
@@ -424,6 +567,7 @@ export class PetCareThreeStage {
       const from = new THREE.Vector3(-0.35 + Math.random() * 0.25, 0.36, 0.85);
       const vel = new THREE.Vector3((Math.random() - 0.5) * 0.7, 0.65, -0.9 - Math.random() * 0.45);
       this.toyWorld.throw(this.yarnToy, from, vel);
+      this.audio.play('toy_swish', { intensity: 0.8 });
       this.brain.noticeToy(this.yarnToy);
       this.emitToyPatch(this.yarnToy);
       return;
@@ -433,6 +577,7 @@ export class PetCareThreeStage {
       const from = new THREE.Vector3(0.32 - Math.random() * 0.25, 0.42, 0.85);
       const vel = new THREE.Vector3((Math.random() - 0.5) * 0.9, 0.85, -1.05 - Math.random() * 0.45);
       this.toyWorld.throw(this.ballToy, from, vel);
+      this.audio.play('bell_jingle', { intensity: 0.8 });
       this.brain.noticeToy(this.ballToy);
       this.emitToyPatch(this.ballToy);
       return;
@@ -444,6 +589,7 @@ export class PetCareThreeStage {
         const tip = new THREE.Vector3(this.actor.position.x + 0.16, 0.45, this.actor.position.z + 0.24);
         this.wandHandle.setHandleWorld(tip);
         this.wandHandle.sim.impulseLure(new THREE.Vector3(0.14, 0.04, -0.08));
+        this.audio.play('toy_swish', { intensity: 0.7 });
         this.brain.noticeWand();
         this.emitLocalPatch({
           kind: 'toy',
@@ -461,6 +607,7 @@ export class PetCareThreeStage {
       this.boxPlaced = true;
       this.boxHandle.object.visible = true;
       this.boxHandle.wiggle();
+      this.audio.play('box_rustle', { intensity: 0.85 });
       this.brain.inspectBox();
       this.emitLocalPatch({
         kind: 'toy',
@@ -474,6 +621,7 @@ export class PetCareThreeStage {
   }
 
   private applySharedSession(session: SharedPetCareSession, animatePartner: boolean) {
+    if (!this.actor || !this.brain) return;
     if (session.revision <= this.lastSyncedRev) return;
     this.lastSyncedRev = session.revision;
 
@@ -492,7 +640,7 @@ export class PetCareThreeStage {
     }
     if (typeof session.coatFluff === 'number') {
       this.brain.coatFluff = THREE.MathUtils.clamp(session.coatFluff, 0.45, 0.96);
-      this.actor.model.uniforms.uFluff.value = this.brain.coatFluff;
+      this.actor.setCoatAppearance({ fluff: this.brain.coatFluff });
     }
 
     const fromPartner = Boolean(
@@ -538,52 +686,64 @@ export class PetCareThreeStage {
     if (this.disposed) return;
     const w = Math.max(240, this.opts.host.clientWidth || 800);
     const h = Math.max(180, this.opts.host.clientHeight || 600);
+    const qCfg = PET_CARE_QUALITY_CONFIG[this.qualityPreset];
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, qCfg.maxDpr));
     this.renderer.setSize(w, h, false);
   }
 
   private loop = (now: number) => {
     if (this.disposed) return;
-    const rawDt = Math.min(0.22, Math.max(0.001, (now - this.lastTickMs) / 1000));
+    const elapsedMs = now - this.lastTickMs;
+    const rawDt = Math.min(0.22, Math.max(0.001, elapsedMs / 1000));
     this.lastTickMs = now;
 
-    // Step physics/rig in <= 0.04s sub-steps so slow software WebGL still advances at real-time speed.
+    this.fpsFrames += 1;
+    this.fpsWindowMs += Math.max(1, elapsedMs);
+    if (this.fpsWindowMs >= 500) {
+      this.measuredFps = Math.round((this.fpsFrames * 1000) / this.fpsWindowMs);
+      this.measuredAvgFrameMs = Number((this.fpsWindowMs / this.fpsFrames).toFixed(1));
+      this.fpsFrames = 0;
+      this.fpsWindowMs = 0;
+    }
+
     let remaining = rawDt;
     while (remaining > 1e-4) {
       const subDt = Math.min(0.04, remaining);
       remaining -= subDt;
       this.toyWorld.update(subDt);
-      if (this.play.tool === 'wand') {
+      if (this.play?.tool === 'wand') {
         this.wandHandle.update(subDt);
       }
       this.waterBowl.update?.(subDt);
       this.boxHandle.update(subDt);
       this.room.update(subDt);
-      this.play.update(subDt);
-      this.brain.update(subDt);
-      this.actor.update(subDt);
+      this.play?.update(subDt);
+      this.brain?.update(subDt);
+      this.actor?.update(subDt);
       this.emotes.update(subDt);
     }
     const dt = rawDt;
 
-    if (this.partnerAuraTimer > 0) {
-      this.partnerAuraTimer = Math.max(0, this.partnerAuraTimer - dt);
-      this.partnerAura.position.set(this.actor.position.x, 0.015, this.actor.position.z);
-      const pulse = 1 + Math.sin(now * 0.01) * 0.14;
-      this.partnerAura.scale.set(pulse, pulse, 1);
-      (this.partnerAura.material as THREE.MeshBasicMaterial).opacity = Math.min(0.8, this.partnerAuraTimer * 0.45);
-    } else {
-      (this.partnerAura.material as THREE.MeshBasicMaterial).opacity = 0;
-    }
+    if (this.actor) {
+      if (this.partnerAuraTimer > 0) {
+        this.partnerAuraTimer = Math.max(0, this.partnerAuraTimer - dt);
+        this.partnerAura.position.set(this.actor.position.x, 0.015, this.actor.position.z);
+        const pulse = 1 + Math.sin(now * 0.01) * 0.14;
+        this.partnerAura.scale.set(pulse, pulse, 1);
+        (this.partnerAura.material as THREE.MeshBasicMaterial).opacity = Math.min(0.8, this.partnerAuraTimer * 0.45);
+      } else {
+        (this.partnerAura.material as THREE.MeshBasicMaterial).opacity = 0;
+      }
 
-    const head = this.actor.headWorld(this.focusPoint);
-    this.followCam.update(dt, head, false);
+      const head = this.actor.headWorld(this.focusPoint);
+      this.followCam.update(dt, head, false);
+    }
     this.renderer.render(this.scene, this.camera);
 
     const wallMs = Date.now();
-    if (wallMs - this.lastLocalPoseEmitMs > 1800) {
+    if (this.actor && this.brain && wallMs - this.lastLocalPoseEmitMs > 1800) {
       this.lastLocalPoseEmitMs = wallMs;
       this.emitLocalPatch({
         kind: 'pose',
@@ -605,9 +765,23 @@ export class PetCareThreeStage {
   };
 
   private publishDevState() {
-    if (!import.meta.env.DEV || typeof window === 'undefined') return;
+    if (!import.meta.env.DEV || typeof window === 'undefined' || !this.actor || !this.brain || !this.play) return;
+    const modelInfo = this.actor.getModelDebugInfo();
     (window as unknown as Record<string, unknown>).__OLW_PET_CARE_V2_STATE = {
       variant: this.variant,
+      modelKind: modelInfo.modelKind,
+      lod: modelInfo.lod,
+      activeClip: modelInfo.activeClip,
+      clipNames: modelInfo.clipNames,
+      modelTriangles: modelInfo.triangles,
+      qualityPreset: this.qualityPreset,
+      audioMuted: this.audio.isMuted(),
+      audioVolume: Number(this.audio.getVolume().toFixed(2)),
+      lastSound: this.audio.lastSoundEvent,
+      fps: this.measuredFps,
+      avgFrameMs: this.measuredAvgFrameMs,
+      drawCalls: this.renderer.info.render.calls,
+      renderTriangles: this.renderer.info.render.triangles,
       activity: this.brain.activity,
       pose: this.actor.rig.pose,
       activityHistory: [...this.brain.activityHistory],
@@ -649,6 +823,7 @@ export class PetCareThreeStage {
     this.partnerAura.geometry.dispose();
     (this.partnerAura.material as THREE.Material).dispose();
     this.room.dispose();
+    this.audio.dispose();
     this.renderer.domElement.remove();
     this.renderer.dispose();
   }

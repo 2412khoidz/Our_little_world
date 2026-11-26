@@ -168,6 +168,8 @@ export interface CatLivingRoom {
   waterBowlSpot: THREE.Vector3;
   boxSpot: THREE.Vector3;
   cameraBase: { position: THREE.Vector3; target: THREE.Vector3; fov: number };
+  setDustCount: (count: number) => void;
+  setShadowsEnabled: (enabled: boolean, mapSize?: number) => void;
   update: (dt: number) => void;
   dispose: () => void;
 }
@@ -396,15 +398,21 @@ export function buildCatLivingRoom(): CatLivingRoom {
   const motes = new THREE.Points(moteGeo, moteMat);
   group.add(motes);
 
+  const boxSpot = new THREE.Vector3(-0.78, 0, 0.38);
+
   const obstacles: Circle[] = [
-    { x: 0.55, z: -1.14, r: 0.58 }, // sofa center approximation
-    { x: 0.15, z: -1.14, r: 0.34 },
-    { x: 0.95, z: -1.14, r: 0.34 },
-    { x: scratchSpot.x, z: scratchSpot.z, r: 0.22 },
-    { x: -1.58, z: -1.18, r: 0.16 },
+    { x: 0.55, z: -1.14, r: 0.62, tag: 'sofa' }, // sofa center
+    { x: 0.12, z: -1.14, r: 0.38, tag: 'sofa' },
+    { x: 0.98, z: -1.14, r: 0.38, tag: 'sofa' },
+    { x: scratchSpot.x, z: scratchSpot.z, r: 0.25, tag: 'scratch' },
+    { x: -1.58, z: -1.18, r: 0.2, tag: 'plant' },
+    { x: 0.86, z: 0.42, r: 0.14, tag: 'bowls' },
+    { x: boxSpot.x, z: boxSpot.z, r: 0.31, tag: 'box' },
   ];
 
   let elapsed = 0;
+  let activeMoteCount = moteCount;
+  let currentMapSize = 1024;
 
   return {
     group,
@@ -415,16 +423,33 @@ export function buildCatLivingRoom(): CatLivingRoom {
     scratchSpot: new THREE.Vector3(scratchSpot.x - 0.28, 0, scratchSpot.z + 0.18),
     foodBowlSpot: new THREE.Vector3(0.75, 0, 0.38),
     waterBowlSpot: new THREE.Vector3(0.98, 0, 0.45),
-    boxSpot: new THREE.Vector3(-0.78, 0, 0.38),
+    boxSpot,
     cameraBase: {
       position: new THREE.Vector3(0.05, 0.72, 1.88),
       target: new THREE.Vector3(0, 0.16, 0.02),
       fov: 46,
     },
+    setDustCount: (count: number) => {
+      activeMoteCount = Math.max(0, Math.min(moteCount, Math.round(count)));
+      motes.visible = activeMoteCount > 0;
+      moteGeo.setDrawRange(0, activeMoteCount);
+    },
+    setShadowsEnabled: (enabled: boolean, mapSize = 1024) => {
+      sunLight.castShadow = enabled;
+      if (enabled && mapSize !== currentMapSize) {
+        currentMapSize = mapSize;
+        sunLight.shadow.mapSize.set(mapSize, mapSize);
+        if (sunLight.shadow.map) {
+          sunLight.shadow.map.dispose();
+          sunLight.shadow.map = null;
+        }
+      }
+    },
     update: (dt: number) => {
       elapsed += dt;
+      if (activeMoteCount <= 0) return;
       const attr = moteGeo.getAttribute('position') as THREE.BufferAttribute;
-      for (let i = 0; i < moteCount; i++) {
+      for (let i = 0; i < activeMoteCount; i++) {
         let y = attr.getY(i) + dt * 0.03;
         if (y > 1.45) y = 0.12;
         attr.setY(i, y);

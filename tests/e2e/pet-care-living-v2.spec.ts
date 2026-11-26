@@ -1,9 +1,21 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || '4173'}`;
+const SCREENSHOT_DIR = 'C:/Users/admin/.gemini/antigravity/brain/3104cc55-393b-45ef-b4ae-6eeaf76e313c';
 
 interface V2State {
   variant: string;
+  modelKind: string;
+  lod: string;
+  activeClip: string;
+  qualityPreset: string;
+  audioMuted: boolean;
+  audioVolume: number;
+  lastSound: string | null;
+  fps: number;
+  avgFrameMs: number;
+  drawCalls: number;
+  renderTriangles: number;
   activity: string;
   pose: string;
   activityHistory: string[];
@@ -65,13 +77,29 @@ test.describe('Pet Care Living V2 — 3D Quýt, Direct Play & 2P Co-Care', () =>
 
     const kibbleBefore = await enterPetCareFromMenu(page, true);
 
-    // 1. Verify sunlit 3D canvas renders warm room (not black #120e14 screen)
+    // 1. Verify Vuena CC0 GLB loads and sunlit 3D canvas renders warm room (not black #120e14 screen)
     await expect
       .poll(async () => {
         const s = await readV2State(page);
-        return Boolean(s && s.variant);
+        return s?.modelKind;
       })
-      .toBe(true);
+      .toBe('vuena-glb');
+
+    const closeUpState = await readV2State(page);
+    // Test Quality Presets (Thấp -> LOD1, Cao -> LOD0) & Audio Controls (Mute/Volume)
+    await page.getByTestId('pet-care-quality-low').click();
+    await expect.poll(async () => (await readV2State(page))?.lod).toBe('lod1');
+    await page.getByTestId('pet-care-quality-high').click();
+    await expect.poll(async () => (await readV2State(page))?.lod).toBe('lod0');
+
+    await page.getByTestId('pet-care-mute').click();
+    await expect.poll(async () => (await readV2State(page))?.audioMuted).toBe(true);
+    await page.getByTestId('pet-care-mute').click();
+    await expect.poll(async () => (await readV2State(page))?.audioMuted).toBe(false);
+
+    // Screenshot 1/2 (max 2 allowed by Mission M.1 quota): Vuena CC0 close-up + sunlit room + quality/audio UI
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/m1-vuena-closeup.png` });
+    console.log('M1_PERF_SNAPSHOT:', JSON.stringify(closeUpState));
 
     const avgBrightness = await page.evaluate(() => {
       const canvas = document.querySelector('[data-testid="pet-care-three-canvas"]') as HTMLCanvasElement | null;
@@ -135,11 +163,17 @@ test.describe('Pet Care Living V2 — 3D Quýt, Direct Play & 2P Co-Care', () =>
       .poll(async () => (await readV2State(page))?.coatFluff ?? 0)
       .toBeGreaterThan(initialFluff);
 
-    // 5. Interaction 3 & 4: Bell ball & yarn ball
+    // 5. Interaction 3 & 4: Bell ball, yarn ball & cardboard box (anti-clipping check)
     await page.getByTestId('pet-care-ball').click();
     await page.waitForTimeout(700);
     await page.getByTestId('pet-care-yarn').click();
     await page.waitForTimeout(700);
+    await page.getByTestId('pet-care-box').click();
+    await expect.poll(async () => (await readV2State(page))?.activity, { timeout: 10_000 }).toBe('box_peek');
+    await page.waitForTimeout(900);
+
+    // Screenshot 2/2 (max 2 allowed by Mission M.1 quota): Quýt interacting with box / play props
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/m1-vuena-play-box.png` });
 
     // 6. Interaction 5: Feather cat wand (Verlet lure + chase_wand)
     await page.getByTestId('pet-care-wand').click();

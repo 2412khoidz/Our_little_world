@@ -1,7 +1,7 @@
 // Adapted from SawyerHood/nintendogs-threejs@43d231c:src/dog/brain.ts + j4lpan/pet-shop feline expressions
 // Bridged directly to OLW shared Pet8Needs, PetPersonalityTraits, MemoryState, and PetAffordances.
 import * as THREE from 'three';
-import type { CatActor, CatRegion } from '../../../donors/nintendogs-cat-v2/catActor';
+import type { CatRegion } from '../../../donors/nintendogs-cat-v2/catActor';
 import type { BowlHandle } from '../../../donors/nintendogs-cat-v2/catProps';
 import type { ToyWorld, WorldToy } from '../../../donors/nintendogs-cat-v2/toyPhysics';
 import type { PetSnapshot } from '../../../shared/pet/petTypes';
@@ -21,6 +21,8 @@ import {
   type PetPersonalityTraits,
 } from '../../../shared/petLiving/petIntelligenceConfig';
 import { PET_MEMORY_PERSIST_CAP } from '../../../shared/petLiving/petPrimitivesAdapter';
+import type { IPetCareCatActor } from './petCareActorTypes';
+import type { CatSoundEvent, PurrMode } from './petCareAudio';
 import type { CatEmoteKind } from './petCareEffects';
 
 export interface CatBrainEnv {
@@ -30,6 +32,8 @@ export interface CatBrainEnv {
   sunSpot: THREE.Vector3;
   boxSpot: THREE.Vector3;
   boxPlaced: () => boolean;
+  boxEntrySpot?: () => THREE.Vector3;
+  boxInteriorFloorY?: () => number;
   wiggleBox: () => void;
   foodBowl: BowlHandle;
   waterBowl: BowlHandle;
@@ -39,6 +43,8 @@ export interface CatBrainEnv {
   wandLureSpeed: () => number;
   impulseWand: (v: THREE.Vector3) => void;
   emote: (kind: CatEmoteKind, worldPos?: THREE.Vector3) => void;
+  sound?: (event: CatSoundEvent, opts?: { intensity?: number }) => void;
+  setPurr?: (mode: PurrMode) => void;
   onActivityChange?: (activity: string, reasonVi?: string) => void;
   onRefuse?: (reason: 'tired' | 'shy' | 'overstimulated') => void;
   onCoatDirtyOrFluff?: (deltaFluff: number) => void;
@@ -179,6 +185,7 @@ class StretchAct extends CatAct {
     this.rig.setPose('stretch', 3.4);
     this.rig.tailRaise = 0.85;
     this.rig.earPerk = 0.4;
+    this.env.sound?.('meow_soft', { intensity: 0.72 });
     this.env.emote('note', this.cat.headWorld());
   }
   step() {
@@ -250,12 +257,16 @@ class SleepAct extends CatAct {
         this.rig.eyesClosed = 1;
         this.rig.tailMode = 'idle';
         this.rig.wagAmp = 0.02;
+        this.env.setPurr?.('sleep');
       },
     });
   }
   step(dt: number) {
     if (!this.asleep) {
-      if (this.t > 7) this.asleep = true;
+      if (this.t > 7) {
+        this.asleep = true;
+        this.env.setPurr?.('sleep');
+      }
       return;
     }
     this.b.needs.energy = Math.min(100, this.b.needs.energy + dt * 4.5);
@@ -267,6 +278,7 @@ class SleepAct extends CatAct {
     if (this.t > this.maxDur) this.finish();
   }
   stop() {
+    this.env.setPurr?.('off');
     this.rig.eyesClosed = 0;
     this.cat.stop();
     this.rig.setPose('lie', 4);
@@ -276,67 +288,183 @@ class SleepAct extends CatAct {
 class PlayToyAct extends CatAct {
   readonly name = 'play_toy';
   priority = 2;
-  private phase: 'approach' | 'stalk' | 'chase' = 'approach';
-  private batted = false;
-  private stalkT = 0;
+  private phase: 'approach' | 'stalk' | 'paw_bat' | 'hug_kick' | 'chase' = 'approach';
+  private phaseT = 0;
+  private batsDone = 0;
+  private batContactFired = false;
+  private swipeSide: 'L' | 'R' = 'L';
+  private kickBeat = 0;
+
   constructor(b: CatBrain, private readonly toy: WorldToy) {
     super(b);
   }
+
   start() {
     this.rig.setPose('stand', 7);
     this.rig.earPerk = 0.85;
     this.rig.tailMode = 'wag_fast';
     const tp = this.toy.object.position;
     this.cat.goTo(tp, {
-      speed: 0.42,
+      speed: 0.44,
       arrive: 0.28,
       onArrive: () => {
-        this.phase = 'stalk';
-        this.stalkT = 0;
-        this.cat.stop();
-        this.rig.setPose('stalk', 8);
+        this.enterStalk();
       },
     });
   }
+
+  private enterStalk() {
+    this.phase = 'stalk';
+    this.phaseT = 0;
+    this.cat.stop();
+    this.rig.setPose('stalk', 8);
+  }
+
+  private enterPawBat() {
+    this.phase = 'paw_bat';
+    this.phaseT = 0;
+    this.batContactFired = false;
+    this.swipeSide = this.batsDone % 2 === 0 ? 'L' : 'R';
+    this.cat.stop();
+    this.cat.face(this.toy.object.position);
+    this.rig.setPose('paw_bat', 11);
+    if (this.rig.pawSwipe) {
+      this.rig.pawSwipe.side = this.swipeSide;
+      this.rig.pawSwipe.progress = 0;
+      this.rig.pawSwipe.active = true;
+    }
+  }
+
+  private enterHugKick() {
+    this.phase = 'hug_kick';
+    this.phaseT = 0;
+    this.kickBeat = 0;
+    this.cat.stop();
+    this.toy.inHand = true;
+    this.toy.resting = false;
+    this.toy.velocity.set(0, 0, 0);
+    this.rig.setPose('hug_kick', 8);
+    if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
+    if (this.rig.hugKick) {
+      this.rig.hugKick.active = true;
+      this.rig.hugKick.phase = 0;
+    }
+    this.env.sound?.('meow_happy', { intensity: 0.72 });
+    this.env.emote('heart', this.cat.headWorld());
+  }
+
   step(dt: number) {
     const tp = this.toy.object.position;
     this.rig.look = { point: tp, weight: 0.95 };
+
     if (this.phase === 'approach') {
-      this.cat.goTo(tp, { speed: 0.42, arrive: 0.28, onArrive: () => { this.phase = 'stalk'; this.stalkT = 0; } });
+      if (this.cat.distanceTo(tp) <= 0.29) {
+        this.enterStalk();
+        return;
+      }
+      this.cat.goTo(tp, { speed: 0.44, arrive: 0.28, onArrive: () => this.enterStalk() });
       if (this.t > 5) this.finish();
       return;
     }
+
     if (this.phase === 'stalk') {
-      this.stalkT += dt;
+      this.phaseT += dt;
       this.cat.face(tp);
-      // Cute feline pre-pounce butt wiggle!
-      this.rig.overlay.pelvis = [0, Math.sin(this.stalkT * 22) * 0.14, 0];
-      if (this.stalkT > 0.75) {
+      this.rig.overlay.pelvis = [0, Math.sin(this.phaseT * 22) * 0.14, 0];
+      if (this.phaseT >= 0.55) {
         delete this.rig.overlay.pelvis;
-        this.phase = 'chase';
-        this.rig.setPose('stand', 9);
-        if (!this.batted) {
-          this.batted = true;
-          this.env.toyWorld.batImpulse(this.toy, this.cat.position, 1.8);
-          this.env.emote('sparkle', tp);
-          this.b.needs.fun = Math.min(100, this.b.needs.fun + 14);
-          this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 10);
-          this.b.recordMemory('played');
-        }
-        const hopTarget = tp.clone().lerp(this.cat.position, 0.25);
-        this.cat.jumpTo(hopTarget, 0.08, 0.34);
+        this.enterPawBat();
       }
       return;
     }
-    if (!this.cat.jump) {
-      if (this.t > 4.2) this.finish();
-      else {
-        this.cat.goTo(tp, { speed: 0.45, arrive: 0.22, onArrive: () => this.finish() });
+
+    if (this.phase === 'paw_bat') {
+      this.phaseT += dt;
+      const progress = Math.min(1, this.phaseT / 0.62);
+      if (this.rig.pawSwipe) {
+        this.rig.pawSwipe.progress = progress;
       }
+
+      // Sync exact paw-contact frame (54%) with ToyWorld physics impulse + sound!
+      if (!this.batContactFired && progress >= 0.54) {
+        this.batContactFired = true;
+        this.batsDone += 1;
+        const pawPos =
+          typeof this.cat.frontPawWorld === 'function'
+            ? this.cat.frontPawWorld(this.swipeSide)
+            : this.cat.position;
+        const power = this.toy.kind === 'ball' ? 1.85 : 1.45;
+        this.env.toyWorld.batImpulse(this.toy, pawPos, power);
+        this.env.sound?.(this.toy.kind === 'ball' ? 'bell_jingle' : 'toy_swish', { intensity: 0.9 });
+        this.env.sound?.('ball_bounce', { intensity: 0.75 });
+        this.env.emote('sparkle', tp);
+        this.b.needs.fun = Math.min(100, this.b.needs.fun + 9);
+        this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 7);
+        this.b.recordMemory('played');
+      }
+
+      if (progress >= 1) {
+        if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
+        if (this.toy.kind === 'yarn' && this.batsDone === 1 && Math.random() < 0.55) {
+          this.enterHugKick();
+        } else if (this.batsDone < 2) {
+          this.phase = 'chase';
+          this.phaseT = 0;
+          this.rig.setPose('stand', 9);
+        } else {
+          this.finish();
+        }
+      }
+      return;
     }
+
+    if (this.phase === 'hug_kick') {
+      this.phaseT += dt;
+      if (this.rig.hugKick) {
+        this.rig.hugKick.phase = this.phaseT;
+      }
+      // Keep hugged yarn positioned tucked in front of chest between front paws
+      const fwd = new THREE.Vector3(Math.sin(this.cat.heading), 0, Math.cos(this.cat.heading));
+      this.toy.object.position.set(
+        this.cat.position.x + fwd.x * 0.14,
+        this.cat.floorY + this.toy.rest + 0.03,
+        this.cat.position.z + fwd.z * 0.14,
+      );
+      this.toy.object.rotation.x += dt * 7;
+
+      const kickIdx = Math.floor(this.phaseT / 0.35);
+      if (kickIdx > this.kickBeat) {
+        this.kickBeat = kickIdx;
+        this.env.sound?.('toy_swish', { intensity: 0.65 });
+      }
+
+      if (this.phaseT >= 1.55) {
+        if (this.rig.hugKick) this.rig.hugKick.active = false;
+        this.toy.inHand = false;
+        this.env.toyWorld.batImpulse(this.toy, this.cat.position, 1.55);
+        this.env.sound?.('toy_swish', { intensity: 0.9 });
+        this.env.emote('sparkle', this.toy.object.position);
+        this.b.needs.fun = Math.min(100, this.b.needs.fun + 10);
+        this.finish();
+      }
+      return;
+    }
+
+    // chase phase between first and second bat
+    this.phaseT += dt;
+    if (this.cat.distanceTo(tp) <= 0.29) {
+      this.enterPawBat();
+      return;
+    }
+    this.cat.goTo(tp, { speed: 0.46, arrive: 0.28, onArrive: () => this.enterPawBat() });
+    if (this.phaseT > 2.6 || this.t > 7.5) this.finish();
   }
+
   stop() {
     delete this.rig.overlay.pelvis;
+    if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
+    if (this.rig.hugKick) this.rig.hugKick.active = false;
+    this.toy.inHand = false;
     this.cat.stop();
     this.rig.earPerk = 0.2;
     this.rig.setPose('stand', 6);
@@ -347,12 +475,18 @@ class ChaseWandAct extends CatAct {
   readonly name = 'chase_wand';
   priority = 4;
   private pounceCd = 0;
+  private pawBatting = false;
+  private pawBatT = 0;
+  private pawHitDone = false;
+  private altSide: 'L' | 'R' = 'L';
+
   start() {
     this.rig.setPose('stalk', 8);
     this.rig.earPerk = 0.9;
     this.rig.tailMode = 'wag_fast';
     this.rig.wagAmp = 0.32;
   }
+
   step(dt: number) {
     if (!this.env.wandActive()) {
       this.finish();
@@ -369,12 +503,52 @@ class ChaseWandAct extends CatAct {
 
     if (this.cat.jump) return;
 
-    if (dist < 0.56 && (speed > 0.32 || Math.random() < dt * 0.8) && this.pounceCd <= 0 && lure.y < 0.52) {
-      this.pounceCd = 1.35;
+    if (this.pawBatting) {
+      this.pawBatT += dt;
+      const progress = Math.min(1, this.pawBatT / 0.56);
+      if (this.rig.pawSwipe) this.rig.pawSwipe.progress = progress;
+      if (!this.pawHitDone && progress >= 0.54) {
+        this.pawHitDone = true;
+        this.env.impulseWand(new THREE.Vector3((Math.random() - 0.5) * 0.15, 0.11, (Math.random() - 0.5) * 0.15));
+        this.env.sound?.('toy_swish', { intensity: 0.85 });
+        this.env.sound?.('bell_jingle', { intensity: 0.75 });
+        this.env.emote('sparkle', lure);
+        this.b.needs.fun = Math.min(100, this.b.needs.fun + 8);
+        this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 6);
+        this.b.recordMemory('played');
+      }
+      if (progress >= 1) {
+        this.pawBatting = false;
+        if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
+        this.rig.setPose('stalk', 8);
+      }
+      return;
+    }
+
+    if (dist < 0.54 && (speed > 0.28 || Math.random() < dt * 0.95) && this.pounceCd <= 0 && lure.y < 0.54) {
+      this.pounceCd = 1.15;
+      if (lure.y < 0.3 && dist < 0.38) {
+        // Low lure -> crisp front-paw raise & bat!
+        this.pawBatting = true;
+        this.pawBatT = 0;
+        this.pawHitDone = false;
+        this.altSide = this.altSide === 'L' ? 'R' : 'L';
+        this.cat.stop();
+        this.rig.setPose('paw_bat', 11);
+        if (this.rig.pawSwipe) {
+          this.rig.pawSwipe.side = this.altSide;
+          this.rig.pawSwipe.progress = 0;
+          this.rig.pawSwipe.active = true;
+        }
+        return;
+      }
+
       const to = floorTarget.clone().lerp(this.cat.position, 0.22);
-      const hopH = THREE.MathUtils.clamp(lure.y * 0.55, 0.08, 0.2);
+      const hopH = THREE.MathUtils.clamp(lure.y * 0.55, 0.08, 0.22);
       this.cat.jumpTo(to, hopH, 0.38, () => {
         this.env.impulseWand(new THREE.Vector3((Math.random() - 0.5) * 0.12, 0.09, (Math.random() - 0.5) * 0.12));
+        this.env.sound?.('toy_swish', { intensity: 0.8 });
+        this.env.sound?.('bell_jingle', { intensity: 0.7 });
         this.env.emote('heart', this.cat.headWorld());
         this.b.needs.fun = Math.min(100, this.b.needs.fun + 9);
         this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 7);
@@ -383,17 +557,19 @@ class ChaseWandAct extends CatAct {
       return;
     }
 
-    if (dist > 0.38) {
+    if (dist > 0.36) {
       this.rig.setPose(speed > 0.55 ? 'stand' : 'stalk', 7);
-      this.cat.goTo(floorTarget, { speed: speed > 0.55 ? 0.5 : 0.3, arrive: 0.28 });
+      this.cat.goTo(floorTarget, { speed: speed > 0.55 ? 0.5 : 0.32, arrive: 0.26 });
     } else {
       this.cat.stop();
       this.rig.setPose('stalk', 8);
       this.rig.overlay.pelvis = [0, Math.sin(this.b.time * 18) * 0.12, 0];
     }
   }
+
   stop() {
     delete this.rig.overlay.pelvis;
+    if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
     this.cat.stop();
     this.rig.earPerk = 0.2;
     this.rig.setPose('sit', 6);
@@ -403,39 +579,86 @@ class ChaseWandAct extends CatAct {
 class BoxPeekAct extends CatAct {
   readonly name = 'box_peek';
   priority = 2;
-  private inside = false;
+  private phase: 'approach' | 'hop_in' | 'peek' | 'hop_out' = 'approach';
+  private peekT = 0;
+
+  private get outsideSpot(): THREE.Vector3 {
+    return this.env.boxEntrySpot
+      ? this.env.boxEntrySpot()
+      : this.env.boxSpot.clone().add(new THREE.Vector3(0, 0, 0.4));
+  }
+
+  private get interiorY(): number {
+    return this.env.boxInteriorFloorY ? this.env.boxInteriorFloorY() : 0.012;
+  }
+
   start() {
     this.rig.setPose('stand', 6);
     this.rig.earPerk = 0.65;
-    const centerInBox = this.env.boxSpot.clone().add(new THREE.Vector3(0, 0, -0.02));
-    this.cat.goTo(centerInBox, {
+    this.cat.ignoreObstacleTag = null;
+    this.cat.goTo(this.outsideSpot, {
       speed: 0.32,
       arrive: 0.1,
-      onArrive: () => {
-        this.inside = true;
-        this.t = 0;
-        this.cat.stop();
-        this.cat.face(this.env.cameraPos());
-        this.rig.setPose('box_peek', 6);
-        this.env.wiggleBox();
-        this.env.emote('sparkle', this.cat.headWorld());
-        this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 12);
-        this.b.needs.safety = Math.min(100, this.b.needs.safety + 6);
-        this.b.recordMemory('explored');
-      },
+      faceAfter: this.env.boxSpot,
+      onArrive: () => this.startHopIn(),
     });
   }
-  step() {
-    if (!this.inside) {
-      if (this.t > 6) this.finish();
+
+  private startHopIn() {
+    this.phase = 'hop_in';
+    this.cat.ignoreObstacleTag = 'box';
+    const center = new THREE.Vector3(this.env.boxSpot.x, 0, this.env.boxSpot.z);
+    this.cat.jumpTo(center, 0.25, 0.44, () => {
+      this.phase = 'peek';
+      this.peekT = 0;
+      this.cat.floorY = this.interiorY;
+      this.cat.position.y = this.cat.floorY;
+      this.cat.face(this.env.cameraPos());
+      this.rig.setPose('box_peek', 6);
+      this.env.wiggleBox();
+      this.env.sound?.('box_rustle', { intensity: 0.9 });
+      this.env.emote('sparkle', this.cat.headWorld());
+      this.b.needs.stimulation = Math.min(100, this.b.needs.stimulation + 12);
+      this.b.needs.safety = Math.min(100, this.b.needs.safety + 6);
+      this.b.recordMemory('explored');
+    });
+  }
+
+  step(dt: number) {
+    if (this.phase === 'approach') {
+      if (this.t > 5) this.startHopIn();
       return;
     }
+    if (this.phase === 'hop_in' || this.phase === 'hop_out') return;
+
+    this.peekT += dt;
     this.b.lookAtCamera(0.95);
-    this.rig.headTilt = Math.sin(this.t * 1.4) * 0.16;
-    if (this.t > 5.2) this.finish();
+    this.rig.headTilt = Math.sin(this.peekT * 1.4) * 0.16;
+    if (this.peekT > 3.8) {
+      this.phase = 'hop_out';
+      this.cat.floorY = 0;
+      this.cat.jumpTo(this.outsideSpot, 0.24, 0.42, () => {
+        this.cat.ignoreObstacleTag = null;
+        this.env.sound?.('box_rustle', { intensity: 0.65 });
+        this.finish();
+      });
+    }
   }
+
   stop() {
     this.rig.headTilt = 0;
+    this.cat.floorY = 0;
+    this.cat.position.y = 0;
+    // Safety: if interrupted while seated inside the cardboard box, nudge just outside the rim
+    if (this.cat.distanceTo(this.env.boxSpot) < 0.34) {
+      const out = this.outsideSpot;
+      if (typeof this.cat.place === 'function') {
+        this.cat.place(out.x, out.z, this.cat.heading);
+      } else {
+        this.cat.position.set(out.x, 0, out.z);
+      }
+    }
+    this.cat.ignoreObstacleTag = null;
     this.cat.stop();
     this.rig.setPose('stand', 5);
   }
@@ -446,6 +669,7 @@ class EatOrDrinkAct extends CatAct {
   priority = 3;
   private atBowl = false;
   private lastEmoteT = 0;
+  private lastBiteStep = -1;
   constructor(b: CatBrain, private readonly water: boolean) {
     super(b);
     this.name = water ? 'drink' : 'eat';
@@ -455,10 +679,12 @@ class EatOrDrinkAct extends CatAct {
   }
   start() {
     const bowlPos = this.bowl.pos;
-    const approach = bowlPos.clone().add(new THREE.Vector3(-0.24, 0, 0.08));
+    const approach = bowlPos.clone().add(this.water ? new THREE.Vector3(0.06, 0, 0.26) : new THREE.Vector3(-0.24, 0, 0.14));
+    this.cat.ignoreObstacleTag = 'bowls';
     this.rig.setPose('stand', 6);
     this.rig.earPerk = 0.6;
     this.rig.tailMode = 'wag_slow';
+    this.env.sound?.('meow_food', { intensity: 0.72 });
     this.cat.goTo(approach, {
       speed: 0.34,
       arrive: 0.08,
@@ -481,6 +707,12 @@ class EatOrDrinkAct extends CatAct {
     this.rig.look = { point: this.bowl.pos, weight: 0.85 };
     const phase = Math.sin(this.t * (this.water ? 10 : 7));
     this.rig.overlay.head = [phase * 0.08, 0, 0];
+
+    const biteStep = Math.floor(this.t / (this.water ? 0.55 : 0.62));
+    if (biteStep > this.lastBiteStep) {
+      this.lastBiteStep = biteStep;
+      this.env.sound?.(this.water ? 'drink_lap' : 'eat_crunch', { intensity: 0.8 });
+    }
 
     if (this.water) {
       this.rig.tongueOut = phase > 0 ? 0.75 : 0.15;
@@ -508,6 +740,7 @@ class EatOrDrinkAct extends CatAct {
   }
   stop() {
     delete this.rig.overlay.head;
+    this.cat.ignoreObstacleTag = null;
     this.rig.mouthOpen = 0;
     this.rig.tongueOut = 0;
     this.cat.stop();
@@ -534,16 +767,20 @@ class ComeToPlayerAct extends CatAct {
         this.arrived = true;
         this.t = 0;
         this.cat.stop();
-        this.rig.setPose('sit', 5);
-        this.rig.happy = 0.8;
+        this.rig.setPose('call', 8);
+        this.rig.happy = 0.85;
+        this.env.sound?.('meow_happy', { intensity: 0.88 });
         this.env.emote('heart', this.cat.headWorld());
       },
     });
   }
   step() {
     this.b.lookAtCamera(1);
+    if (this.arrived && this.t > 1.25 && this.rig.pose === 'call') {
+      this.rig.setPose('sit', 6);
+    }
     if (!this.arrived && this.t > 5) this.arrived = true;
-    if (this.arrived && this.t > 3.2) this.finish();
+    if (this.arrived && this.t > 3.4) this.finish();
   }
   stop() {
     this.rig.happy = 0;
@@ -585,6 +822,7 @@ class PettedAct extends CatAct {
   start() {
     this.cat.stop();
     this.cat.face(this.env.cameraPos());
+    this.env.setPurr?.('active');
   }
   step(dt: number) {
     if (!this.b.pet || this.b.pet.idle > 0.95) {
@@ -626,6 +864,7 @@ class PettedAct extends CatAct {
   }
   stop() {
     delete this.rig.overlay.head;
+    this.env.setPurr?.('off');
     this.rig.happy = 0;
     this.rig.eyesClosed = 0;
     this.rig.tailRaise = 0.25;
@@ -643,6 +882,7 @@ class BrushedAct extends CatAct {
     this.rig.eyesClosed = 0.72;
     this.rig.happy = 0.75;
     this.rig.tailMode = 'wag_slow';
+    this.env.setPurr?.('active');
   }
   step(dt: number) {
     if (!this.b.brushActiveIdle && this.t > 1.2) {
@@ -664,6 +904,7 @@ class BrushedAct extends CatAct {
   }
   stop() {
     delete this.rig.overlay.head;
+    this.env.setPurr?.('off');
     this.rig.eyesClosed = 0;
     this.rig.happy = 0;
     this.rig.setPose('sit', 5);
@@ -683,6 +924,7 @@ class RefuseAct extends CatAct {
     this.rig.tailMode = 'tuck';
     this.rig.happy = 0;
     this.rig.eyesClosed = 0;
+    this.env.sound?.('meow_short', { intensity: 0.65 });
     this.env.emote('question', this.cat.headWorld());
     this.env.onRefuse?.(this.reason);
 
@@ -730,9 +972,10 @@ export class CatBrain {
   private lastBellyReset = 0;
   private recentActs: CatActivityName[] = [];
   private snapshot: PetSnapshot | null = null;
+  private strideAccum = 0;
 
   constructor(
-    readonly actor: CatActor,
+    readonly actor: IPetCareCatActor,
     readonly env: CatBrainEnv,
   ) {}
 
@@ -841,8 +1084,9 @@ export class CatBrain {
     this.brushIdle = 0;
     this.brushActiveIdle = true;
     this.coatFluff = THREE.MathUtils.clamp(this.coatFluff + amount, 0.45, 0.96);
-    this.actor.model.uniforms.uFluff.value = this.coatFluff;
-    this.actor.model.uniforms.uDirt.value = Math.max(0, this.actor.model.uniforms.uDirt.value - amount);
+    if (typeof this.actor.setCoatAppearance === 'function') {
+      this.actor.setCoatAppearance({ fluff: this.coatFluff, dirt: 0 });
+    }
     this.needs.hygiene = Math.min(100, this.needs.hygiene + amount * 60);
     this.needs.social = Math.min(100, this.needs.social + amount * 25);
     if (!(this.act instanceof BrushedAct) && (this.act?.priority ?? 0) < 6) {
@@ -923,8 +1167,17 @@ export class CatBrain {
       this.overstimulation = Math.max(0, this.overstimulation - dt * 0.08);
     }
 
-    // Gentle passive need drift
+    // Gentle passive need drift & footstep cadence
     const moving = this.actor.speed > 0.05;
+    if (this.actor.speed > 0.08 && !this.actor.jump) {
+      this.strideAccum += dt * (this.actor.speed / 0.14);
+      if (this.strideAccum >= 1) {
+        this.strideAccum = 0;
+        this.env.sound?.('footstep', { intensity: THREE.MathUtils.clamp(this.actor.speed / 0.45, 0.35, 0.9) });
+      }
+    } else {
+      this.strideAccum = 0;
+    }
     this.needs.energy = Math.max(10, this.needs.energy - dt * (moving ? 0.35 : 0.04));
     this.needs.hunger = Math.max(15, this.needs.hunger - dt * 0.14);
     this.needs.thirst = Math.max(15, this.needs.thirst - dt * 0.16);

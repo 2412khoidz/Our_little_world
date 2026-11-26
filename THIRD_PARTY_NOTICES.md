@@ -45,6 +45,18 @@ SOFTWARE.
    - **Adapted Concepts:** Double-blink eye micro-expressions, ear twitches, and lightweight reactive cues integrated into `catRig.ts` and `catBrain.ts`.
    - **License:** MIT License (Copyright (c) j4lpan — permissive open-source license allowing modification and redistribution with attribution).
 
+## 4. Mission M.1 — CC0 3D Cat Model & Real Audio Assets (`public/assets/pet-care-v2/`)
+
+- **`Vuena — Cute Pets & Wildlife FREE Sample`** (`https://vuena.itch.io/blocky-pets-free`) — **CC0 1.0 Universal**
+  - **Used:** `GLB/animal_cat.glb` (19 bones, 13 clips, LOD0/LOD1) vendored at `public/assets/pet-care-v2/models/vuena-cat.glb` alongside `LICENSE-VUENA-CC0.txt`.
+- **OpenGameArt CC0 Audio Packs** (transcoded locally to mono `.mp3` for cross-browser & iOS Safari/PWA compatibility):
+  - **Cat Purr & Meow** by Kerzoven (`https://opengameart.org/content/cat-purr-meow`, **CC0**) — `meow_soft.mp3`, `meow_happy.mp3`, `meow_food.mp3`, `purr_loop.mp3`, `purr_sleep.mp3`.
+  - **Meow** by IgnasD (`https://opengameart.org/content/meow`, **CC0**) — `meow_short.mp3`.
+  - **Crunch sounds (cucumber)** by cogitollc (`https://opengameart.org/content/crunch-sounds-cucumber`, **CC0**) — `eat_crunch.mp3`, `eat_crunch_2.mp3`.
+  - **40 CC0 Water / Splash / Slime SFX** by rubberduck (`https://opengameart.org/content/40-cc0-water-splash-slime-sfx`, **CC0**) — `drink_lap.mp3`.
+  - **100 CC0 SFX & 100 CC0 SFX 2** by rubberduck (`https://opengameart.org/content/100-cc0-sfx`, `https://opengameart.org/content/100-cc0-sfx-2`, **CC0**) — `bell_jingle.mp3`, `box_rustle.mp3`, `brush_fur.mp3`, `footstep.mp3`, `ball_bounce.mp3`, `toy_swish.mp3`.
+- **Note:** `vinish.dev` *Orange Tabby* (`CC BY 4.0`) was inspected as an upstream reference candidate and is not bundled in `public/assets/pet-care-v2/`.
+
 ## Status of the V0.2–V0.3 domain modules (DeepSeek night session)
 
 The reference checkouts listed in `docs/research/REUSE_MATRIX.md`
