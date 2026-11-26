@@ -36,7 +36,8 @@ import {
   tickTiledWorldNpcs,
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
-import { applyTiledZoneAccents } from '../world/tiledZoneAccents';
+import { applyTiledZoneAccents, type AmbientChickenHandle } from '../world/tiledZoneAccents';
+import { stepEmergentChicken } from '../../shared/world/emergentWorldBehavior';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
@@ -247,6 +248,7 @@ export class WorldScene extends Phaser.Scene {
   private ambientMoteKind: 'petal' | 'firefly' = 'petal';
   private buildingMap = false;
   private tiledNpcs: TiledWorldNpcEntity[] = [];
+  private ambientChickens: AmbientChickenHandle[] = [];
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
@@ -285,9 +287,13 @@ export class WorldScene extends Phaser.Scene {
 
     this.input.once('pointerdown', () => {
       void gameAudio.unlock();
+      void gameAudio.preloadDomain('world');
+      void gameAudio.preloadDomain('ui');
     });
     this.input.keyboard?.once('keydown', () => {
       void gameAudio.unlock();
+      void gameAudio.preloadDomain('world');
+      void gameAudio.preloadDomain('ui');
     });
 
     if (this.input.keyboard) {
@@ -381,7 +387,7 @@ export class WorldScene extends Phaser.Scene {
     return container;
   }
 
-  private triggerDonorToolSwing(kind: DonorToolKind): void {
+  private triggerDonorToolSwing(kind: DonorToolKind, forceRestart = false): void {
     if (!this.localSprite) return;
     const triggered = this.donorToolController.trigger(
       kind,
@@ -393,10 +399,13 @@ export class WorldScene extends Phaser.Scene {
         playToolActionSfx(kind);
         this.spawnDonorToolHitParticles(kind, state.targetWorldX, state.targetWorldY);
       },
+      forceRestart,
     );
     if (triggered) {
       const animAction = kind === 'axe' ? 'tool' : kind === 'rod' ? 'fish' : kind;
       playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, animAction);
+    } else if (forceRestart) {
+      playToolActionSfx(kind);
     }
   }
 
@@ -505,6 +514,8 @@ export class WorldScene extends Phaser.Scene {
     this.buildingMap = true;
     this.currentMapId = mapId;
     gameAudio.setZoneMusic(mapId);
+    if (mapId === 'farm') void gameAudio.preloadDomain('farming');
+    if (this.petSnapshot && FOLLOW_CAT_MAPS.has(mapId)) void gameAudio.preloadDomain('pet');
     this.clearLocalPosture(true);
     this.prePosturePos = null;
     this.pathQueue = [];
@@ -527,8 +538,10 @@ export class WorldScene extends Phaser.Scene {
       npc.shadow.destroy();
       npc.body.destroy();
       npc.label.destroy();
+      npc.emoteBadge.destroy();
     }
     this.tiledNpcs = [];
+    this.ambientChickens = [];
     this.ambientMoteKind = mapId === 'beach' || mapId === 'forest' ? 'firefly' : 'petal';
     this.tilemap?.destroy();
     this.tilemap = null;
@@ -571,6 +584,7 @@ export class WorldScene extends Phaser.Scene {
         (obj) => this.mapLayers.push(obj),
         this,
       );
+      this.ambientChickens = accents.chickens ?? [];
       if (accents.motes.length > 0 && accents.moteBounds) {
         this.motes = accents.motes;
         this.moteBounds = accents.moteBounds;
@@ -1179,6 +1193,7 @@ export class WorldScene extends Phaser.Scene {
   private setupPointerInput(): void {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       const worldPt = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      if (!Number.isFinite(worldPt.x) || !Number.isFinite(worldPt.y)) return;
       const tileX = Math.floor(worldPt.x / this.tilePx());
       const tileY = Math.floor(worldPt.y / this.tilePx());
       if (!this.decorateState.active) {
@@ -1202,6 +1217,7 @@ export class WorldScene extends Phaser.Scene {
       if (pointer.getDistance() > 14) return;
 
       const worldPt = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      if (!Number.isFinite(worldPt.x) || !Number.isFinite(worldPt.y)) return;
       const tileX = Math.floor(worldPt.x / this.tilePx());
       const tileY = Math.floor(worldPt.y / this.tilePx());
       const mapDef = getMapDefinition(this.currentMapId);
@@ -1610,17 +1626,17 @@ export class WorldScene extends Phaser.Scene {
           this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
           if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            this.triggerDonorToolSwing('hoe');
+            this.triggerDonorToolSwing('hoe', true);
           }
           if (highlightPlotId != null && highlightAction === 'plant') {
-            this.triggerDonorToolSwing('plant');
+            this.triggerDonorToolSwing('plant', true);
           }
           if (highlightPlotId != null && highlightAction === 'water') {
             playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            this.triggerDonorToolSwing('water');
+            this.triggerDonorToolSwing('water', true);
           }
           if (highlightPlotId != null && highlightAction === 'harvest') {
-            this.triggerDonorToolSwing('harvest');
+            this.triggerDonorToolSwing('harvest', true);
           }
         }
       }),
@@ -1643,6 +1659,10 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:pet-reaction', ({ action }) => {
         this.petEntity?.triggerReaction(action);
+        gameAudio.playSfx(action === 'feed' ? 'meow_food' : 'meow_happy', {
+          volumeScale: 0.55,
+          cooldownMs: 1200,
+        });
       }),
 
       gameEventBus.on('cmd:set-study-pet-mode', ({ active }) => {
@@ -1870,8 +1890,8 @@ export class WorldScene extends Phaser.Scene {
     if (!cam) return;
     if (this.petCareMode) return;
     const def = getMapDefinition(this.currentMapId);
-    const width = this.scale.width || 400;
-    const height = this.scale.height || 600;
+    const width = Math.max(1, this.scale.width || 400);
+    const height = Math.max(1, this.scale.height || 600);
     const worldW = def.widthTiles * this.tilePx();
     const worldH = def.heightTiles * this.tilePx();
 
@@ -1940,6 +1960,48 @@ export class WorldScene extends Phaser.Scene {
     this.donorToolController.update(deltaMs);
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
+    const isNight = Boolean(this.worldClockPresentation?.lighting.night);
+    const weatherKind = this.worldClockPresentation?.weather.kind ?? 'sunny';
+    const mapDef = getMapDefinition(this.currentMapId);
+    const tPx = this.tilePx();
+    const isBlockedTile = (tx: number, ty: number) =>
+      tx < 0 ||
+      ty < 0 ||
+      tx >= mapDef.widthTiles ||
+      ty >= mapDef.heightTiles ||
+      this.blockedGrid.has(`${tx},${ty}`);
+
+    let nearestChickenDistPx = Infinity;
+    if (this.ambientChickens.length > 0) {
+      const running = Boolean(this.wasd?.SHIFT.isDown);
+      const toolSwinging = this.donorToolController.isMovementLocked();
+      for (const ch of this.ambientChickens) {
+        stepEmergentChicken(ch.state, {
+          nowMs: now,
+          dtSec,
+          tilePx: tPx,
+          playerX: this.localSprite?.x ?? null,
+          playerY: this.localSprite?.y ?? null,
+          playerRunning: moved && running,
+          toolSwinging,
+          heldItemSku: this.heldItem.itemSku,
+          isNight,
+          weatherKind,
+          isTileBlocked: isBlockedTile,
+        });
+        ch.sprite
+          .setPosition(ch.state.x, ch.state.y)
+          .setFlipX(ch.state.facing === 'left')
+          .setAlpha(ch.state.activity === 'roosting_sleep' ? 0.8 : 1)
+          .setDepth(Math.round(ch.state.y));
+        ch.shadow.setPosition(ch.state.x, ch.state.y - 1);
+        if (this.petEntity) {
+          const petPos = this.petEntity.getWorldPosition();
+          nearestChickenDistPx = Math.min(nearestChickenDistPx, Math.hypot(petPos.x - ch.state.x, petPos.y - ch.state.y));
+        }
+      }
+    }
+
     if (
       !this.petCareMode &&
       this.livingPetDriver &&
@@ -1952,7 +2014,6 @@ export class WorldScene extends Phaser.Scene {
         memberIds[0] ?? 'partner-a',
         memberIds[1] ?? 'partner-b',
       ];
-      const mapDef = getMapDefinition(this.currentMapId);
       const out = this.livingPetDriver.update({
         mapId: this.currentMapId,
         placements: this.placements,
@@ -1964,13 +2025,17 @@ export class WorldScene extends Phaser.Scene {
         localPlayerY: this.localSprite?.y ?? null,
         caregiverIds: caregiverPair,
         foodOffer: null,
-        tilePx: this.tilePx(),
-        isTileBlocked: (tx, ty) =>
-          tx < 0 ||
-          ty < 0 ||
-          tx >= mapDef.widthTiles ||
-          ty >= mapDef.heightTiles ||
-          this.blockedGrid.has(`${tx},${ty}`),
+        tilePx: tPx,
+        isTileBlocked: isBlockedTile,
+        playerPosture: this.localPosture,
+        isNight,
+        weatherKind,
+        playerFarmingActive:
+          this.currentMapId === 'farm' &&
+          (this.donorToolController.isMovementLocked() ||
+            this.heldItem.itemSku === 'tool_hoe' ||
+            Boolean(this.heldItem.itemSku?.startsWith('seed_'))),
+        nearestChickenDistPx,
       });
       this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
       if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
@@ -1988,7 +2053,13 @@ export class WorldScene extends Phaser.Scene {
       this.petEntity?.update(dtSec);
     }
     this.updateRemoteEntities(deltaMs);
-    tickTiledWorldNpcs(this.tiledNpcs, time);
+    tickTiledWorldNpcs(this.tiledNpcs, time, {
+      playerX: this.localSprite?.x ?? null,
+      playerY: this.localSprite?.y ?? null,
+      playerPosture: this.localPosture,
+      isNight,
+      weatherKind,
+    });
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);

@@ -1,5 +1,15 @@
 import * as THREE from 'three';
 import type { PetCareTailMode } from '../../../shared/petLiving/petCare/petCareTypes';
+import {
+  VUENA_JOINT_LIMITS,
+  clampBoneRelativeToRest,
+  enforceCatGroundContact,
+  preserveBoneLengths,
+  safeFinite,
+  safeNormalizeVec3,
+  sanitizeQuaternion,
+  type RestBoneEntry,
+} from './catAnatomyConstraints';
 import { solveVuenaFrontPawIk } from './catPawIk';
 import type { HugKickOverlayState, IPetCareRig, LookTarget, PawSwipeOverlayState } from './petCareActorTypes';
 
@@ -114,6 +124,9 @@ const _deltaQ = new THREE.Quaternion();
 const _targetWorld = new THREE.Vector3();
 const _headWorld = new THREE.Vector3();
 const _invQ = new THREE.Quaternion();
+const _AXIS_X = new THREE.Vector3(1, 0, 0);
+const _AXIS_Y = new THREE.Vector3(0, 1, 0);
+const _AXIS_Z = new THREE.Vector3(0, 0, 1);
 
 /** Rotates a rigged bone by `angleRad` around an axis defined in the actor's local frame (+X left, +Y up, +Z forward). */
 function rotateBoneAroundActorAxis(
@@ -122,20 +135,25 @@ function rotateBoneAroundActorAxis(
   actorAxis: THREE.Vector3,
   angleRad: number,
 ): void {
-  if (!bone || Math.abs(angleRad) < 1e-4) return;
+  if (!bone || !Number.isFinite(angleRad) || Math.abs(angleRad) < 1e-4) return;
   const parent = bone.parent;
   if (!parent) return;
   parent.getWorldQuaternion(_parentQ);
   actorGroup.getWorldQuaternion(_actorQ);
+  sanitizeQuaternion(_parentQ);
+  sanitizeQuaternion(_actorQ);
   // Convert actor-local axis -> world -> parent-local -> bone-local
   _localAxis.copy(actorAxis).applyQuaternion(_actorQ);
   _invQ.copy(_parentQ).invert();
   _localAxis.applyQuaternion(_invQ);
   // Convert from parent-local into bone-local space via inverse of current bone.quaternion
+  sanitizeQuaternion(bone.quaternion);
   _invQ.copy(bone.quaternion).invert();
-  _localAxis.applyQuaternion(_invQ).normalize();
-  _deltaQ.setFromAxisAngle(_localAxis, angleRad);
+  _localAxis.applyQuaternion(_invQ);
+  safeNormalizeVec3(_localAxis, actorAxis);
+  _deltaQ.setFromAxisAngle(_localAxis, safeFinite(angleRad, 0));
   bone.quaternion.multiply(_deltaQ);
+  sanitizeQuaternion(bone.quaternion);
 }
 
 /** Exact closed-eyelid local translation from `vuena-cat.glb` (`sleep` / `hit` midframe). */
@@ -182,7 +200,7 @@ export class CatAnimationAdapter implements IPetCareRig {
   private wagPhase = 0;
   private readonly restLidsPos = new THREE.Vector3(0, 0, 0);
   private readonly restHipsPos = new THREE.Vector3(0, 0, 0);
-  private readonly restBoneTransforms: Array<{ bone: THREE.Bone; pos: THREE.Vector3; quat: THREE.Quaternion }> = [];
+  private readonly restBoneTransforms: RestBoneEntry[] = [];
   private hugRollCur = 0;
 
   constructor(
@@ -192,12 +210,14 @@ export class CatAnimationAdapter implements IPetCareRig {
     private readonly bones: Record<string, THREE.Bone>,
   ) {
     this.mixer = new THREE.AnimationMixer(animRoot);
-    for (const bone of Object.values(bones)) {
+    for (const [name, bone] of Object.entries(bones)) {
       if (!bone) continue;
       this.restBoneTransforms.push({
+        name,
         bone,
         pos: bone.position.clone(),
-        quat: bone.quaternion.clone(),
+        quat: sanitizeQuaternion(bone.quaternion.clone()),
+        length: bone.position.length(),
       });
     }
     for (const clip of clips) {
@@ -271,7 +291,8 @@ export class CatAnimationAdapter implements IPetCareRig {
     }
   }
 
-  update(dt: number): void {
+  update(rawDt: number): void {
+    const dt = THREE.MathUtils.clamp(safeFinite(rawDt, 0.016), 0, 0.1);
     this.elapsed += dt;
     this.poseElapsed += dt;
 
@@ -308,10 +329,29 @@ export class CatAnimationAdapter implements IPetCareRig {
         (this.hugKick.phase > 1.25 ? Math.max(0, 1 - (this.hugKick.phase - 1.25) / 0.3) : 1)
       : 0;
     this.hugRollCur += (wantHugRoll - this.hugRollCur) * (1 - Math.exp(-14 * dt));
-    this.animRoot.position.y = Math.max(0, this.rootLift);
-    this.animRoot.rotation.z = THREE.MathUtils.clamp(this.rootRoll + 0.28 * this.hugRollCur, -0.35, 0.35);
+    this.animRoot.position.y = Math.max(0, safeFinite(this.rootLift, 0));
+    this.animRoot.rotation.z = THREE.MathUtils.clamp(
+      safeFinite(this.rootRoll, 0) + 0.28 * safeFinite(this.hugRollCur, 0),
+      -0.35,
+      0.35,
+    );
 
     this.applyAdditiveOverlays(dt);
+    this.applyAnatomicalConstraints();
+  }
+
+  private applyAnatomicalConstraints(): void {
+    for (let i = 0; i < this.restBoneTransforms.length; i += 1) {
+      const entry = this.restBoneTransforms[i]!;
+      const limits = VUENA_JOINT_LIMITS[entry.name];
+      if (limits) {
+        clampBoneRelativeToRest(entry.bone, entry.quat, limits);
+      } else {
+        sanitizeQuaternion(entry.bone.quaternion, entry.quat);
+      }
+    }
+    preserveBoneLengths(this.restBoneTransforms);
+    enforceCatGroundContact(this.animRoot, this.actorGroup, this.bones, 0);
   }
 
   private applyAdditiveOverlays(dt: number): void {
@@ -366,37 +406,37 @@ export class CatAnimationAdapter implements IPetCareRig {
     const headRoll = THREE.MathUtils.clamp(this.headTiltCur + ovRoll, -0.26, 0.26);
 
     if (this.bones.Neck) {
-      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(0, 1, 0), neckYaw);
-      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, new THREE.Vector3(1, 0, 0), neckPitch);
+      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, _AXIS_Y, neckYaw);
+      rotateBoneAroundActorAxis(this.bones.Neck, this.actorGroup, _AXIS_X, neckPitch);
     }
     if (this.bones.Head) {
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 1, 0), headYaw);
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(1, 0, 0), headPitch);
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(0, 0, 1), headRoll);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, _AXIS_Y, headYaw);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, _AXIS_X, headPitch);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, _AXIS_Z, headRoll);
     }
 
     // 3. Stalk crouch & butt-wiggle overlay
     if (this.pose === 'stalk' && this.bones.Hips) {
       const pelvisOv = this.overlay.pelvis;
       const wiggle = pelvisOv ? pelvisOv[1] : Math.sin(this.elapsed * 20) * 0.08;
-      rotateBoneAroundActorAxis(this.bones.Hips, this.actorGroup, new THREE.Vector3(0, 1, 0), wiggle);
-      rotateBoneAroundActorAxis(this.bones.Hips, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.14);
+      rotateBoneAroundActorAxis(this.bones.Hips, this.actorGroup, _AXIS_Y, wiggle);
+      rotateBoneAroundActorAxis(this.bones.Hips, this.actorGroup, _AXIS_X, 0.14);
       if (this.bones.FrontUpperLeg_L) {
-        rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.22);
+        rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, _AXIS_X, -0.22);
       }
       if (this.bones.FrontUpperLeg_R) {
-        rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.22);
+        rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, _AXIS_X, -0.22);
       }
     }
 
     // 4. Airplane / Perked Ears
     if (Math.abs(this.earPerk) > 0.05) {
       const flatten = this.earPerk < 0 ? -this.earPerk * 0.62 : -this.earPerk * 0.12;
-      rotateBoneAroundActorAxis(this.bones.Ear_L, this.actorGroup, new THREE.Vector3(0, 0, 1), flatten);
-      rotateBoneAroundActorAxis(this.bones.Ear_R, this.actorGroup, new THREE.Vector3(0, 0, 1), -flatten);
+      rotateBoneAroundActorAxis(this.bones.Ear_L, this.actorGroup, _AXIS_Z, flatten);
+      rotateBoneAroundActorAxis(this.bones.Ear_R, this.actorGroup, _AXIS_Z, -flatten);
       if (this.earPerk > 0) {
-        rotateBoneAroundActorAxis(this.bones.Ear_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.16 * this.earPerk);
-        rotateBoneAroundActorAxis(this.bones.Ear_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.16 * this.earPerk);
+        rotateBoneAroundActorAxis(this.bones.Ear_L, this.actorGroup, _AXIS_X, 0.16 * this.earPerk);
+        rotateBoneAroundActorAxis(this.bones.Ear_R, this.actorGroup, _AXIS_X, 0.16 * this.earPerk);
       }
     }
 
@@ -405,26 +445,26 @@ export class CatAnimationAdapter implements IPetCareRig {
       this.wagPhase += dt * this.wagFreq * Math.PI * 2;
       const sideSign = this.tailMode === 'tuck' ? 0.04 : Math.sin(this.wagPhase) * this.wagAmp;
       const raisePitch = this.tailMode === 'tuck' ? 0.55 : -this.tailRaise * 0.45;
-      rotateBoneAroundActorAxis(this.bones.Tail_1, this.actorGroup, new THREE.Vector3(0, 1, 0), sideSign);
-      rotateBoneAroundActorAxis(this.bones.Tail_1, this.actorGroup, new THREE.Vector3(1, 0, 0), raisePitch);
-      rotateBoneAroundActorAxis(this.bones.Tail_2, this.actorGroup, new THREE.Vector3(0, 1, 0), sideSign * 0.75);
+      rotateBoneAroundActorAxis(this.bones.Tail_1, this.actorGroup, _AXIS_Y, sideSign);
+      rotateBoneAroundActorAxis(this.bones.Tail_1, this.actorGroup, _AXIS_X, raisePitch);
+      rotateBoneAroundActorAxis(this.bones.Tail_2, this.actorGroup, _AXIS_Y, sideSign * 0.75);
     }
 
     // 6. Grooming paw-lick & P3 cozy cushion kneading overlays
     if (this.pose === 'groom') {
       const lick = Math.sin(this.elapsed * 5.2);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.95 - lick * 0.18);
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.45 + lick * 0.2);
-      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.24 + lick * 0.1);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, _AXIS_X, -0.95 - lick * 0.18);
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, _AXIS_X, -0.45 + lick * 0.2);
+      rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, _AXIS_X, 0.24 + lick * 0.1);
     } else if (this.pose === 'knead') {
       const phase = this.elapsed * 4.4;
       const leftLift = Math.max(0, Math.sin(phase));
       const rightLift = Math.max(0, -Math.sin(phase));
-      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, new THREE.Vector3(0, 0, 1), Math.sin(phase) * 0.06);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.44 * leftLift + 0.08 * (1 - leftLift));
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.34 * leftLift);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.44 * rightLift + 0.08 * (1 - rightLift));
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.34 * rightLift);
+      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, _AXIS_Z, Math.sin(phase) * 0.06);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, _AXIS_X, -0.44 * leftLift + 0.08 * (1 - leftLift));
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, _AXIS_X, 0.34 * leftLift);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, _AXIS_X, -0.44 * rightLift + 0.08 * (1 - rightLift));
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, _AXIS_X, 0.34 * rightLift);
     }
 
     // 7. Interactive Analytical Front-Paw IK Swipe (targets live 3D ball/yarn/wand coordinates!)
@@ -467,19 +507,19 @@ export class CatAnimationAdapter implements IPetCareRig {
     if (this.hugKick.active || this.hugRollCur > 0.02) {
       const r = this.hugKick.active ? Math.max(0.2, this.hugRollCur) : this.hugRollCur;
       const kick = Math.sin(this.hugKick.phase * 16);
-      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.24 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.78 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(0, 0, 1), -0.3 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.78 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(0, 0, 1), 0.3 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.42 * r);
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.42 * r);
+      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, _AXIS_X, 0.24 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, _AXIS_X, -0.78 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, _AXIS_Z, -0.3 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, _AXIS_X, -0.78 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, _AXIS_Z, 0.3 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, _AXIS_X, 0.42 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, _AXIS_X, 0.42 * r);
 
       // Rhythmic alternating hind-leg bunny kicks against the hugged yarn
-      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), (-0.52 + kick * 0.56) * r);
-      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), (-0.52 - kick * 0.56) * r);
-      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), (0.42 - kick * 0.44) * r);
-      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), (0.42 + kick * 0.44) * r);
+      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_L, this.actorGroup, _AXIS_X, (-0.52 + kick * 0.56) * r);
+      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_R, this.actorGroup, _AXIS_X, (-0.52 - kick * 0.56) * r);
+      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_L, this.actorGroup, _AXIS_X, (0.42 - kick * 0.44) * r);
+      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_R, this.actorGroup, _AXIS_X, (0.42 + kick * 0.44) * r);
     }
   }
 

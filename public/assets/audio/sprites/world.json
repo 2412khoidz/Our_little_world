@@ -1,0 +1,28 @@
+{
+  "resources": [
+    "/assets/audio/sprites/world.mp3"
+  ],
+  "spritemap": {
+    "footstep": {
+      "start": 0,
+      "end": 0.375,
+      "loop": false
+    },
+    "door": {
+      "start": 0.495,
+      "end": 1.0119,
+      "loop": false
+    },
+    "interact": {
+      "start": 1.1319,
+      "end": 1.4445,
+      "loop": false
+    },
+    "rod": {
+      "start": 1.5645,
+      "end": 1.9089,
+      "loop": false
+    }
+  },
+  "durationSec": 2.0289
+}

@@ -35,6 +35,8 @@ import {
   type PetLocomotionSnapshot,
 } from '../../shared/petLiving/petMovement/petLocomotionModel';
 import type { FurniturePlacement, MapId } from '../../shared/types';
+import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
+import { evaluateOverworldCatEmergentBehavior } from '../../shared/world/emergentWorldBehavior';
 import { TILE_SIZE } from '../../shared/maps';
 import type { LivingPetDevTelemetry } from '../../shared/petLiving/mainGame/livingPetDevTelemetry';
 
@@ -61,6 +63,11 @@ export interface PetLivingWorldFrame {
   foodOffer: PetFoodOfferInput | null;
   tilePx?: number;
   isTileBlocked?: (tileX: number, tileY: number) => boolean;
+  playerPosture?: CouplePostureKind;
+  isNight?: boolean;
+  weatherKind?: string;
+  playerFarmingActive?: boolean;
+  nearestChickenDistPx?: number;
 }
 
 const FOLLOW_OFFSETS: readonly [number, number][] = [
@@ -313,9 +320,16 @@ export class PetLivingMainGameDriver {
       }
 
       if (frame.mapId !== 'home') {
-        const sitPhase = Math.floor(frame.nowMs / 6500) % 2 === 0;
+        const emergent = evaluateOverworldCatEmergentBehavior({
+          isNight: Boolean(frame.isNight),
+          isStudying: frame.isStudying,
+          playerPosture: frame.playerPosture ?? 'none',
+          playerFarmingActive: Boolean(frame.playerFarmingActive),
+          nearestChickenDistPx: frame.nearestChickenDistPx ?? Infinity,
+          nowMs: frame.nowMs,
+        });
         const idleLoco = stepPetLocomotion(this.movement.loco, {
-          intent: sitPhase ? 'sit' : 'idle',
+          intent: emergent.intent,
           targetX: px,
           targetY: py,
           preferredFacing: 'south',
@@ -324,9 +338,9 @@ export class PetLivingMainGameDriver {
         });
         this.movement = { ...this.movement, loco: idleLoco };
         let outdoorBubble: string | null = null;
-        if (frame.nowMs - this.lastBubbleMs > 7500) {
+        if (emergent.bubbleText && frame.nowMs - this.lastBubbleMs > 7500) {
           this.lastBubbleMs = frame.nowMs;
-          outdoorBubble = sitPhase ? 'Purr~' : 'Mrow?';
+          outdoorBubble = emergent.bubbleText;
         }
         return { loco: idleLoco, ambientBubble: outdoorBubble, authority: this.authority };
       }

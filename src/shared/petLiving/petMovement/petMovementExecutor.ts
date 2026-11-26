@@ -21,6 +21,7 @@ import {
   type PetLocomotionSnapshot,
 } from './petLocomotionModel';
 import { findTilePath, type GridPoint } from './tilePathfinding';
+import { isExemptFromCleanupTimeout } from '../../world/emergentWorldBehavior';
 
 const ARRIVAL_TOLERANCE_PX = 3.5;
 const STUCK_MS = 4500;
@@ -348,7 +349,9 @@ export function tickPetMovement(
     };
 
     const moved = Math.hypot(next.loco.x - next.lastProgressX, next.loco.y - next.lastProgressY);
-    if (moved >= MIN_PROGRESS_PX) {
+    const exemptFromStuck =
+      next.status === 'arriving' || isExemptFromCleanupTimeout(next.activeActionId);
+    if (moved >= MIN_PROGRESS_PX || exemptFromStuck) {
       next = {
         ...next,
         lastProgressAtMs: nowMs,

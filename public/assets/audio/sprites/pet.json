@@ -1,0 +1,53 @@
+{
+  "resources": [
+    "/assets/audio/sprites/pet.mp3"
+  ],
+  "spritemap": {
+    "meow_soft": {
+      "start": 0,
+      "end": 1.8,
+      "loop": false
+    },
+    "meow_happy": {
+      "start": 1.92,
+      "end": 3.3056,
+      "loop": false
+    },
+    "meow_food": {
+      "start": 3.4256,
+      "end": 5.2256,
+      "loop": false
+    },
+    "eat_crunch": {
+      "start": 5.3456,
+      "end": 5.7956,
+      "loop": false
+    },
+    "drink_lap": {
+      "start": 5.9156,
+      "end": 6.3066,
+      "loop": false
+    },
+    "ball_bounce": {
+      "start": 6.4266,
+      "end": 6.6766,
+      "loop": false
+    },
+    "bell_jingle": {
+      "start": 6.7966,
+      "end": 7.3466,
+      "loop": false
+    },
+    "brush_fur": {
+      "start": 7.4666,
+      "end": 7.8666,
+      "loop": false
+    },
+    "toy_swish": {
+      "start": 7.9866,
+      "end": 8.3366,
+      "loop": false
+    }
+  },
+  "durationSec": 8.4566
+}

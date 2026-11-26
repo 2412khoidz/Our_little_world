@@ -4,6 +4,13 @@ import { TILE_SIZE } from '../../shared/maps';
 import extIds from '../art/worldExtendedArtIds.json';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
 import { createAmbientMotes, placeSoftShadow, placeWarmLight, type FloatingMote } from '../artDemos/demoHelpers';
+import { createChickenActorState, type ChickenActorState } from '../../shared/world/emergentWorldBehavior';
+
+export interface AmbientChickenHandle {
+  sprite: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
+  state: ChickenActorState;
+}
 
 type PlaceProp = (
   frameId: string,
@@ -56,6 +63,7 @@ function addHollowmereProp(
 export interface ZoneAccentResult {
   motes: FloatingMote[];
   moteBounds?: { x: number; y: number; w: number; h: number };
+  chickens?: AmbientChickenHandle[];
 }
 
 /**
@@ -71,6 +79,7 @@ export function applyTiledZoneAccents(
   scene: Phaser.Scene,
 ): ZoneAccentResult {
   const hasProps = scene.textures.exists(WORLD_PROPS_KEY);
+  const chickens: AmbientChickenHandle[] = [];
 
   if (mapId === 'farm') {
     // Greenhouse on NW overlook + Barn / Farmhouse & Meadowbrook Windmill
@@ -95,14 +104,22 @@ export function applyTiledZoneAccents(
         pushLayer(duck);
       }
       if (scene.anims.exists('olw-chicken')) {
-        for (const [cx, cy] of [[10, 14], [12, 16]] as const) {
-          pushLayer(placeSoftShadow(scene, cx * TILE_SIZE, cy * TILE_SIZE - 1, 10, 4, cy * TILE_SIZE - 2, 0.36));
+        for (const [idx, [cx, cy]] of ([[10, 14], [12, 16]] as const).entries()) {
+          const homeX = cx * TILE_SIZE;
+          const homeY = cy * TILE_SIZE;
+          const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.36);
           const ch = scene.add
-            .sprite(cx * TILE_SIZE, cy * TILE_SIZE, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
+            .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
             .setOrigin(0.5, 0.85)
-            .setDepth(Math.round(cy * TILE_SIZE));
+            .setDepth(Math.round(homeY));
           ch.play('olw-chicken');
+          pushLayer(shadow);
           pushLayer(ch);
+          chickens.push({
+            sprite: ch,
+            shadow,
+            state: createChickenActorState(`farm_chicken_${idx}`, homeX, homeY, idx * 1.7),
+          });
         }
       }
       if (scene.anims.exists('olw-sheep')) {
@@ -123,7 +140,7 @@ export function applyTiledZoneAccents(
     pushLayer(placeWarmLight(scene, 29.5 * TILE_SIZE, 20 * TILE_SIZE, 44, 0xffd896, 0.22, 860));
 
     const bounds = { x: 16, y: 16, w: worldWidthPx - 32, h: worldHeightPx - 32 };
-    return { motes: createAmbientMotes(scene, bounds, 'petal', 16), moteBounds: bounds };
+    return { motes: createAmbientMotes(scene, bounds, 'petal', 16), moteBounds: bounds, chickens };
   }
 
   if (mapId === 'village') {
@@ -137,16 +154,25 @@ export function applyTiledZoneAccents(
       const pic = pxAt(47, 29);
       place(extIds.props.picnic_blanket, pic.x, pic.y, 0.5, 0.5, 3);
       if (scene.anims.exists('olw-chicken')) {
+        const homeX = 23 * TILE_SIZE;
+        const homeY = 32 * TILE_SIZE;
+        const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.34);
         const ch = scene.add
-          .sprite(23 * TILE_SIZE, 32 * TILE_SIZE, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
+          .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
           .setOrigin(0.5, 0.85)
-          .setDepth(Math.round(32 * TILE_SIZE));
+          .setDepth(Math.round(homeY));
         ch.play('olw-chicken');
+        pushLayer(shadow);
         pushLayer(ch);
+        chickens.push({
+          sprite: ch,
+          shadow,
+          state: createChickenActorState('village_chicken_0', homeX, homeY, 2.3),
+        });
       }
     }
     const bounds = { x: 24, y: 24, w: worldWidthPx - 48, h: worldHeightPx - 48 };
-    return { motes: createAmbientMotes(scene, bounds, 'petal', 12), moteBounds: bounds };
+    return { motes: createAmbientMotes(scene, bounds, 'petal', 12), moteBounds: bounds, chickens };
   }
 
   if (mapId === 'beach') {

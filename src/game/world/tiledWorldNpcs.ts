@@ -3,8 +3,10 @@ import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
 import { createCompactNameTag, placeSoftShadow } from '../artDemos/demoHelpers';
 import { TILE_SIZE } from '../../shared/maps';
+import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
 import type { AvatarConfig, MapId } from '../../shared/types';
 import { getParsedTiledWorld } from '../../shared/world/tiledMapRegistry';
+import { evaluateNpcReaction } from '../../shared/world/emergentWorldBehavior';
 
 export interface TiledWorldNpcEntity {
   id: string;
@@ -13,12 +15,24 @@ export interface TiledWorldNpcEntity {
   role: string;
   tileX: number;
   tileY: number;
+  texKey: string;
   body: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Container;
+  emoteBadge: Phaser.GameObjects.Text;
   homeX: number;
   homeY: number;
   phase: number;
+  lastWasNear: boolean;
+  emoteUntilMs: number;
+}
+
+export interface NpcTickContext {
+  playerX: number | null;
+  playerY: number | null;
+  playerPosture?: CouplePostureKind;
+  isNight?: boolean;
+  weatherKind?: string;
 }
 
 const NPC_AVATAR_BY_ID: Record<string, AvatarConfig> = {
@@ -96,9 +110,22 @@ export function spawnTiledWorldNpcs(
     const labelText = spawn.labelVi ?? spawn.id;
     const label = createCompactNameTag(scene, px, py - 28, labelText, '#d8b46e');
     label.setDepth(9450);
+    const emoteBadge = scene.add
+      .text(px, py - 37, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '8px',
+        color: '#ffeec2',
+        backgroundColor: '#261a20cc',
+        padding: { x: 3, y: 1 },
+        resolution: 4,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(9455)
+      .setVisible(false);
     pushLayer(shadow);
     pushLayer(body);
     pushLayer(label);
+    pushLayer(emoteBadge);
     npcs.push({
       id: spawn.id,
       labelVi: labelText,
@@ -106,27 +133,58 @@ export function spawnTiledWorldNpcs(
       role: spawn.role,
       tileX: spawn.tileX,
       tileY: spawn.tileY,
+      texKey,
       body,
       shadow,
       label,
+      emoteBadge,
       homeX: px,
       homeY: py,
       phase: Math.random() * Math.PI * 2,
+      lastWasNear: false,
+      emoteUntilMs: 0,
     });
   }
   return npcs;
 }
 
-export function tickTiledWorldNpcs(npcs: readonly TiledWorldNpcEntity[], timeMs: number): void {
+export function tickTiledWorldNpcs(
+  npcs: readonly TiledWorldNpcEntity[],
+  timeMs: number,
+  ctx?: NpcTickContext,
+): void {
   const t = timeMs / 1000;
   for (const npc of npcs) {
-    const bob = Math.sin(t * 1.4 + npc.phase) * 0.6;
-    const sway = Math.sin(t * 0.45 + npc.phase) * 2.5;
+    const reaction = evaluateNpcReaction({
+      npcX: npc.homeX,
+      npcY: npc.homeY,
+      playerX: ctx?.playerX ?? null,
+      playerY: ctx?.playerY ?? null,
+      playerPosture: ctx?.playerPosture ?? 'none',
+      isNight: Boolean(ctx?.isNight),
+      weatherKind: ctx?.weatherKind ?? 'sunny',
+    });
+    const bob = Math.sin(t * 1.4 + npc.phase) * 0.6 * reaction.swayScale;
+    const sway = Math.sin(t * 0.45 + npc.phase) * 2.5 * reaction.swayScale;
     const nx = npc.homeX + sway;
     const ny = npc.homeY;
     npc.body.setPosition(nx, ny + bob * 0.5);
+    npc.body.setFrame(getIdleFrameIndex(reaction.facing));
     npc.shadow.setPosition(nx, ny - 1);
     npc.label.setPosition(nx, ny - 28 + bob * 0.5);
+
+    const isNear = reaction.state === 'interacting';
+    if (isNear && !npc.lastWasNear && reaction.bubbleText) {
+      npc.emoteUntilMs = timeMs + 2200;
+      npc.emoteBadge.setText(reaction.bubbleText);
+    }
+    npc.lastWasNear = isNear;
+
+    if (isNear && timeMs < npc.emoteUntilMs) {
+      npc.emoteBadge.setPosition(nx, ny - 37 + bob * 0.5).setVisible(true);
+    } else {
+      npc.emoteBadge.setVisible(false);
+    }
   }
 }
 

@@ -68,8 +68,9 @@ export class DonorPydewToolController {
     playerY: number,
     tilePx: number,
     onHit?: (state: DonorToolActionState) => void,
+    forceRestart = false,
   ): boolean {
-    if (this.active) return false;
+    if (this.active && !forceRestart) return false;
     const [dx, dy] = DIRECTION_VECTORS[facing];
     const targetWorldX = playerX + dx * tilePx * 0.85;
     const targetWorldY = playerY - 2 + dy * tilePx * 0.85;

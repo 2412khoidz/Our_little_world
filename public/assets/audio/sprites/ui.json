@@ -1,0 +1,33 @@
+{
+  "resources": [
+    "/assets/audio/sprites/ui.mp3"
+  ],
+  "spritemap": {
+    "ui_select": {
+      "start": 0,
+      "end": 0.8522,
+      "loop": false
+    },
+    "tool_swap": {
+      "start": 0.9722,
+      "end": 1.3166,
+      "loop": false
+    },
+    "shop_buy": {
+      "start": 1.4366,
+      "end": 1.8875,
+      "loop": false
+    },
+    "shop_sell": {
+      "start": 2.0075,
+      "end": 2.6299,
+      "loop": false
+    },
+    "fail": {
+      "start": 2.7499,
+      "end": 3.1934,
+      "loop": false
+    }
+  },
+  "durationSec": 3.3134
+}
