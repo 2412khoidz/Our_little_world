@@ -52,11 +52,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: rgba(40, 30, 36, 0.88);
-  border: 1px solid rgba(255, 248, 239, 0.14);
-  color: var(--surface-cream);
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #5d3b27 0%, #442a1b 100%);
+  border: 2px solid #c9944f;
+  box-shadow:
+    0 2px 0 #2b180e,
+    0 4px 12px rgba(24, 14, 10, 0.34);
+  color: #fff6e2;
   font-size: 12px;
 }
 
@@ -68,7 +71,7 @@
 
 .world-clock-hud__pill small {
   display: block;
-  opacity: 0.82;
+  opacity: 0.88;
   font-weight: 500;
   font-size: 11px;
 }
@@ -76,12 +79,13 @@
 .world-clock-hud__weather {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  border-radius: 12px;
-  background: rgba(40, 30, 36, 0.72);
-  border: 1px solid rgba(255, 248, 239, 0.1);
-  color: var(--surface-cream);
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #5d3b27 0%, #442a1b 100%);
+  border: 2px solid #a87447;
+  box-shadow: 0 2px 0 #2b180e;
+  color: #fff6e2;
   font-size: 11px;
 }
 
@@ -92,12 +96,13 @@
 .world-clock-hud__mode-summary {
   list-style: none;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: rgba(40, 30, 36, 0.72);
-  border: 1px solid rgba(255, 248, 239, 0.1);
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #5d3b27 0%, #442a1b 100%);
+  border: 2px solid #a87447;
+  box-shadow: 0 2px 0 #2b180e;
   font-size: 11.5px;
-  color: var(--surface-cream);
+  color: #fff6e2;
 }
 
 .world-clock-hud__mode-summary::-webkit-details-marker {
@@ -271,7 +276,7 @@
   bottom: auto;
   transform: none;
   z-index: auto;
-  max-width: min(320px, calc(100vw - 48px));
+  max-width: min(460px, calc(100vw - 24px));
 }
 
 .couple-emote-dock {
@@ -319,7 +324,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
-  max-width: min(340px, calc(100vw - 24px));
+  max-width: min(460px, calc(100vw - 20px));
 }
 
 .couple-emote-dock__close {
@@ -763,8 +768,9 @@
   grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
   gap: 6px;
   padding: 8px calc(10px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(10px + var(--safe-left));
-  background: rgba(45, 34, 38, 0.96);
-  border-top: 1px solid rgba(255, 248, 239, 0.12);
+  background: linear-gradient(180deg, #4b3020 0%, #372216 100%);
+  border-top: 2px solid #a87447;
+  box-shadow: 0 -4px 16px rgba(24, 14, 10, 0.28);
   z-index: 35;
   flex-shrink: 0;
 }
@@ -772,23 +778,23 @@
 .nav-btn {
   min-height: 46px;
   padding: 6px 4px;
-  border-radius: 12px;
-  border: 1px solid transparent;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
   background: transparent;
-  color: #ead8c7;
+  color: #f3dfbe;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .nav-btn--active {
-  background: rgba(217, 119, 98, 0.24);
-  border-color: rgba(217, 119, 98, 0.65);
-  color: #fff8ef;
+  background: rgba(229, 173, 67, 0.22);
+  border-color: #e5ad43;
+  color: #fff8e7;
 }
 
 /* Decorate Bottom Drawer */
@@ -973,10 +979,13 @@
   max-width: 540px;
   max-height: 88dvh;
   overflow-y: auto;
-  background: var(--surface-cream);
+  background: #f6e7c9;
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-honey);
-  box-shadow: var(--shadow-card);
+  border: 3px solid #7c4c29;
+  outline: 2px solid #c9944f;
+  outline-offset: -5px;
+  box-shadow: 0 6px 0 #4c2d1f, 0 14px 32px rgba(32, 18, 12, 0.35);
+  color: #3e2313;
   padding: 18px;
   display: flex;
   flex-direction: column;

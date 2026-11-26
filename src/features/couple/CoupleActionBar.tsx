@@ -1,4 +1,5 @@
 import { COUPLE_EMOTES, type CoupleEmoteId, type CoupleInvitePayload, type CouplePostureKind } from '../../shared/couple/coupleTypes';
+import { COUPLE_EMOTE_PIXEL_URLS } from '../../shared/art/kilnItemIcons';
 
 interface CoupleActionBarProps {
   partnerOnlineSameRoom: boolean;
@@ -119,9 +120,23 @@ export function CoupleActionBar({
               borderRadius: 999,
               fontSize: 15,
               lineHeight: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {item.symbol}
+            {COUPLE_EMOTE_PIXEL_URLS[item.id] ? (
+              <img
+                src={COUPLE_EMOTE_PIXEL_URLS[item.id]}
+                alt=""
+                width={18}
+                height={18}
+                draggable={false}
+                style={{ imageRendering: 'pixelated', display: 'block' }}
+              />
+            ) : (
+              item.symbol
+            )}
           </button>
         ))}
 
@@ -142,9 +157,20 @@ export function CoupleActionBar({
             padding: '4px 10px',
             fontSize: 12.5,
             whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
           }}
         >
-          {outgoingInviteActive ? 'Đang đợi...' : '🫂 Ôm nhau'}
+          <img
+            src="/assets/ui/hybrid/emotes/hearts_double.png"
+            alt=""
+            width={15}
+            height={15}
+            draggable={false}
+            style={{ imageRendering: 'pixelated' }}
+          />
+          {outgoingInviteActive ? 'Đang đợi...' : 'Ôm nhau'}
         </button>
 
         {onRequestHoldHands && (
@@ -165,9 +191,20 @@ export function CoupleActionBar({
               padding: '4px 10px',
               fontSize: 12.5,
               whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
             }}
           >
-            🤝 Nắm tay
+            <img
+              src="/assets/ui/hybrid/emotes/heart.png"
+              alt=""
+              width={15}
+              height={15}
+              draggable={false}
+              style={{ imageRendering: 'pixelated' }}
+            />
+            Nắm tay
           </button>
         )}
 

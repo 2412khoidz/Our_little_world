@@ -2319,6 +2319,43 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnEmoteBubble(x: number, y: number, symbol: string): void {
+    const texBySymbol: Record<string, string> = {
+      '❤️': 'olw-emote-heart',
+      '💕': 'olw-emote-hearts',
+      '👋': 'olw-emote-thumbs',
+      '😴': 'olw-emote-sleep',
+      '✨': 'olw-emote-star',
+      '💭': 'olw-emote-cat',
+    };
+    const texKey = texBySymbol[symbol];
+    if (texKey && this.textures.exists(texKey)) {
+      const icon = this.add.image(x, y, texKey).setScale(0.56).setOrigin(0.5, 1).setDepth(9600);
+      this.tweens.add({
+        targets: icon,
+        y: y - 18,
+        alpha: 0,
+        scale: 0.72,
+        duration: 1400,
+        ease: 'Sine.Out',
+        onComplete: () => icon.destroy(),
+      });
+      if ((symbol === '❤️' || symbol === '💕' || symbol === '✨') && this.textures.exists('olw-emote-star')) {
+        for (const [dx, dy] of [[-10, -4], [10, -6]] as const) {
+          const spark = this.add.image(x + dx, y + dy, 'olw-emote-star').setScale(0.28).setDepth(9599);
+          this.tweens.add({
+            targets: spark,
+            x: x + dx * 1.6,
+            y: y + dy - 16,
+            alpha: 0,
+            duration: 1050,
+            ease: 'Sine.Out',
+            onComplete: () => spark.destroy(),
+          });
+        }
+      }
+      return;
+    }
+
     const bubble = this.add
       .text(x, y, symbol, {
         fontSize: '12px',

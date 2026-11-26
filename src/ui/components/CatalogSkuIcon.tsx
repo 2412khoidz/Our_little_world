@@ -1,3 +1,4 @@
+import { kilnItemIconUrlForSku } from '../../shared/art/kilnItemIcons';
 import { propsIconIdForCatalogSku } from '../../shared/art/catalogSkuPropsIcon';
 import { PET_FOOD_CATALOG } from '../../shared/petLiving/petFoodCatalog';
 import { CatalogPropsIcon } from './CatalogPropsIcon';
@@ -16,6 +17,19 @@ export interface CatalogSkuIconProps {
 
 export function CatalogSkuIcon({ sku, size = 28 }: CatalogSkuIconProps) {
   const base = skuBaseKey(sku);
+  const kilnUrl = kilnItemIconUrlForSku(base);
+  if (kilnUrl) {
+    return (
+      <img
+        src={kilnUrl}
+        alt=""
+        width={size}
+        height={size}
+        draggable={false}
+        style={{ imageRendering: 'pixelated', objectFit: 'contain', display: 'block' }}
+      />
+    );
+  }
   const propsIconId = propsIconIdForCatalogSku(base);
   if (propsIconId) return <CatalogPropsIcon iconId={propsIconId} size={size} />;
   const petFood = PET_FOOD_CATALOG.find((f) => f.sku === base);

@@ -16,8 +16,26 @@ import {
   type ScrapbookPage,
   type ScrapbookStickerEmoji,
 } from '../../shared/couple/scrapbookTypes';
+import { SCRAPBOOK_PIXEL_STICKER_URLS } from '../../shared/art/kilnItemIcons';
 import { loadScrapbookAlbum, saveScrapbookAlbum } from './scrapbookAlbumStorage';
 import './scrapbookAlbum.css';
+
+function PixelStickerGlyph({ emoji, size = 22 }: { emoji: string; size?: number }) {
+  const url = SCRAPBOOK_PIXEL_STICKER_URLS[emoji];
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={emoji}
+        width={size}
+        height={size}
+        draggable={false}
+        style={{ imageRendering: 'pixelated', display: 'block' }}
+      />
+    );
+  }
+  return <>{emoji}</>;
+}
 
 interface ScrapbookPageProps {
   page: ScrapbookPage;
@@ -71,7 +89,7 @@ const ScrapbookFlipPage = forwardRef<HTMLDivElement, ScrapbookPageProps>(functio
           className={`scrapbook-sticker${s.placedByUserId !== localUserId ? ' scrapbook-sticker--partner' : ''}`}
           style={{ left: `${s.xPct}%`, top: `${s.yPct}%` }}
         >
-          {s.emoji}
+          <PixelStickerGlyph emoji={s.emoji} size={24} />
         </span>
       ))}
     </div>
@@ -291,10 +309,11 @@ export function ScrapbookAlbumModal({
               type="button"
               className={`btn btn--secondary btn--sm btn--sticker${selectedSticker === emoji ? ' btn--primary' : ''}`}
               aria-pressed={selectedSticker === emoji}
+              aria-label={`Sticker ${emoji}`}
               title="Chọn sticker rồi chạm vào trang"
               onClick={() => setSelectedSticker((cur) => (cur === emoji ? null : emoji))}
             >
-              {emoji}
+              <PixelStickerGlyph emoji={emoji} size={20} />
             </button>
           ))}
           <button

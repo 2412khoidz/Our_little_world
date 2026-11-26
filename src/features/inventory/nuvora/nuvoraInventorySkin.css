@@ -14,14 +14,14 @@
 .nuvora-desk {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px 16px 14px;
-  background: repeating-linear-gradient(0deg, #9a6735 0 21px, #6f4623 21px 24px);
-  box-shadow:
-    0 0 0 3px #1f1008,
-    inset 0 0 0 3px #b9803f,
-    0 10px 0 0 #0005;
-  border-radius: 4px;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  background-color: #dec096;
+  border: 14px solid #6b4125;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 14px / 0 stretch;
+  box-shadow: 0 12px 28px rgba(42, 23, 15, 0.36);
+  border-radius: 6px;
+  image-rendering: pixelated;
 }
 
 .nuvora-desk__title-row {
@@ -34,36 +34,32 @@
 
 .nuvora-desk__title {
   margin: 0;
-  font: italic bold 16px 'Trebuchet MS', serif;
-  color: #f5e6c8;
-  text-shadow: 1px 1px 0 #1f1008;
-  letter-spacing: 0.5px;
+  font: 800 16px 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  color: #462818;
+  text-shadow: 0 1px 0 rgba(255, 246, 224, 0.65);
+  letter-spacing: 0.2px;
 }
 
 .nuvora-tray {
-  background: #4a2f1a;
-  padding: 9px;
-  box-shadow:
-    0 0 0 2px #1d1008,
-    inset 0 0 0 2px #6e4826;
-  border-radius: 3px;
+  background: rgba(114, 72, 41, 0.16);
+  padding: 8px;
+  box-shadow: inset 0 0 0 2px #8a5730;
+  border-radius: 5px;
 }
 
 .nuvora-g9 {
   display: grid;
   grid-template-columns: repeat(9, var(--nuvora-slot));
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
 }
 
 .nuvora-sl {
   width: var(--nuvora-slot);
   height: var(--nuvora-slot);
-  background: #2a1b12;
-  box-shadow:
-    inset 2px 2px #100803,
-    inset -2px -2px #54391f;
-  border-radius: 2px;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  image-rendering: pixelated;
+  border-radius: 3px;
   position: relative;
   display: flex;
   align-items: center;
@@ -71,20 +67,16 @@
   box-sizing: border-box;
   border: none;
   padding: 0;
+  transition: transform 90ms ease;
 }
 
 .nuvora-sl--hot {
-  background: #c8913f;
-  box-shadow:
-    inset 2px 2px #f0c77b,
-    inset -2px -2px #7a4c1c;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #e9cda2;
 }
 
 .nuvora-sl--selected {
-  box-shadow:
-    inset 0 0 0 3px #fff4d6,
-    0 0 0 2px #1f1008;
-  transform: translateY(-3px);
+  background-image: url('/assets/ui/hybrid/slot_selected.png');
+  transform: translateY(-2px);
   z-index: 1;
 }
 
@@ -125,13 +117,14 @@
 }
 
 .olw-hotbar-tray--nuvora {
-  gap: 3px;
-  padding: 5px;
-  background: linear-gradient(#a56f3a, #8a5a2e);
+  gap: 4px;
+  padding: 6px 7px;
+  background: linear-gradient(180deg, #b87e48 0%, #8f5c31 100%);
   box-shadow:
-    0 0 0 3px #1f1008,
-    inset 0 0 0 2px #c9944f;
-  border-radius: 3px;
+    0 0 0 2.5px #4c2d1f,
+    inset 0 0 0 2px #e5b76a,
+    0 6px 16px rgba(34, 18, 12, 0.34);
+  border-radius: 6px;
   border: none;
 }
 
@@ -139,21 +132,18 @@
   width: var(--nuvora-slot);
   height: var(--nuvora-slot);
   min-width: var(--nuvora-slot);
-  background: #c8913f;
-  box-shadow:
-    inset 2px 2px #f0c77b,
-    inset -2px -2px #7a4c1c;
-  border-radius: 2px;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  image-rendering: pixelated;
+  box-shadow: none;
+  border-radius: 3px;
   border: none;
 }
 
 .olw-hotbar-tray--nuvora .olw-hotbar-slot--selected {
-  background: #c8913f;
+  background: url('/assets/ui/hybrid/slot_selected.png') center / 100% 100% no-repeat #fff2d2;
   border: none;
-  box-shadow:
-    inset 0 0 0 3px #fff4d6,
-    0 0 0 2px #1f1008;
-  transform: translateY(-3px);
+  box-shadow: 0 2px 6px rgba(72, 36, 14, 0.35);
+  transform: translateY(-2px);
 }
 
 .nuvora-g9--hot {
@@ -250,22 +240,23 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
-  background: repeating-linear-gradient(0deg, #9a6735 0 21px, #6f4623 21px 24px);
-  box-shadow:
-    0 0 0 3px #1f1008,
-    inset 0 0 0 3px #b9803f;
-  border-radius: 4px;
+  padding: 16px 18px;
+  background-color: #dec096;
+  border: 14px solid #6b4125;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 14px / 0 stretch;
+  box-shadow: 0 12px 28px rgba(42, 23, 15, 0.36);
+  border-radius: 6px;
+  image-rendering: pixelated;
 }
 
 .nuvora-ship-desk h2 {
   margin: 0;
-  font: italic bold 16px 'Trebuchet MS', serif;
-  color: #f5e6c8;
-  text-shadow: 1px 1px 0 #1f1008;
+  font: 800 16px 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  color: #462818;
+  text-shadow: 0 1px 0 rgba(255, 246, 224, 0.65);
 }
 
-/* Cabacos ShopRow-inspired buy list (NUVORA palette). */
+/* Cabacos ShopRow-inspired buy list (Hybrid Kiln Harvest palette). */
 .nuvora-shop-list {
   display: flex;
   flex-direction: column;
@@ -280,9 +271,9 @@
   padding: 6px 8px;
   background: #f5e6c8;
   box-shadow:
-    inset 0 0 0 2px #e8d4a8,
-    0 0 0 2px #1d1008;
-  border-radius: 3px;
+    inset 0 0 0 2px #e5c694,
+    0 0 0 1.5px #7c4c29;
+  border-radius: 4px;
 }
 
 .nuvora-shop-row__icon-bg {
@@ -291,16 +282,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #c8913f;
-  box-shadow: inset 2px 2px #f0c77b, inset -2px -2px #7a4c1c;
-  border-radius: 2px;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  border-radius: 3px;
   image-rendering: pixelated;
 }
 
 .nuvora-shop-row__name {
   font-size: 13px;
   font-weight: 700;
-  color: #1f140b;
+  color: #3e2313;
   line-height: 1.2;
 }
 
@@ -313,8 +303,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font: bold 14px monospace;
-  color: #1f140b;
+  font: 700 13px 'Be Vietnam Pro', monospace;
+  color: #462818;
 }
 
 .nuvora-shop-row__coin {
@@ -329,7 +319,7 @@
   border-radius: 50%;
 }
 
-/* Cabacos SeedShopPanel-style slot grid (Worker K). */
+/* Cabacos SeedShopPanel-style slot grid (Hybrid Kiln palette). */
 .nuvora-shop-g9 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -347,9 +337,9 @@
   background: #f5e6c8;
   border: none;
   box-shadow:
-    inset 0 0 0 2px #e8d4a8,
-    0 0 0 2px #1d1008;
-  border-radius: 3px;
+    inset 0 0 0 2px #e5c694,
+    0 0 0 1.5px #7c4c29;
+  border-radius: 4px;
   cursor: pointer;
   image-rendering: pixelated;
 }
@@ -365,9 +355,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #c8913f;
-  box-shadow: inset 2px 2px #f0c77b, inset -2px -2px #7a4c1c;
-  border-radius: 2px;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  border-radius: 3px;
 }
 
 .nuvora-shop-cell__name {

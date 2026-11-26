@@ -452,3 +452,12 @@ Replaces overlapping/misaligned maps with a cohesive `16×16` pixel-density worl
 
 **Proof:** `tests/unit/worldReconstructionGraph.test.ts` (16×16 uniformity, independent beach, bounce-free portal clearances, BFS reachability of 184 plots/NPCs/portals), updated `donorFarmBeachSketch.test.ts`, `donorHollowmereBeach.test.ts`, `pydewFarmDonorRender.test.ts`, `mapRecoveryImport.test.ts`, `pydewForestSlice.test.ts`.
 
+## Hybrid Unified Art Direction & 32×32 Cat Upgrade (`antigravity/neon-world-reconstruction`)
+
+| Asset Source | License | OLW Target | Role |
+|---|---|---|---|
+| **Frakassets — Free Pets Pack (`cat-orange_32px_top-down_outline_lit.png`)** | CC BY 4.0 | `public/assets/pets/cat-orange-32px.png`, `UPSTREAM-LICENSE.txt`, `livingCatWorldSprite.ts`, `BootScene.ts`, `PetEntity.ts` | Replaces 2.175× scaled 16×16 overworld cat with crisp 32×32 top-down sprite (`scale 0.78`) |
+| **Kiln Harvest Free Sampler (`bitkiln`)** | Free personal & commercial (`KILN-HARVEST-LICENSE.txt`) | `public/assets/ui/hybrid/` (`panel_wood.png`, `button_wide_wood_*.png`, `slot_*.png`, `hotbar.png`, 33 items in `items/`), `kilnItemIcons.ts`, `nuvoraInventorySkin.css`, `app.css` | Unified warm brass-wood UI framing, inventory/hotbar/shop slots, gold coin HUD & 16×16 item icons |
+| **Sprout Lands UI Pack (`Cup Nooble`)** | Non-commercial free tier (`SPROUT-LANDS-README.txt`) | `public/assets/ui/hybrid/emotes/` (`heart`, `hearts_double`, `star`, `cat_love`, `cat_sleep`, `sun`, `cloud`, `rain`, `moon`, `flower`, `clover`, `sprout`), `WorldClockHud.tsx`, `ScrapbookAlbumModal.tsx`, `CoupleActionBar.tsx`, `WorldScene.ts` | Pixel weather/time HUD, pixel scrapbook stickers & floating pixel couple emotes |
+
+
