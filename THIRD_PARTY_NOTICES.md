@@ -34,6 +34,29 @@ SOFTWARE.
 - **Assets Used:** `cat-orange` 16×16 top-down animated spritesheet (`outline_lit` & `shadow`, 128 frames) and `puppy-shiba` 16×16 preview frame.
 - **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
+## 3. Mission M — 3D Pet Care V2 Donors (`src/donors/nintendogs-cat-v2/` & expressions)
+
+1. **`SawyerHood/nintendogs-threejs` (`commit 43d231c26e209132dbadb752a6a8e14830c83ccd`)**
+   - **Adapted Modules:** Procedural SDF & Surface Nets mesher (`sdf.ts`, `surfaceNets.ts`), GLSL shell-fur shader (`fur.ts`), skeleton rig/IK/pose solver patterns (`catDesign.ts`, `catModel.ts`, `catRig.ts`, `catActor.ts`), `ToyWorld` physics (`toyPhysics.ts`), procedural living-room props & follow camera (`catProps.ts`, `catRoom.ts`), `Brain` & raycast `PlayController` patterns (`catBrain.ts`, `catPlayController.ts`).
+   - **Verification Note:** All ported files are tagged `// Adapted from SawyerHood/nintendogs-threejs@43d231c` and documented in `src/donors/nintendogs-cat-v2/UPSTREAM_REUSE.md`; upstream repo currently has **no LICENSE file declared** (recorded transparently for owner review before external public distribution).
+   - **Zero copyrighted audio/binary assets copied.**
+
+2. **`j4lpan/pet-shop` (`commit 77f8b59a33c93881b44e15209b310b199a423d2a`, `MIT License`)**
+   - **Adapted Concepts:** Double-blink eye micro-expressions, ear twitches, and lightweight reactive cues integrated into `catRig.ts` and `catBrain.ts`.
+   - **License:** MIT License (Copyright (c) j4lpan — permissive open-source license allowing modification and redistribution with attribution).
+
+## 4. Mission M.1 — CC0 3D Cat Model & Real Audio Assets (`public/assets/pet-care-v2/`)
+
+- **`Vuena — Cute Pets & Wildlife FREE Sample`** (`https://vuena.itch.io/blocky-pets-free`) — **CC0 1.0 Universal**
+  - **Used:** `GLB/animal_cat.glb` (19 bones, 13 clips, LOD0/LOD1) vendored at `public/assets/pet-care-v2/models/vuena-cat.glb` alongside `LICENSE-VUENA-CC0.txt`.
+- **OpenGameArt CC0 Audio Packs** (transcoded locally to mono `.mp3` for cross-browser & iOS Safari/PWA compatibility):
+  - **Cat Purr & Meow** by Kerzoven (`https://opengameart.org/content/cat-purr-meow`, **CC0**) — `meow_soft.mp3`, `meow_happy.mp3`, `meow_food.mp3`, `purr_loop.mp3`, `purr_sleep.mp3`.
+  - **Meow** by IgnasD (`https://opengameart.org/content/meow`, **CC0**) — `meow_short.mp3`.
+  - **Crunch sounds (cucumber)** by cogitollc (`https://opengameart.org/content/crunch-sounds-cucumber`, **CC0**) — `eat_crunch.mp3`, `eat_crunch_2.mp3`.
+  - **40 CC0 Water / Splash / Slime SFX** by rubberduck (`https://opengameart.org/content/40-cc0-water-splash-slime-sfx`, **CC0**) — `drink_lap.mp3`.
+  - **100 CC0 SFX & 100 CC0 SFX 2** by rubberduck (`https://opengameart.org/content/100-cc0-sfx`, `https://opengameart.org/content/100-cc0-sfx-2`, **CC0**) — `bell_jingle.mp3`, `box_rustle.mp3`, `brush_fur.mp3`, `footstep.mp3`, `ball_bounce.mp3`, `toy_swish.mp3`.
+- **Note:** `vinish.dev` *Orange Tabby* (`CC BY 4.0`) was inspected as an upstream reference candidate and is not bundled in `public/assets/pet-care-v2/`.
+
 ## Status of the V0.2–V0.3 domain modules (DeepSeek night session)
 
 The reference checkouts listed in `docs/research/REUSE_MATRIX.md`

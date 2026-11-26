@@ -2,15 +2,10 @@ import Phaser from 'phaser';
 import { gameEventBus } from '../../eventBus';
 import type { PetSnapshot } from '../../../shared/pet/petTypes';
 import type { CatAccessoryId, CatCoatVariantId } from '../../../shared/petLiving/petVisualTypes';
-import { PetCareAutonomy } from '../../../shared/petLiving/petCare/PetCareAutonomy';
-import { derivePetCareMood } from '../../../shared/petLiving/petCare/petCareMood';
-import type { PetCareActionKind } from '../../../shared/petLiving/petCare/petCareTypes';
-import { PET_PERSONALITY_PRESETS } from '../../../shared/petLiving/petIntelligenceConfig';
 import { setPetCareModeActive } from '../../../shared/petLiving/petCare/petCareModeFlag';
 import { PetCareSessionGoals } from '../../../shared/petLiving/petCare/petCareSessionGoals';
-import { registerWorldAtlas } from '../../art/worldAtlas';
-import { PetCarePortraitRig } from './PetCarePortraitRig';
-import { PetCareRoomBackdrop } from './PetCareRoomBackdrop';
+import type { PetCareActionKind } from '../../../shared/petLiving/petCare/petCareTypes';
+import { setPetCareBridgeIdentity } from './petCareBridgeState';
 
 export interface PetCareSceneData {
   variant: CatCoatVariantId;
@@ -20,13 +15,12 @@ export interface PetCareSceneData {
   petSnapshot: PetSnapshot | null;
 }
 
+/**
+ * Lightweight Phaser bridge scene active during 3D Pet Care.
+ * Avoids mounting any hidden 2D canvas objects so GPU/CPU stay dedicated to WebGL2 3D care.
+ */
 export class PetCareScene extends Phaser.Scene {
-  private rig: PetCarePortraitRig | null = null;
-  private room: PetCareRoomBackdrop | null = null;
-  private backdrop: Phaser.GameObjects.Rectangle | null = null;
-  private autonomy: PetCareAutonomy | null = null;
   private readonly unsubs: Array<() => void> = [];
-  private sessionStartMs = 0;
   private readonly sessionGoals = new PetCareSessionGoals();
 
   constructor() {
@@ -34,80 +28,38 @@ export class PetCareScene extends Phaser.Scene {
   }
 
   init(_data: PetCareSceneData): void {
-    this.sessionStartMs = Date.now();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
   }
 
   create(data: PetCareSceneData): void {
     setPetCareModeActive(true);
-    registerWorldAtlas(this);
-    const { width, height } = this.scale;
-    const cx = width / 2;
-    const cy = height / 2 - 12;
+    this.scene.setVisible(false);
 
-    this.cameras.main.setBackgroundColor(0x120e14);
-
-    this.room = new PetCareRoomBackdrop(this, width, height);
-    this.backdrop = this.add
-      .rectangle(cx, cy, width + 8, height + 8, 0x120e14, 0.12)
-      .setScrollFactor(0)
-      .setDepth(0);
-
-    const traits = PET_PERSONALITY_PRESETS.find((p) => p.id === data.traitId)?.traits ?? PET_PERSONALITY_PRESETS[0]!.traits;
-    this.autonomy = new PetCareAutonomy(derivePetCareMood(data.petSnapshot, traits));
-
-    this.rig = new PetCarePortraitRig(
-      this,
-      cx,
-      cy,
-      data.variant,
-      data.accessory,
-      data.petName,
-      data.petSnapshot,
-      data.traitId,
-    );
-
+    setPetCareBridgeIdentity({
+      variant: data.variant,
+      accessory: data.accessory,
+      petName: data.petName,
+      traitId: data.traitId,
+      petSnapshot: data.petSnapshot,
+    });
     this.game.canvas.dataset.petCareRig = 'portrait';
     gameEventBus.emit('evt:pet-care-mode', { active: true });
 
     this.unsubs.push(
-      gameEventBus.on('cmd:pet-care-stroke', ({ zone, strokeIndex }) => {
-        this.rig?.strokeFromHud(zone, strokeIndex);
-      }),
       gameEventBus.on('evt:pet-care-stroke-done', () => {
         if (this.sessionGoals.record('stroke')) this.emitSessionGoals();
       }),
-      gameEventBus.on('evt:pet-care-refuse', () => {
-        this.autonomy?.notifyRefuse(Date.now());
+      gameEventBus.on('evt:pet-care-autonomy-cue', () => {
+        if (this.sessionGoals.record('autonomy')) this.emitSessionGoals();
       }),
       gameEventBus.on('cmd:pet-care-action', (payload) => {
-        this.handleCareAction(payload.kind, payload.sku, payload.quality, payload.ownerScope);
-      }),
-      gameEventBus.on('cmd:sync-pet', (pet) => {
-        this.rig?.syncSnapshot(pet);
-        if (this.autonomy && pet) {
-          const t = PET_PERSONALITY_PRESETS[0]!.traits;
-          this.autonomy.setMood(derivePetCareMood(pet, t));
-        }
-      }),
-      gameEventBus.on('cmd:sync-shared-pet-care-session', (session) => {
-        this.rig?.syncSharedPhysical(session.physical, session.lastActorUserId);
+        this.recordActionGoal(payload.kind);
       }),
     );
   }
 
-  private handleCareAction(
-    kind: PetCareActionKind,
-    sku?: string,
-    quality: 'normal' | 'silver' | 'gold' = 'normal',
-    ownerScope = 'shared',
-  ): void {
-    this.rig?.performAction(kind);
+  private recordActionGoal(kind: PetCareActionKind): void {
     if (this.sessionGoals.recordAction(kind)) this.emitSessionGoals();
-    // offer_food only → inventory RPC (dev LAN / Supabase); brush/pour_water stay scene-local.
-    if (kind === 'offer_food' && sku) {
-      gameEventBus.emit('evt:pet-care-request-consume', { sku, quality, ownerScope });
-    }
   }
 
   private emitSessionGoals(): void {
@@ -119,31 +71,6 @@ export class PetCareScene extends Phaser.Scene {
     });
   }
 
-  update(_time: number, deltaMs: number): void {
-    const now = Date.now();
-    const cam = this.cameras.main;
-    const cx = cam.width / 2;
-    const cy = cam.height / 2 - 12;
-    this.rig?.setPosition(cx, cy);
-    this.room?.setPosition(cx, cy);
-    this.backdrop?.setPosition(cx, cy);
-    this.rig?.update(deltaMs, now);
-
-    if (this.autonomy && this.rig) {
-      const quiet = now - this.rig.getLastInteractionMs();
-      const cue = this.autonomy.tick(now, quiet);
-      if (cue.kind === 'proactive') {
-        this.rig.performAction(cue.action);
-        gameEventBus.emit('evt:pet-care-autonomy-cue', {
-          action: cue.action,
-          bubbleVi: cue.bubbleVi,
-        });
-        if (this.sessionGoals.record('autonomy')) this.emitSessionGoals();
-        if (this.sessionGoals.recordAction(cue.action)) this.emitSessionGoals();
-      }
-    }
-  }
-
   shutdownPetCare(): void {
     this.cleanup();
   }
@@ -151,15 +78,8 @@ export class PetCareScene extends Phaser.Scene {
   private cleanup(): void {
     for (const u of this.unsubs) u();
     this.unsubs.length = 0;
-    this.rig?.destroy();
-    this.rig = null;
-    this.room?.destroy();
-    this.room = null;
-    this.backdrop?.destroy();
-    this.backdrop = null;
     setPetCareModeActive(false);
     delete this.game.canvas.dataset.petCareRig;
     gameEventBus.emit('evt:pet-care-mode', { active: false });
-    void this.sessionStartMs;
   }
 }

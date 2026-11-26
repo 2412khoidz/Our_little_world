@@ -123,6 +123,7 @@ import type { WorldClockPresentation } from '../../shared/world/worldClock';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { PetLivingMainGameDriver } from '../pet/PetLivingMainGameDriver';
 import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRuntime';
+import { getPersistedPetCareV2State } from '../pet/care/petCareBridgeState';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 import { playAvatarPostureAnim, resetAvatarSpriteOrigin } from '../avatar/avatarPostureVisual';
 import { MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
@@ -1347,11 +1348,12 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:set-paused', ({ paused }) => {
         this.paused = paused;
+        if (this.petCareMode) return;
         if (paused) {
           this.emitLocalMovement('idle');
-          this.scene.pause();
+          if (this.scene.isActive()) this.scene.pause();
         } else {
-          this.scene.resume();
+          if (this.scene.isPaused()) this.scene.resume();
         }
       }),
 
@@ -1520,14 +1522,20 @@ export class WorldScene extends Phaser.Scene {
     this.petCareMode = active;
     setPetCareModeActive(active);
 
-    if (active && this.petEntity && this.petSnapshot) {
+    if (active) {
       this.pathQueue = [];
       this.cameras.main.stopFollow();
-      this.petEntity.setCareCloseUp(false);
-      this.petEntity.setVisible(false);
+      if (this.petEntity) {
+        this.petEntity.setCareCloseUp(false);
+        this.petEntity.setVisible(false);
+      }
       this.scene.setVisible(false);
-      this.scene.pause();
-      const visual = this.petEntity.getVisualIdentity();
+      if (this.scene.isActive()) this.scene.pause();
+      const visual = this.petEntity?.getVisualIdentity() ?? {
+        variant: 'ginger-tabby' as const,
+        accessory: 'ribbon_rose' as const,
+        name: this.petSnapshot?.name ?? 'Quýt',
+      };
       enterPetCareRuntime(this.game, {
         variant: visual.variant,
         accessory: visual.accessory,
@@ -1537,6 +1545,10 @@ export class WorldScene extends Phaser.Scene {
       });
     } else {
       exitPetCareRuntime(this.game);
+      const savedCare = getPersistedPetCareV2State();
+      if (savedCare) {
+        this.livingPetDriver?.syncCareNeeds(savedCare.needs);
+      }
       this.scene.setVisible(true);
       this.scene.resume();
       if (this.petEntity && this.petSnapshot && this.currentMapId === 'home') {

@@ -11,7 +11,7 @@ import type {
   PresencePayload,
   WorldMember,
 } from '../shared/types';
-import type { SharedPetCareSession } from '../shared/petLiving/petCare/sharedPetCareSession';
+import type { SharedPetCarePatch, SharedPetCareSession } from '../shared/petLiving/petCare/sharedPetCareSession';
 import type { PetCareJ4lpanPortraitPayload } from '../shared/petLiving/petCare/petCareJ4lpanPortraitBus';
 import type { HomeBowlPresentation } from '../shared/interaction/homeBowlPresentation';
 import type { EnvInteractionHook, EnvInteractionHookKind } from '../shared/world/envInteractionHooks';
@@ -120,12 +120,22 @@ export interface GameEventMap {
   'cmd:pet-care-mode': { active: boolean };
   'cmd:pet-care-stroke': { zone: 'head' | 'chin' | 'back'; strokeIndex: number };
   'cmd:pet-care-action': {
-    kind: 'toy_yarn' | 'toy_box' | 'offer_food' | 'brush' | 'pour_water' | 'call' | 'observe';
+    kind:
+      | 'toy_yarn'
+      | 'toy_ball'
+      | 'toy_wand'
+      | 'toy_box'
+      | 'offer_food'
+      | 'brush'
+      | 'pour_water'
+      | 'call'
+      | 'observe';
     sku?: string;
     quality?: 'normal' | 'silver' | 'gold';
     ownerScope?: string;
   };
   'cmd:sync-shared-pet-care-session': SharedPetCareSession;
+  'evt:pet-care-local-patch': SharedPetCarePatch;
   'cmd:env-transition': EnvInteractionHook;
   'cmd:apply-home-bowl': { kind: 'food' | 'water' | 'fill_pitcher' };
   'evt:local-home-bowl-changed': HomeBowlPresentation;

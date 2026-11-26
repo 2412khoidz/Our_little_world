@@ -199,6 +199,13 @@ export class PetLivingMainGameDriver {
     return this.traitPresetId;
   }
 
+  syncCareNeeds(needs: Partial<Pet8Needs>): void {
+    this.simNeeds = {
+      ...this.simNeeds,
+      ...needs,
+    };
+  }
+
   getDevTelemetry(mapId: MapId, spriteVisible: boolean, nowMs: number): LivingPetDevTelemetry {
     const loco = this.movement.loco;
     return {
