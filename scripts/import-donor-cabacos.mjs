@@ -75,14 +75,14 @@ function exportVillage() {
         id: 9101,
         name: 'village-to-garden',
         type: 'portal',
-        x: 6 * TW,
-        y: 22 * TW,
+        x: 7 * TW,
+        y: 11 * TW,
         width: TW,
-        height: TW * 2,
+        height: TW,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
           { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
-          { name: 'spawnX', type: 'int', value: 9 },
+          { name: 'spawnX', type: 'int', value: 8 },
           { name: 'spawnY', type: 'int', value: 11 },
         ],
       },
@@ -113,7 +113,7 @@ function exportVillage() {
               height: TW,
               properties: [
                 { name: 'targetMapId', type: 'string', value: 'forest' },
-                { name: 'labelVi', type: 'string', value: 'Vào rừng thông Tuxemon' },
+                { name: 'labelVi', type: 'string', value: 'Vào Rừng thông' },
                 { name: 'spawnX', type: 'int', value: 8 },
                 { name: 'spawnY', type: 'int', value: 36 },
               ],
@@ -464,7 +464,8 @@ function exportVillage() {
       [15, 32, 16, 34], // crop_market door & return spawn (16,34)
       [33, 14, 34, 15], // town_hall door & return spawn (34,15) — keeps blue roof (33,12..13) blocked
       [37, 31, 39, 32], // wooden river bridge planks
-      [6, 22, 8, 22],   // village-to-garden west trail gate & bridge deck arrival (8,22); keeps (9,21)/(9,23) rails & south cliff solid
+      [7, 11, 7, 13],   // NW wooden archway gate (7,11) <-> garden and north bridge deck arrival (7,13)
+      [7, 22, 8, 22],   // west bridge approach (8,22); keeps (9,21)/(9,23) rails & south cliff solid
       [50, 3, 53, 5],   // village-to-forest north plaza road & arrival (52,5)
       [41, 30, 44, 31], // community house front sidewalk & Bé Na path
     ];

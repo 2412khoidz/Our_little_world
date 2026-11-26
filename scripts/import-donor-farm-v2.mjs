@@ -314,7 +314,7 @@ function buildFarmMap() {
         height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
-          { name: 'spawnX', type: 'int', value: 3 },
+          { name: 'spawnX', type: 'int', value: 2 },
           { name: 'spawnY', type: 'int', value: 7 },
           { name: 'labelVi', type: 'string', value: 'Về Vườn nhà' },
         ],

@@ -69,6 +69,49 @@
   font-size: 12.5px;
 }
 
+.zone-arrival-banner {
+  position: fixed;
+  top: calc(50px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 24;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: rgba(45, 29, 20, 0.9);
+  border: 1.5px solid #e4b76e;
+  box-shadow: 0 4px 14px rgba(18, 10, 6, 0.36);
+  color: #fff6e2;
+  text-align: center;
+  animation: zoneBannerFadeIn 220ms ease-out;
+}
+
+.zone-arrival-banner strong {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.zone-arrival-banner span {
+  font-size: 11px;
+  color: #f3dfb8;
+}
+
+@keyframes zoneBannerFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 .world-clock-hud__pill small {
   display: block;
   opacity: 0.88;

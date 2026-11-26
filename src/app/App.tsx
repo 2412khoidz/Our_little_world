@@ -103,6 +103,7 @@ import type { StudyControlAction, StudyMode, StudySnapshot } from '../shared/stu
 import { OnboardingScreen } from '../features/pairing/OnboardingScreen';
 import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
+import { getIslandZoneMeta } from '../shared/world/worldGraph';
 
 const DevSpikeLabModal = import.meta.env.DEV
   ? lazy(() =>
@@ -376,6 +377,33 @@ function MainCoupleApp() {
   const [farmServerNowMs, setFarmServerNowMs] = useState(0);
   const [farmBusy, setFarmBusy] = useState(false);
   const [farmShopKind, setFarmShopKind] = useState<FarmShopKind>('seed');
+  const [zoneBanner, setZoneBanner] = useState<{
+    nameVi: string;
+    subtitleVi: string;
+    id: number;
+  } | null>(null);
+  const zoneBannerTimerRef = useRef<number | null>(null);
+
+  const announceZoneEntry = useCallback((mapId: MapId) => {
+    const meta = getIslandZoneMeta(mapId);
+    const id = Date.now();
+    setZoneBanner({ nameVi: meta.nameVi, subtitleVi: meta.subtitleVi, id });
+    if (zoneBannerTimerRef.current !== null) {
+      window.clearTimeout(zoneBannerTimerRef.current);
+    }
+    zoneBannerTimerRef.current = window.setTimeout(() => {
+      setZoneBanner((cur) => (cur?.id === id ? null : cur));
+      zoneBannerTimerRef.current = null;
+    }, 2600);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (zoneBannerTimerRef.current !== null) {
+        window.clearTimeout(zoneBannerTimerRef.current);
+      }
+    };
+  }, []);
 
   const applyFarmSnapshotToUi = useCallback(
     (
@@ -1439,9 +1467,11 @@ function MainCoupleApp() {
         }
       }
       setCurrentMapId(resolvedTargetMapId);
+      announceZoneEntry(resolvedTargetMapId);
       gameEventBus.emit('cmd:set-map', {
         mapId: resolvedTargetMapId,
         spawnTile: { tileX: resolvedSpawnX, tileY: resolvedSpawnY },
+        portalId,
       });
     });
 
@@ -1548,7 +1578,7 @@ function MainCoupleApp() {
       unsubPosture();
       unsubHomeBowl();
     };
-  }, [currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
+  }, [announceZoneEntry, currentUser, refreshInventorySnapshot, refreshMailboxSnapshot, refreshPetSnapshot, refreshStudySnapshot, studySeat]);
 
   useEffect(() => {
     publishPetCarePatchRef.current = async (patch) => {
@@ -2043,6 +2073,7 @@ function MainCoupleApp() {
       gameEventBus.emit('cmd:env-transition', hook);
     }
     setCurrentMapId(mapId);
+    announceZoneEntry(mapId);
     const def = getMapDefinition(mapId);
     gameEventBus.emit('cmd:set-map', {
       mapId,
@@ -2135,6 +2166,13 @@ function MainCoupleApp() {
           </span>
         </button>
       )}
+
+      {zoneBanner && !petCareMode && !isAnyModalOpen ? (
+        <div className="zone-arrival-banner" data-testid="zone-arrival-banner" role="status">
+          <strong>{zoneBanner.nameVi}</strong>
+          <span>{zoneBanner.subtitleVi}</span>
+        </div>
+      ) : null}
 
       {!petCareMode && <LivingPetDevBanner />}
       {!petCareMode && <ExtendedWorldDevBanner />}
@@ -2343,6 +2381,7 @@ function MainCoupleApp() {
             setDecoratePreviewRotated(false);
             if (currentMapId !== target) {
               setCurrentMapId(target);
+              announceZoneEntry(target);
               const def = getMapDefinition(target);
               gameEventBus.emit('cmd:set-map', { mapId: target, spawnTile: def.defaultSpawn });
             }

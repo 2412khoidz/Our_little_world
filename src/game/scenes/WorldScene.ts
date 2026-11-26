@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { avatarConfigsEqual, DEFAULT_AVATAR_PARTNER_A } from '../../shared/avatar';
 import { getCatalogItem } from '../../shared/catalog';
 import { getMapDefinition, getMapTilePixelSize } from '../../shared/maps';
+import { getArrivalFacingForPortal } from '../../shared/world/worldGraph';
 import { MapDebugOverlay } from '../dev/mapDebugOverlay';
 import { renderOutdoorWorld } from '../world/outdoorRenderer';
 import { renderTiledWorldMapLayers } from '../world/renderTiledWorldMap';
@@ -510,9 +511,13 @@ export class WorldScene extends Phaser.Scene {
     this.playLocalMoveAnim(this.localMoving, false);
   }
 
-  private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }): void {
+  private buildMap(mapId: MapId, spawnTile?: { tileX: number; tileY: number }, portalId?: string): void {
     this.buildingMap = true;
     this.currentMapId = mapId;
+    const arrivalFacing = getArrivalFacingForPortal(portalId);
+    if (arrivalFacing) {
+      this.localFacing = arrivalFacing;
+    }
     gameAudio.setZoneMusic(mapId);
     if (mapId === 'farm') void gameAudio.preloadDomain('farming');
     if (this.petSnapshot && FOLLOW_CAT_MAPS.has(mapId)) void gameAudio.preloadDomain('pet');
@@ -628,6 +633,7 @@ export class WorldScene extends Phaser.Scene {
     this.localShadow.setPosition(px, py - 1);
     this.localLabel.setScale(s);
     this.localLabel.setPosition(px, py - this.nameTagOffsetY('none'));
+    this.playLocalMoveAnim(false, false);
     this.coupleAffectionIcon?.setVisible(false);
     for (const remote of this.remoteEntities.values()) {
       remote.sprite.setScale(s);
@@ -1518,9 +1524,9 @@ export class WorldScene extends Phaser.Scene {
         this.syncRemoteAppearancesFromMembers();
       }),
 
-      gameEventBus.on('cmd:set-map', ({ mapId, spawnTile }) => {
+      gameEventBus.on('cmd:set-map', ({ mapId, spawnTile, portalId }) => {
         if (mapId !== this.currentMapId || spawnTile) {
-          this.buildMap(mapId, spawnTile);
+          this.buildMap(mapId, spawnTile, portalId);
         }
       }),
 

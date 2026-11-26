@@ -1568,7 +1568,7 @@
           "id": 3,
           "name": "garden-to-farm",
           "type": "portal",
-          "x": 16,
+          "x": 0,
           "y": 112,
           "width": 16,
           "height": 32,
@@ -1581,7 +1581,7 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 59
+              "value": 60
             },
             {
               "name": "spawnY",
@@ -1599,9 +1599,9 @@
           "id": 4,
           "name": "garden-to-village",
           "type": "portal",
-          "x": 144,
+          "x": 128,
           "y": 208,
-          "width": 16,
+          "width": 32,
           "height": 16,
           "properties": [
             {
@@ -1612,12 +1612,12 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 8
+              "value": 7
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 22
+              "value": 13
             },
             {
               "name": "labelVi",

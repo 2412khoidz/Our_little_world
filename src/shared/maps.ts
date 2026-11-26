@@ -93,7 +93,7 @@ export const MAP_DEFINITIONS: Record<MapId, MapDefinition> = {
     'village',
     'Làng',
     '/assets/maps/village.json',
-    { tileX: 8, tileY: 22 },
+    { tileX: 42, tileY: 31 },
   ),
   farm: buildTiledZoneDefinition('farm', 'Đồng ruộng', '/assets/maps/farm.json', {
     tileX:
@@ -188,22 +188,22 @@ function buildTiledZoneDefinition(
 const GARDEN_TO_VILLAGE_PORTAL: MapPortal = {
   id: 'garden-to-village',
   labelVi: 'Vào làng',
-  tileX: 9,
+  tileX: 8,
   tileY: 13,
   radiusTiles: 1.6,
   targetMapId: 'village',
-  targetSpawnX: 8,
-  targetSpawnY: 22,
+  targetSpawnX: 7,
+  targetSpawnY: 13,
 };
 
 const GARDEN_TO_FARM_PORTAL: MapPortal = {
   id: 'garden-to-farm',
   labelVi: 'Ra nông trại',
-  tileX: 1,
+  tileX: 0,
   tileY: 7,
   radiusTiles: 1.6,
   targetMapId: 'farm',
-  targetSpawnX: 59,
+  targetSpawnX: 60,
   targetSpawnY: 22,
 };
 
