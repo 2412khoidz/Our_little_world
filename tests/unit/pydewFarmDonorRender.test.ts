@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import farmJson from '../../public/assets/maps/farm.json';
-import forestJson from '../../public/assets/maps/forest.json';
+import farmJson from '../../src/assets/maps/farm.json';
+import forestJson from '../../src/assets/maps/forest.json';
 import {
   PYDEW_DONOR_DEPTH_ORDER,
   PYDEW_DONOR_SKIP_LAYERS,

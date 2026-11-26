@@ -7,7 +7,7 @@ import { isOutdoorBlocked, isOutdoorNoPlace } from './world/outdoorCollision';
 import { isExtendedWorldDevEnabled } from './worldIntegration/extendedWorldDevFlag';
 import { isTileBlockedFromParsed, type ParsedTiledPortal } from './world/parseTiledWorldMap';
 import { getParsedTiledWorld } from './world/tiledMapRegistry';
-import farmWorldJson from '../../public/assets/maps/farm.json';
+import farmWorldJson from '../assets/maps/farm.json';
 import type { MapId } from './types';
 
 export const TILE_SIZE = 16;

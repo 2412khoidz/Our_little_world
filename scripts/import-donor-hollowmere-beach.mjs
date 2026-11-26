@@ -7,7 +7,7 @@ import path from 'node:path';
 import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const ROOT = path.resolve('public/maps/donor/hollowmere');
-const OUT_MAPS = path.resolve('public/assets/maps');
+const OUT_MAPS = path.resolve('src/assets/maps');
 const VILLAGE_JSON = path.join(OUT_MAPS, 'village.json');
 const TW = 16;
 

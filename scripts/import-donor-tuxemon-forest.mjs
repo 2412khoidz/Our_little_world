@@ -8,7 +8,7 @@ import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '..');
 const DONOR = path.join(REPO, 'public/maps/donor/tuxemon');
-const OUT_MAPS = path.join(REPO, 'public/assets/maps');
+const OUT_MAPS = path.join(REPO, 'src/assets/maps');
 const VILLAGE_JSON = path.join(OUT_MAPS, 'village.json');
 const FOREST_JSON = path.join(OUT_MAPS, 'forest.json');
 const PY = path.join(REPO, 'scripts/lib/tuxemonTmxToOlwJson.py');

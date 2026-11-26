@@ -843,7 +843,7 @@ function writeManifest() {
         replaceable: true,
       },
       {
-        path: 'public/assets/maps/home.json',
+        path: 'src/assets/maps/home.json',
         role: 'Home room Tiled JSON map (16x12 tiles)',
         author: 'Our Little World',
         license: 'CC0-1.0',
@@ -852,7 +852,7 @@ function writeManifest() {
         replaceable: true,
       },
       {
-        path: 'public/assets/maps/garden.json',
+        path: 'src/assets/maps/garden.json',
         role: 'Garden Tiled JSON map (18x14 tiles)',
         author: 'Our Little World',
         license: 'CC0-1.0',

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import farmJson from '../../public/assets/maps/farm.json';
-import beachJson from '../../public/assets/maps/beach.json';
-import shopJson from '../../public/assets/maps/shop.json';
-import forestJson from '../../public/assets/maps/forest.json';
+import farmJson from '../../src/assets/maps/farm.json';
+import beachJson from '../../src/assets/maps/beach.json';
+import shopJson from '../../src/assets/maps/shop.json';
+import forestJson from '../../src/assets/maps/forest.json';
 import { validateFarmPlotContract } from '../../scripts/lib/preserveFarmPlotContract.mjs';
 
 const recoveryEnabled = (json: { properties?: { name: string; value: unknown }[] }) =>

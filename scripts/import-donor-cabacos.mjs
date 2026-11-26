@@ -7,7 +7,7 @@ import path from 'node:path';
 import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const ROOT = path.resolve('public/maps/donor/cabacos');
-const OUT_MAPS = path.resolve('public/assets/maps');
+const OUT_MAPS = path.resolve('src/assets/maps');
 const TW = 16;
 
 function loadJson(file) {
@@ -75,8 +75,8 @@ function exportVillage() {
         id: 9101,
         name: 'village-to-garden',
         type: 'portal',
-        x: 45 * TW,
-        y: 34 * TW,
+        x: 44 * TW,
+        y: 31 * TW,
         width: TW,
         height: TW,
         properties: [
@@ -169,6 +169,7 @@ function exportVillage() {
           door: 'player_tool_shop_door',
           targetMapId: 'shop_tool',
           labelVi: 'Vào cửa hàng dụng cụ',
+          portalTile: { tileX: 28, tileY: 36 },
           spawnInterior: { tileX: 11, tileY: 13 },
         },
         {
@@ -206,15 +207,19 @@ function exportVillage() {
   const doorByName = new Map((interactionLayer?.objects ?? []).map((o) => [o.name, o]));
   for (const spec of VILLAGE_SHOP_PORTALS) {
     const door = doorByName.get(spec.door);
-    if (!door) continue;
+    if (!door && !spec.portalTile) continue;
+    const px = spec.portalTile ? spec.portalTile.tileX * TW : door.x;
+    const py = spec.portalTile ? spec.portalTile.tileY * TW : door.y;
+    const pw = spec.portalTile ? TW : (door.width ?? TW);
+    const ph = spec.portalTile ? TW : (door.height ?? TW);
     portals.objects.push({
       id: spec.id,
       name: spec.name,
       type: 'portal',
-      x: door.x,
-      y: door.y,
-      width: door.width ?? TW,
-      height: door.height ?? TW,
+      x: px,
+      y: py,
+      width: pw,
+      height: ph,
       properties: [
         { name: 'targetMapId', type: 'string', value: spec.targetMapId },
         { name: 'labelVi', type: 'string', value: spec.labelVi },
@@ -424,23 +429,14 @@ function exportVillage() {
 
   const colLayer = src.layers.find((l) => l.name === 'Collision' && l.type === 'tilelayer');
   const pathsLayer = src.layers.find((l) => l.name === 'paths' && l.type === 'tilelayer');
-  const bldLayer = src.layers.find((l) => l.name === 'building' && l.type === 'tilelayer');
-  const wallsLayer = src.layers.find((l) => l.name === 'walls' && l.type === 'tilelayer');
-  const wellsLayer = src.layers.find((l) => l.name === 'wells' && l.type === 'tilelayer');
   if (colLayer?.data) {
-    // 1. Clear ALL stray invisible walls sitting directly on walkable road/path tiles
-    if (pathsLayer?.data) {
-      for (let i = 0; i < colLayer.data.length; i += 1) {
-        const hasPath = (pathsLayer.data[i] ?? 0) > 0;
-        const hasSolid =
-          (bldLayer?.data?.[i] ?? 0) > 0 ||
-          (wallsLayer?.data?.[i] ?? 0) > 0 ||
-          (wellsLayer?.data?.[i] ?? 0) > 0;
-        if (hasPath && !hasSolid) {
-          colLayer.data[i] = 0;
-        }
-      }
+    // 1. Keep Cabacos Collision intact so fences, trees, cliffs & houses cannot be walked through,
+    //    and explicitly block roof edges that lacked collision in upstream TMJ.
+    for (let x = 20; x <= 27; x += 1) {
+      colLayer.data[33 * src.width + x] = 66; // tool_shop red roof north edge
     }
+    colLayer.data[34 * src.width + 45] = 66; // green-roofed house east roof/chimney edge
+    colLayer.data[35 * src.width + 45] = 66;
 
     // 2. Extend east wooden harbor pier cleanly all the way to east map boundary (x=78..85, y=31..33)
     const pierRowGids = { 31: 295, 32: 359, 33: 423 };
@@ -454,15 +450,15 @@ function exportVillage() {
       }
     }
 
-    // 3. Clear generous walkable aprons around every door entrance, spawn tile & portal gate
+    // 3. Clear ONLY exact doorway thresholds, return sidewalk spawns & gate trails (never overlap roofs or fences)
     const clearAprons = [
-      [32, 23, 33, 26], // seed_shop door & sidewalk
-      [27, 35, 30, 38], // tool_shop door & East road
-      [15, 32, 17, 34], // crop_market door & Plaza
-      [32, 13, 35, 16], // town_hall door & North square
-      [40, 30, 46, 35], // player_house_door & garden gate
-      [1, 28, 5, 31],   // village-to-farm west road
-      [11, 1, 14, 6],   // village-to-forest north trail
+      [32, 24, 33, 25], // seed_shop door & return spawn (32,25)
+      [28, 36, 30, 37], // tool_shop door (28,36) & return spawn (30,36) — keeps (27,35) red roof blocked
+      [15, 32, 16, 34], // crop_market door & return spawn (16,34)
+      [33, 13, 34, 15], // town_hall door & return spawn (34,15)
+      [41, 30, 44, 31], // player_house_door & open road beside garden portal (44,31)
+      [1, 29, 3, 30],   // village-to-farm west road
+      [12, 1, 13, 4],   // village-to-forest north trail
     ];
     for (const [x0, y0, x1, y1] of clearAprons) {
       for (let y = y0; y <= y1; y += 1) {
@@ -790,7 +786,7 @@ const INTERIOR_SPECS = [
 
 const VILLAGE_DOOR_SPAWN = {
   player_seed_shop_door: { tileX: 32, tileY: 25 },
-  player_tool_shop_door: { tileX: 29, tileY: 36 },
+  player_tool_shop_door: { tileX: 30, tileY: 36 },
   player_crop_market_door: { tileX: 16, tileY: 34 },
   player_town_hall_door: { tileX: 34, tileY: 15 },
 };

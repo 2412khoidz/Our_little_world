@@ -7,7 +7,7 @@ interface HeldItemChipProps {
 }
 
 export function HeldItemChip({ heldItem, onClear }: HeldItemChipProps) {
-  if (heldItem.itemKind === 'none' || !heldItem.itemSku) return null;
+  if (heldItem.itemKind === 'none' || heldItem.itemKind === 'tool' || !heldItem.itemSku) return null;
 
   return (
     <div className="olw-held-item-chip" data-testid="held-item-chip" role="status">

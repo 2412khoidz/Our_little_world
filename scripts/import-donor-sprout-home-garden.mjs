@@ -8,8 +8,8 @@ import { buildGardenMap, buildHomeMap, buildSproutTilesets } from './lib/sproutH
 
 const REPO = path.resolve(import.meta.dirname, '..');
 const MANIFEST = path.join(REPO, 'public/maps/donor/sprout-lands/MANIFEST.json');
-const HOME_OUT = path.join(REPO, 'public/assets/maps/home.json');
-const GARDEN_OUT = path.join(REPO, 'public/assets/maps/garden.json');
+const HOME_OUT = path.join(REPO, 'src/assets/maps/home.json');
+const GARDEN_OUT = path.join(REPO, 'src/assets/maps/garden.json');
 const MAPS_TS = path.join(REPO, 'src/shared/maps.ts');
 
 function recoveryProps() {

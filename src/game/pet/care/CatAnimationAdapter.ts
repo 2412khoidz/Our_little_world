@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { PetCareTailMode } from '../../../shared/petLiving/petCare/petCareTypes';
+import { solveVuenaFrontPawIk } from './catPawIk';
 import type { HugKickOverlayState, IPetCareRig, LookTarget, PawSwipeOverlayState } from './petCareActorTypes';
 
 export const VUENA_CLIP_NAMES = [
@@ -43,11 +44,17 @@ export function selectVuenaClipForState(params: {
   if (pose === 'jump') {
     return { clip: 'jump', timeScale: 1.45, loopOnce: true, fadeSec: 0.09 };
   }
-  if (pose === 'paw_bat' || pose === 'attack') {
-    return { clip: 'attack', timeScale: 1.5, loopOnce: false, fadeSec: 0.08 };
+  if (pose === 'attack') {
+    return { clip: 'attack', timeScale: 1.4, loopOnce: true, fadeSec: 0.1 };
+  }
+  if (pose === 'paw_bat' || pose === 'knead') {
+    return { clip: 'idle', timeScale: 0.95, loopOnce: false, fadeSec: 0.12 };
   }
   if (pose === 'hug_kick' || pose === 'belly') {
-    return { clip: 'death', timeScale: 1.0, loopOnce: true, fadeSec: 0.22, clampTimeSec: 0.62 };
+    return { clip: 'idle', timeScale: 0.85, loopOnce: false, fadeSec: 0.22 };
+  }
+  if (pose === 'death_dramatic') {
+    return { clip: 'death', timeScale: 1.0, loopOnce: true, fadeSec: 0.22 };
   }
   if (pose === 'eat') {
     return { clip: 'eat', timeScale: 1.05, loopOnce: false, fadeSec: 0.18 };
@@ -131,8 +138,8 @@ function rotateBoneAroundActorAxis(
   bone.quaternion.multiply(_deltaQ);
 }
 
-/** Smooth closed-eyelid local translation delta observed in `vuena-cat.glb` (sleep / hit frames). */
-const VUENA_LIDS_CLOSED_DELTA = new THREE.Vector3(0, 0.046, 0.021);
+/** Exact closed-eyelid local translation from `vuena-cat.glb` (`sleep` / `hit` midframe). */
+const VUENA_LIDS_CLOSED_DELTA = new THREE.Vector3(0, 0.0455, 0.0207);
 
 export class CatAnimationAdapter implements IPetCareRig {
   pose = 'stand';
@@ -169,12 +176,13 @@ export class CatAnimationAdapter implements IPetCareRig {
   private lookYaw = 0;
   private lookPitch = 0;
   private headTiltCur = 0;
-  private lidCur = 0;
   private blinkTimer = 2.6;
-  private blinkAmount = 0;
+  private blinkHoldSec = 0;
+  private happyBlinkTimer = 2.1;
   private wagPhase = 0;
   private readonly restLidsPos = new THREE.Vector3(0, 0, 0);
   private readonly restHipsPos = new THREE.Vector3(0, 0, 0);
+  private hugRollCur = 0;
 
   constructor(
     private readonly actorGroup: THREE.Group,
@@ -278,9 +286,14 @@ export class CatAnimationAdapter implements IPetCareRig {
     this.switchClip(selection);
     this.mixer.update(dt);
 
-    // Apply vertical jump lift & lean cleanly on animation root
-    this.animRoot.position.y = this.rootLift;
-    this.animRoot.rotation.z = this.rootRoll;
+    // Apply vertical jump lift / hug side-roll cleanly on animation root
+    const wantHugRoll = this.hugKick.active
+      ? Math.min(1, this.hugKick.phase / 0.28) *
+        (this.hugKick.phase > 1.25 ? Math.max(0, 1 - (this.hugKick.phase - 1.25) / 0.3) : 1)
+      : 0;
+    this.hugRollCur += (wantHugRoll - this.hugRollCur) * (1 - Math.exp(-14 * dt));
+    this.animRoot.position.y = this.rootLift - 0.042 * this.hugRollCur;
+    this.animRoot.rotation.z = this.rootRoll + 1.12 * this.hugRollCur;
 
     this.applyAdditiveOverlays(dt);
   }
@@ -288,17 +301,25 @@ export class CatAnimationAdapter implements IPetCareRig {
   private applyAdditiveOverlays(dt: number): void {
     this.actorGroup.updateMatrixWorld(true);
 
-    // 1. Blink + Happy ^^ Lids overlay (only override Lids when open or blinking/happy, let sleep clip handle sleep)
+    // 1. Crisp binary Eyelid overlay (exact GLB rest or exact closed offset — never half-open rim clipping)
     this.blinkTimer -= dt;
     if (this.blinkTimer <= 0) {
-      this.blinkAmount = 1;
-      this.blinkTimer = 2.4 + Math.random() * 3.2;
+      this.blinkHoldSec = 0.16;
+      this.blinkTimer = 2.5 + Math.random() * 3.0;
     }
-    this.blinkAmount = Math.max(0, this.blinkAmount - dt * 6.5);
-    const wantLid = this.pose === 'sleep' ? 0 : Math.max(this.eyesClosed, this.happy > 0.65 ? 0.72 : 0, this.blinkAmount);
-    this.lidCur += (wantLid - this.lidCur) * (1 - Math.exp(-16 * dt));
+    let happyBlink = false;
+    if (this.happy > 0.65) {
+      this.happyBlinkTimer -= dt;
+      if (this.happyBlinkTimer <= 0) {
+        this.blinkHoldSec = Math.max(this.blinkHoldSec, 0.34);
+        this.happyBlinkTimer = 2.2 + Math.random() * 1.4;
+      }
+      happyBlink = this.blinkHoldSec > 0;
+    }
+    this.blinkHoldSec = Math.max(0, this.blinkHoldSec - dt);
+    const closedBinary = this.eyesClosed > 0.5 || this.blinkHoldSec > 0 || happyBlink ? 1 : 0;
     if (this.bones.Lids && this.pose !== 'sleep') {
-      this.bones.Lids.position.copy(this.restLidsPos).addScaledVector(VUENA_LIDS_CLOSED_DELTA, THREE.MathUtils.clamp(this.lidCur, 0, 1));
+      this.bones.Lids.position.copy(this.restLidsPos).addScaledVector(VUENA_LIDS_CLOSED_DELTA, closedBinary);
     }
 
     // 2. Smooth head LookAt + Tilt + Sniff/Groom nod
@@ -367,62 +388,76 @@ export class CatAnimationAdapter implements IPetCareRig {
       rotateBoneAroundActorAxis(this.bones.Tail_2, this.actorGroup, new THREE.Vector3(0, 1, 0), sideSign * 0.75);
     }
 
-    // 6. Grooming paw-lick additive gesture when sitting in groom pose
+    // 6. Grooming paw-lick & P3 cozy cushion kneading overlays
     if (this.pose === 'groom') {
       const lick = Math.sin(this.elapsed * 5.2);
       rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.95 - lick * 0.18);
       rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.45 + lick * 0.2);
       rotateBoneAroundActorAxis(this.bones.Head, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.24 + lick * 0.1);
+    } else if (this.pose === 'knead') {
+      const phase = this.elapsed * 4.4;
+      const leftLift = Math.max(0, Math.sin(phase));
+      const rightLift = Math.max(0, -Math.sin(phase));
+      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, new THREE.Vector3(0, 0, 1), Math.sin(phase) * 0.06);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.44 * leftLift + 0.08 * (1 - leftLift));
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.34 * leftLift);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.44 * rightLift + 0.08 * (1 - rightLift));
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.34 * rightLift);
     }
 
-    // 7. Interactive Front-Paw Raise & Bat Swipe (for ball, yarn, wand!)
+    // 7. Interactive Analytical Front-Paw IK Swipe (targets live 3D ball/yarn/wand coordinates!)
     if (this.pawSwipe.active) {
       const p = THREE.MathUtils.clamp(this.pawSwipe.progress, 0, 1);
       const isLeft = this.pawSwipe.side === 'L';
-      const upper = isLeft ? this.bones.FrontUpperLeg_L : this.bones.FrontUpperLeg_R;
-      const lower = isLeft ? this.bones.FrontLowerLeg_L : this.bones.FrontLowerLeg_R;
+      const upperActive = isLeft ? this.bones.FrontUpperLeg_L : this.bones.FrontUpperLeg_R;
+      const lowerActive = isLeft ? this.bones.FrontLowerLeg_L : this.bones.FrontLowerLeg_R;
+      const upperSupport = isLeft ? this.bones.FrontUpperLeg_R : this.bones.FrontUpperLeg_L;
 
-      // 0..0.42 raise high (lift up + forward), 0.42..0.65 crisp strike swing down/forward, 0.65..1 recover
-      let raiseAngle: number;
-      let reachAngle: number;
-      let sweepSide = 0;
-      if (p < 0.42) {
-        const k = THREE.MathUtils.smoothstep(p / 0.42, 0, 1);
-        raiseAngle = -1.18 * k;
-        reachAngle = -0.35 * k;
-      } else if (p < 0.65) {
-        const k = THREE.MathUtils.smoothstep((p - 0.42) / 0.23, 0, 1);
-        raiseAngle = THREE.MathUtils.lerp(-1.18, -0.52, k);
-        reachAngle = THREE.MathUtils.lerp(-0.35, 0.35, k);
-        sweepSide = (isLeft ? -0.35 : 0.35) * k;
+      let weight = 0;
+      let anticipation = 0;
+      if (this.pose === 'jump') {
+        // Mid-air wand pounce swipe peaks cleanly around jump apex
+        weight = Math.sin(p * Math.PI);
+      } else if (p < 0.32) {
+        anticipation = THREE.MathUtils.smoothstep(p / 0.32, 0, 1);
+      } else if (p < 0.64) {
+        const k = THREE.MathUtils.smoothstep((p - 0.32) / 0.24, 0, 1);
+        weight = k;
+        anticipation = 1 - k;
       } else {
-        const k = 1 - THREE.MathUtils.smoothstep((p - 0.65) / 0.35, 0, 1);
-        raiseAngle = -0.52 * k;
-        reachAngle = 0.35 * k;
-        sweepSide = (isLeft ? -0.35 : 0.35) * k;
+        weight = 1 - THREE.MathUtils.smoothstep((p - 0.64) / 0.36, 0, 1);
       }
 
-      rotateBoneAroundActorAxis(upper, this.actorGroup, new THREE.Vector3(1, 0, 0), raiseAngle);
-      rotateBoneAroundActorAxis(upper, this.actorGroup, new THREE.Vector3(0, 1, 0), sweepSide);
-      rotateBoneAroundActorAxis(lower, this.actorGroup, new THREE.Vector3(1, 0, 0), reachAngle);
+      solveVuenaFrontPawIk({
+        actorGroup: this.actorGroup,
+        spine: this.bones.Spine,
+        upperActive,
+        lowerActive,
+        upperSupport,
+        targetWorld: this.pawSwipe.targetWorld,
+        side: this.pawSwipe.side,
+        weight,
+        anticipation,
+      });
     }
 
-    // 8. Toy Hug (both front paws inward) + Bunny-Kick (rapid alternating hind legs!)
-    if (this.hugKick.active) {
-      const kick = Math.sin(this.hugKick.phase * 18);
-      // Hug toy inward with both front paws
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.68);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(0, 0, 1), -0.32);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.68);
-      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(0, 0, 1), 0.32);
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.35);
-      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.35);
+    // 8. Smooth Side-Roll Yarn Hug + Rhythmic Alternating Hind-Leg Bunny Kick (zero death clip)
+    if (this.hugKick.active || this.hugRollCur > 0.02) {
+      const r = this.hugKick.active ? Math.max(0.2, this.hugRollCur) : this.hugRollCur;
+      const kick = Math.sin(this.hugKick.phase * 16);
+      rotateBoneAroundActorAxis(this.bones.Spine, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.24 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.78 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_L, this.actorGroup, new THREE.Vector3(0, 0, 1), -0.3 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.78 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontUpperLeg_R, this.actorGroup, new THREE.Vector3(0, 0, 1), 0.3 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.42 * r);
+      rotateBoneAroundActorAxis(this.bones.FrontLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.42 * r);
 
-      // Bunny kick hind legs playfully
-      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.55 + kick * 0.55);
-      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), -0.55 - kick * 0.55);
-      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.45 - kick * 0.45);
-      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), 0.45 + kick * 0.45);
+      // Rhythmic alternating hind-leg bunny kicks against the hugged yarn
+      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), (-0.52 + kick * 0.56) * r);
+      rotateBoneAroundActorAxis(this.bones.BackUpperLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), (-0.52 - kick * 0.56) * r);
+      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_L, this.actorGroup, new THREE.Vector3(1, 0, 0), (0.42 - kick * 0.44) * r);
+      rotateBoneAroundActorAxis(this.bones.BackLowerLeg_R, this.actorGroup, new THREE.Vector3(1, 0, 0), (0.42 + kick * 0.44) * r);
     }
   }
 

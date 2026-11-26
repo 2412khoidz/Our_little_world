@@ -8,8 +8,8 @@ import path from 'node:path';
 import { validateFarmPlotContract } from './lib/preserveFarmPlotContract.mjs';
 import { RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
-const OUT = path.resolve('public/assets/maps/farm.json');
-const VILLAGE_JSON = path.resolve('public/assets/maps/village.json');
+const OUT = path.resolve('src/assets/maps/farm.json');
+const VILLAGE_JSON = path.resolve('src/assets/maps/village.json');
 const CONTRACT_PATH = path.resolve('src/shared/world/farmPlotContract.v1.json');
 const OLW_SHA = '79e423defc12bd99327cfcc28bf7ec0085996244';
 

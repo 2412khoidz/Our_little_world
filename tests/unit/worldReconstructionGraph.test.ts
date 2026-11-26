@@ -3,8 +3,8 @@ import { getMapDefinition, getMapTilePixelSize } from '../../src/shared/maps';
 import { buildFarmSlicePlotInteractables } from '../../src/shared/farming/farmPlayableBridge';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import type { MapId } from '../../src/shared/types';
-import beachJson from '../../public/assets/maps/beach.json';
-import villageJson from '../../public/assets/maps/village.json';
+import beachJson from '../../src/assets/maps/beach.json';
+import villageJson from '../../src/assets/maps/village.json';
 
 function reachableTiles(mapId: MapId): Set<string> {
   const def = getMapDefinition(mapId);

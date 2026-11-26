@@ -238,7 +238,7 @@ class GroomAct extends CatAct {
 class SleepAct extends CatAct {
   readonly name = 'sleep';
   priority = 1;
-  private asleep = false;
+  private stage: 'walk' | 'knead' | 'asleep' = 'walk';
   private zzzCooldown = 1.6;
   constructor(b: CatBrain, private readonly maxDur = 12) {
     super(b);
@@ -250,21 +250,35 @@ class SleepAct extends CatAct {
       speed: 0.22,
       arrive: 0.14,
       onArrive: () => {
-        this.asleep = true;
+        this.stage = 'knead';
         this.t = 0;
         this.cat.stop();
-        this.rig.setPose('sleep', 2.6);
-        this.rig.eyesClosed = 1;
-        this.rig.tailMode = 'idle';
-        this.rig.wagAmp = 0.02;
-        this.env.setPurr?.('sleep');
+        this.rig.setPose('knead', 4);
+        this.rig.happy = 0.75;
+        this.env.setPurr?.('active');
+        this.env.emote('heart', this.cat.headWorld());
       },
     });
   }
   step(dt: number) {
-    if (!this.asleep) {
+    if (this.stage === 'walk') {
       if (this.t > 7) {
-        this.asleep = true;
+        this.stage = 'asleep';
+        this.rig.setPose('sleep', 2.6);
+        this.rig.eyesClosed = 1;
+        this.env.setPurr?.('sleep');
+      }
+      return;
+    }
+    if (this.stage === 'knead') {
+      if (this.t >= 2.0) {
+        this.stage = 'asleep';
+        this.t = 0;
+        this.rig.happy = 0;
+        this.rig.setPose('sleep', 2.6);
+        this.rig.eyesClosed = 1;
+        this.rig.tailMode = 'idle';
+        this.rig.wagAmp = 0.02;
         this.env.setPurr?.('sleep');
       }
       return;
@@ -279,6 +293,7 @@ class SleepAct extends CatAct {
   }
   stop() {
     this.env.setPurr?.('off');
+    this.rig.happy = 0;
     this.rig.eyesClosed = 0;
     this.cat.stop();
     this.rig.setPose('lie', 4);
@@ -332,6 +347,7 @@ class PlayToyAct extends CatAct {
       this.rig.pawSwipe.side = this.swipeSide;
       this.rig.pawSwipe.progress = 0;
       this.rig.pawSwipe.active = true;
+      this.rig.pawSwipe.targetWorld = this.toy.object.position;
     }
   }
 
@@ -383,6 +399,7 @@ class PlayToyAct extends CatAct {
       const progress = Math.min(1, this.phaseT / 0.62);
       if (this.rig.pawSwipe) {
         this.rig.pawSwipe.progress = progress;
+        this.rig.pawSwipe.targetWorld = tp;
       }
 
       // Sync exact paw-contact frame (54%) with ToyWorld physics impulse + sound!
@@ -501,12 +518,23 @@ class ChaseWandAct extends CatAct {
     const floorTarget = new THREE.Vector3(lure.x, 0, lure.z);
     const dist = this.cat.distanceTo(floorTarget);
 
-    if (this.cat.jump) return;
+    if (this.cat.jump) {
+      if (this.rig.pawSwipe) {
+        this.rig.pawSwipe.active = true;
+        this.rig.pawSwipe.side = this.altSide;
+        this.rig.pawSwipe.targetWorld = lure;
+        this.rig.pawSwipe.progress = THREE.MathUtils.clamp(this.cat.jump.t / Math.max(0.05, this.cat.jump.dur), 0, 1);
+      }
+      return;
+    }
 
     if (this.pawBatting) {
       this.pawBatT += dt;
       const progress = Math.min(1, this.pawBatT / 0.56);
-      if (this.rig.pawSwipe) this.rig.pawSwipe.progress = progress;
+      if (this.rig.pawSwipe) {
+        this.rig.pawSwipe.progress = progress;
+        this.rig.pawSwipe.targetWorld = lure;
+      }
       if (!this.pawHitDone && progress >= 0.54) {
         this.pawHitDone = true;
         this.env.impulseWand(new THREE.Vector3((Math.random() - 0.5) * 0.15, 0.11, (Math.random() - 0.5) * 0.15));
@@ -539,6 +567,7 @@ class ChaseWandAct extends CatAct {
           this.rig.pawSwipe.side = this.altSide;
           this.rig.pawSwipe.progress = 0;
           this.rig.pawSwipe.active = true;
+          this.rig.pawSwipe.targetWorld = lure;
         }
         return;
       }
@@ -546,6 +575,7 @@ class ChaseWandAct extends CatAct {
       const to = floorTarget.clone().lerp(this.cat.position, 0.22);
       const hopH = THREE.MathUtils.clamp(lure.y * 0.55, 0.08, 0.22);
       this.cat.jumpTo(to, hopH, 0.38, () => {
+        if (this.rig.pawSwipe) this.rig.pawSwipe.active = false;
         this.env.impulseWand(new THREE.Vector3((Math.random() - 0.5) * 0.12, 0.09, (Math.random() - 0.5) * 0.12));
         this.env.sound?.('toy_swish', { intensity: 0.8 });
         this.env.sound?.('bell_jingle', { intensity: 0.7 });

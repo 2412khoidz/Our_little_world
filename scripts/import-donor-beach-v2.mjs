@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
-const OUT = path.resolve('public/assets/maps/beach.json');
-const VILLAGE_JSON = path.resolve('public/assets/maps/village.json');
+const OUT = path.resolve('src/assets/maps/beach.json');
+const VILLAGE_JSON = path.resolve('src/assets/maps/village.json');
 const OLW_SHA = '79e423defc12bd99327cfcc28bf7ec0085996244';
 const TW = 16;
 const W = 56;

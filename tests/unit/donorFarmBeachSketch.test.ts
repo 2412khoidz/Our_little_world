@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateFarmPlotContract } from '../../scripts/lib/preserveFarmPlotContract.mjs';
-import farmJson from '../../public/assets/maps/farm.json';
-import beachJson from '../../public/assets/maps/beach.json';
+import farmJson from '../../src/assets/maps/farm.json';
+import beachJson from '../../src/assets/maps/beach.json';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 
 describe('donor farm/beach sketch', () => {

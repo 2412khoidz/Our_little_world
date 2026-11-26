@@ -7,6 +7,7 @@ import {
 } from '../../shared/donor/cabacos-79e423d/farmHeldToolPresentation';
 import { ensureLivingItemTextures, LIVING_ITEMS_ATLAS_KEY } from '../pet/petSpriteBuilder';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
+import type { DonorToolActionState } from './donorPydewToolController';
 
 export class HeldItemRenderer {
   private readonly image: Phaser.GameObjects.Image;
@@ -18,7 +19,7 @@ export class HeldItemRenderer {
     this.image = scene.add
       .image(0, 0, LIVING_ITEMS_ATLAS_KEY, 'food_kibble')
       .setOrigin(0.5, 0.5)
-      .setScale(0.75)
+      .setScale(0.55)
       .setVisible(false);
   }
 
@@ -77,50 +78,92 @@ export class HeldItemRenderer {
     held: HeldItemState,
     timeMs: number,
     avatarScale = 1,
+    toolAction: DonorToolActionState | null = null,
   ): void {
-    if (held.itemKind === 'none' || !this.applyHeldVisual(held)) {
+    const toolHeld = held.itemKind === 'tool';
+    const actionActive = Boolean(toolAction?.active) || (toolHeld && held.temporaryActionState !== 'none');
+
+    // Never paste selected hotbar tools continuously over the character while idling or walking!
+    if (held.itemKind === 'none' || (toolHeld && !actionActive) || !this.applyHeldVisual(held)) {
       this.image.setVisible(false);
       this.image.setRotation(0);
+      this.image.setFlipX(false);
       return;
     }
 
-    const toolHeld = held.itemKind === 'tool';
+    if (toolHeld && actionActive) {
+      const p = toolAction?.active ? toolAction.progress : (Math.sin(timeMs / 95) * 0.5 + 0.5);
+      const isWaterCan = toolAction?.toolKind === 'water' || held.itemSku?.includes('water');
+      const useFacing = toolAction?.active ? toolAction.facing : facing;
+      this.image.setScale((isWaterCan ? 0.54 : 0.6) * avatarScale);
+      this.image.setFlipX(useFacing === 'left');
+      this.image.setOrigin(
+        isWaterCan ? 0.5 : useFacing === 'left' ? 0.8 : 0.2,
+        isWaterCan ? 0.5 : 0.85,
+      );
+
+      // Directional swing arc (wind-up -> impact strike) or watering-can tilt
+      const swingCurve = p < 0.35
+        ? -0.82 * (p / 0.35)
+        : -0.82 + 1.75 * Math.min(1, (p - 0.35) / 0.45);
+      const rot = isWaterCan
+        ? (useFacing === 'left' ? -0.45 : 0.45) * Math.sin(p * Math.PI)
+        : (useFacing === 'left' ? -swingCurve : swingCurve);
+
+      let ox: number;
+      let oy: number;
+      let depth = avatarDepth + 3;
+      if (useFacing === 'left') {
+        ox = -6 * avatarScale;
+        oy = -5.5 * avatarScale;
+      } else if (useFacing === 'right') {
+        ox = 6 * avatarScale;
+        oy = -5.5 * avatarScale;
+      } else if (useFacing === 'up') {
+        ox = 3.5 * avatarScale;
+        oy = -8 * avatarScale;
+        depth = avatarDepth - 2;
+      } else {
+        ox = -3 * avatarScale;
+        oy = -3 * avatarScale;
+      }
+
+      this.image.setPosition(Math.round(avatarX + ox), Math.round(avatarY + oy));
+      this.image.setRotation(rot);
+      this.image.setDepth(depth);
+      this.image.setVisible(true);
+      return;
+    }
+
+    // Carried non-tool items (gifts, flowers, food, crops, seeds): natural hands/waist carry pose
     const seedHeld = Boolean(held.itemSku?.startsWith('seed_'));
-    const baseScale = toolHeld ? 0.56 : seedHeld ? 0.22 : 0.72;
-    this.image.setScale(baseScale * avatarScale);
+    this.image.setOrigin(0.5, 0.5);
+    this.image.setFlipX(false);
+    this.image.setRotation(0);
+    this.image.setScale((seedHeld ? 0.2 : 0.54) * avatarScale);
 
-    const walkBob = moving ? Math.sin(timeMs / 90) * 1.1 * avatarScale : 0;
-    const toolSwing =
-      toolHeld && held.temporaryActionState === 'none' && moving
-        ? Math.sin(timeMs / 120) * 1.3 * avatarScale
-        : 0;
-    const actionActive = held.temporaryActionState !== 'none';
-    const actionBob = actionActive ? -2.2 * avatarScale : toolSwing;
-    const swingAngle = actionActive
-      ? (facing === 'left' ? -0.52 : 0.52) * Math.sin(timeMs / 75)
-      : 0;
-
+    const walkBob = moving ? Math.sin(timeMs * 0.014) * 0.7 * avatarScale : 0;
     let ox: number;
     let oy: number;
-    let depth = avatarDepth + 1;
+    let depth = avatarDepth + 3;
 
     if (facing === 'left') {
-      ox = -7 * avatarScale;
-      oy = -8 * avatarScale + walkBob + actionBob;
+      ox = -5.5 * avatarScale;
+      oy = -5 * avatarScale + walkBob;
     } else if (facing === 'right') {
-      ox = 7 * avatarScale;
-      oy = -8 * avatarScale + walkBob + actionBob;
+      ox = 5.5 * avatarScale;
+      oy = -5 * avatarScale + walkBob;
     } else if (facing === 'up') {
-      ox = 5 * avatarScale;
-      oy = -11 * avatarScale + walkBob + actionBob;
-      depth = avatarDepth - 1;
+      ox = 0;
+      oy = -6.5 * avatarScale + walkBob;
+      depth = avatarDepth - 4;
     } else {
-      ox = -5 * avatarScale;
-      oy = -7 * avatarScale + walkBob + actionBob;
+      ox = 0;
+      oy = -4.5 * avatarScale + walkBob;
+      depth = avatarDepth + 4;
     }
 
     this.image.setPosition(Math.round(avatarX + ox), Math.round(avatarY + oy));
-    this.image.setRotation(swingAngle);
     this.image.setDepth(depth);
     this.image.setVisible(true);
   }

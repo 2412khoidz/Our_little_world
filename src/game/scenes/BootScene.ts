@@ -8,9 +8,10 @@ import {
 } from '../../shared/donor/pydewFarmerCharacterSheet';
 import { preloadWorldAtlas, registerWorldAtlas } from '../art/worldAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
-import farmWorldJson from '../../../public/assets/maps/farm.json';
-import homeWorldJson from '../../../public/assets/maps/home.json';
-import gardenWorldJson from '../../../public/assets/maps/garden.json';
+import { TILED_MAP_RAW_JSON_BY_PHASER_KEY } from '../../shared/world/tiledMapRegistry';
+import farmWorldJson from '../../assets/maps/farm.json';
+import homeWorldJson from '../../assets/maps/home.json';
+import gardenWorldJson from '../../assets/maps/garden.json';
 import { PYDEW_RAIN_DROP_TEXTURE_KEYS, PYDEW_RAIN_DROP_URLS } from '../../shared/donor/pydew/pydewRainPresentation';
 import { sproutTextureKey } from '../world/renderDonorSproutMap';
 import {
@@ -94,18 +95,14 @@ export class BootScene extends Phaser.Scene {
     preloadWorldAtlas(this);
     this.load.image('tileset-cozy', '/assets/starter/tileset-cozy.png');
     this.load.image('furniture-cozy', '/assets/starter/furniture-cozy.png');
-    this.load.tilemapTiledJSON('map-home', '/assets/maps/home.json');
-    this.load.tilemapTiledJSON('map-garden', '/assets/maps/garden.json');
-    this.load.tilemapTiledJSON('map-meadow', '/assets/maps/meadow.json');
-    this.load.tilemapTiledJSON('map-village', '/assets/maps/village.json');
-    this.load.tilemapTiledJSON('map-farm', '/assets/maps/farm.json');
-    this.load.tilemapTiledJSON('map-forest', '/assets/maps/forest.json');
-    this.load.tilemapTiledJSON('map-beach', '/assets/maps/beach.json');
-    this.load.tilemapTiledJSON('map-shop', '/assets/maps/shop.json');
-    this.load.tilemapTiledJSON('map-shop-seed', '/assets/maps/shop_seed.json');
-    this.load.tilemapTiledJSON('map-shop-tool', '/assets/maps/shop_tool.json');
-    this.load.tilemapTiledJSON('map-shop-crop-market', '/assets/maps/shop_crop_market.json');
-    this.load.tilemapTiledJSON('map-shop-town-hall', '/assets/maps/shop_town_hall.json');
+    for (const [key, mapJson] of Object.entries(TILED_MAP_RAW_JSON_BY_PHASER_KEY)) {
+      if (!this.cache.tilemap.exists(key)) {
+        this.cache.tilemap.add(key, {
+          format: Phaser.Tilemaps.Formats.TILED_JSON,
+          data: structuredClone(mapJson),
+        });
+      }
+    }
     this.load.image('donor-cabacos-ts_map', '/maps/donor/cabacos/ts_map.png');
     this.load.image('donor-cabacos-ts_forest', '/maps/donor/cabacos/ts_forest.png');
     const tuxemonTilesets = [

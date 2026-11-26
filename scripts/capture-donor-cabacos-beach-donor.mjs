@@ -7,6 +7,7 @@ import { PNG } from 'pngjs';
 import { encodePng } from './pixel-canvas.mjs';
 
 const ROOT = path.resolve('public');
+const MAPS_ROOT = path.resolve('src/assets/maps');
 const OUT =
   process.env.OUT ||
   '/cursor/stores/bc-2e22f11f-fecd-46d0-800e-ec62bb2a932f/media/map-transplant-beach-donor.png';
@@ -35,7 +36,7 @@ function gidTile(tilesets, gid) {
 }
 
 function main() {
-  const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/maps/beach.json'), 'utf8'));
+  const map = JSON.parse(fs.readFileSync(path.join(MAPS_ROOT, 'beach.json'), 'utf8'));
   const w = map.width;
   const h = map.height;
   const textures = new Map();

@@ -6,7 +6,7 @@ import { getMapDefinition } from '../../src/shared/maps';
 
 describe('independent Gull Bay coastal beach reconstruction', () => {
   it('parses 56×36 native 16px layout with village portal & open boardwalk', () => {
-    const raw = fs.readFileSync(path.join(process.cwd(), 'public/assets/maps/beach.json'), 'utf8');
+    const raw = fs.readFileSync(path.join(process.cwd(), 'src/assets/maps/beach.json'), 'utf8');
     const json = JSON.parse(raw) as TiledWorldMapJson & {
       properties?: { name: string; value: string }[];
     };

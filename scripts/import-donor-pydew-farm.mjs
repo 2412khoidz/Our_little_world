@@ -8,7 +8,7 @@ import { validateFarmPlotContract } from './lib/preserveFarmPlotContract.mjs';
 import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const TMX = path.resolve('public/maps/donor/pydew-valley/data/map.tmx');
-const OUT = path.resolve('public/assets/maps/farm.json');
+const OUT = path.resolve('src/assets/maps/farm.json');
 const CONTRACT_PATH = path.resolve('src/shared/world/farmPlotContract.v1.json');
 const SHA = fs
   .readFileSync(path.resolve('public/maps/donor/pydew-valley/UPSTREAM_SHA.txt'), 'utf8')

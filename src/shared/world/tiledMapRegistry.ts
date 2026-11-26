@@ -1,15 +1,16 @@
 import type { MapId } from '../types';
-import beachJson from '../../../public/assets/maps/beach.json';
-import farmJson from '../../../public/assets/maps/farm.json';
-import forestJson from '../../../public/assets/maps/forest.json';
-import shopJson from '../../../public/assets/maps/shop.json';
-import shopCropMarketJson from '../../../public/assets/maps/shop_crop_market.json';
-import shopSeedJson from '../../../public/assets/maps/shop_seed.json';
-import shopToolJson from '../../../public/assets/maps/shop_tool.json';
-import shopTownHallJson from '../../../public/assets/maps/shop_town_hall.json';
-import homeJson from '../../../public/assets/maps/home.json';
-import gardenJson from '../../../public/assets/maps/garden.json';
-import villageJson from '../../../public/assets/maps/village.json';
+import beachJson from '../../assets/maps/beach.json';
+import farmJson from '../../assets/maps/farm.json';
+import forestJson from '../../assets/maps/forest.json';
+import meadowJson from '../../assets/maps/meadow.json';
+import shopJson from '../../assets/maps/shop.json';
+import shopCropMarketJson from '../../assets/maps/shop_crop_market.json';
+import shopSeedJson from '../../assets/maps/shop_seed.json';
+import shopToolJson from '../../assets/maps/shop_tool.json';
+import shopTownHallJson from '../../assets/maps/shop_town_hall.json';
+import homeJson from '../../assets/maps/home.json';
+import gardenJson from '../../assets/maps/garden.json';
+import villageJson from '../../assets/maps/village.json';
 import { parseTiledWorldMap, type ParsedTiledWorldMap, type TiledWorldMapJson } from './parseTiledWorldMap';
 
 export const PARSED_TILED_WORLDS: Partial<Record<MapId, ParsedTiledWorldMap>> = {
@@ -61,4 +62,19 @@ export const TILED_MAP_PHASER_KEYS: Record<TiledWorldMapId, string> = {
   shop_tool: 'map-shop-tool',
   shop_crop_market: 'map-shop-crop-market',
   shop_town_hall: 'map-shop-town-hall',
+};
+
+export const TILED_MAP_RAW_JSON_BY_PHASER_KEY: Record<string, TiledWorldMapJson> = {
+  'map-home': homeJson as TiledWorldMapJson,
+  'map-garden': gardenJson as TiledWorldMapJson,
+  'map-meadow': meadowJson as TiledWorldMapJson,
+  'map-village': villageJson as TiledWorldMapJson,
+  'map-farm': farmJson as TiledWorldMapJson,
+  'map-forest': forestJson as TiledWorldMapJson,
+  'map-beach': beachJson as TiledWorldMapJson,
+  'map-shop': shopJson as TiledWorldMapJson,
+  'map-shop-seed': shopSeedJson as TiledWorldMapJson,
+  'map-shop-tool': shopToolJson as TiledWorldMapJson,
+  'map-shop-crop-market': shopCropMarketJson as TiledWorldMapJson,
+  'map-shop-town-hall': shopTownHallJson as TiledWorldMapJson,
 };

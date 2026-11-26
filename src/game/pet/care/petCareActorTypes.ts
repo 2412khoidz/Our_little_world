@@ -11,6 +11,8 @@ export interface PawSwipeOverlayState {
   /** Normalized progress 0..1 across anticipation -> swipe strike -> follow-through. */
   progress: number;
   active: boolean;
+  /** Live 3D world-space toy/lure target for front-paw IK aiming. */
+  targetWorld?: THREE.Vector3 | null;
 }
 
 export interface HugKickOverlayState {

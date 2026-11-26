@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { getMapDefinition } from '../../src/shared/maps';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import { isTileBlockedFromParsed } from '../../src/shared/world/parseTiledWorldMap';
-import homeJson from '../../public/assets/maps/home.json';
-import gardenJson from '../../public/assets/maps/garden.json';
+import homeJson from '../../src/assets/maps/home.json';
+import gardenJson from '../../src/assets/maps/garden.json';
 
 describe('Sprout Lands home/garden transplant', () => {
   it('marks donor maps with sprout-lands metadata', () => {

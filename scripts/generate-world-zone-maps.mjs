@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const OUT = path.join(process.cwd(), 'public/assets/maps');
+const OUT = path.join(process.cwd(), 'src/assets/maps');
 
 /** @see scripts/generate-starter-assets.mjs — 16x16 cozy tileset */
 const T = {

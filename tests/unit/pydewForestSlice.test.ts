@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getMapDefinition } from '../../src/shared/maps';
 import { getParsedTiledWorld } from '../../src/shared/world/tiledMapRegistry';
 import { isTileBlockedFromParsed } from '../../src/shared/world/parseTiledWorldMap';
-import forestJson from '../../public/assets/maps/forest.json';
+import forestJson from '../../src/assets/maps/forest.json';
 
 describe('Tuxemon forest transplant', () => {
   it('forest.json is stamped tuxemon donor', () => {

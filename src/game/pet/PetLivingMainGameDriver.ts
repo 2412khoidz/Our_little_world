@@ -59,6 +59,126 @@ export interface PetLivingWorldFrame {
   localPlayerY: number | null;
   caregiverIds: readonly [string, string];
   foodOffer: PetFoodOfferInput | null;
+  tilePx?: number;
+  isTileBlocked?: (tileX: number, tileY: number) => boolean;
+}
+
+const FOLLOW_OFFSETS: readonly [number, number][] = [
+  [-16, 4],
+  [16, 4],
+  [-18, -8],
+  [18, -8],
+  [0, 16],
+  [0, -14],
+  [0, 0],
+];
+
+function isWorldPosWalkable(
+  wx: number,
+  wy: number,
+  tilePx: number,
+  isTileBlocked?: (tileX: number, tileY: number) => boolean,
+): boolean {
+  if (!isTileBlocked || tilePx <= 0) return true;
+  const rx = 4;
+  const ry = 3;
+  const checks: readonly [number, number][] = [
+    [wx, wy],
+    [wx - rx, wy - ry],
+    [wx + rx, wy - ry],
+    [wx - rx, wy + 1],
+    [wx + rx, wy + 1],
+  ];
+  for (const [cx, cy] of checks) {
+    if (isTileBlocked(Math.floor(cx / tilePx), Math.floor(cy / tilePx))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function pickWalkableFollowTarget(
+  ownerX: number,
+  ownerY: number,
+  tilePx: number,
+  isTileBlocked?: (tileX: number, tileY: number) => boolean,
+): { x: number; y: number } {
+  for (const [ox, oy] of FOLLOW_OFFSETS) {
+    const cx = ownerX + ox;
+    const cy = ownerY + oy;
+    if (isWorldPosWalkable(cx, cy, tilePx, isTileBlocked)) {
+      return { x: cx, y: cy };
+    }
+  }
+  return { x: ownerX, y: ownerY };
+}
+
+function findNextTileWaypoint(
+  fromX: number,
+  fromY: number,
+  goalX: number,
+  goalY: number,
+  tilePx: number,
+  isTileBlocked: (tileX: number, tileY: number) => boolean,
+): { x: number; y: number } | null {
+  const sx = Math.floor(fromX / tilePx);
+  const sy = Math.floor(fromY / tilePx);
+  const gx = Math.floor(goalX / tilePx);
+  const gy = Math.floor(goalY / tilePx);
+  if (sx === gx && sy === gy) return null;
+
+  const startKey = `${sx},${sy}`;
+  const goalKey = `${gx},${gy}`;
+  const parent = new Map<string, string | null>([[startKey, null]]);
+  const queue: Array<[number, number]> = [[sx, sy]];
+  const dirs: readonly [number, number][] = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  let bestKey: string | null = null;
+  let bestDist = Infinity;
+  let head = 0;
+  const MAX_VISITED = 160;
+
+  while (head < queue.length && parent.size < MAX_VISITED) {
+    const [cx, cy] = queue[head++]!;
+    const ck = `${cx},${cy}`;
+    if (ck === goalKey) {
+      bestKey = ck;
+      break;
+    }
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      const nk = `${nx},${ny}`;
+      if (parent.has(nk)) continue;
+      if (isTileBlocked(nx, ny)) continue;
+      parent.set(nk, ck);
+      const d = Math.hypot(nx - gx, ny - gy);
+      if (d < bestDist) {
+        bestDist = d;
+        bestKey = nk;
+      }
+      queue.push([nx, ny]);
+    }
+  }
+
+  if (!bestKey || bestKey === startKey) return null;
+  let stepKey = bestKey;
+  while (true) {
+    const p = parent.get(stepKey);
+    if (!p) return null;
+    if (p === startKey) {
+      const [wx = sx, wy = sy] = stepKey.split(',').map(Number);
+      return {
+        x: (wx + 0.5) * tilePx,
+        y: (wy + 0.75) * tilePx,
+      };
+    }
+    stepKey = p;
+  }
 }
 
 export interface PetLivingDriverOutput {
@@ -120,30 +240,81 @@ export class PetLivingMainGameDriver {
     const py = this.movement.loco.y;
     const dtSec = Math.max(0.008, Math.min(0.1, frame.dtMs / 1000));
 
-    // Smoothly follow owner across both home (when owner walks away) and outdoor maps.
+    // Smoothly follow owner across both home (when owner walks away) and outdoor maps while strictly obeying walls/water/fences.
     if (frame.localPlayerX !== null && frame.localPlayerY !== null) {
-      const targetX = frame.localPlayerX - 16;
-      const targetY = frame.localPlayerY + 4;
+      const tilePx = frame.tilePx ?? TILE_SIZE;
+      const isBlocked = frame.isTileBlocked;
+      const followTarget = pickWalkableFollowTarget(
+        frame.localPlayerX,
+        frame.localPlayerY,
+        tilePx,
+        isBlocked,
+      );
+      const targetX = followTarget.x;
+      const targetY = followTarget.y;
       const distToOwner = Math.hypot(frame.localPlayerX - px, frame.localPlayerY - py);
       const followStartDist = frame.mapId === 'home' ? 52 : 34;
 
-      if (distToOwner > 260) {
+      if (distToOwner > 260 && isWorldPosWalkable(targetX, targetY, tilePx, isBlocked)) {
         const snapped = createLocomotionSnapshot(targetX, targetY);
         this.movement = { ...this.movement, loco: snapped };
         return { loco: snapped, ambientBubble: 'Mrow!', authority: this.authority };
       }
 
       if (distToOwner > followStartDist && !frame.isStudying && !this.pendingFoodOffer && !frame.foodOffer) {
+        const intent = distToOwner > 86 ? 'run' : 'move';
+        let steerX = targetX;
+        let steerY = targetY;
+
+        if (isBlocked) {
+          const probe = stepPetLocomotion(this.movement.loco, {
+            intent,
+            targetX: steerX,
+            targetY: steerY,
+            dtSec,
+            nowMs: frame.nowMs,
+            runThresholdPx: 86,
+          });
+          if (!isWorldPosWalkable(probe.x, probe.y, tilePx, isBlocked)) {
+            const waypoint = findNextTileWaypoint(px, py, targetX, targetY, tilePx, isBlocked);
+            if (waypoint) {
+              steerX = waypoint.x;
+              steerY = waypoint.y;
+            }
+          }
+        }
+
         const nextLoco = stepPetLocomotion(this.movement.loco, {
-          intent: distToOwner > 86 ? 'run' : 'move',
-          targetX,
-          targetY,
+          intent,
+          targetX: steerX,
+          targetY: steerY,
           dtSec,
           nowMs: frame.nowMs,
           runThresholdPx: 86,
         });
-        this.movement = { ...this.movement, loco: nextLoco };
-        return { loco: nextLoco, ambientBubble: null, authority: this.authority };
+
+        let resolvedLoco = nextLoco;
+        if (isBlocked && !isWorldPosWalkable(nextLoco.x, nextLoco.y, tilePx, isBlocked)) {
+          const canSlideX = isWorldPosWalkable(nextLoco.x, py, tilePx, isBlocked);
+          const canSlideY = isWorldPosWalkable(px, nextLoco.y, tilePx, isBlocked);
+          if (canSlideX) {
+            resolvedLoco = { ...nextLoco, y: py };
+          } else if (canSlideY) {
+            resolvedLoco = { ...nextLoco, x: px };
+          } else {
+            resolvedLoco = stepPetLocomotion(this.movement.loco, {
+              intent: 'sit',
+              targetX: px,
+              targetY: py,
+              preferredFacing: nextLoco.facing,
+              dtSec,
+              nowMs: frame.nowMs,
+            });
+          }
+        }
+
+        this.movement = { ...this.movement, loco: resolvedLoco };
+        return { loco: resolvedLoco, ambientBubble: null, authority: this.authority };
       }
 
       if (frame.mapId !== 'home') {

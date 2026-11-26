@@ -481,7 +481,7 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 29
+              "value": 30
             },
             {
               "name": "spawnY",

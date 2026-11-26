@@ -104,6 +104,12 @@ import {
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 import { isDonorEconomyUiEnabled } from '../../shared/donor/donorEconomyUiFlag';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
+import {
+  DonorPydewToolController,
+  toolKindFromItemSku,
+  type DonorToolKind,
+} from '../interaction/donorPydewToolController';
+import { playToolActionSfx } from '../interaction/toolActionAudio';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
 import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
@@ -251,6 +257,7 @@ export class WorldScene extends Phaser.Scene {
   private heldItem: HeldItemState = EMPTY_HELD_ITEM;
   private lastHeldToolAction: HeldItemState['temporaryActionState'] = 'none';
   private heldRenderer: HeldItemRenderer | null = null;
+  private readonly donorToolController = new DonorPydewToolController();
   private localMoving = false;
   private farmPlotVisual: FarmPlotVisualController | null = null;
   private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
@@ -351,12 +358,56 @@ export class WorldScene extends Phaser.Scene {
 
   private buildCozyQuilt(x: number, y: number, fillHex: number): Phaser.GameObjects.Container {
     const s = this.avatarScale();
-    const quilt = this.add.rectangle(0, 0, 15, 13, fillHex, 0.98).setStrokeStyle(0.85, 0xfff8ef, 0.95);
-    const fold = this.add.rectangle(0, -5.2, 14.4, 2.6, 0xfff6eb, 0.96);
-    const seam = this.add.rectangle(0, 1.5, 13, 0.75, 0xffffff, 0.36);
+    // Tucked waist-to-feet blanket so both face and hair remain clearly visible on the pillow
+    const quilt = this.add.rectangle(0, 0, 14, 8.5, fillHex, 0.98).setStrokeStyle(0.85, 0xfff8ef, 0.95);
+    const fold = this.add.rectangle(0, -3.4, 13.4, 2.2, 0xfff6eb, 0.98);
+    const seam = this.add.rectangle(0, 1.1, 12, 0.75, 0xffffff, 0.42);
     const container = this.add.container(x, y, [quilt, fold, seam]);
     container.setScale(s);
     return container;
+  }
+
+  private triggerDonorToolSwing(kind: DonorToolKind): void {
+    if (!this.localSprite) return;
+    const triggered = this.donorToolController.trigger(
+      kind,
+      this.localFacing,
+      this.localSprite.x,
+      this.localSprite.y,
+      this.tilePx(),
+      (state) => {
+        playToolActionSfx(kind);
+        this.spawnDonorToolHitParticles(kind, state.targetWorldX, state.targetWorldY);
+      },
+    );
+    if (triggered) {
+      const animAction = kind === 'axe' ? 'tool' : kind === 'rod' ? 'fish' : kind;
+      playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, animAction);
+    }
+  }
+
+  private spawnDonorToolHitParticles(kind: DonorToolKind, wx: number, wy: number): void {
+    const color = kind === 'water' ? 0x6fd3ff : kind === 'axe' ? 0xd9a066 : 0x9c6b43;
+    const s = this.avatarScale();
+    for (let i = 0; i < 4; i += 1) {
+      const p = this.add.circle(
+        wx + (Math.random() - 0.5) * 6 * s,
+        wy + (Math.random() - 0.5) * 4 * s,
+        1.4 * s,
+        color,
+        0.9,
+      );
+      p.setDepth(wy + 30);
+      this.tweens.add({
+        targets: p,
+        x: p.x + (Math.random() - 0.5) * 10 * s,
+        y: p.y - (3 + Math.random() * 6) * s,
+        alpha: 0,
+        duration: 260,
+        ease: 'Sine.Out',
+        onComplete: () => p.destroy(),
+      });
+    }
   }
 
   private spawnRunDust(x: number, y: number): void {
@@ -1337,15 +1388,11 @@ export class WorldScene extends Phaser.Scene {
           this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
           if (highlightPlotId != null && highlightAction === 'till') {
             playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            if (this.localSprite) {
-              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'hoe');
-            }
+            this.triggerDonorToolSwing('hoe');
           }
           if (highlightPlotId != null && highlightAction === 'water') {
             playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            if (this.localSprite) {
-              playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'water');
-            }
+            this.triggerDonorToolSwing('water');
           }
           if (highlightPlotId != null && highlightAction === 'harvest') {
             if (this.localSprite) {
@@ -1662,6 +1709,7 @@ export class WorldScene extends Phaser.Scene {
       updateAmbientMotes(this.motes, this.moteBounds, dtSec, time / 1000, this.ambientMoteKind);
     }
 
+    this.donorToolController.update(deltaMs);
     const moved = this.updateLocalMovement(dtSec);
     this.localMoving = moved;
     if (
@@ -1676,6 +1724,7 @@ export class WorldScene extends Phaser.Scene {
         memberIds[0] ?? 'partner-a',
         memberIds[1] ?? 'partner-b',
       ];
+      const mapDef = getMapDefinition(this.currentMapId);
       const out = this.livingPetDriver.update({
         mapId: this.currentMapId,
         placements: this.placements,
@@ -1687,6 +1736,13 @@ export class WorldScene extends Phaser.Scene {
         localPlayerY: this.localSprite?.y ?? null,
         caregiverIds: caregiverPair,
         foodOffer: null,
+        tilePx: this.tilePx(),
+        isTileBlocked: (tx, ty) =>
+          tx < 0 ||
+          ty < 0 ||
+          tx >= mapDef.widthTiles ||
+          ty >= mapDef.heightTiles ||
+          this.blockedGrid.has(`${tx},${ty}`),
       });
       this.petEntity.applyLivingLocomotion(out.loco, out.ambientBubble);
       if (import.meta.env.DEV && now - this.lastLivingPetTelemetryAtMs >= 500) {
@@ -1730,6 +1786,12 @@ export class WorldScene extends Phaser.Scene {
     if (this.decorateState.active) {
       this.localSprite.stop();
       this.localSprite.setFrame(avatarIdleFrame(this.localTextureKey, this.localFacing));
+      return false;
+    }
+
+    if (this.donorToolController.isMovementLocked()) {
+      this.pathQueue = [];
+      this.tapMarker?.clear();
       return false;
     }
 
@@ -1888,10 +1950,10 @@ export class WorldScene extends Phaser.Scene {
 
     if (this.localPosture === 'lie_bed') {
       if (!this.localBlanket) {
-        this.localBlanket = this.buildCozyQuilt(this.localSprite.x, this.localSprite.y - 3 * s, 0xf2b7c6);
+        this.localBlanket = this.buildCozyQuilt(this.localSprite.x, this.localSprite.y + 1.2 * s, 0xf2b7c6);
       }
       this.localBlanket
-        .setPosition(this.localSprite.x, this.localSprite.y - 3 * s)
+        .setPosition(this.localSprite.x, this.localSprite.y + 1.2 * s)
         .setDepth(this.localSprite.y + 44)
         .setScale(s)
         .setVisible(true);
@@ -1916,15 +1978,17 @@ export class WorldScene extends Phaser.Scene {
     const partner = Array.from(this.remoteEntities.values()).find(
       (e) => e.mapId === this.currentMapId,
     );
-    const sameRoomSitting =
+    const sameRoomSittingOrCuddling =
       partner &&
-      (this.localPosture === 'sit_sofa' || this.localPosture === 'sit_bench') &&
+      (this.localPosture === 'sit_sofa' ||
+        this.localPosture === 'sit_bench' ||
+        this.localPosture === 'lie_bed') &&
       partner.posture === this.localPosture;
     const activeAffection =
       partner &&
       (this.localPosture === 'hug' ||
         this.localPosture === 'hold_hands' ||
-        sameRoomSitting);
+        sameRoomSittingOrCuddling);
 
     if (!activeAffection || !partner) {
       this.coupleAffectionIcon?.setVisible(false);
@@ -2312,16 +2376,16 @@ export class WorldScene extends Phaser.Scene {
     const footY = (item.tileY + item.heightTiles) * this.tilePx();
     const slot0 =
       kind === 'bed_lie'
-        ? { x: centerX - 7.5, y: (item.tileY + 1.5) * this.tilePx() }
+        ? { x: centerX - 6.4, y: (item.tileY + 1.38) * this.tilePx() }
         : kind === 'bench_sit'
           ? { x: centerX - 8, y: footY + 2 }
-          : { x: centerX - 8, y: footY - 3 };
+          : { x: centerX - 6.5, y: footY - 5.5 };
     const slot1 =
       kind === 'bed_lie'
-        ? { x: centerX + 7.5, y: slot0.y }
+        ? { x: centerX + 6.4, y: slot0.y }
         : kind === 'bench_sit'
           ? { x: centerX + 8, y: footY + 2 }
-          : { x: centerX + 8, y: footY - 3 };
+          : { x: centerX + 6.5, y: footY - 5.5 };
 
     const occupiedSlots: number[] = [];
     for (const remote of this.remoteEntities.values()) {
@@ -2431,10 +2495,10 @@ export class WorldScene extends Phaser.Scene {
     const s = this.avatarScale();
     if (entity.posture === 'lie_bed' && entity.mapId === this.currentMapId) {
       if (!entity.blanket) {
-        entity.blanket = this.buildCozyQuilt(entity.sprite.x, entity.sprite.y - 5 * s, 0xb8d9ee);
+        entity.blanket = this.buildCozyQuilt(entity.sprite.x, entity.sprite.y + 1.2 * s, 0xb8d9ee);
       }
       entity.blanket
-        .setPosition(entity.sprite.x, entity.sprite.y - 3 * s)
+        .setPosition(entity.sprite.x, entity.sprite.y + 1.2 * s)
         .setDepth(entity.sprite.y + 44)
         .setScale(s)
         .setVisible(true);
@@ -2696,7 +2760,12 @@ export class WorldScene extends Phaser.Scene {
       this.heldItem.temporaryActionState !== 'none' &&
       this.heldItem.temporaryActionState !== this.lastHeldToolAction
     ) {
-      playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing);
+      const toolKind = toolKindFromItemSku(this.heldItem.itemSku, this.heldItem.temporaryActionState);
+      if (toolKind) {
+        this.triggerDonorToolSwing(toolKind);
+      } else {
+        playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing);
+      }
     }
     this.lastHeldToolAction = this.heldItem.temporaryActionState;
     this.heldRenderer.sync(
@@ -2708,6 +2777,7 @@ export class WorldScene extends Phaser.Scene {
       this.heldItem,
       timeMs,
       this.avatarScale(),
+      this.donorToolController.getState(),
     );
   }
 

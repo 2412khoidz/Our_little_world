@@ -5,7 +5,7 @@ import { parseTiledWorldMap, type TiledWorldMapJson } from '../../src/shared/wor
 
 describe('donor Cabacos village transplant', () => {
   it('parses collision and OLW portals', () => {
-    const raw = fs.readFileSync(path.join(process.cwd(), 'public/assets/maps/village.json'), 'utf8');
+    const raw = fs.readFileSync(path.join(process.cwd(), 'src/assets/maps/village.json'), 'utf8');
     const parsed = parseTiledWorldMap(JSON.parse(raw) as TiledWorldMapJson);
     expect(parsed.widthTiles).toBe(86);
     expect(parsed.heightTiles).toBe(48);

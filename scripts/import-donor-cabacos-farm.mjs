@@ -10,7 +10,7 @@ import {
 import { MAP_RECOVERY_MODE, RECOVERY_SLICE } from './lib/mapRecoveryMode.mjs';
 
 const CABACOS = path.resolve('public/maps/donor/cabacos/Cabacos_map.tmj');
-const OUT = path.resolve('public/assets/maps/farm.json');
+const OUT = path.resolve('src/assets/maps/farm.json');
 const OLW_SHA = '79e423defc12bd99327cfcc28bf7ec0085996244';
 
 const OUT_W = 64;

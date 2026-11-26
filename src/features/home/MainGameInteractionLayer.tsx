@@ -19,7 +19,6 @@ import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
-import { FarmFishLoopTutorial } from './FarmFishLoopTutorial';
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
@@ -308,15 +307,12 @@ export function MainGameInteractionLayer({
         data-testid="main-game-interaction-hud"
       >
         {!petCareHud ? (
-          <>
-            <FarmFishLoopTutorial mapId={currentMapId} donorPlayable={donorLanPlayable} />
-            <ContextualPromptBadge
-              resolution={resolution}
-              unavailableToast={noticeText}
-              onPrimary={() => void executePrimary()}
-              onSecondary={() => void executeSecondary()}
-            />
-          </>
+          <ContextualPromptBadge
+            resolution={resolution}
+            unavailableToast={noticeText}
+            onPrimary={() => void executePrimary()}
+            onSecondary={() => void executeSecondary()}
+          />
         ) : null}
         <HeldItemChip heldItem={heldItem} onClear={clearHeld} />
         <GameHotbar

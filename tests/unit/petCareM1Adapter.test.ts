@@ -138,7 +138,7 @@ function createM1StubActor() {
 }
 
 describe('MISSION M.1 — Vuena Clip Adapter, Paw-Synced Play, Box Anti-Clipping, Presets & Audio', () => {
-  it('maps CatBrain poses & speeds to all 13 Vuena GLB animation clips', () => {
+  it('maps CatBrain poses & speeds to Vuena GLB animation clips without crude paw_bat/hug_kick hacks', () => {
     const usedClips = new Set<string>([
       selectVuenaClipForState({ pose: 'stand', speed: 0, idleAltFlag: false }).clip,
       selectVuenaClipForState({ pose: 'stand', speed: 0, idleAltFlag: true }).clip,
@@ -148,16 +148,23 @@ describe('MISSION M.1 — Vuena Clip Adapter, Paw-Synced Play, Box Anti-Clipping
       selectVuenaClipForState({ pose: 'eat', speed: 0 }).clip,
       selectVuenaClipForState({ pose: 'sit', speed: 0 }).clip,
       selectVuenaClipForState({ pose: 'sleep', speed: 0 }).clip,
-      selectVuenaClipForState({ pose: 'paw_bat', speed: 0 }).clip,
+      selectVuenaClipForState({ pose: 'attack', speed: 0 }).clip,
       selectVuenaClipForState({ pose: 'call', speed: 0 }).clip,
       selectVuenaClipForState({ pose: 'refuse', speed: 0, poseElapsedSec: 0.1 }).clip,
-      selectVuenaClipForState({ pose: 'hug_kick', speed: 0 }).clip,
+      selectVuenaClipForState({ pose: 'death_dramatic', speed: 0 }).clip,
       selectVuenaClipForState({ pose: 'stretch', speed: 0 }).clip,
     ]);
 
     for (const clip of VUENA_CLIP_NAMES) {
       expect(usedClips.has(clip), `Missing mapping for Vuena clip: ${clip}`).toBe(true);
     }
+
+    // M.2 removes crude death-pause & generic attack hacks from playful paw_bat / hug_kick
+    const pawBatSel = selectVuenaClipForState({ pose: 'paw_bat', speed: 0 });
+    expect(pawBatSel.clip).toBe('idle');
+    const hugKickSel = selectVuenaClipForState({ pose: 'hug_kick', speed: 0 });
+    expect(hugKickSel.clip).toBe('idle');
+    expect(hugKickSel.clampTimeSec).toBeUndefined();
   });
 
   it('synchronizes front-paw contact frame with toy physics impulse and cleanly releases yarn hug on stop', () => {
