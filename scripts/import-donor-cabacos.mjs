@@ -75,15 +75,15 @@ function exportVillage() {
         id: 9101,
         name: 'village-to-garden',
         type: 'portal',
-        x: 42 * TW,
-        y: 31 * TW,
+        x: 45 * TW,
+        y: 32 * TW,
         width: TW,
         height: TW,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'garden' },
           { name: 'labelVi', type: 'string', value: 'Về vườn' },
           { name: 'spawnX', type: 'int', value: 9 },
-          { name: 'spawnY', type: 'int', value: 12 },
+          { name: 'spawnY', type: 'int', value: 11 },
         ],
       },
       {
@@ -98,30 +98,30 @@ function exportVillage() {
           { name: 'targetMapId', type: 'string', value: 'garden' },
           { name: 'labelVi', type: 'string', value: 'Đường về vườn' },
           { name: 'spawnX', type: 'int', value: 9 },
-          { name: 'spawnY', type: 'int', value: 12 },
+          { name: 'spawnY', type: 'int', value: 11 },
         ],
       },
       {
         id: 9103,
         name: 'village-to-farm',
         type: 'portal',
-        x: 80 * TW,
-        y: 24 * TW,
+        x: 1 * TW,
+        y: 29 * TW,
         width: TW,
         height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'farm' },
-          { name: 'labelVi', type: 'string', value: 'Ra đồng' },
-          { name: 'spawnX', type: 'int', value: 4 },
-          { name: 'spawnY', type: 'int', value: 20 },
+          { name: 'labelVi', type: 'string', value: 'Ra Nông trại' },
+          { name: 'spawnX', type: 'int', value: 59 },
+          { name: 'spawnY', type: 'int', value: 22 },
         ],
       },
       {
         id: 9104,
         name: 'player_house_door',
         type: 'portal',
-        x: 666,
-        y: 479.5,
+        x: 41 * TW,
+        y: 30 * TW,
         width: 30,
         height: 14,
         properties: [
@@ -135,14 +135,14 @@ function exportVillage() {
         id: 9105,
         name: 'village-to-beach',
         type: 'portal',
-        x: 84 * TW,
-        y: 26 * TW,
+        x: 81 * TW,
+        y: 32 * TW,
         width: TW * 2,
         height: TW * 2,
         properties: [
           { name: 'targetMapId', type: 'string', value: 'beach' },
-          { name: 'labelVi', type: 'string', value: 'Ra Gull Bay' },
-          { name: 'spawnX', type: 'int', value: 1 },
+          { name: 'labelVi', type: 'string', value: 'Ra Bãi biển Vịnh Hải Âu' },
+          { name: 'spawnX', type: 'int', value: 5 },
           { name: 'spawnY', type: 'int', value: 16 },
         ],
       },
@@ -152,15 +152,15 @@ function exportVillage() {
               id: 9106,
               name: 'village-to-forest',
               type: 'portal',
-              x: 84 * TW,
-              y: 20 * TW,
-              width: TW,
-              height: TW * 2,
+              x: 12 * TW,
+              y: 2 * TW,
+              width: TW * 2,
+              height: TW,
               properties: [
                 { name: 'targetMapId', type: 'string', value: 'forest' },
-                { name: 'labelVi', type: 'string', value: 'Vào rừng (PyDew slice)' },
-                { name: 'spawnX', type: 'int', value: 2 },
-                { name: 'spawnY', type: 'int', value: 22 },
+                { name: 'labelVi', type: 'string', value: 'Vào rừng thông Tuxemon' },
+                { name: 'spawnX', type: 'int', value: 4 },
+                { name: 'spawnY', type: 'int', value: 32 },
               ],
             },
           ]
@@ -176,7 +176,7 @@ function exportVillage() {
           door: 'player_seed_shop_door',
           targetMapId: 'shop_seed',
           labelVi: 'Vào cửa hàng hạt',
-          spawnInterior: { tileX: 11, tileY: 16 },
+          spawnInterior: { tileX: 12, tileY: 14 },
         },
         {
           id: 9111,
@@ -184,7 +184,7 @@ function exportVillage() {
           door: 'player_tool_shop_door',
           targetMapId: 'shop_tool',
           labelVi: 'Vào cửa hàng dụng cụ',
-          spawnInterior: { tileX: 11, tileY: 16 },
+          spawnInterior: { tileX: 11, tileY: 13 },
         },
         {
           id: 9112,
@@ -192,7 +192,7 @@ function exportVillage() {
           door: 'player_crop_market_door',
           targetMapId: 'shop_crop_market',
           labelVi: 'Vào chợ nông sản',
-          spawnInterior: { tileX: 11, tileY: 16 },
+          spawnInterior: { tileX: 11, tileY: 14 },
         },
         {
           id: 9113,
@@ -200,7 +200,7 @@ function exportVillage() {
           door: 'player_town_hall_door',
           targetMapId: 'shop_town_hall',
           labelVi: 'Vào tòa thị chính',
-          spawnInterior: { tileX: 11, tileY: 16 },
+          spawnInterior: { tileX: 11, tileY: 13 },
         },
       ]
     : [];
@@ -352,8 +352,107 @@ function exportVillage() {
     objects: cabacosInteractables,
   };
 
-  src.layers = src.layers.filter((l) => l.name !== 'Portals' && l.name !== 'Interactables');
-  src.layers.push(portals, interactables);
+  const npcs = {
+    id: 9003,
+    name: 'NPCSpawns',
+    type: 'objectgroup',
+    visible: true,
+    opacity: 1,
+    draworder: 'topdown',
+    x: 0,
+    y: 0,
+    objects: [
+      {
+        id: 9301,
+        name: 'bac_hai',
+        type: 'npc',
+        x: 34 * TW,
+        y: 25 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'role', type: 'string', value: 'seed_vendor' },
+          { name: 'labelVi', type: 'string', value: 'Bác Hai' },
+          {
+            name: 'dialogueVi',
+            type: 'string',
+            value: 'Hạt giống tươi mới về sáng nay! Bước qua cửa gỗ cạnh bác để vào tiệm nhé.',
+          },
+        ],
+      },
+      {
+        id: 9302,
+        name: 'co_lan',
+        type: 'npc',
+        x: 20 * TW,
+        y: 32 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'role', type: 'string', value: 'bakery_host' },
+          { name: 'labelVi', type: 'string', value: 'Cô Lan' },
+          {
+            name: 'dialogueVi',
+            type: 'string',
+            value: 'Tiệm bánh Hollow vừa ra lò bánh dâu nóng hổi — mang lúa mì & dâu tây tới đây cùng chế biến nào!',
+          },
+        ],
+      },
+      {
+        id: 9303,
+        name: 'chu_tu',
+        type: 'npc',
+        x: 29 * TW,
+        y: 36 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'role', type: 'string', value: 'tool_smith' },
+          { name: 'labelVi', type: 'string', value: 'Chú Tư' },
+          {
+            name: 'dialogueVi',
+            type: 'string',
+            value: 'Mồi câu và dụng cụ làm nông đều đủ ở tiệm dụng cụ phía sau chú.',
+          },
+        ],
+      },
+      {
+        id: 9304,
+        name: 'be_na',
+        type: 'npc',
+        x: 43 * TW,
+        y: 31 * TW,
+        width: TW,
+        height: TW,
+        properties: [
+          { name: 'role', type: 'string', value: 'town_guide' },
+          { name: 'labelVi', type: 'string', value: 'Bé Na' },
+          {
+            name: 'dialogueVi',
+            type: 'string',
+            value: 'Đi hướng Tây ra Nông trại 184 luống, hướng Đông qua bến tàu tới Vịnh Hải Âu, hướng Bắc là vào Rừng thông!',
+          },
+        ],
+      },
+    ],
+  };
+
+  // Ensure east harbor path to village-to-beach (78..82, 32..33) is cleanly walkable
+  const colLayer = src.layers.find((l) => l.name === 'Collision' && l.type === 'tilelayer');
+  if (colLayer?.data) {
+    for (let y = 31; y <= 33; y += 1) {
+      for (let x = 78; x <= 82; x += 1) {
+        colLayer.data[y * src.width + x] = 0;
+      }
+    }
+    colLayer.data[2 * src.width + 12] = 0;
+    colLayer.data[2 * src.width + 13] = 0;
+    colLayer.data[3 * src.width + 12] = 0;
+    colLayer.data[3 * src.width + 13] = 0;
+  }
+
+  src.layers = src.layers.filter((l) => l.name !== 'Portals' && l.name !== 'Interactables' && l.name !== 'NPCSpawns');
+  src.layers.push(portals, interactables, npcs);
   writeJson('village.json', src);
   console.log('Wrote village.json', src.width, 'x', src.height, 'donor=cabacos');
 }
@@ -667,8 +766,8 @@ const INTERIOR_SPECS = [
 
 const VILLAGE_DOOR_SPAWN = {
   player_seed_shop_door: { tileX: 32, tileY: 25 },
-  player_tool_shop_door: { tileX: 27, tileY: 37 },
-  player_crop_market_door: { tileX: 15, tileY: 33 },
+  player_tool_shop_door: { tileX: 28, tileY: 37 },
+  player_crop_market_door: { tileX: 15, tileY: 34 },
   player_town_hall_door: { tileX: 33, tileY: 14 },
 };
 

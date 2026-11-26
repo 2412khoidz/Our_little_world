@@ -4,19 +4,19 @@
   "spawnDefault": { "tileX": 14, "tileY": 32 },
   "portals": {
     "village": {
-      "villageEdgeTile": { "tileX": 84, "tileY": 20 },
-      "forestSpawnTile": { "tileX": 3, "tileY": 32 },
-      "labelVi": "Vào rừng Route 1"
+      "villageEdgeTile": { "tileX": 12, "tileY": 2 },
+      "forestSpawnTile": { "tileX": 8, "tileY": 36 },
+      "labelVi": "Vào rừng thông Tuxemon"
     },
     "returnToVillage": {
-      "forestEdgeTile": { "tileX": 1, "tileY": 32 },
-      "villageSpawnTile": { "tileX": 84, "tileY": 20 },
-      "labelVi": "Về làng Cabacos"
+      "forestEdgeTile": { "tileX": 8, "tileY": 39 },
+      "villageSpawnTile": { "tileX": 12, "tileY": 5 },
+      "labelVi": "Về thị trấn Cabacos"
     },
     "beach": {
-      "forestEdgeTile": { "tileX": 14, "tileY": 38 },
-      "beachSpawnTile": { "tileX": 2, "tileY": 22 },
-      "labelVi": "Ra Gull Bay (bãi biển)"
+      "forestEdgeTile": { "tileX": 24, "tileY": 24 },
+      "beachSpawnTile": { "tileX": 5, "tileY": 16 },
+      "labelVi": "Xuống Vịnh Hải Âu"
     }
   }
 }

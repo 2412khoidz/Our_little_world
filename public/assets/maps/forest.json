@@ -5652,8 +5652,8 @@
           "id": 1,
           "name": "forest-to-village",
           "type": "portal",
-          "x": 16,
-          "y": 512,
+          "x": 128,
+          "y": 624,
           "width": 16,
           "height": 32,
           "properties": [
@@ -5665,17 +5665,17 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 84
+              "value": 12
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 20
+              "value": 5
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Về làng Cabacos"
+              "value": "Về thị trấn Cabacos"
             }
           ]
         },
@@ -5683,8 +5683,8 @@
           "id": 2,
           "name": "forest-to-beach",
           "type": "portal",
-          "x": 224,
-          "y": 608,
+          "x": 384,
+          "y": 384,
           "width": 16,
           "height": 32,
           "properties": [
@@ -5696,17 +5696,17 @@
             {
               "name": "spawnX",
               "type": "int",
-              "value": 2
+              "value": 5
             },
             {
               "name": "spawnY",
               "type": "int",
-              "value": 22
+              "value": 16
             },
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Ra Gull Bay (bãi biển)"
+              "value": "Xuống Vịnh Hải Âu"
             }
           ]
         }
@@ -5739,7 +5739,7 @@
             {
               "name": "labelVi",
               "type": "string",
-              "value": "Suối rừng — câu tension (canvas-games)"
+              "value": "Suối rừng — câu cá thư giãn"
             },
             {
               "name": "maxRadiusPx",
@@ -5755,6 +5755,96 @@
               "name": "fishingSpotId",
               "type": "string",
               "value": "east_stream"
+            }
+          ]
+        },
+        {
+          "id": 92,
+          "name": "forest_glade_bench",
+          "type": "interactable",
+          "x": 336,
+          "y": 288,
+          "width": 32,
+          "height": 16,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "bench"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Ghế gỗ dưới tán thông — ngồi nghỉ cùng nhau"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 48
+            }
+          ]
+        },
+        {
+          "id": 93,
+          "name": "forest_mushroom_forage",
+          "type": "interactable",
+          "x": 128,
+          "y": 400,
+          "width": 32,
+          "height": 16,
+          "properties": [
+            {
+              "name": "kind",
+              "type": "string",
+              "value": "bench"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Bụi nấm rừng — ngắm cảnh cùng nhau"
+            },
+            {
+              "name": "maxRadiusPx",
+              "type": "int",
+              "value": 46
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "NPCSpawns",
+      "type": "objectgroup",
+      "visible": true,
+      "opacity": 1,
+      "draworder": "topdown",
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 101,
+          "name": "be_na",
+          "type": "npc",
+          "x": 208,
+          "y": 480,
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "role",
+              "type": "string",
+              "value": "forest_keeper"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Bé Na (Rừng)"
+            },
+            {
+              "name": "dialogueVi",
+              "type": "string",
+              "value": "Rừng thông hôm nay yên tĩnh lắm! Hai bạn men theo lối mòn lên hồ phía đông câu cá hoặc ngồi ghế nghỉ dưới tán cây nhé."
             }
           ]
         }
@@ -5841,6 +5931,11 @@
       "name": "olwDonorNote",
       "type": "string",
       "value": "Tuxemon forest transplant — native tilesets, baked object collisions"
+    },
+    {
+      "name": "olwRecovery",
+      "type": "string",
+      "value": "map-recovery-v1-8e4454d"
     }
   ]
 }

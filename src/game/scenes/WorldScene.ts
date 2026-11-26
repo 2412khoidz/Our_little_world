@@ -36,6 +36,7 @@ import {
   tickTiledWorldNpcs,
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
+import { applyTiledZoneAccents } from '../world/tiledZoneAccents';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
@@ -233,6 +234,8 @@ export class WorldScene extends Phaser.Scene {
   private joystickVector = { vx: 0, vy: 0 };
 
   private lastPortalAtMs = 0;
+  private arrivedAtTile: { tileX: number; tileY: number } | null = null;
+  private ambientMoteKind: 'petal' | 'firefly' = 'petal';
   private buildingMap = false;
   private tiledNpcs: TiledWorldNpcEntity[] = [];
   private lastInteractKeySent: string | null = null;
@@ -327,6 +330,17 @@ export class WorldScene extends Phaser.Scene {
 
   private avatarScale(): number {
     return this.tilePx() >= 64 ? 2 : 1;
+  }
+
+  private isIndoorMap(mapId: MapId = this.currentMapId): boolean {
+    return mapId === 'home' || mapId === 'shop' || mapId.startsWith('shop_');
+  }
+
+  private mapBackgroundColor(mapId: MapId): string {
+    if (this.isIndoorMap(mapId)) return '#1d151c';
+    if (mapId === 'beach') return '#2d82b5';
+    if (mapId === 'forest') return '#254834';
+    return '#689b4f';
   }
 
   private nameTagOffsetY(posture: CouplePostureKind): number {
@@ -429,10 +443,12 @@ export class WorldScene extends Phaser.Scene {
     }
     this.motes = [];
     for (const npc of this.tiledNpcs) {
+      npc.shadow.destroy();
       npc.body.destroy();
       npc.label.destroy();
     }
     this.tiledNpcs = [];
+    this.ambientMoteKind = mapId === 'beach' || mapId === 'forest' ? 'firefly' : 'petal';
     this.tilemap?.destroy();
     this.tilemap = null;
     this.farmPlotVisual?.destroy();
@@ -466,6 +482,18 @@ export class WorldScene extends Phaser.Scene {
         this.buildTiledWorldMap(mapId);
       }
       this.tiledNpcs = spawnTiledWorldNpcs(this, mapId, (obj) => this.mapLayers.push(obj));
+      const accents = applyTiledZoneAccents(
+        mapId,
+        worldW,
+        worldH,
+        this.placeProp.bind(this),
+        (obj) => this.mapLayers.push(obj),
+        this,
+      );
+      if (accents.motes.length > 0 && accents.moteBounds) {
+        this.motes = accents.motes;
+        this.moteBounds = accents.moteBounds;
+      }
       if (mapId === 'farm' && this.tilemap) {
         const farmTilePx = getMapTilePixelSize('farm');
         this.farmPlotVisual = new FarmPlotVisualController(
@@ -487,11 +515,12 @@ export class WorldScene extends Phaser.Scene {
       this.buildStarterMap(mapId);
     }
 
-    this.cameras.main.setBackgroundColor(mapId === 'home' ? '#a6be77' : '#a6be77');
+    this.cameras.main.setBackgroundColor(this.mapBackgroundColor(mapId));
 
     const spawn = spawnTile ?? def.defaultSpawn;
     const me = this.members.find((m) => m.userId === this.localUserId);
     const partnerOffsetX = !spawnTile && me?.role === 'partner' && !def.isStaticBlocked(spawn.tileX + 1, spawn.tileY) ? 1 : 0;
+    this.arrivedAtTile = { tileX: spawn.tileX + partnerOffsetX, tileY: spawn.tileY };
     const px = (spawn.tileX + partnerOffsetX + 0.5) * this.tilePx();
     const py = (spawn.tileY + 0.85) * this.tilePx();
     const s = this.avatarScale();
@@ -1439,7 +1468,7 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:sync-world-clock', (payload) => {
         this.worldClockPresentation = payload;
-        this.worldLighting?.apply(payload);
+        this.worldLighting?.apply(payload, this.isIndoorMap());
       }),
     );
 
@@ -1561,8 +1590,13 @@ export class WorldScene extends Phaser.Scene {
       cam.setZoom(zoom);
       const largeWorld =
         this.currentMapId === 'outdoor' || isTiledWorldMapId(this.currentMapId);
-      const marginX = largeWorld ? 8 : 12;
-      const marginY = largeWorld ? 8 : 12;
+      const wideTiledOutdoor =
+        this.currentMapId === 'village' ||
+        this.currentMapId === 'farm' ||
+        this.currentMapId === 'forest' ||
+        this.currentMapId === 'beach';
+      const marginX = wideTiledOutdoor ? 0 : largeWorld ? 4 : 8;
+      const marginY = wideTiledOutdoor ? 0 : largeWorld ? 4 : 8;
       const scenic = computeScenicBounds(width, height, zoom, worldW, worldH, marginX, marginY);
       cam.setBounds(scenic.x, scenic.y, scenic.width, scenic.height);
       const fitsEntireMapHorizontally = width / zoom >= worldW;
@@ -1604,7 +1638,7 @@ export class WorldScene extends Phaser.Scene {
     const dtSec = Math.min(deltaMs, 50) / 1000;
     const now = Date.now();
     if (this.motes.length > 0) {
-      updateAmbientMotes(this.motes, this.moteBounds, dtSec, time / 1000, 'petal');
+      updateAmbientMotes(this.motes, this.moteBounds, dtSec, time / 1000, this.ambientMoteKind);
     }
 
     const moved = this.updateLocalMovement(dtSec);
@@ -1654,7 +1688,7 @@ export class WorldScene extends Phaser.Scene {
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);
     if (this.worldClockPresentation && this.worldLighting) {
-      this.worldLighting.apply(this.worldClockPresentation);
+      this.worldLighting.apply(this.worldClockPresentation, this.isIndoorMap());
     }
     this.syncCameraDataset();
     this.emitLocalMovement(moved ? 'walk' : 'idle');
@@ -1947,25 +1981,38 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryEnterAnchorBench(targetId: string): boolean {
-    if (this.currentMapId !== 'outdoor') return false;
-    const anchors = MAIN_GAME_WORLD_ANCHORS.outdoor;
-    const slots: Record<string, { x: number; y: number; slot1?: { x: number; y: number } }> = {
-      outdoor_picnic: {
-        x: anchors.picnicPx.x - 6,
-        y: anchors.picnicPx.y,
-        slot1: { x: anchors.picnicPx.x + 6, y: anchors.picnicPx.y },
-      },
-      outdoor_sunset: {
-        x: anchors.sunsetBenchPx.x - 6,
-        y: anchors.sunsetBenchPx.y,
-        slot1: { x: anchors.sunsetBenchPx.x + 6, y: anchors.sunsetBenchPx.y },
-      },
-    };
-    const anchor = slots[targetId];
-    if (!anchor) return false;
+    let slot0: { x: number; y: number } | null = null;
+    let slot1: { x: number; y: number } | null = null;
 
-    const slot0 = { x: anchor.x, y: anchor.y };
-    const slot1 = anchor.slot1 ?? { x: anchor.x + 12, y: anchor.y };
+    if (this.currentMapId === 'outdoor') {
+      const anchors = MAIN_GAME_WORLD_ANCHORS.outdoor;
+      const slots: Record<string, { x: number; y: number; slot1?: { x: number; y: number } }> = {
+        outdoor_picnic: {
+          x: anchors.picnicPx.x - 6,
+          y: anchors.picnicPx.y,
+          slot1: { x: anchors.picnicPx.x + 6, y: anchors.picnicPx.y },
+        },
+        outdoor_sunset: {
+          x: anchors.sunsetBenchPx.x - 6,
+          y: anchors.sunsetBenchPx.y,
+          slot1: { x: anchors.sunsetBenchPx.x + 6, y: anchors.sunsetBenchPx.y },
+        },
+      };
+      const anchor = slots[targetId];
+      if (anchor) {
+        slot0 = { x: anchor.x, y: anchor.y };
+        slot1 = anchor.slot1 ?? { x: anchor.x + 12, y: anchor.y };
+      }
+    }
+
+    if (!slot0 || !slot1) {
+      const targets = buildTiledWorldInteractableTargets(this.currentMapId, isDonorEconomyUiEnabled());
+      const bench = targets.find((t) => t.id === targetId && t.kind === 'bench');
+      if (!bench) return false;
+      slot0 = { x: bench.x - 7, y: bench.y };
+      slot1 = { x: bench.x + 7, y: bench.y };
+    }
+
     const occupiedSlots: number[] = [];
     for (const remote of this.remoteEntities.values()) {
       if (remote.mapId !== this.currentMapId || remote.posture !== 'sit_bench') continue;
@@ -2034,13 +2081,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private findNearbyInteractable(): NearbyInteractable | null {
-    const tileX = (this.localSprite.x - 8) / this.tilePx();
-    const tileY = (this.localSprite.y - 8) / this.tilePx();
+    const tileX = this.localSprite.x / this.tilePx() - 0.5;
+    const tileY = (this.localSprite.y - 2) / this.tilePx() - 0.5;
     const def = getMapDefinition(this.currentMapId);
 
-    const tileXi = Math.floor(tileX);
-    const tileYi = Math.floor(tileY);
-  for (const portal of def.portals) {
+    const tileXi = Math.floor(this.localSprite.x / this.tilePx());
+    const tileYi = Math.floor((this.localSprite.y - 2) / this.tilePx());
+    for (const portal of def.portals) {
+      if (portal.targetMapId === this.currentMapId) continue;
       const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
       if (dist <= portal.radiusTiles) {
         return { kind: 'portal', labelVi: portal.labelVi };
@@ -2115,24 +2163,26 @@ export class WorldScene extends Phaser.Scene {
     const tileX = Math.floor(this.localSprite.x / this.tilePx());
     const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
 
-    if (this.buildingMap || now - this.lastPortalAtMs < 2200) return;
+    if (this.buildingMap || now - this.lastPortalAtMs < 1400) return;
 
-    for (const portal of def.portals) {
-      if (portal.targetMapId === this.currentMapId) continue;
-      const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
-      const dy = Math.abs(tileY - portal.tileY);
-      const onWestGateLane = portal.tileX === 0 && tileX <= 4 && dy <= 1;
-      const onEastGateLane =
-        portal.tileX === def.widthTiles - 1 && tileX >= def.widthTiles - 5 && dy <= 1;
-      if (dist <= 0.85 || onWestGateLane || onEastGateLane) {
-        this.lastPortalAtMs = now;
-        gameEventBus.emit('evt:request-map-change', {
-          targetMapId: portal.targetMapId,
-          spawnX: portal.targetSpawnX,
-          spawnY: portal.targetSpawnY,
-          portalId: portal.id,
-        });
-        return;
+    const movedFromArrival =
+      !this.arrivedAtTile ||
+      Math.hypot(tileX - this.arrivedAtTile.tileX, tileY - this.arrivedAtTile.tileY) >= 1.4;
+
+    if (movedFromArrival) {
+      for (const portal of def.portals) {
+        if (portal.targetMapId === this.currentMapId) continue;
+        const dist = Math.hypot(tileX - portal.tileX, tileY - portal.tileY);
+        if (dist <= 0.95) {
+          this.lastPortalAtMs = now;
+          gameEventBus.emit('evt:request-map-change', {
+            targetMapId: portal.targetMapId,
+            spawnX: portal.targetSpawnX,
+            spawnY: portal.targetSpawnY,
+            portalId: portal.id,
+          });
+          return;
+        }
       }
     }
 
@@ -2177,8 +2227,8 @@ export class WorldScene extends Phaser.Scene {
     } else if (near.kind === 'mailbox') {
       gameEventBus.emit('evt:open-mailbox');
     } else if (near.kind === 'npc_talk') {
-      const tileX = Math.floor((this.localSprite.x - 8) / this.tilePx());
-      const tileY = Math.floor((this.localSprite.y - 8) / this.tilePx());
+      const tileX = Math.floor(this.localSprite.x / this.tilePx());
+      const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
       const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
       if (npc) {
         gameEventBus.emit('evt:preview-notice', {

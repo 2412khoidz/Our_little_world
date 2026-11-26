@@ -87,6 +87,24 @@ export class BootScene extends Phaser.Scene {
     this.load.image('donor-cabacos-tool-shop', '/maps/donor/cabacos/tool_shop_sunnyside_style_384x288.png');
     this.load.image('donor-cabacos-crop-market', '/maps/donor/cabacos/crop_market_sem_fundo.png');
     this.load.image('donor-cabacos-town-hall', '/maps/donor/cabacos/town_hall_sem_fundo.png');
+    const hollowmereSprites: [string, string][] = [
+      ['donor-hollowmere-ferry', '/maps/donor/hollowmere/sprites/ferry.png'],
+      ['donor-hollowmere-palm', '/maps/donor/hollowmere/sprites/palm.png'],
+      ['donor-hollowmere-windmill', '/maps/donor/hollowmere/sprites/windmill.png'],
+      ['donor-hollowmere-shipping-bin', '/maps/donor/hollowmere/sprites/shipping_bin.png'],
+      ['donor-hollowmere-scarecrow', '/maps/donor/hollowmere/sprites/scarecrow.png'],
+      ['donor-hollowmere-wishing-well', '/maps/donor/hollowmere/sprites/wishing_well.png'],
+      ['donor-hollowmere-crab-pot', '/maps/donor/hollowmere/sprites/crab_pot.png'],
+      ['donor-hollowmere-bench', '/maps/donor/hollowmere/sprites/wooden_bench.png'],
+      ['donor-hollowmere-string-lights', '/maps/donor/hollowmere/sprites/string_lights.png'],
+      ['donor-hollowmere-hay-bale', '/maps/donor/hollowmere/sprites/hay_bale.png'],
+      ['donor-hollowmere-greenhouse', '/maps/donor/hollowmere/sprites/greenhouse.png'],
+      ['donor-hollowmere-cafe', '/maps/donor/hollowmere/sprites/cafe.png'],
+      ['donor-hollowmere-farmhouse', '/maps/donor/hollowmere/sprites/farmhouse.png'],
+    ];
+    for (const [key, url] of hollowmereSprites) {
+      this.load.image(key, url);
+    }
     this.load.image('donor-cabacos-soil', '/assets/donor/cabacos-plantation/soil.png');
     this.load.image('donor-cabacos-hoe', '/assets/donor/cabacos-plantation/tools/hoe.png');
     this.load.image('donor-cabacos-watering-can', '/assets/donor/cabacos-plantation/tools/watering_can.png');
@@ -180,6 +198,19 @@ export class BootScene extends Phaser.Scene {
       'donor-cabacos-tool-shop',
       'donor-cabacos-crop-market',
       'donor-cabacos-town-hall',
+      'donor-hollowmere-ferry',
+      'donor-hollowmere-palm',
+      'donor-hollowmere-windmill',
+      'donor-hollowmere-shipping-bin',
+      'donor-hollowmere-scarecrow',
+      'donor-hollowmere-wishing-well',
+      'donor-hollowmere-crab-pot',
+      'donor-hollowmere-bench',
+      'donor-hollowmere-string-lights',
+      'donor-hollowmere-hay-bale',
+      'donor-hollowmere-greenhouse',
+      'donor-hollowmere-cafe',
+      'donor-hollowmere-farmhouse',
       'donor-cabacos-soil',
       'donor-cabacos-hoe',
       'donor-cabacos-watering-can',

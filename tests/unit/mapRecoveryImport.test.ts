@@ -22,16 +22,11 @@ describe('map recovery import contract', () => {
     expect(recoveryEnabled(farmJson)).toBe(true);
   });
 
-  it('beach recovery uses Cabacos east coast when tagged', () => {
-    const cabacosPrimary = beachJson.properties?.some(
-      (p) => p.name === 'olwBeachCabacosPrimary' && p.value === true,
-    );
-    if (!cabacosPrimary) {
-      if (!beachJson.properties?.some((p) => p.name === 'olwHollowmereNoScatter')) return;
-      expect(recoveryEnabled(beachJson)).toBe(true);
-      return;
-    }
+  it('beach recovery uses independent Gull Bay coastal layout', () => {
     expect(beachJson.properties?.find((p) => p.name === 'olwDonor')?.value).toBe('cabacos');
+    expect(beachJson.properties?.find((p) => p.name === 'olwDonorMap')?.value).toBe(
+      'gull_bay_independent_coast_v2',
+    );
     expect(recoveryEnabled(beachJson)).toBe(true);
     expect(beachJson.tilesets?.some((t) => t.name === 'ts_map')).toBe(true);
   });

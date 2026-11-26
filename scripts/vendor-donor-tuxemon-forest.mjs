@@ -10,7 +10,10 @@ import { execSync } from 'node:child_process';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const UPSTREAM =
-  process.env.TUXEMON_UPSTREAM ?? path.resolve('/tmp/tuxemon-upstream');
+  process.env.TUXEMON_UPSTREAM ??
+  (fs.existsSync(path.resolve(REPO_ROOT, 'vendor/tuxemon-upstream'))
+    ? path.resolve(REPO_ROOT, 'vendor/tuxemon-upstream')
+    : path.resolve('/tmp/tuxemon-upstream'));
 const OUT_ROOT = path.resolve(REPO_ROOT, 'public/maps/donor/tuxemon');
 const MAP_NAMES = ['dryadsgrove.tmx', 'tt_forest_route1.tmx'];
 const TILESET_FILES = [

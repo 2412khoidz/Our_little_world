@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { getIdleFrameIndex } from '../art/avatarSpriteBuilder';
 import { ensurePhaserAvatarTexture } from '../art/phaserAvatarTexture';
+import { createCompactNameTag, placeSoftShadow } from '../artDemos/demoHelpers';
 import { TILE_SIZE } from '../../shared/maps';
 import type { AvatarConfig, MapId } from '../../shared/types';
 import { getParsedTiledWorld } from '../../shared/world/tiledMapRegistry';
@@ -13,8 +14,8 @@ export interface TiledWorldNpcEntity {
   tileX: number;
   tileY: number;
   body: Phaser.GameObjects.Sprite;
-  shadow: Phaser.GameObjects.Ellipse;
-  label: Phaser.GameObjects.Text;
+  shadow: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Container;
   homeX: number;
   homeY: number;
   phase: number;
@@ -24,10 +25,10 @@ const NPC_AVATAR_BY_ID: Record<string, AvatarConfig> = {
   bac_hai: {
     skinTone: 'warm',
     hairStyle: 'short',
-    hairColor: 'chestnut',
+    hairColor: 'espresso',
     outfitStyle: 'overall',
     outfitColor: 'cream',
-    accessory: 'none',
+    accessory: 'glasses',
   },
   co_lan: {
     skinTone: 'fair',
@@ -40,25 +41,36 @@ const NPC_AVATAR_BY_ID: Record<string, AvatarConfig> = {
   ong_minh: {
     skinTone: 'tan',
     hairStyle: 'short',
-    hairColor: 'espresso',
+    hairColor: 'chestnut',
     outfitStyle: 'sweater',
     outfitColor: 'sky',
+    accessory: 'none',
+  },
+  chu_tu: {
+    skinTone: 'tan',
+    hairStyle: 'short',
+    hairColor: 'espresso',
+    outfitStyle: 'overall',
+    outfitColor: 'sky',
     accessory: 'glasses',
+  },
+  be_na: {
+    skinTone: 'fair',
+    hairStyle: 'long',
+    hairColor: 'honey',
+    outfitStyle: 'cardigan',
+    outfitColor: 'sage',
+    accessory: 'ribbon',
   },
 };
 
 function npcAvatarForSpawn(id: string, role: string): AvatarConfig {
   if (NPC_AVATAR_BY_ID[id]) return NPC_AVATAR_BY_ID[id]!;
-  return role === 'market_preview'
-    ? NPC_AVATAR_BY_ID.bac_hai!
-    : {
-        skinTone: 'warm',
-        hairStyle: 'bob',
-        hairColor: 'honey',
-        outfitStyle: 'sweater',
-        outfitColor: 'sage',
-        accessory: 'none',
-      };
+  if (role.includes('fish')) return NPC_AVATAR_BY_ID.ong_minh!;
+  if (role.includes('bakery') || role.includes('cafe')) return NPC_AVATAR_BY_ID.co_lan!;
+  if (role.includes('tool')) return NPC_AVATAR_BY_ID.chu_tu!;
+  if (role.includes('forest')) return NPC_AVATAR_BY_ID.be_na!;
+  return NPC_AVATAR_BY_ID.bac_hai!;
 }
 
 export function spawnTiledWorldNpcs(
@@ -74,25 +86,16 @@ export function spawnTiledWorldNpcs(
     const px = (spawn.tileX + 0.5) * TILE_SIZE;
     const py = (spawn.tileY + 0.85) * TILE_SIZE;
     const depth = Math.round(py);
-    const shadow = scene.add.ellipse(px, py + 2, 16, 6, 0x2a3350, 0.22);
-    shadow.setDepth(depth - 1);
+    const shadow = placeSoftShadow(scene, px, py - 1, 14, 5, depth - 1, 0.4);
     const avatar = npcAvatarForSpawn(spawn.id, spawn.role);
     const texKey = ensurePhaserAvatarTexture(scene, avatar);
     const body = scene.add
       .sprite(px, py, texKey, getIdleFrameIndex('down'))
-      .setOrigin(0.5, 1)
+      .setOrigin(0.5, 0.88)
       .setDepth(depth);
     const labelText = spawn.labelVi ?? spawn.id;
-    const label = scene.add
-      .text(px, py - 30, labelText, {
-        fontFamily: 'Nunito, sans-serif',
-        fontSize: '10px',
-        color: '#2a3350',
-        backgroundColor: '#fff8e8ee',
-        padding: { x: 5, y: 2 },
-      })
-      .setOrigin(0.5, 1)
-      .setDepth(depth + 1);
+    const label = createCompactNameTag(scene, px, py - 28, labelText, '#d8b46e');
+    label.setDepth(9450);
     pushLayer(shadow);
     pushLayer(body);
     pushLayer(label);
@@ -117,13 +120,13 @@ export function spawnTiledWorldNpcs(
 export function tickTiledWorldNpcs(npcs: readonly TiledWorldNpcEntity[], timeMs: number): void {
   const t = timeMs / 1000;
   for (const npc of npcs) {
-    const dx = Math.sin(t * 0.35 + npc.phase) * 6;
-    const dy = Math.cos(t * 0.28 + npc.phase) * 2;
-    const nx = npc.homeX + dx;
-    const ny = npc.homeY + dy;
-    npc.body.setPosition(nx, ny);
-    npc.shadow.setPosition(nx, ny + 5);
-    npc.label.setPosition(nx, ny - 30);
+    const bob = Math.sin(t * 1.4 + npc.phase) * 0.6;
+    const sway = Math.sin(t * 0.45 + npc.phase) * 2.5;
+    const nx = npc.homeX + sway;
+    const ny = npc.homeY;
+    npc.body.setPosition(nx, ny + bob * 0.5);
+    npc.shadow.setPosition(nx, ny - 1);
+    npc.label.setPosition(nx, ny - 28 + bob * 0.5);
   }
 }
 

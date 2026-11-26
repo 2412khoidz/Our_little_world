@@ -2,15 +2,13 @@ import type { MapId } from '../types';
 import contractV1 from './farmPlotContract.v1.json';
 
 /**
- * Composer 1 — world anchors only (no farming simulation).
- * Bump `FARM_PLOT_CONTRACT_VERSION` + regenerate `farmPlotContract.v1.json` when anchors change.
+ * Unified 16px Farm Plot Contract (184 plots: farm_main 0..119 + farm_annex 0..63).
  */
 export const FARM_PLOT_CONTRACT_VERSION =
-  typeof contractV1.contractVersion === 'string' ? contractV1.contractVersion : '1.0.1';
+  typeof contractV1.contractVersion === 'string' ? contractV1.contractVersion : '1.0.2';
 
 export const FARM_ZONE_MAP_ID: MapId = 'farm';
 
-/** Tiled tile layer ids on `public/assets/maps/farm.json` (match generator). */
 export const FARM_TILED_LAYER_IDS = {
   ground: 1,
   paths: 2,
@@ -25,7 +23,6 @@ export const FARM_TILED_OBJECT_LAYER_IDS = {
   interactables: 11,
 } as const;
 
-/** Gids on `tileset-cozy` row 3 — must match `scripts/generate-starter-assets.mjs`. */
 export const FARM_TILE_GIDS = {
   soilDry: 53,
   soilWet: 54,
@@ -42,10 +39,6 @@ export interface FarmPlotRegion {
   readonly rows: number;
 }
 
-/**
- * Walkable soil rectangles on the farm map (Ground layer gids 53/54).
- * `plotAnchorId` = `${regionId}_${localIndex}` row-major within the region.
- */
 export const FARM_PLOT_REGIONS: readonly FarmPlotRegion[] =
   (contractV1.plotRegions as FarmPlotRegion[] | undefined)?.length === 2
     ? (contractV1.plotRegions as FarmPlotRegion[])
@@ -129,7 +122,7 @@ export function isFarmSoilTile(tileX: number, tileY: number): boolean {
   return enumerateFarmPlotAnchors().some((a) => a.tileX === tileX && a.tileY === tileY);
 }
 
-/** World interactables (HUD / simulation hooks). Tile coords = object origin in Tiled. */
+/** World interactables (all aligned to 16×16 tiles). */
 export const FARM_WORLD_INTERACTABLES = {
   shipping_bin: {
     id: 'farm_shipping_bin',
@@ -165,7 +158,6 @@ export const FARM_WORLD_INTERACTABLES = {
   },
 } as const;
 
-/** Village seed shop entry (Cabacos donor `village-to-shop-seed` → `shop_seed` interior). */
 export const VILLAGE_SHOP_PORTAL = {
   portalObjectId: 'village-to-shop-seed',
   mapId: 'village' as MapId,
@@ -191,16 +183,15 @@ export interface FarmPlotContractExport {
   villageShopPortal: typeof VILLAGE_SHOP_PORTAL;
 }
 
-/** Machine-readable export for Composer 1 (mirrors `farmPlotContract.v1.json`). */
 export function buildFarmPlotContractExport(): FarmPlotContractExport {
   return {
     contractVersion: FARM_PLOT_CONTRACT_VERSION,
     mapId: FARM_ZONE_MAP_ID,
     mapSizeTiles: {
       width: contractV1.mapSizeTiles?.width ?? 64,
-      height: contractV1.mapSizeTiles?.height ?? 56,
+      height: contractV1.mapSizeTiles?.height ?? 44,
     },
-    defaultSpawnTile: contractV1.defaultSpawnTile ?? { tileX: 55, tileY: 20 },
+    defaultSpawnTile: contractV1.defaultSpawnTile ?? { tileX: 29, tileY: 22 },
     tiledJsonPath: '/assets/maps/farm.json',
     tileGids: FARM_TILE_GIDS,
     tileLayerIds: FARM_TILED_LAYER_IDS,

@@ -89,7 +89,8 @@ export class FarmPlotVisualController {
       if (isWet) {
         const wetKey = this.pickWetSoilTextureKey(plot);
         if (wetKey) {
-          next.wetOverlay = this.scene.add.image(cx, cy, wetKey).setDepth(3.25).setScale(1);
+          const wetScale = this.tilePixelSize / 64;
+          next.wetOverlay = this.scene.add.image(cx, cy, wetKey).setDepth(3.25).setScale(wetScale);
           this.pushObject(next.wetOverlay);
         }
       }
@@ -114,7 +115,7 @@ export class FarmPlotVisualController {
         const indicatorKey = this.plotIndicatorTexture(plot);
         if (indicatorKey) {
           next.indicator = this.scene.add
-            .image(cx, cy - 22, indicatorKey)
+            .image(cx, cy - Math.max(12, Math.round(this.tilePixelSize * 0.85)), indicatorKey)
             .setDepth(3.55)
             .setScale(1);
           this.pushObject(next.indicator);
