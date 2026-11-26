@@ -43,14 +43,17 @@ import {
   type AmbientCrabHandle,
   type AmbientDuckHandle,
   type AmbientSheepHandle,
+  type AmbientSnailHandle,
 } from '../world/tiledZoneAccents';
 import {
   createChickenActorState,
   createDuckActorState,
+  createSnailActorState,
   stepEmergentChicken,
   stepEmergentCrab,
   stepEmergentDuck,
   stepEmergentSheep,
+  stepEmergentSnail,
 } from '../../shared/world/emergentWorldBehavior';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
@@ -95,7 +98,13 @@ import {
 } from '../art/phaserAvatarTexture';
 import { computeGameplayZoom, computeScenicBounds, fitWorldZoom } from '../art/worldCamera';
 import { USE_PRIVATE_ART } from '../art/atlasProfile';
-import { WORLD_ART_KEY, WORLD_PROPS_KEY, applyWorldFurnitureDisplaySize, worldFurnitureFrame } from '../art/worldAtlas';
+import {
+  SNAIL_SHEET_KEY,
+  WORLD_ART_KEY,
+  WORLD_PROPS_KEY,
+  applyWorldFurnitureDisplaySize,
+  worldFurnitureFrame,
+} from '../art/worldAtlas';
 import { facingTowardPoint, isFarmPlotPixelAdjacent } from '../../shared/farming/farmAdjacency';
 import { resolveSharedPostureSeat } from '../../shared/interaction/furnitureSeatAnchors';
 import { isPrivateAtlasReady } from '../world/privateArtCapability';
@@ -272,10 +281,12 @@ export class WorldScene extends Phaser.Scene {
   private ambientMoteKind: 'petal' | 'firefly' = 'petal';
   private buildingMap = false;
   private tiledNpcs: TiledWorldNpcEntity[] = [];
+  private activeDialogueNpcId: string | null = null;
   private ambientChickens: AmbientChickenHandle[] = [];
   private ambientDucks: AmbientDuckHandle[] = [];
   private ambientSheep: AmbientSheepHandle[] = [];
   private ambientCrabs: AmbientCrabHandle[] = [];
+  private ambientSnails: AmbientSnailHandle[] = [];
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
@@ -649,6 +660,7 @@ export class WorldScene extends Phaser.Scene {
     this.ambientDucks = [];
     this.ambientSheep = [];
     this.ambientCrabs = [];
+    this.ambientSnails = [];
     this.ambientMoteKind = mapId === 'beach' || mapId === 'forest' ? 'firefly' : 'petal';
     this.tilemap?.destroy();
     this.tilemap = null;
@@ -695,6 +707,7 @@ export class WorldScene extends Phaser.Scene {
       this.ambientDucks = accents.ducks ?? [];
       this.ambientSheep = accents.sheep ?? [];
       this.ambientCrabs = accents.crabs ?? [];
+      this.ambientSnails = accents.snails ?? [];
       if (accents.motes.length > 0 && accents.moteBounds) {
         this.motes = accents.motes;
         this.moteBounds = accents.moteBounds;
@@ -919,20 +932,20 @@ export class WorldScene extends Phaser.Scene {
       this.mapLayers.push(frog);
     }
     if (this.anims.exists('olw-duck')) {
-      const duck = this.add.sprite(168, 168, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`).setOrigin(0.5, 0.8).setDepth(170);
-      duck.play('olw-duck');
-      this.mapLayers.push(duck);
-      this.ambientDucks.push({
-        sprite: duck,
-        lastRippleAtMs: 0,
-        state: createDuckActorState(
-          'garden_pond_duck_0',
-          168,
-          168,
-          { minX: 146, maxX: 174, minY: 154, maxY: 174 },
-          1.1,
-        ),
-      });
+      const duckConfigs = [
+        { id: 'garden_pond_duck_0', x: 168, y: 168, bounds: { minX: 146, maxX: 174, minY: 154, maxY: 174 }, phase: 1.1 },
+        { id: 'garden_pond_duck_1', x: 96, y: 160, bounds: { minX: 86, maxX: 108, minY: 150, maxY: 170 }, phase: 3.4 },
+      ];
+      for (const dc of duckConfigs) {
+        const duck = this.add.sprite(dc.x, dc.y, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`).setOrigin(0.5, 0.8).setDepth(dc.y + 2);
+        duck.play('olw-duck');
+        this.mapLayers.push(duck);
+        this.ambientDucks.push({
+          sprite: duck,
+          lastRippleAtMs: 0,
+          state: createDuckActorState(dc.id, dc.x, dc.y, dc.bounds, dc.phase),
+        });
+      }
     }
 
     // 3. Romantic Sakura Picnic Glade (`tx = 1..4, ty = 8..10`)
@@ -966,16 +979,40 @@ export class WorldScene extends Phaser.Scene {
     this.placeProp(extIds.props.beehive, 266, 138, 0.5, 1, 138);
 
     if (this.anims.exists('olw-chicken')) {
-      const chShadow = placeSoftShadow(this, 184, 143, 11, 4, 135, 0.45);
-      this.mapLayers.push(chShadow);
-      const ch = this.add.sprite(184, 144, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`).setOrigin(0.5, 0.85).setDepth(144);
-      ch.play('olw-chicken');
-      this.mapLayers.push(ch);
-      this.ambientChickens.push({
-        sprite: ch,
-        shadow: chShadow,
-        state: createChickenActorState('garden_chicken_0', 184, 144, 0.9),
-      });
+      const chickSpecs = [
+        { id: 'garden_chicken_0', x: 184, y: 144, phase: 0.9 },
+        { id: 'garden_chicken_1', x: 48, y: 108, phase: 2.7 },
+      ];
+      for (const cs of chickSpecs) {
+        const chShadow = placeSoftShadow(this, cs.x, cs.y - 1, 11, 4, cs.y - 9, 0.45);
+        this.mapLayers.push(chShadow);
+        const ch = this.add.sprite(cs.x, cs.y, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`).setOrigin(0.5, 0.85).setDepth(cs.y);
+        ch.play('olw-chicken');
+        this.mapLayers.push(ch);
+        this.ambientChickens.push({
+          sprite: ch,
+          shadow: chShadow,
+          state: createChickenActorState(cs.id, cs.x, cs.y, cs.phase),
+        });
+      }
+    }
+
+    if (this.textures.exists(SNAIL_SHEET_KEY) && this.anims.exists('olw-snail')) {
+      const snailSpecs: readonly { id: string; x: number; y: number; axis: 'x' | 'y'; span: number; phase: number }[] = [
+        { id: 'garden_snail_0', x: 92, y: 134, axis: 'x', span: 16, phase: 0.6 },
+        { id: 'garden_snail_1', x: 206, y: 174, axis: 'y', span: 14, phase: 2.1 },
+      ];
+      for (const sn of snailSpecs) {
+        const snShadow = placeSoftShadow(this, sn.x, sn.y - 1, 8, 3, Math.round(sn.y) - 1, 0.36);
+        const snSprite = this.add.sprite(sn.x, sn.y, SNAIL_SHEET_KEY, 0).setOrigin(0.5, 0.85).setDepth(Math.round(sn.y));
+        snSprite.play('olw-snail');
+        this.mapLayers.push(snShadow, snSprite);
+        this.ambientSnails.push({
+          sprite: snSprite,
+          shadow: snShadow,
+          state: createSnailActorState(sn.id, sn.x, sn.y, sn.axis, sn.span, sn.phase),
+        });
+      }
     }
 
     // 5. Drifting cherry blossom petals (within walkable garden bounds)
@@ -1839,6 +1876,9 @@ export class WorldScene extends Phaser.Scene {
         this.studyPetMode = active;
         this.petEntity?.setStudyMode(active);
       }),
+      gameEventBus.on('cmd:set-active-npc-dialogue', ({ npcId }) => {
+        this.activeDialogueNpcId = npcId;
+      }),
 
       gameEventBus.on('cmd:pet-local-food-offer', (offer) => {
         this.livingPetDriver?.setFoodOffer(offer);
@@ -1941,7 +1981,15 @@ export class WorldScene extends Phaser.Scene {
 
       gameEventBus.on('cmd:sync-world-clock', (payload) => {
         this.worldClockPresentation = payload;
-        this.worldLighting?.apply(payload, this.isIndoorMap());
+        const cam = this.cameras.main;
+        const playerScreenPos =
+          this.localSprite && cam.width > 0 && cam.height > 0
+            ? {
+                x: cam.width * 0.5 + (this.localSprite.x - cam.worldView.centerX) * cam.zoom,
+                y: cam.height * 0.5 + (this.localSprite.y - 10 - cam.worldView.centerY) * cam.zoom,
+              }
+            : null;
+        this.worldLighting?.apply(payload, this.isIndoorMap(), playerScreenPos);
       }),
     );
 
@@ -2249,6 +2297,10 @@ export class WorldScene extends Phaser.Scene {
           isNight,
           weatherKind,
           isTileBlocked: isBlockedTile,
+          isForbiddenTile:
+            this.currentMapId === 'farm'
+              ? (tx, ty) => farmPlotIndexForTile(tx, ty) !== null
+              : undefined,
         });
         sp.sprite
           .setPosition(sp.state.x, sp.state.y + sp.state.grazeBobY)
@@ -2291,6 +2343,30 @@ export class WorldScene extends Phaser.Scene {
           .setDepth(Math.round(cr.state.y));
         cr.sprite.anims.timeScale = cr.state.animRateScale;
         cr.shadow.setPosition(cr.state.x, cr.state.y - 1);
+      }
+    }
+
+    if (this.ambientSnails.length > 0) {
+      for (const sn of this.ambientSnails) {
+        stepEmergentSnail(sn.state, {
+          nowMs: now,
+          dtSec,
+          tilePx: tPx,
+          playerX: this.localSprite?.x ?? null,
+          playerY: this.localSprite?.y ?? null,
+          playerRunning: moved && running,
+          toolSwinging,
+          heldItemSku: this.heldItem.itemSku,
+          isNight,
+          weatherKind,
+          isTileBlocked: isBlockedTile,
+        });
+        sn.sprite
+          .setPosition(sn.state.x, sn.state.y)
+          .setFlipX(sn.state.facing === 'left')
+          .setDepth(Math.round(sn.state.y));
+        sn.sprite.anims.timeScale = sn.state.animRateScale;
+        sn.shadow.setPosition(sn.state.x, sn.state.y - 1);
       }
     }
 
@@ -2403,6 +2479,10 @@ export class WorldScene extends Phaser.Scene {
       playerPosture: this.localPosture,
       isNight,
       weatherKind,
+      activeDialogueNpcId: this.activeDialogueNpcId,
+      partnerInSameRoom: Array.from(this.remoteEntities.values()).some(
+        (remote) => remote.mapId === this.currentMapId,
+      ),
       isTileBlocked: isBlockedTile,
       actorObstacles: npcActorObstacles,
     });
@@ -2410,7 +2490,15 @@ export class WorldScene extends Phaser.Scene {
     this.syncHeldItemPresentation(time);
     this.emitInteractionFrameIfDue(now);
     if (this.worldClockPresentation && this.worldLighting) {
-      this.worldLighting.apply(this.worldClockPresentation, this.isIndoorMap());
+      const cam = this.cameras.main;
+      const playerScreenPos =
+        this.localSprite && cam.width > 0 && cam.height > 0
+          ? {
+              x: cam.width * 0.5 + (this.localSprite.x - cam.worldView.centerX) * cam.zoom,
+              y: cam.height * 0.5 + (this.localSprite.y - 10 - cam.worldView.centerY) * cam.zoom,
+            }
+          : null;
+      this.worldLighting.apply(this.worldClockPresentation, this.isIndoorMap(), playerScreenPos);
     }
     this.syncCameraDataset();
     this.emitLocalMovement(moved ? 'walk' : 'idle');

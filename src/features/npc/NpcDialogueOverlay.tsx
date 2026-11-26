@@ -11,6 +11,7 @@ import {
   recordNpcConversation,
   resolveNpcProfile,
   saveNpcRelationshipState,
+  selectHadesDialogueLine,
   setNpcErrandStatus,
   type NpcDialogueActionKind,
   type NpcDialogueChoice,
@@ -135,13 +136,27 @@ export function NpcDialogueOverlay({
     [npcId, fallbackLabelVi, fallbackRole, fallbackDialogueVi],
   );
 
-  const [relMap, setRelMap] = useState(() => {
+  const [{ relMap, chosenLineId }, setDialogueSession] = useState(() => {
     const loaded = loadNpcRelationshipState(worldId, userId);
-    const updated = recordNpcConversation(loaded, profile.id);
+    const curRel = getNpcRelationship(loaded, profile.id);
+    const pick = selectHadesDialogueLine(profile.id, {
+      ...context,
+      mapId,
+      affinity: curRel.affinity,
+      errandStatus: curRel.errandStatus,
+      talkCount: curRel.talkCount ?? 0,
+      seenLineIds: curRel.seenLineIds ?? [],
+    });
+    const updated = recordNpcConversation(loaded, profile.id, Date.now(), pick?.id ?? null);
     saveNpcRelationshipState(worldId, userId, updated);
-    return updated;
+    return { relMap: updated, chosenLineId: pick?.id ?? null };
   });
   const rel = getNpcRelationship(relMap, profile.id);
+  const seenBeforeOpen = useMemo(
+    () =>
+      (rel.seenLineIds ?? []).filter((id) => id !== chosenLineId),
+    [rel.seenLineIds, chosenLineId],
+  );
 
   const [nodeId, setNodeId] = useState<string>(profile.entryNodeId);
   const node = profile.nodes[nodeId] ?? profile.nodes[profile.entryNodeId]!;
@@ -152,8 +167,10 @@ export function NpcDialogueOverlay({
       mapId,
       affinity: rel.affinity,
       errandStatus: rel.errandStatus,
+      talkCount: Math.max(0, (rel.talkCount ?? 1) - 1),
+      seenLineIds: seenBeforeOpen,
     }),
-    [context, mapId, rel.affinity, rel.errandStatus],
+    [context, mapId, rel.affinity, rel.errandStatus, rel.talkCount, seenBeforeOpen],
   );
 
   const fullText = useMemo(() => node.textVi(fullContext), [node, fullContext]);
@@ -210,17 +227,17 @@ export function NpcDialogueOverlay({
     (choice: NpcDialogueChoice) => {
       gameAudio.playSfx('ui_select', { volumeScale: 0.6 });
       if (choice.action === 'accept_errand') {
-        setRelMap((prev) => {
-          const next = setNpcErrandStatus(prev, profile.id, 'active', 0);
+        setDialogueSession((prev) => {
+          const next = setNpcErrandStatus(prev.relMap, profile.id, 'active', 0);
           saveNpcRelationshipState(worldId, userId, next);
-          return next;
+          return { ...prev, relMap: next };
         });
       } else if (choice.action === 'complete_errand') {
         gameAudio.playStinger('quest');
-        setRelMap((prev) => {
-          const next = setNpcErrandStatus(prev, profile.id, 'done', 2);
+        setDialogueSession((prev) => {
+          const next = setNpcErrandStatus(prev.relMap, profile.id, 'done', 2);
           saveNpcRelationshipState(worldId, userId, next);
-          return next;
+          return { ...prev, relMap: next };
         });
       } else if (choice.action) {
         onAction(choice.action);
@@ -276,7 +293,7 @@ export function NpcDialogueOverlay({
       onClick={onClose}
     >
       <div
-        className="adv-dialogue-panel olw-game-window"
+        className="adv-dialogue-panel"
         data-testid="npc-dialogue-overlay"
         onClick={(e) => e.stopPropagation()}
       >
@@ -328,7 +345,9 @@ export function NpcDialogueOverlay({
             <p>{visibleText}</p>
             {!typingDone ? (
               <span className="adv-dialogue-cursor" aria-hidden>▌</span>
-            ) : null}
+            ) : (
+              <span className="adv-dialogue-star" aria-hidden>★</span>
+            )}
           </div>
 
           <div className="adv-dialogue-footer">

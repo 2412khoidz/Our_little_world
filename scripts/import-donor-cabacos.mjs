@@ -804,6 +804,14 @@ const INTERIOR_SPECS = [
     counterLabel: 'Quầy hạt giống — Bác Hai',
     portalExitId: 'shop-seed-to-village',
     portalEnterId: 'village-to-shop-seed',
+    npcSpawn: {
+      id: 'bac_hai',
+      tileX: 11,
+      tileY: 6,
+      role: 'seed_vendor',
+      labelVi: 'Bác Hai',
+      dialogueVi: 'Chào hai cháu ghé Tiệm Hạt Giống! Quầy hạt tươi lúc nào cũng sẵn sàng.',
+    },
   },
   {
     donorFile: 'tool_shop.tmj',
@@ -819,6 +827,14 @@ const INTERIOR_SPECS = [
     counterLabel: 'Quầy dụng cụ',
     portalExitId: 'shop-tool-to-village',
     portalEnterId: 'village-to-shop-tool',
+    npcSpawn: {
+      id: 'chu_tu',
+      tileX: 12,
+      tileY: 9,
+      role: 'tool_smith',
+      labelVi: 'Chú Tư',
+      dialogueVi: 'Mồi câu, cuốc, bình tưới vừa được chú đánh bóng — cần gì cứ chọn nhé!',
+    },
   },
   {
     donorFile: 'Crop_market.tmj',
@@ -834,6 +850,14 @@ const INTERIOR_SPECS = [
     counterLabel: 'Quầy chợ nông sản',
     portalExitId: 'shop-crop-market-to-village',
     portalEnterId: 'village-to-shop-crop-market',
+    npcSpawn: {
+      id: 'co_lan',
+      tileX: 11,
+      tileY: 6,
+      role: 'bakery_host',
+      labelVi: 'Cô Lan',
+      dialogueVi: 'Chợ nông sản hôm nay nhộn nhịp ghê! Hai cháu mang rau quả hay cá tới đổi thưởng nhé.',
+    },
   },
   {
     donorFile: 'Town_hall.tmj',
@@ -849,6 +873,14 @@ const INTERIOR_SPECS = [
     counterLabel: 'Bản đồ mua ruộng — chưa mở',
     portalExitId: 'shop-town-hall-to-village',
     portalEnterId: 'village-to-shop-town-hall',
+    npcSpawn: {
+      id: 'thi_truong',
+      tileX: 12,
+      tileY: 9,
+      role: 'town_mayor',
+      labelVi: 'Trưởng Làng Minh',
+      dialogueVi: 'Chào hai cư dân mới của Làng Cabacos! Tòa Thị Chính luôn trân trọng từng góc nhà và luống rau hai bạn dựng xây.',
+    },
   },
 ];
 
@@ -972,6 +1004,34 @@ function exportCabacosImageInterior(spec) {
         x: 0,
         y: 0,
         objects: interactables,
+      },
+      {
+        id: 4,
+        name: 'NPCSpawns',
+        type: 'objectgroup',
+        visible: true,
+        opacity: 1,
+        draworder: 'topdown',
+        x: 0,
+        y: 0,
+        objects: spec.npcSpawn
+          ? [
+              {
+                id: 5,
+                name: spec.npcSpawn.id,
+                type: 'npc',
+                x: spec.npcSpawn.tileX * TW,
+                y: spec.npcSpawn.tileY * TW,
+                width: TW,
+                height: TW,
+                properties: [
+                  { name: 'role', type: 'string', value: spec.npcSpawn.role },
+                  { name: 'labelVi', type: 'string', value: spec.npcSpawn.labelVi },
+                  { name: 'dialogueVi', type: 'string', value: spec.npcSpawn.dialogueVi },
+                ],
+              },
+            ]
+          : [],
       },
     ],
     nextlayerid: 5,

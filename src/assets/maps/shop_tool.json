@@ -539,6 +539,44 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "NPCSpawns",
+      "type": "objectgroup",
+      "visible": true,
+      "opacity": 1,
+      "draworder": "topdown",
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 5,
+          "name": "chu_tu",
+          "type": "npc",
+          "x": 192,
+          "y": 144,
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "role",
+              "type": "string",
+              "value": "tool_smith"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Chú Tư"
+            },
+            {
+              "name": "dialogueVi",
+              "type": "string",
+              "value": "Mồi câu, cuốc, bình tưới vừa được chú đánh bóng — cần gì cứ chọn nhé!"
+            }
+          ]
+        }
+      ]
     }
   ],
   "nextlayerid": 5,

@@ -1,6 +1,6 @@
 import type { AvatarConfig, MapId } from '../types';
 
-export type NpcId = 'bac_hai' | 'co_lan' | 'chu_tu' | 'be_na' | 'ong_minh';
+export type NpcId = 'bac_hai' | 'co_lan' | 'chu_tu' | 'be_na' | 'ong_minh' | 'thi_truong';
 export type NpcMood = 'warm' | 'happy' | 'curious' | 'thoughtful';
 
 export type NpcDialogueActionKind =
@@ -30,6 +30,11 @@ export interface NpcDialogueContext {
   readonly hasPet: boolean;
   readonly petName?: string;
   readonly playerNickname: string;
+  readonly partnerInSameRoom?: boolean;
+  readonly partnerNickname?: string;
+  readonly heldItemSku?: string | null;
+  readonly talkCount?: number;
+  readonly seenLineIds?: readonly string[];
   readonly affinity: number;
   readonly errandStatus: 'none' | 'active' | 'done';
 }
@@ -58,12 +63,591 @@ export interface NpcRelationshipRecord {
   affinity: number;
   errandStatus: 'none' | 'active' | 'done';
   lastTalkedAtMs: number;
+  talkCount?: number;
+  seenLineIds?: string[];
 }
 
 export type NpcRelationshipMap = Record<string, NpcRelationshipRecord>;
 
+export interface HadesDialogueLine {
+  readonly id: string;
+  readonly category: 'couple' | 'solo' | 'context';
+  readonly when?: (ctx: NpcDialogueContext) => boolean;
+  readonly textVi: (ctx: NpcDialogueContext) => string;
+}
+
+function partnerLabel(ctx: NpcDialogueContext): string {
+  return ctx.partnerNickname?.trim() || 'người thương của cháu';
+}
+
+function catLabel(ctx: NpcDialogueContext): string {
+  return ctx.petName?.trim() || 'Quýt';
+}
+
+export const NPC_DIALOGUE_POOLS: Readonly<Record<NpcId, readonly HadesDialogueLine[]>> = {
+  bac_hai: [
+    // Couple (when both players are together in the same room/zone)
+    {
+      id: 'bh_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Ôi chà, ${ctx.playerNickname} với ${partnerLabel(ctx)} cùng sánh bước tới thăm bác đấy à! Nhìn hai đứa đứng cạnh nhau thấy cả khu vườn sáng bừng lên luôn.`,
+    },
+    {
+      id: 'bh_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Hai vợ chồng nhà này đúng là ăn ý thật — ${ctx.playerNickname} chọn giống dâu hay lúa mì thì để ${partnerLabel(ctx)} cầm bình tưới phụ một tay nha!`,
+    },
+    {
+      id: 'bh_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Hồi sáng bác để dành hai túi hạt mầm khỏe nhất cho ${ctx.playerNickname} và ${partnerLabel(ctx)} nè. Trồng chung một luống hoa sau nhà thích lắm đó.`,
+    },
+    {
+      id: 'bh_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Đi đâu cũng có cặp có đôi như ${ctx.playerNickname} với ${partnerLabel(ctx)} làm bác nhớ thuở trẻ ghê! Trong tiệm có đủ phân tốt lẫn giống ngon nhé.`,
+    },
+    // Solo (missing or asking warmly about partner)
+    {
+      id: 'bh_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Ủa hôm nay ${ctx.playerNickname} ghé một mình hả? ${partnerLabel(ctx)} chắc đang bận thu dọn ở nhà hay chuẩn bị bất ngờ gì cho cháu rồi.`,
+    },
+    {
+      id: 'bh_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Chào ${ctx.playerNickname}! Nhớ chọn thêm ít hạt dâu ngọt mang về trồng bất ngờ cho ${partnerLabel(ctx)} ngắm mỗi sáng nhé.`,
+    },
+    {
+      id: 'bh_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Một mình dạo quanh nông trại cũng thư thái lắm, nhưng lát nữa rủ ${partnerLabel(ctx)} qua đây xem mấy luống rau cùng lớn nha ${ctx.playerNickname}!`,
+    },
+    {
+      id: 'bh_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `${ctx.playerNickname} làm việc chăm thế này nhưng đừng quên nghỉ tay nhắn vài dòng cho ${partnerLabel(ctx)} yên tâm nhé.`,
+    },
+    // Context lines (night, weather, pet, held tool/seed, location)
+    {
+      id: 'bh_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Đêm xuống gió đồng mát rượi luôn ${ctx.playerNickname}! Đèn lồng tiệm bác vẫn chong sáng để đón hai đứa ghé muộn đó.`,
+    },
+    {
+      id: 'bh_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Mưa lất phất thế này hạt nảy mầm nhanh cực kỳ, cháu chẳng cần chạy ra giếng múc nước nhiều đâu ${ctx.playerNickname}!`,
+    },
+    {
+      id: 'bh_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Bé ${catLabel(ctx)} hồi nãy cứ rình mấy chú gà ngoài sân cười muốn xỉu luôn ${ctx.playerNickname}! Mèo nhà cháu lanh lợi thật sự.`,
+    },
+    {
+      id: 'bh_ctx_tool',
+      category: 'context',
+      when: (ctx) => Boolean(ctx.heldItemSku),
+      textVi: (ctx) =>
+        ctx.heldItemSku?.startsWith('seed_')
+          ? `Trên tay cháu là bịch hạt ngon rồi đấy! Ra ô đất nâu đứng sát vào là gieo được ngay.`
+          : `Đồ nghề sẵn trên tay rồi hả ${ctx.playerNickname}? Cần thêm hạt giống hay gửi bán nông sản cứ nói bác mở sổ ngay!`,
+    },
+  ],
+
+  co_lan: [
+    {
+      id: 'cl_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `A! ${ctx.playerNickname} và ${partnerLabel(ctx)} cùng tới chợ luôn nè! Nhìn hai đứa ríu rít đi cùng nhau ngọt hơn cả bánh tart dâu mới nướng của cô đó.`,
+    },
+    {
+      id: 'cl_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Hôm nay có cả ${ctx.playerNickname} lẫn ${partnerLabel(ctx)}, hay hai bạn chọn một món bánh cặp rồi mang về bàn ăn trong nhà thưởng thức chung đi!`,
+    },
+    {
+      id: 'cl_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Cô mới để riêng hai phần mứt dâu trên quầy cho ${ctx.playerNickname} và ${partnerLabel(ctx)}. Chợ nông sản vui nhất là lúc thấy hai cháu cười nói bên nhau.`,
+    },
+    {
+      id: 'cl_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Đứng sát bên quầy cô chụp một tấm kỷ niệm nào — cả ${ctx.playerNickname} với ${partnerLabel(ctx)} hôm nay đều có vẻ rạng rỡ đặc biệt luôn đó!`,
+    },
+    {
+      id: 'cl_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Chào ${ctx.playerNickname}! Hôm nay ${partnerLabel(ctx)} không đi chợ cùng cháu à? Để cô gói thêm một phần bánh ấm để cháu mang về làm quà nhé.`,
+    },
+    {
+      id: 'cl_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Cô đang ủ mẻ bột mới chờ ${ctx.playerNickname} với ${partnerLabel(ctx)} cùng ghé ăn thử nè. Cháu ghé một mình vậy mà thấy hơi thiếu một tiếng cười đấy nha!`,
+    },
+    {
+      id: 'cl_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `${ctx.playerNickname} vừa thu hoạch hay đi dạo một mình về phải không? Lát gọi ${partnerLabel(ctx)} vào Xưởng Hollow cùng phụ bếp cho vui nhé.`,
+    },
+    {
+      id: 'cl_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Gửi chút hương vani và dâu tây cho ${ctx.playerNickname}! Về nhớ kể với ${partnerLabel(ctx)} là tiệm bánh hôm nay thơm nức cả ngõ luôn nha.`,
+    },
+    {
+      id: 'cl_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Tối trời rồi mà bếp bánh vẫn ấm lửa đỏ hồng nè ${ctx.playerNickname}. Uống ly trà nóng rồi hãy dạo tiếp dưới ánh sao nhé!`,
+    },
+    {
+      id: 'cl_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Trời mưa lâm râm mà ngửi mùi bánh bơ vừa chín tới thì hết sẩy ${ctx.playerNickname} ơi!`,
+    },
+    {
+      id: 'cl_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Bé ${catLabel(ctx)} ngửi thấy mùi cá nướng từ chảo cô là vểnh tai ngay ấy ${ctx.playerNickname}! Dễ thương hết chỗ nói.`,
+    },
+    {
+      id: 'cl_ctx_fish',
+      category: 'context',
+      when: (ctx) => ctx.affinity >= 2 || ctx.walletCoins >= 80,
+      textVi: (ctx) =>
+        `Khách quen tới chơi rồi ${ctx.playerNickname}! Túi xu (${ctx.walletCoins}) đang rủng rỉnh vậy, cháu muốn thử công thức súp hải sản hay bánh dâu đặc biệt nào?`,
+    },
+  ],
+
+  chu_tu: [
+    {
+      id: 'ct_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Haha! ${ctx.playerNickname} và ${partnerLabel(ctx)} cùng dắt nhau vào tiệm dụng cụ à? Một người cầm cuốc, một người xách cần câu — chuẩn cặp đôi đảo nhỏ luôn!`,
+    },
+    {
+      id: 'ct_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Hai cháu ${ctx.playerNickname} và ${partnerLabel(ctx)} định rủ nhau đi câu cá thi xem ai kéo được cá hiếm trước phải không? Chú mới mài thêm móc câu bén lắm.`,
+    },
+    {
+      id: 'ct_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Có cả hai đứa ở đây chú vui hẳn! Để chú chỉnh lại cặp cần gỗ đôi cho ${ctx.playerNickname} với ${partnerLabel(ctx)} ra cầu gỗ Vịnh Hải Âu thử nha.`,
+    },
+    {
+      id: 'ct_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Bình tưới hay cuốc sắt nhà nào có hai người giữ gìn cùng nhau đều bền hơn gấp bội — nhìn ${ctx.playerNickname} với ${partnerLabel(ctx)} là chú biết ngay.`,
+    },
+    {
+      id: 'ct_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Chào ${ctx.playerNickname}! Đi mua mồi câu lén trước để trổ tài với ${partnerLabel(ctx)} đúng không? Chú giữ bí mật giùm cho!`,
+    },
+    {
+      id: 'ct_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Hôm nay thấy ${ctx.playerNickname} ghé một mình, ${partnerLabel(ctx)} đang ở ngoài biển hay trong vườn hả cháu? Cần gì bảo chú chuẩn bị sẵn cho hai đứa.`,
+    },
+    {
+      id: 'ct_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Rèn xong mẻ lưỡi câu sáng bóng này chú nghĩ ngay tới đội câu ${ctx.playerNickname} – ${partnerLabel(ctx)} đấy! Khi nào rảnh rủ nhau ra cầu tàu nhé.`,
+    },
+    {
+      id: 'ct_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Cần gì đồ nghề làm nông thì ${ctx.playerNickname} cứ chọn thoải mái, mang về đỡ đần cho cả ${partnerLabel(ctx)} nữa nhé.`,
+    },
+    {
+      id: 'ct_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Đêm rồi mà lò rèn chú Tư vẫn còn than hồng ấm lắm ${ctx.playerNickname}. Câu cá đêm ngoài vịnh nghe sóng vỗ thích cực kỳ!`,
+    },
+    {
+      id: 'ct_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Mưa bụi thế này không làm rỉ đồ nghề của chú đâu — cá lớn ngoài Vịnh Hải Âu lại hay ăn mồi vào buổi mưa nhẹ đấy ${ctx.playerNickname}!`,
+    },
+    {
+      id: 'ct_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Bé ${catLabel(ctx)} cứ nhìn chằm chằm vào xô mồi câu trong góc tiệm chú kìa ${ctx.playerNickname}! Coi chừng chú ăn vụng mất một con cá mồi đấy haha.`,
+    },
+    {
+      id: 'ct_ctx_tool',
+      category: 'context',
+      when: (ctx) => Boolean(ctx.heldItemSku),
+      textVi: (ctx) =>
+        ctx.heldItemSku === 'tool_fishing_rod'
+          ? `Cây cần câu trên tay trông cứng cáp ghê ${ctx.playerNickname}! Nhớ thủ thêm mồi trước khi thả dây câu cá hiếm nhé.`
+          : `Thợ lành nghề chọn đồ chuẩn lắm! Quầy dụng cụ lúc nào cũng sẵn vật tư tốt nhất cho ${ctx.playerNickname}.`,
+    },
+  ],
+
+  be_na: [
+    {
+      id: 'bn_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Oa!! Anh chị ${ctx.playerNickname} và ${partnerLabel(ctx)} đi chơi đôi với nhau nhìn cưng xỉu luôn!! Hôm nay hai người muốn đi dạo Rừng thông hay ngắm hoàng hôn ngoài Vịnh Hải Âu nè?`,
+    },
+    {
+      id: 'bn_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Na thấy hai người ${ctx.playerNickname} với ${partnerLabel(ctx)} đứng gần nhau phát sáng cả khu rừng/quảng trường luôn á! Lên cầu gỗ hay ngồi ghế dưới tán cây chill lắm đó!`,
+    },
+    {
+      id: 'bn_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Hihi có đủ cả ${ctx.playerNickname} lẫn ${partnerLabel(ctx)} rồi nè! Đừng quên tìm mấy chú ốc sên với cua nhỏ chạy lon ton dọc đường đi nha hai bạn.`,
+    },
+    {
+      id: 'bn_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Bí mật nhỏ nha: đi cùng ${partnerLabel(ctx)} qua mấy cây cầu gỗ lúc trời tối ngắm đom đóm và sao trời là đẹp nhất đảo luôn đó ${ctx.playerNickname}!`,
+    },
+    {
+      id: 'bn_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Ơ ${ctx.playerNickname} hôm nay đi thám hiểm trước một mình à? Lát nhớ dẫn ${partnerLabel(ctx)} lên đây cùng nghe gió thổi qua tán thông nhé!`,
+    },
+    {
+      id: 'bn_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Na vừa thấy đàn cừu nhảy nhót bên đồng cỏ Nông trại — ${ctx.playerNickname} nhớ rủ ${partnerLabel(ctx)} qua xem chung cho vui nha!`,
+    },
+    {
+      id: 'bn_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Đi một mình quanh làng cẩn thận kẻo lạc mấy bậc thang leo vách đá nha ${ctx.playerNickname}! Nhưng mà thang gỗ bây giờ Na mở lối hết trơn rồi, leo lên nhìn toàn cảnh đã lắm.`,
+    },
+    {
+      id: 'bn_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Gặp ${ctx.playerNickname} vui ghê! Nếu thấy nhớ ${partnerLabel(ctx)} thì mở bảng Thả tim ở góc phải gửi cái ôm ấm áp từ xa nha!`,
+    },
+    {
+      id: 'bn_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Nhìn bầu trời đầy sao lấp lánh với mấy chú đom đóm kìa ${ctx.playerNickname}! Ban đêm trên đảo thơ mộng y như phim hoạt hình luôn.`,
+    },
+    {
+      id: 'bn_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Mưa lất phất làm lá thông xanh rì luôn ${ctx.playerNickname}! Đừng lo bị ướt, không khí mát mẻ thế này đi dạo thích lắm.`,
+    },
+    {
+      id: 'bn_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Bé ${catLabel(ctx)} nãy chạy theo ${ctx.playerNickname} cưng xỉu luôn! Chắc chắn mấy chú gà ngoài làng sắp phải chạy toán loạn vì bé cho xem.`,
+    },
+    {
+      id: 'bn_ctx_forest',
+      category: 'context',
+      when: (ctx) => ctx.mapId === 'forest' || ctx.affinity >= 2,
+      textVi: (ctx) =>
+        `Từ Rừng thông đi thẳng đường mòn xuống phía Nam là ra lại con đường đất phía Bắc Nông trại luôn đó ${ctx.playerNickname} — tiện hơn trước nhiều luôn!`,
+    },
+  ],
+
+  ong_minh: [
+    {
+      id: 'om_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Ồ, cả ${ctx.playerNickname} với ${partnerLabel(ctx)} cùng dạo ra Vịnh Hải Âu ngắm biển hả cháu? Gió vịnh chiều nay êm lắm, ngồi cuối cầu gỗ buông cần chung là hết ý!`,
+    },
+    {
+      id: 'om_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Ông câu ở vịnh này mấy chục năm rồi, thấy đôi trẻ ${ctx.playerNickname} và ${partnerLabel(ctx)} đứng tựa vai nhau trên cầu gỗ mà lòng ông cũng vui lây.`,
+    },
+    {
+      id: 'om_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Mấy chú cua trên cát hễ thấy cặp đôi ${ctx.playerNickname} – ${partnerLabel(ctx)} bước tới là chạy rào rào chào đón đó haha! Ra cầu gỗ thử vận may cá hiếm đi hai cháu.`,
+    },
+    {
+      id: 'om_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Câu được con Tôm Hùm Gió hay Cá Ngừ nào, ${ctx.playerNickname} với ${partnerLabel(ctx)} mang về nấu nồi canh ngọt cho ấm bụng nhé!`,
+    },
+    {
+      id: 'om_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Hôm nay ${ctx.playerNickname} ra biển hóng gió một mình à? Khi nào ${partnerLabel(ctx)} rảnh nhớ rủ ra ngồi ghế gỗ bến vịnh nghe sóng vỗ chung nhé.`,
+    },
+    {
+      id: 'om_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Ngồi câu một mình giữa tiếng sóng biển cũng tĩnh tâm lắm ${ctx.playerNickname} ơi — nhưng câu được con cá hiếm xong nhớ khoe liền với ${partnerLabel(ctx)} nha!`,
+    },
+    {
+      id: 'om_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Chiều nay cá thu vào gần bờ lắm ${ctx.playerNickname}. Thử kéo một mẻ to làm bất ngờ cho ${partnerLabel(ctx)} tối nay xem sao!`,
+    },
+    {
+      id: 'om_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Ông mới thấy đàn ốc biển nhỏ bò dọc bãi cát kia kìa. Lát dẫn ${partnerLabel(ctx)} đi dạo bờ cát phía Nam đẹp lắm đấy ${ctx.playerNickname}.`,
+    },
+    {
+      id: 'om_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Biển đêm Vịnh Hải Âu lấp lánh ánh sao phản chiếu trên mặt nước đẹp nao lòng luôn ${ctx.playerNickname}! Câu cá đêm đôi khi dính loại phát sáng hiếm lắm đấy.`,
+    },
+    {
+      id: 'om_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Mưa nhẹ gõ lách tách trên mặt vịnh lại là lúc đàn cá nổi lên săn mồi nhiều nhất đấy ${ctx.playerNickname}!`,
+    },
+    {
+      id: 'om_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Bé ${catLabel(ctx)} mắt sáng rực mỗi lần ông nhấc xô cá tươi lên kìa ${ctx.playerNickname}! Con mèo nhỏ này sành ăn cá biển lắm nha.`,
+    },
+    {
+      id: 'om_ctx_fish',
+      category: 'context',
+      when: (ctx) => Boolean(ctx.heldItemSku?.startsWith('fish_')) || ctx.affinity >= 2,
+      textVi: (ctx) =>
+        `Tay câu ngày càng lên tay rồi đó ${ctx.playerNickname}! Ngoài vịnh có tới đủ hạng cá Thường, Bạc, Hiếm chờ người kiên nhẫn chinh phục.`,
+    },
+  ],
+
+  thi_truong: [
+    {
+      id: 'tt_couple_1',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Chào mừng cặp đôi ${ctx.playerNickname} và ${partnerLabel(ctx)} tới Tòa Thị Chính Cabacos! Hồ sơ công dân của hai bạn lúc nào cũng là điểm sáng ấm áp nhất đảo nhỏ này.`,
+    },
+    {
+      id: 'tt_couple_2',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Nhìn ${ctx.playerNickname} và ${partnerLabel(ctx)} cùng đồng hành vào Tòa Thị Chính thật đáng quý! Mỗi món đồ hai bạn trang trí đều làm thung lũng thêm sức sống.`,
+    },
+    {
+      id: 'tt_couple_3',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Tòa Thị Chính ghi nhận cả hai cư dân ${ctx.playerNickname} & ${partnerLabel(ctx)} đang chung sức xây tổ ấm tuyệt vời! Cần chỉ đường tới bất kỳ tiệm nào cứ hỏi tôi.`,
+    },
+    {
+      id: 'tt_couple_4',
+      category: 'couple',
+      when: (ctx) => Boolean(ctx.partnerInSameRoom),
+      textVi: (ctx) =>
+        `Chúc mừng hai bạn ngày hôm nay thật bình yên! Sau giờ làm vườn, ${ctx.playerNickname} và ${partnerLabel(ctx)} nhớ dành thời gian nghỉ ngơi bên nhau ở sofa hay bờ biển nhé.`,
+    },
+    {
+      id: 'tt_solo_1',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Xin chào ${ctx.playerNickname}! Hôm nay bạn đại diện hai người tới thăm Tòa Thị Chính à? Gửi lời hỏi thăm thân thương của tôi tới ${partnerLabel(ctx)} nhé!`,
+    },
+    {
+      id: 'tt_solo_2',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Bảng quy hoạch đảo vẫn luôn cập nhật gọn gàng chờ ${ctx.playerNickname} và ${partnerLabel(ctx)} cùng xem. Lần tới nhớ rủ cả hai cùng ghé cho vui cửa vui nhà nha.`,
+    },
+    {
+      id: 'tt_solo_3',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Tôi thấy ${ctx.playerNickname} rất chu đáo chăm lo cho cả nông trại lẫn mái ấm — ${partnerLabel(ctx)} hẳn sẽ cảm động lắm khi nghe bạn kể lại chuyện hôm nay.`,
+    },
+    {
+      id: 'tt_solo_4',
+      category: 'solo',
+      when: (ctx) => !ctx.partnerInSameRoom,
+      textVi: (ctx) =>
+        `Cần hỗ trợ thông tin cư dân hay dịch vụ làng Cabacos cứ bảo tôi nhé ${ctx.playerNickname}, dù bạn tới một mình hay đi cùng ${partnerLabel(ctx)}.`,
+    },
+    {
+      id: 'tt_ctx_night',
+      category: 'context',
+      when: (ctx) => ctx.isNight,
+      textVi: (ctx) =>
+        `Đã khuya rồi nhưng Tòa Thị Chính vẫn thắp đèn tiếp đón ${ctx.playerNickname}. Trời đêm đảo nhỏ yên ả lắm, nhớ giữ gìn sức khỏe nhé!`,
+    },
+    {
+      id: 'tt_ctx_rain',
+      category: 'context',
+      when: (ctx) => ctx.weatherKind === 'drizzle',
+      textVi: (ctx) =>
+        `Ngoài trời đang mưa phùn nhè nhẹ, ngồi trong Tòa Thị Chính ấm áp nghe tiếng mưa rơi thật dễ chịu phải không ${ctx.playerNickname}?`,
+    },
+    {
+      id: 'tt_ctx_pet',
+      category: 'context',
+      when: (ctx) => ctx.hasPet,
+      textVi: (ctx) =>
+        `Nghe dân làng khen bé ${catLabel(ctx)} nhà ${ctx.playerNickname} ngoan mà lanh lợi lắm! Bé thích nhất những lúc chạy lon ton theo chủ khắp quảng trường đấy.`,
+    },
+    {
+      id: 'tt_ctx_coins',
+      category: 'context',
+      when: (ctx) => ctx.affinity >= 1,
+      textVi: (ctx) =>
+        `Quỹ chung hiện có ${ctx.walletCoins} xu rồi đó ${ctx.playerNickname}! Bản đồ mở rộng thêm ruộng phụ đang được hội đồng chuẩn bị cho chặng V0.2 sắp tới.`,
+    },
+  ],
+};
+
 function defaultRelRecord(): NpcRelationshipRecord {
-  return { affinity: 1, errandStatus: 'none', lastTalkedAtMs: 0 };
+  return { affinity: 1, errandStatus: 'none', lastTalkedAtMs: 0, talkCount: 0, seenLineIds: [] };
+}
+
+export function selectHadesDialogueLine(
+  npcId: string,
+  ctx: NpcDialogueContext,
+): HadesDialogueLine | null {
+  const pool = (NPC_DIALOGUE_POOLS as Record<string, readonly HadesDialogueLine[] | undefined>)[npcId];
+  if (!pool || pool.length === 0) return null;
+
+  const seen = new Set(ctx.seenLineIds ?? []);
+  const eligible = pool.filter((line) => (line.when ? line.when(ctx) : true));
+  const candidates = eligible.length > 0 ? eligible : pool;
+
+  const partnerPriority = ctx.partnerInSameRoom ? 'couple' : 'solo';
+  const unseenPriority = candidates.filter((l) => !seen.has(l.id) && l.category === partnerPriority);
+  const unseenContext = candidates.filter((l) => !seen.has(l.id) && l.category === 'context');
+  const unseenAny = candidates.filter((l) => !seen.has(l.id));
+
+  const talkIdx = Math.max(0, ctx.talkCount ?? 0);
+  // Alternate between relationship-aware partner lines and vivid world context lines while strictly avoiding repeats
+  const preferContext = talkIdx % 3 === 2 && unseenContext.length > 0;
+  const bucket = preferContext
+    ? unseenContext
+    : unseenPriority.length > 0
+      ? unseenPriority
+      : unseenAny.length > 0
+        ? unseenAny
+        : candidates;
+
+  const idx = talkIdx % bucket.length;
+  return bucket[idx] ?? bucket[0]!;
 }
 
 function makeErrandNodes(profile: {
@@ -145,16 +729,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
       root: {
         id: 'root',
         mood: 'warm',
-        textVi: (ctx) => {
-          const greeting = ctx.isNight
-            ? `Tối rồi mà ${ctx.playerNickname} vẫn chăm chỉ ghé thăm bác à?`
-            : ctx.weatherKind === 'drizzle'
-              ? `Trời lất phất mưa thế này, cây ngoài ruộng được tưới mát lắm đấy ${ctx.playerNickname}!`
-              : `Chào ${ctx.playerNickname}! Hôm nay hai bạn muốn trồng thêm gì cho nông trại nào?`;
-          return ctx.mapId === 'farm'
-            ? `${greeting} Mấy chú gà sáng nay quấn quýt hạt giống lắm.`
-            : `${greeting} Tiệm hạt giống ngay sau lưng bác luôn mở cửa nhé.`;
-        },
+        textVi: (ctx) => selectHadesDialogueLine('bac_hai', ctx)!.textVi(ctx),
         choices: (ctx) => [
           { id: 'shop_seed', labelVi: 'Mua hạt giống tươi', action: 'open_seed_shop', badgeVi: 'Tiệm hạt' },
           { id: 'ship_crop', labelVi: 'Gửi bán nông sản lấy xu', action: 'open_shipping', badgeVi: 'Thùng gom' },
@@ -189,7 +764,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
   co_lan: {
     id: 'co_lan',
     nameVi: 'Cô Lan',
-    roleTitleVi: 'Chủ Tiệm Bánh Hollow',
+    roleTitleVi: 'Chủ Tiệm Bánh & Chợ Nông Sản',
     accentHex: '#e38ba8',
     avatarConfig: {
       skinTone: 'fair',
@@ -206,10 +781,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
       root: {
         id: 'root',
         mood: 'happy',
-        textVi: (ctx) =>
-          ctx.isNight
-            ? `Đêm xuống tiệm bánh vẫn còn chút hương bơ ấm áp, ${ctx.playerNickname} có muốn vào bếp cùng cô không?`
-            : `Chào ${ctx.playerNickname}! Lò bánh Hollow vừa thơm nức mùi dâu tây và lúa mì mới thu hoạch đó!`,
+        textVi: (ctx) => selectHadesDialogueLine('co_lan', ctx)!.textVi(ctx),
         choices: (ctx) => [
           { id: 'open_bakery', labelVi: 'Vào bếp làm bánh & chế biến', action: 'open_workshop', badgeVi: 'Xưởng bánh' },
           { id: 'bakery_lore', labelVi: 'Hỏi bí quyết làm quà cho người thương', nextNodeId: 'bakery_lore' },
@@ -259,8 +831,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
       root: {
         id: 'root',
         mood: 'warm',
-        textVi: (ctx) =>
-          `Chào ${ctx.playerNickname}! Cần câu, mồi nhử và phụ kiện làm vườn ở tiệm chú lúc nào cũng chắc chắn và sẵn sàng.`,
+        textVi: (ctx) => selectHadesDialogueLine('chu_tu', ctx)!.textVi(ctx),
         choices: (ctx) => [
           { id: 'open_tools', labelVi: 'Mua mồi câu & đồ dùng', action: 'open_tool_shop', badgeVi: 'Dụng cụ' },
           { id: 'fishing_tips', labelVi: 'Hỏi cách câu cá hiếm hơn', nextNodeId: 'fishing_rarity_tips' },
@@ -303,17 +874,14 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
       outfitColor: 'sage',
       accessory: 'ribbon',
     },
-    errandTitleVi: 'Đi dạo đủ cổng nối Vườn – Làng – Nông trại – Vịnh',
+    errandTitleVi: 'Đi dạo đủ cổng nối Vườn – Làng – Nông trại – Rừng – Vịnh',
     errandHintVi: 'Theo các bảng chỉ đường phát sáng ở đầu cổng để khám phá hòn đảo.',
     entryNodeId: 'root',
     nodes: {
       root: {
         id: 'root',
         mood: 'happy',
-        textVi: (ctx) =>
-          ctx.mapId === 'forest'
-            ? `Rừng thông hôm nay mát rượi luôn ${ctx.playerNickname}! Trên hồ phía đông yên tĩnh hợp câu cá thư giãn lắm.`
-            : `Chào ${ctx.playerNickname}! Quảng trường làng hôm nay rộn ràng ghê — bạn muốn Na chỉ đường quanh đảo không?`,
+        textVi: (ctx) => selectHadesDialogueLine('be_na', ctx)!.textVi(ctx),
         choices: (ctx) => [
           { id: 'map_guide', labelVi: 'Chỉ đường các khu vực trên đảo', nextNodeId: 'island_map_guide' },
           { id: 'cozy_tips', labelVi: 'Mẹo vườn hoa & chăm mèo cưng', nextNodeId: 'cozy_tips' },
@@ -329,7 +897,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
         id: 'island_map_guide',
         mood: 'curious',
         textVi: () =>
-          'Từ Vườn hoa riêng: đi cổng Nam qua cầu là ra Làng Cabacos; đi cổng Tây là thẳng tới Nông trại 184 luống! Còn từ quảng trường làng: đi hướng Đông qua cầu gỗ ra Vịnh Hải Âu, hoặc lên cổng Bắc để dạo Rừng thông nhé.',
+          'Từ Vườn nhà: đi cổng Tây ra thẳng Nông trại 184 luống (rồi đi thẳng con đường đất phía Bắc nông trại lên Rừng thông mát rượi!), hoặc đi cầu Nam tới cầu gỗ Bắc Làng Cabacos; từ làng đi bến tàu phía Đông là ra Vịnh Hải Âu!',
         choices: () => [
           { id: 'back_root', labelVi: 'Dễ nhớ quá, cảm ơn Na!', nextNodeId: 'root' },
         ],
@@ -339,7 +907,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
         mood: 'warm',
         textVi: (ctx) =>
           ctx.hasPet
-            ? `${ctx.petName ?? 'Bé mèo'} thích chạy lon ton theo hai bạn ở nhà, vườn, làng và nông trại lắm! Khi muốn chơi gần với mèo 3D thì ghé cạnh bé hoặc mở mục Chăm mèo nha.`
+            ? `${ctx.petName ?? 'Bé mèo'} thích chạy lon ton theo hai bạn ở nhà, vườn, làng, nông trại, rừng và bãi biển lắm! Khi muốn chơi gần với mèo 3D thì ghé cạnh bé hoặc mở mục Chăm mèo nha.`
             : 'Bạn có thể vào mục Trang trí để sắp xếp ghế gỗ vườn cho hai người ngồi ngắm hoa, hoặc nhận nuôi bé mèo ở bảng Thú cưng đó!',
         choices: () => [
           { id: 'pet_open', labelVi: 'Mở góc chăm sóc mèo', action: 'open_pet_care', badgeVi: 'Thú cưng' },
@@ -347,8 +915,8 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
         ],
       },
       ...makeErrandNodes({
-        errandOfferVi: 'Hai bạn thử đi qua cầu cổng gỗ nối Vườn – Làng – Vịnh Hải Âu để ngắm biển và mấy chú cua nhỏ chạy dọc bãi cát rồi quay lại kể Na nhé!',
-        errandProgressVi: 'Nhìn mấy bảng mũi tên sáng nhẹ ở rìa mỗi bản đồ là nhận ra ngay lối đi.',
+        errandOfferVi: 'Hai bạn thử đi qua cầu gỗ nối Vườn – Làng – Vịnh Hải Âu, rồi dạo đường Bắc Nông trại lên Rừng thông để ngắm mấy chú cua, ốc sên nhé!',
+        errandProgressVi: 'Nhìn mấy bảng mũi tên sáng nhẹ ở đầu đường & cầu gỗ là nhận ra ngay lối đi.',
         errandDoneVi: 'Hai bạn thuộc hết đường trên đảo rồi đấy! Đảo mình càng ngày càng ấm áp.',
       }),
     },
@@ -374,10 +942,7 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
       root: {
         id: 'root',
         mood: 'warm',
-        textVi: (ctx) =>
-          ctx.weatherKind === 'drizzle'
-            ? `Mưa nhẹ làm cá biển nổi lên gần cầu gỗ hơn đấy ${ctx.playerNickname}! Gió vịnh mát lắm.`
-            : `Chào hai cháu ghé Vịnh Hải Âu! Sóng lặng thế này ngồi cuối cầu thả cần là hết ý, ${ctx.playerNickname} thử không?`,
+        textVi: (ctx) => selectHadesDialogueLine('ong_minh', ctx)!.textVi(ctx),
         choices: (ctx) => [
           { id: 'fish_sea', labelVi: 'Ra cầu gỗ câu cá ngay', action: 'open_fishing_sea', badgeVi: 'Câu cá' },
           { id: 'sea_tips', labelVi: 'Bí quyết nhận biết cá hiếm', nextNodeId: 'sea_fishing_tips' },
@@ -400,9 +965,58 @@ export const NPC_PROFILES: Readonly<Record<NpcId, NpcProfile>> = {
         ],
       },
       ...makeErrandNodes({
-        errandOfferVi: 'Hôm nay mấy chú cua dọc mép cát chạy rộn ràng lắm — cháu thử đi dọc bờ vịnh rồi ra cuối cầu thả cần một lượt nhé!',
+        errandOfferVi: 'Hôm nay mấy chú cua & ốc sên dọc mép cát chạy rộn ràng lắm — cháu thử đi dọc bờ vịnh rồi ra cuối cầu thả cần một lượt nhé!',
         errandProgressVi: 'Đừng quên mở Túi đồ (I) để xem chi tiết từng loài cá mình bắt được.',
         errandDoneVi: 'Tay câu cừ thật đấy! Chúc hai cháu câu được con cá thật hiếm.',
+      }),
+    },
+  },
+
+  thi_truong: {
+    id: 'thi_truong',
+    nameVi: 'Trưởng Làng Minh',
+    roleTitleVi: 'Tòa Thị Chính Cabacos',
+    accentHex: '#b48cd8',
+    avatarConfig: {
+      skinTone: 'fair',
+      hairStyle: 'short',
+      hairColor: 'espresso',
+      outfitStyle: 'sweater',
+      outfitColor: 'rose',
+      accessory: 'glasses',
+    },
+    errandTitleVi: 'Thăm hỏi hết cư dân và các cửa hàng Làng Cabacos',
+    errandHintVi: 'Ghé Tiệm Hạt, Tiệm Dụng Cụ, Chợ Nông Sản rồi quay lại Tòa Thị Chính báo tin nhé.',
+    entryNodeId: 'root',
+    nodes: {
+      root: {
+        id: 'root',
+        mood: 'warm',
+        textVi: (ctx) => selectHadesDialogueLine('thi_truong', ctx)!.textVi(ctx),
+        choices: (ctx) => [
+          { id: 'town_lore', labelVi: 'Xem thông tin cư dân & đảo nhỏ', nextNodeId: 'town_lore' },
+          { id: 'pet_open', labelVi: 'Mở góc chăm sóc bé mèo', action: 'open_pet_care', badgeVi: 'Thú cưng' },
+          {
+            id: 'errand_menu',
+            labelVi: ctx.errandStatus === 'active' ? 'Báo cáo dạo quanh làng' : 'Việc nhỏ cùng Tòa Thị Chính',
+            nextNodeId: 'errand_menu',
+          },
+          { id: 'bye', labelVi: 'Cháu xin phép ra sảnh ngoài ạ', closesDialogue: true },
+        ],
+      },
+      town_lore: {
+        id: 'town_lore',
+        mood: 'thoughtful',
+        textVi: () =>
+          'Cabacos nối liền Vườn hoa qua cầu gỗ phía Bắc, nối ra Vịnh Hải Âu ở phía Đông, còn Rừng thông xanh mát nằm ngay phía Bắc Nông trại 184 luống. Tòa Thị Chính đang chuẩn bị bản đồ ruộng mở rộng cho V0.2!',
+        choices: () => [
+          { id: 'back_root', labelVi: 'Cảm ơn thông tin hữu ích ạ!', nextNodeId: 'root' },
+        ],
+      },
+      ...makeErrandNodes({
+        errandOfferVi: 'Nếu rảnh, hai bạn ghé thăm hết Tiệm Hạt, Tiệm Dụng Cụ và Chợ Nông Sản trong làng để làm quen dân làng rồi báo tôi một tiếng nha.',
+        errandProgressVi: 'Bác Hai, Chú Tư và Cô Lan đều đang túc trực ngay trong từng cửa hàng đấy!',
+        errandDoneVi: 'Đôi bạn hòa nhập rất nhanh với nhịp sống Cabacos — ai trong làng cũng quý hai bạn.',
       }),
     },
   },
@@ -471,22 +1085,38 @@ export function getNpcRelationship(
   map: NpcRelationshipMap,
   npcId: string,
 ): NpcRelationshipRecord {
-  return map[npcId] ?? defaultRelRecord();
+  const rec = map[npcId];
+  if (!rec) return defaultRelRecord();
+  return {
+    affinity: rec.affinity ?? 1,
+    errandStatus: rec.errandStatus ?? 'none',
+    lastTalkedAtMs: rec.lastTalkedAtMs ?? 0,
+    talkCount: rec.talkCount ?? 0,
+    seenLineIds: Array.isArray(rec.seenLineIds) ? rec.seenLineIds : [],
+  };
 }
 
 export function recordNpcConversation(
   map: NpcRelationshipMap,
   npcId: string,
   nowMs = Date.now(),
+  chosenLineId?: string | null,
 ): NpcRelationshipMap {
   const cur = getNpcRelationship(map, npcId);
   const canBump = nowMs - cur.lastTalkedAtMs > 60_000;
+  const prevSeen = cur.seenLineIds ?? [];
+  const nextSeen =
+    chosenLineId && !prevSeen.includes(chosenLineId)
+      ? [...prevSeen, chosenLineId].slice(-24)
+      : prevSeen;
   return {
     ...map,
     [npcId]: {
       ...cur,
       affinity: canBump ? Math.min(10, cur.affinity + 1) : cur.affinity,
       lastTalkedAtMs: nowMs,
+      talkCount: (cur.talkCount ?? 0) + 1,
+      seenLineIds: nextSeen,
     },
   };
 }

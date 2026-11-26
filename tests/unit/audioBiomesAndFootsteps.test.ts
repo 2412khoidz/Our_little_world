@@ -13,21 +13,22 @@ const REPO_ROOT = path.resolve(import.meta.dirname, '../..');
 
 describe('Checkpoint E1 & E2: distinct biome audio, footsteps, natural cat voice & art contract', () => {
   it('assigns distinct tracks per island biome and uses 5 distinct MP3 files on disk', () => {
-    expect(musicTrackForMap('home')).toBe('title');
-    expect(musicTrackForMap('garden')).toBe('garden');
+    expect(musicTrackForMap('home')).toBe('home_garden');
+    expect(musicTrackForMap('garden')).toBe('home_garden');
+    expect(musicTrackForMap('outdoor')).toBe('home_garden');
     expect(musicTrackForMap('farm')).toBe('farm');
     expect(musicTrackForMap('village')).toBe('town');
     expect(musicTrackForMap('forest')).toBe('forest');
     expect(musicTrackForMap('beach')).toBe('beach');
 
     gameAudio.setZoneMusic('garden');
-    expect(gameAudio.getDesiredMusicTrackId()).toBe('garden');
+    expect(gameAudio.getDesiredMusicTrackId()).toBe('home_garden');
     gameAudio.setZoneMusic('beach');
     expect(gameAudio.getDesiredMusicTrackId()).toBe('beach');
     gameAudio.setZoneMusic('forest');
     expect(gameAudio.getDesiredMusicTrackId()).toBe('forest');
 
-    const trackFiles = ['title.mp3', 'garden.mp3', 'farm.mp3', 'town.mp3', 'blue_forest.mp3'];
+    const trackFiles = ['title.mp3', 'garden.mp3', 'home_garden_theme.mp3', 'farm.mp3', 'town.mp3', 'blue_forest.mp3'];
     const hashes = new Set<string>();
     for (const file of trackFiles) {
       const fullPath = path.join(REPO_ROOT, 'public/assets/audio/music', file);
@@ -35,7 +36,7 @@ describe('Checkpoint E1 & E2: distinct biome audio, footsteps, natural cat voice
       const md5 = crypto.createHash('md5').update(fs.readFileSync(fullPath)).digest('hex');
       hashes.add(md5);
     }
-    expect(hashes.size).toBe(5);
+    expect(hashes.size).toBe(trackFiles.length);
   });
 
   it('resolves all 6 surface footstep types accurately from map and tile coordinates', () => {

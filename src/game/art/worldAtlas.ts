@@ -8,6 +8,7 @@ export const WORLD_ART_KEY = 'world-atlas';
 export const WORLD_PROPS_KEY = 'world-props-atlas';
 export const SAKURA_POT_OVERRIDE_KEY = 'olw-sakura-pot-override';
 export const BEACH_CRAB_SHEET_KEY = 'olw-crab-sheet';
+export const SNAIL_SHEET_KEY = 'olw-snail-sheet';
 const WORLD_ART_MANIFEST = 'world-atlas-manifest';
 const WORLD_PROPS_MANIFEST = 'world-props-manifest';
 
@@ -95,6 +96,67 @@ export function registerWorldAtlas(scene: Phaser.Scene): void {
 
   ensureSakuraPotOverrideTexture(scene);
   ensureBeachCrabTexture(scene);
+  ensureSnailTexture(scene);
+}
+
+/** Procedural CC0 4-frame 16x16 cozy garden/coastal spiral snail spritesheet + animation. */
+function ensureSnailTexture(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(SNAIL_SHEET_KEY)) {
+    const tex = scene.textures.createCanvas(SNAIL_SHEET_KEY, 64, 16);
+    if (!tex) return;
+    const ctx = tex.getContext();
+    ctx.clearRect(0, 0, 64, 16);
+    ctx.imageSmoothingEnabled = false;
+
+    for (let f = 0; f < 4; f += 1) {
+      const ox = f * 16;
+      const stretch = f === 1 || f === 2 ? 1 : 0;
+      const stalkBob = f === 1 ? -1 : f === 3 ? 1 : 0;
+
+      // Soft dark outline for cream body
+      ctx.fillStyle = '#5f4631';
+      ctx.fillRect(ox + 2, 11, 10 + stretch, 3);
+      ctx.fillRect(ox + 10 + stretch, 9 + stalkBob, 3, 4);
+      // Warm cream snail foot & head
+      ctx.fillStyle = '#f6dfb8';
+      ctx.fillRect(ox + 3, 12, 9 + stretch, 2);
+      ctx.fillRect(ox + 10 + stretch, 10 + stalkBob, 2, 3);
+
+      // Antennae / eyestalks
+      ctx.fillStyle = '#5f4631';
+      ctx.fillRect(ox + 11 + stretch, 7 + stalkBob, 1, 3);
+      ctx.fillRect(ox + 13 + stretch, 8 + stalkBob, 1, 2);
+      ctx.fillStyle = '#2d1c19';
+      ctx.fillRect(ox + 11 + stretch, 6 + stalkBob, 1, 1);
+      ctx.fillRect(ox + 13 + stretch, 7 + stalkBob, 1, 1);
+
+      // Coiled caramel/moss shell
+      ctx.fillStyle = '#54311e';
+      ctx.fillRect(ox + 4, 6, 7, 6);
+      ctx.fillRect(ox + 5, 5, 5, 7);
+      ctx.fillStyle = '#c47b47';
+      ctx.fillRect(ox + 5, 6, 5, 5);
+      ctx.fillStyle = '#e7aa6e';
+      ctx.fillRect(ox + 6, 7, 3, 3);
+      ctx.fillStyle = '#7b4628';
+      ctx.fillRect(ox + 7, 8, 1, 2);
+    }
+
+    tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    tex.refresh();
+    for (let f = 0; f < 4; f += 1) {
+      tex.add(f, 0, f * 16, 0, 16, 16);
+    }
+  }
+
+  if (!scene.anims.exists('olw-snail')) {
+    scene.anims.create({
+      key: 'olw-snail',
+      frames: [0, 1, 2, 3].map((frame) => ({ key: SNAIL_SHEET_KEY, frame })),
+      frameRate: 4,
+      repeat: -1,
+    });
+  }
 }
 
 /** Procedural CC0 4-frame 16x16 cozy coral beach crab spritesheet + animation. */

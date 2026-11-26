@@ -539,6 +539,44 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "NPCSpawns",
+      "type": "objectgroup",
+      "visible": true,
+      "opacity": 1,
+      "draworder": "topdown",
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {
+          "id": 5,
+          "name": "thi_truong",
+          "type": "npc",
+          "x": 192,
+          "y": 144,
+          "width": 16,
+          "height": 16,
+          "properties": [
+            {
+              "name": "role",
+              "type": "string",
+              "value": "town_mayor"
+            },
+            {
+              "name": "labelVi",
+              "type": "string",
+              "value": "Trưởng Làng Minh"
+            },
+            {
+              "name": "dialogueVi",
+              "type": "string",
+              "value": "Chào hai cư dân mới của Làng Cabacos! Tòa Thị Chính luôn trân trọng từng góc nhà và luống rau hai bạn dựng xây."
+            }
+          ]
+        }
+      ]
     }
   ],
   "nextlayerid": 5,

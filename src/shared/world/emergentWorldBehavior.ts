@@ -113,6 +113,7 @@ export interface EmergentChickenContext {
   isNight: boolean;
   weatherKind: 'sunny' | 'cloudy' | 'drizzle' | string;
   isTileBlocked?: (tx: number, ty: number) => boolean;
+  isForbiddenTile?: (tx: number, ty: number) => boolean;
 }
 
 function canActorStand(
@@ -380,12 +381,14 @@ export interface SheepActorState {
   vx: number;
   vy: number;
   facing: 'left' | 'right';
-  activity: 'grazing' | 'wandering' | 'curious_player' | 'resting' | 'sleeping';
+  activity: 'grazing' | 'wandering' | 'curious_player' | 'fleeing_player' | 'resting' | 'sleeping';
   grazeBobY: number;
   animRateScale: number;
   bubbleText: string | null;
   stateUntilMs: number;
   nextThinkAtMs: number;
+  curiousStartedAtMs: number;
+  curiousCooldownUntilMs: number;
   phase: number;
 }
 
@@ -410,6 +413,8 @@ export function createSheepActorState(
     bubbleText: null,
     stateUntilMs: 0,
     nextThinkAtMs: 0,
+    curiousStartedAtMs: 0,
+    curiousCooldownUntilMs: 0,
     phase,
   };
 }
@@ -432,36 +437,58 @@ export function stepEmergentSheep(state: SheepActorState, ctx: EmergentChickenCo
     return state;
   }
 
-  if (ctx.playerRunning && distToPlayer < 36 && ctx.nowMs >= state.stateUntilMs) {
+  const startled =
+    (ctx.toolSwinging && distToPlayer < 60) ||
+    (ctx.playerRunning && distToPlayer < 46) ||
+    distToPlayer < 22;
+
+  if (startled && ctx.nowMs >= state.stateUntilMs) {
     const awayX = ctx.playerX !== null ? state.x - ctx.playerX : 1;
     const awayY = ctx.playerY !== null ? state.y - ctx.playerY : 0;
     const len = Math.max(1e-4, Math.hypot(awayX, awayY));
-    state.activity = 'wandering';
-    state.vx = (awayX / len) * 20;
-    state.vy = (awayY / len) * 20;
+    state.activity = 'fleeing_player';
+    state.vx = (awayX / len) * 36;
+    state.vy = (awayY / len) * 36;
     state.facing = state.vx >= 0 ? 'right' : 'left';
-    state.stateUntilMs = ctx.nowMs + 800;
-    state.nextThinkAtMs = ctx.nowMs + 1600;
-    state.bubbleText = null;
-  } else if (distToPlayer < 56 && ctx.nowMs >= state.stateUntilMs) {
-    state.activity = 'curious_player';
-    state.vx = 0;
-    state.vy = 0;
-    if (ctx.playerX !== null) {
-      state.facing = ctx.playerX >= state.x ? 'right' : 'left';
-    }
-    state.bubbleText = 'baa~';
+    state.stateUntilMs = ctx.nowMs + 950;
     state.nextThinkAtMs = ctx.nowMs + 1500;
+    state.curiousCooldownUntilMs = ctx.nowMs + 5000;
+    state.bubbleText = 'baa!';
+  } else if (
+    distToPlayer >= 22 &&
+    distToPlayer < 52 &&
+    ctx.nowMs >= state.stateUntilMs &&
+    (state.activity === 'curious_player' || ctx.nowMs >= state.curiousCooldownUntilMs)
+  ) {
+    if (state.activity !== 'curious_player') {
+      state.curiousStartedAtMs = ctx.nowMs;
+    }
+    if (ctx.nowMs - state.curiousStartedAtMs < 1900) {
+      state.activity = 'curious_player';
+      state.vx = 0;
+      state.vy = 0;
+      if (ctx.playerX !== null) {
+        state.facing = ctx.playerX >= state.x ? 'right' : 'left';
+      }
+      state.bubbleText = 'baa~';
+      state.nextThinkAtMs = ctx.nowMs + 900;
+    } else {
+      // Finish curious pause -> go on cooldown so sheep resumes roaming/grazing green grass
+      state.curiousCooldownUntilMs = ctx.nowMs + 6000;
+      state.activity = 'grazing';
+      state.bubbleText = null;
+      state.nextThinkAtMs = ctx.nowMs + 400;
+    }
   } else if (ctx.nowMs >= state.nextThinkAtMs && ctx.nowMs >= state.stateUntilMs) {
-    const slot = Math.floor((ctx.nowMs + state.phase * 1100) / 3400);
-    if (slot % 3 !== 1) {
+    const slot = Math.floor((ctx.nowMs + state.phase * 1100) / 2800);
+    if (slot % 2 === 0) {
       state.activity = 'grazing';
       state.vx = 0;
       state.vy = 0;
       state.bubbleText = null;
-      state.nextThinkAtMs = ctx.nowMs + 2400;
+      state.nextThinkAtMs = ctx.nowMs + 2000;
     } else {
-      const radius = ctx.weatherKind === 'drizzle' ? 20 : 44;
+      const radius = ctx.weatherKind === 'drizzle' ? 22 : 48;
       const angle = (slot * 2.1 + state.phase) % (Math.PI * 2);
       const tx = state.homeX + Math.cos(angle) * radius;
       const ty = state.homeY + Math.sin(angle) * radius * 0.72;
@@ -469,19 +496,24 @@ export function stepEmergentSheep(state: SheepActorState, ctx: EmergentChickenCo
       const dy = ty - state.y;
       const len = Math.max(1e-4, Math.hypot(dx, dy));
       state.activity = 'wandering';
-      state.vx = (dx / len) * 11;
-      state.vy = (dy / len) * 11;
+      state.vx = (dx / len) * 14;
+      state.vy = (dy / len) * 14;
       state.facing = state.vx >= 0 ? 'right' : 'left';
       state.bubbleText = null;
-      state.nextThinkAtMs = ctx.nowMs + 2600;
+      state.nextThinkAtMs = ctx.nowMs + 2400;
     }
   }
 
   if (Math.abs(state.vx) > 0.01 || Math.abs(state.vy) > 0.01) {
     const nextX = state.x + state.vx * dt;
     const nextY = state.y + state.vy * dt;
+    const nTx = Math.floor(nextX / tilePx);
+    const nTy = Math.floor(nextY / tilePx);
+    const forbidden = Boolean(ctx.isForbiddenTile?.(nTx, nTy));
+    const maxRadius = state.activity === 'fleeing_player' ? 76 : 58;
     if (
-      Math.hypot(nextX - state.homeX, nextY - state.homeY) <= 56 &&
+      !forbidden &&
+      Math.hypot(nextX - state.homeX, nextY - state.homeY) <= maxRadius &&
       canActorStand(nextX, nextY, tilePx, ctx.isTileBlocked)
     ) {
       state.x = nextX;
@@ -494,9 +526,123 @@ export function stepEmergentSheep(state: SheepActorState, ctx: EmergentChickenCo
   }
 
   state.grazeBobY =
-    state.activity === 'grazing' ? (Math.sin(ctx.nowMs * 0.006 + state.phase) > 0.4 ? 0.8 : 0) : 0;
+    state.activity === 'fleeing_player'
+      ? -Math.abs(Math.sin(ctx.nowMs * 0.02 + state.phase)) * 5.0
+      : state.activity === 'grazing'
+        ? (Math.sin(ctx.nowMs * 0.008 + state.phase) > 0.3 ? 1.1 : 0)
+        : 0;
   state.animRateScale =
-    state.activity === 'wandering' ? 1.15 : state.activity === 'curious_player' ? 0.8 : 0.9;
+    state.activity === 'fleeing_player'
+      ? 2.2
+      : state.activity === 'wandering'
+        ? 1.25
+        : state.activity === 'curious_player'
+          ? 0.85
+          : 0.95;
+  return state;
+}
+
+export interface SnailActorState {
+  readonly id: string;
+  readonly homeX: number;
+  readonly homeY: number;
+  readonly patrolAxis: 'x' | 'y';
+  readonly patrolSpanPx: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  facing: 'left' | 'right';
+  activity: 'crawling' | 'resting';
+  animRateScale: number;
+  stateUntilMs: number;
+  nextThinkAtMs: number;
+  phase: number;
+}
+
+export function createSnailActorState(
+  id: string,
+  homeX: number,
+  homeY: number,
+  patrolAxis: 'x' | 'y' = 'x',
+  patrolSpanPx = 22,
+  phase = 0,
+): SnailActorState {
+  return {
+    id,
+    homeX,
+    homeY,
+    patrolAxis,
+    patrolSpanPx,
+    x: homeX,
+    y: homeY,
+    vx: 0,
+    vy: 0,
+    facing: phase % 2 >= 1 ? 'right' : 'left',
+    activity: 'crawling',
+    animRateScale: 0.9,
+    stateUntilMs: 0,
+    nextThinkAtMs: 0,
+    phase,
+  };
+}
+
+export function stepEmergentSnail(state: SnailActorState, ctx: EmergentChickenContext): SnailActorState {
+  const dt = Math.max(0.004, Math.min(0.1, Number.isFinite(ctx.dtSec) ? ctx.dtSec : 0.016));
+  const tilePx = Math.max(1, ctx.tilePx);
+  const distToPlayer =
+    ctx.playerX !== null && ctx.playerY !== null
+      ? Math.hypot(ctx.playerX - state.x, ctx.playerY - state.y)
+      : Infinity;
+
+  if ((ctx.playerRunning || ctx.toolSwinging || distToPlayer < 22) && distToPlayer < 36) {
+    state.activity = 'resting';
+    state.vx = 0;
+    state.vy = 0;
+    state.stateUntilMs = ctx.nowMs + 1400;
+    state.animRateScale = 0.2;
+    return state;
+  }
+
+  if (ctx.nowMs >= state.nextThinkAtMs && ctx.nowMs >= state.stateUntilMs) {
+    const slot = Math.floor((ctx.nowMs + state.phase * 1300) / 3400);
+    if (slot % 4 === 0) {
+      state.activity = 'resting';
+      state.vx = 0;
+      state.vy = 0;
+      state.nextThinkAtMs = ctx.nowMs + 1800;
+    } else {
+      const sign = slot % 2 === 0 ? 1 : -1;
+      const tx = state.homeX + (state.patrolAxis === 'x' ? sign * state.patrolSpanPx : 0);
+      const ty = state.homeY + (state.patrolAxis === 'y' ? sign * state.patrolSpanPx : 0);
+      const dx = tx - state.x;
+      const dy = ty - state.y;
+      const len = Math.max(1e-4, Math.hypot(dx, dy));
+      state.activity = 'crawling';
+      state.vx = (dx / len) * 5.2;
+      state.vy = (dy / len) * 5.2;
+      state.facing = Math.abs(state.vx) > 0.2 ? (state.vx >= 0 ? 'right' : 'left') : sign > 0 ? 'right' : 'left';
+      state.nextThinkAtMs = ctx.nowMs + 2800;
+    }
+  }
+
+  if (Math.abs(state.vx) > 0.01 || Math.abs(state.vy) > 0.01) {
+    const nextX = state.x + state.vx * dt;
+    const nextY = state.y + state.vy * dt;
+    if (
+      Math.hypot(nextX - state.homeX, nextY - state.homeY) <= state.patrolSpanPx + 10 &&
+      canActorStand(nextX, nextY, tilePx, ctx.isTileBlocked)
+    ) {
+      state.x = nextX;
+      state.y = nextY;
+    } else {
+      state.vx = 0;
+      state.vy = 0;
+      state.activity = 'resting';
+    }
+  }
+
+  state.animRateScale = state.activity === 'crawling' ? 1.0 : 0.25;
   return state;
 }
 

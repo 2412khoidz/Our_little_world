@@ -43,7 +43,7 @@ export type GameSfxName =
   | 'stinger_quest'
   | 'stinger_area';
 
-export type MusicTrackId = 'title' | 'garden' | 'farm' | 'town' | 'forest' | 'beach';
+export type MusicTrackId = 'title' | 'garden' | 'home_garden' | 'farm' | 'town' | 'forest' | 'beach';
 
 export interface GameAudioSettings {
   muted: boolean;
@@ -115,6 +115,7 @@ const SPRITE_AUDIO_URLS: Record<AudioDomain, string> = {
 const MUSIC_URLS: Record<MusicTrackId, string> = {
   title: '/assets/audio/music/title.mp3',
   garden: '/assets/audio/music/garden.mp3',
+  home_garden: '/assets/audio/music/home_garden_theme.mp3',
   farm: '/assets/audio/music/farm.mp3',
   town: '/assets/audio/music/town.mp3',
   forest: '/assets/audio/music/blue_forest.mp3',
@@ -155,10 +156,9 @@ function loadSettings(): GameAudioSettings {
 export function musicTrackForMap(mapId: MapId): MusicTrackId {
   switch (mapId) {
     case 'home':
-      return 'title';
     case 'garden':
     case 'outdoor':
-      return 'garden';
+      return 'home_garden';
     case 'farm':
       return 'farm';
     case 'forest':

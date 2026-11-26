@@ -323,6 +323,7 @@ function MainCoupleApp() {
   const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
+  const [heldItemSku, setHeldItemSku] = useState<string | null>(null);
   const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>({
     water_pitcher: 100,
     tool_watering_can: 100,
@@ -495,6 +496,11 @@ function MainCoupleApp() {
     role: string;
     fallbackDialogueVi: string;
   } | null>(null);
+  useEffect(() => {
+    gameEventBus.emit('cmd:set-active-npc-dialogue', {
+      npcId: activeNpcDialogue?.npcId ?? null,
+    });
+  }, [activeNpcDialogue]);
   const [showJoystick, setShowJoystick] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
   );
@@ -914,6 +920,7 @@ function MainCoupleApp() {
     () =>
       gameEventBus.on('cmd:sync-held-item', (held) => {
         setHeldHotbarIndex(held.itemKind === 'none' ? null : held.slotIndex);
+        setHeldItemSku(held.itemKind === 'none' ? null : (held.itemSku ?? null));
       }),
     [],
   );
@@ -2415,7 +2422,7 @@ function MainCoupleApp() {
         />
       ) : (
         <QuickNavBar
-          hidden={petCareMode}
+          hidden={petCareMode || activeNpcDialogue !== null}
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}
@@ -2773,22 +2780,31 @@ function MainCoupleApp() {
 
       {activeNpcDialogue && currentUser && worldSnapshot && (
         <NpcDialogueOverlay
-          npcId={activeNpcDialogue.npcId}
-          mapId={activeNpcDialogue.mapId}
-          fallbackLabelVi={activeNpcDialogue.labelVi}
-          fallbackRole={activeNpcDialogue.role}
-          fallbackDialogueVi={activeNpcDialogue.fallbackDialogueVi}
-          worldId={worldSnapshot.world.id}
-          userId={currentUser.userId}
-          context={{
-            mapId: activeNpcDialogue.mapId,
-            isNight: (worldClockPresentation?.lighting.night ?? 0) >= 0.45,
-            weatherKind: worldClockPresentation?.weather.kind ?? 'sunny',
-            walletCoins: farmWalletCoins,
-            hasPet: Boolean(petSnapshot),
-            petName: petSnapshot?.name,
-            playerNickname: localMember?.nickname ?? 'Bạn',
-          }}
+            npcId={activeNpcDialogue.npcId}
+            mapId={activeNpcDialogue.mapId}
+            fallbackLabelVi={activeNpcDialogue.labelVi}
+            fallbackRole={activeNpcDialogue.role}
+            fallbackDialogueVi={activeNpcDialogue.fallbackDialogueVi}
+            worldId={worldSnapshot.world.id}
+            userId={currentUser.userId}
+            context={{
+              mapId: activeNpcDialogue.mapId,
+              isNight: (worldClockPresentation?.lighting.night ?? 0) >= 0.45,
+              weatherKind: worldClockPresentation?.weather.kind ?? 'sunny',
+              walletCoins: farmWalletCoins,
+              hasPet: Boolean(petSnapshot),
+              petName: petSnapshot?.name,
+              playerNickname: localMember?.nickname ?? 'Bạn',
+              partnerInSameRoom: presences.some(
+                (p) => p.userId !== currentUser.userId && p.mapId === activeNpcDialogue.mapId,
+              ),
+              partnerNickname: (
+                presences.find(
+                  (p) => p.userId !== currentUser.userId && p.mapId === activeNpcDialogue.mapId,
+                ) ?? worldSnapshot.members.find((m) => m.userId !== currentUser.userId)
+              )?.nickname,
+              heldItemSku,
+            }}
           onAction={(action: NpcDialogueActionKind) => {
             setActiveNpcDialogue(null);
             if (action === 'open_seed_shop') {

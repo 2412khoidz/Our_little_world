@@ -78,6 +78,7 @@ export interface GameEventMap {
   'cmd:set-joystick': { vx: number; vy: number };
   'cmd:trigger-interact': undefined;
   'cmd:interact-npc': undefined;
+  'cmd:set-active-npc-dialogue': { npcId: string | null };
   'cmd:set-paused': { paused: boolean };
   'cmd:sync-pet': PetSnapshot | null;
   'cmd:pet-reaction': { action: PetActionType };

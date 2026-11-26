@@ -5,7 +5,7 @@ import { avatarWalkAnimKey } from '../art/avatarAtlasLayout';
 import { createCompactNameTag, placeSoftShadow } from '../artDemos/demoHelpers';
 import { getMapDefinition, TILE_SIZE } from '../../shared/maps';
 import type { CouplePostureKind } from '../../shared/couple/coupleTypes';
-import type { AvatarConfig, MapId } from '../../shared/types';
+import type { AvatarConfig, Direction, MapId } from '../../shared/types';
 import { getParsedTiledWorld } from '../../shared/world/tiledMapRegistry';
 import {
   createNpcRoutineState,
@@ -34,6 +34,8 @@ export interface TiledWorldNpcEntity {
   phase: number;
   lastWasNear: boolean;
   emoteUntilMs: number;
+  greetHopUntilMs: number;
+  lastAmbientEmoteAtMs: number;
 }
 
 export interface NpcTickContext {
@@ -43,6 +45,7 @@ export interface NpcTickContext {
   isNight?: boolean;
   weatherKind?: string;
   activeDialogueNpcId?: string | null;
+  partnerInSameRoom?: boolean;
   isTileBlocked?: (tx: number, ty: number) => boolean;
   actorObstacles?: readonly ActorCollider[];
 }
@@ -53,6 +56,7 @@ function npcAvatarForSpawn(id: string, role: string): AvatarConfig {
   if (role.includes('fish')) return NPC_PROFILES.ong_minh.avatarConfig;
   if (role.includes('bakery') || role.includes('cafe')) return NPC_PROFILES.co_lan.avatarConfig;
   if (role.includes('tool')) return NPC_PROFILES.chu_tu.avatarConfig;
+  if (role.includes('mayor')) return NPC_PROFILES.thi_truong.avatarConfig;
   if (role.includes('forest')) return NPC_PROFILES.be_na.avatarConfig;
   return NPC_PROFILES.bac_hai.avatarConfig;
 }
@@ -64,6 +68,10 @@ function buildWalkableNpcWaypoints(
   homeX: number,
   homeY: number,
 ): NpcWaypoint[] {
+  // Indoor shopkeepers hold their shop counter post cleanly and perform animated Zelda idle gestures.
+  if (mapId === 'shop' || mapId.startsWith('shop_')) {
+    return [{ x: homeX, y: homeY }];
+  }
   const def = getMapDefinition(mapId);
   const waypoints: NpcWaypoint[] = [{ x: homeX, y: homeY }];
   const offsets: readonly [number, number][] = [
@@ -83,6 +91,8 @@ function buildWalkableNpcWaypoints(
   }
   return waypoints;
 }
+
+const IDLE_GLANCE_SEQ: readonly Direction[] = ['down', 'left', 'down', 'right', 'down'];
 
 export function spawnTiledWorldNpcs(
   scene: Phaser.Scene,
@@ -144,6 +154,8 @@ export function spawnTiledWorldNpcs(
       phase,
       lastWasNear: false,
       emoteUntilMs: 0,
+      greetHopUntilMs: 0,
+      lastAmbientEmoteAtMs: 0,
     });
   }
   return npcs;
@@ -172,14 +184,53 @@ export function tickTiledWorldNpcs(
       actorObstacles: ctx?.actorObstacles,
     });
 
+    const isTalking = ctx?.activeDialogueNpcId === npc.id;
+    const isNear = npc.routine.activity === 'interacting';
+
+    if (isNear && !npc.lastWasNear) {
+      npc.greetHopUntilMs = timeMs + 380;
+      npc.emoteUntilMs = timeMs + 2400;
+      npc.emoteBadge.setText(
+        ctx?.partnerInSameRoom ? '💕' : npc.routine.bubbleText || '👋',
+      );
+    } else if (
+      !isNear &&
+      !npc.routine.moving &&
+      !ctx?.isNight &&
+      timeMs - npc.lastAmbientEmoteAtMs > 9500 + Math.round(npc.phase * 1100)
+    ) {
+      npc.lastAmbientEmoteAtMs = timeMs;
+      npc.emoteUntilMs = timeMs + 1600;
+      npc.emoteBadge.setText(
+        npc.role.includes('bakery') ? '🥐' : npc.role.includes('fish') ? '🐟' : npc.role.includes('mayor') ? '📜' : '♪',
+      );
+    }
+    npc.lastWasNear = isNear;
+
+    // Zelda Ocarina-of-Time style expressive gestures: rhythmic breathing bob, periodic glancing, greet hop, active chat nod
+    const hopOffset =
+      timeMs < npc.greetHopUntilMs
+        ? -Math.sin(((npc.greetHopUntilMs - timeMs) / 380) * Math.PI) * 3.4
+        : isTalking
+          ? -Math.abs(Math.sin(t * 7.2 + npc.phase)) * 1.4
+          : 0;
+    const idleBob = npc.routine.moving ? 0 : Math.sin(t * 2.1 + npc.phase) * 0.55;
     const nx = npc.routine.x;
     const ny = npc.routine.y;
-    const bob = npc.routine.moving ? 0 : Math.sin(t * 1.6 + npc.phase) * 0.45;
-    npc.body.setPosition(nx, ny + bob);
+    const drawY = ny + idleBob + hopOffset;
+
+    npc.body.setPosition(nx, drawY);
     npc.body.setDepth(Math.round(ny));
+    const breatheScaleY = npc.routine.moving ? 1 : 1 + Math.sin(t * 2.4 + npc.phase) * 0.025;
+    npc.body.setScale(1, breatheScaleY);
     npc.shadow.setPosition(nx, ny - 1);
     npc.shadow.setDepth(Math.round(ny) - 1);
-    npc.label.setPosition(nx, ny - 28 + bob);
+    npc.label.setPosition(nx, drawY - 28);
+
+    const idleFacing =
+      !npc.routine.moving && !isNear && !isTalking && !ctx?.isNight
+        ? IDLE_GLANCE_SEQ[Math.floor((timeMs + npc.phase * 1500) / 3100) % IDLE_GLANCE_SEQ.length]!
+        : npc.routine.facing;
 
     if (npc.routine.moving) {
       const walkKey = avatarWalkAnimKey(npc.texKey, npc.routine.facing);
@@ -193,18 +244,11 @@ export function tickTiledWorldNpcs(
       }
     } else {
       npc.body.stop();
-      npc.body.setFrame(getIdleFrameIndex(npc.routine.facing));
+      npc.body.setFrame(getIdleFrameIndex(idleFacing));
     }
 
-    const isNear = npc.routine.activity === 'interacting';
-    if (isNear && !npc.lastWasNear && npc.routine.bubbleText) {
-      npc.emoteUntilMs = timeMs + 2200;
-      npc.emoteBadge.setText(npc.routine.bubbleText);
-    }
-    npc.lastWasNear = isNear;
-
-    if (isNear && timeMs < npc.emoteUntilMs) {
-      npc.emoteBadge.setPosition(nx, ny - 37 + bob).setVisible(true);
+    if (timeMs < npc.emoteUntilMs) {
+      npc.emoteBadge.setPosition(nx, drawY - 37).setVisible(true);
     } else {
       npc.emoteBadge.setVisible(false);
     }
@@ -215,7 +259,7 @@ export function nearestTiledNpc(
   npcs: readonly TiledWorldNpcEntity[],
   tileX: number,
   tileY: number,
-  radiusTiles = 2.6,
+  radiusTiles = 3.1,
 ): TiledWorldNpcEntity | null {
   let best: TiledWorldNpcEntity | null = null;
   let bestD = radiusTiles;

@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   NPC_PROFILES,
+  NPC_DIALOGUE_POOLS,
+  type NpcDialogueContext,
   getNpcRelationship,
   recordNpcConversation,
   resolveNpcProfile,
+  selectHadesDialogueLine,
   setNpcErrandStatus,
 } from '../../src/shared/npc/npcDialogueRegistry';
 import {
@@ -12,13 +15,17 @@ import {
   createDuckActorState,
   createNpcRoutineState,
   createSheepActorState,
+  createSnailActorState,
   isExemptFromCleanupTimeout,
   stepEmergentChicken,
   stepEmergentCrab,
   stepEmergentDuck,
   stepEmergentSheep,
+  stepEmergentSnail,
   stepNpcRoutine,
 } from '../../src/shared/world/emergentWorldBehavior';
+import farmMapData from '../../src/assets/maps/farm.json';
+import { farmPlotIndexForTile } from '../../src/shared/farming/farmPlotIndex';
 
 describe('Checkpoint D1 & D2: ADV NPC dialogue & observable living animals/NPCs', () => {
   it('provides data-driven ADV profiles and branches for all 5 village/farm/beach NPCs and fallback IDs', () => {
@@ -216,5 +223,152 @@ describe('Checkpoint D1 & D2: ADV NPC dialogue & observable living animals/NPCs'
     expect(routine.activity).toBe('interacting');
     expect(routine.facing).toBe('up');
     expect(routine.bubbleText).toBe('👋');
+  });
+
+  it('ships >= 12 Hades lines for all 6 NPCs, couples/solo priority, and unseen-first non-repeating rotation', () => {
+    const testCtx: NpcDialogueContext = {
+      mapId: 'village',
+      isNight: false,
+      weatherKind: 'sunny',
+      walletCoins: 50,
+      hasPet: true,
+      petName: 'Quýt',
+      playerNickname: 'Mây',
+      affinity: 1,
+      errandStatus: 'none',
+    };
+    const expectedIds = ['bac_hai', 'co_lan', 'chu_tu', 'be_na', 'ong_minh', 'thi_truong'] as const;
+    for (const id of expectedIds) {
+      expect(NPC_PROFILES[id]).toBeTruthy();
+      expect(NPC_DIALOGUE_POOLS[id].length).toBeGreaterThanOrEqual(12);
+
+      const soloFirst = selectHadesDialogueLine(id, { ...testCtx, partnerInSameRoom: false, talkCount: 0 });
+      const coupleFirst = selectHadesDialogueLine(id, { ...testCtx, partnerInSameRoom: true, talkCount: 0 });
+      expect(soloFirst).not.toBeNull();
+      expect(coupleFirst).not.toBeNull();
+      expect(soloFirst?.category).toBe('solo');
+      expect(coupleFirst?.category).toBe('couple');
+      expect(coupleFirst?.textVi({ ...testCtx, partnerInSameRoom: true })).not.toBe(
+        soloFirst?.textVi({ ...testCtx, partnerInSameRoom: false }),
+      );
+    }
+
+    let relMap = {};
+    const seenIds: string[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const rel = getNpcRelationship(relMap, 'thi_truong');
+      const pick = selectHadesDialogueLine('thi_truong', {
+        ...testCtx,
+        mapId: 'shop_town_hall',
+        partnerInSameRoom: i % 2 === 0,
+        seenLineIds: rel.seenLineIds,
+        talkCount: rel.talkCount,
+      });
+      expect(pick).not.toBeNull();
+      expect(seenIds).not.toContain(pick!.id);
+      seenIds.push(pick!.id);
+      relMap = recordNpcConversation(relMap, 'thi_truong', 1_000_000 + i * 70_000, pick!.id);
+    }
+    expect(new Set(seenIds).size).toBe(6);
+  });
+
+  it('keeps farm pond ducks strictly over real water tiles, keeps sheep off tilled soil, and animates sheep/snails cleanly', () => {
+    const layers = farmMapData.layers as { name: string; data?: number[] }[];
+    const width = farmMapData.width;
+    const waterData = layers.find((l) => l.name === 'water')?.data ?? [];
+    const soilData = layers.find((l) => l.name === 'soil')?.data ?? [];
+
+    const duckPondTiles: readonly [number, number][] = [
+      [32, 6],
+      [33, 6],
+      [51, 9],
+      [52, 9],
+    ];
+    for (const [tx, ty] of duckPondTiles) {
+      expect(waterData[ty * width + tx]).toBeGreaterThan(0);
+    }
+
+    const sheepPastureTiles: readonly [number, number][] = [
+      [37, 6],
+      [42, 7],
+      [46, 14],
+      [55, 16],
+    ];
+    for (const [tx, ty] of sheepPastureTiles) {
+      expect(farmPlotIndexForTile(tx, ty)).toBeNull();
+      expect(soilData[ty * width + tx]).toBe(0);
+    }
+
+    const sheep = createSheepActorState('farm_sheep_test', 37 * 16, 6 * 16, 0);
+    stepEmergentSheep(sheep, {
+      nowMs: 2_000,
+      dtSec: 0.016,
+      tilePx: 16,
+      playerX: 37 * 16 - 40,
+      playerY: 6 * 16,
+      playerRunning: false,
+      toolSwinging: true,
+      heldItemSku: 'item_hoe',
+      isNight: false,
+      weatherKind: 'sunny',
+    });
+    expect(sheep.activity).toBe('fleeing_player');
+    expect(sheep.bubbleText).toBe('baa!');
+
+    const curiousSheep = createSheepActorState('farm_sheep_curious', 37 * 16, 6 * 16, 0);
+    stepEmergentSheep(curiousSheep, {
+      nowMs: 1_000,
+      dtSec: 0.016,
+      tilePx: 16,
+      playerX: 37 * 16 - 32,
+      playerY: 6 * 16,
+      playerRunning: false,
+      toolSwinging: false,
+      heldItemSku: null,
+      isNight: false,
+      weatherKind: 'sunny',
+    });
+    expect(curiousSheep.activity).toBe('curious_player');
+    stepEmergentSheep(curiousSheep, {
+      nowMs: 3_500,
+      dtSec: 0.016,
+      tilePx: 16,
+      playerX: 37 * 16 - 32,
+      playerY: 6 * 16,
+      playerRunning: false,
+      toolSwinging: false,
+      heldItemSku: null,
+      isNight: false,
+      weatherKind: 'sunny',
+    });
+    expect(curiousSheep.activity).not.toBe('curious_player');
+
+    const snail = createSnailActorState('garden_snail_test', 92, 134, 'x', 16, 0.2);
+    stepEmergentSnail(snail, {
+      nowMs: 4_000,
+      dtSec: 0.05,
+      tilePx: 16,
+      playerX: 300,
+      playerY: 300,
+      playerRunning: false,
+      toolSwinging: false,
+      heldItemSku: null,
+      isNight: false,
+      weatherKind: 'sunny',
+    });
+    expect(snail.activity).toBe('crawling');
+    stepEmergentSnail(snail, {
+      nowMs: 4_200,
+      dtSec: 0.016,
+      tilePx: 16,
+      playerX: 102,
+      playerY: 134,
+      playerRunning: true,
+      toolSwinging: false,
+      heldItemSku: null,
+      isNight: false,
+      weatherKind: 'sunny',
+    });
+    expect(snail.activity).toBe('resting');
   });
 });
