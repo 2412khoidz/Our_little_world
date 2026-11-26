@@ -9,6 +9,7 @@ import type {
   PetSnapshot,
 } from '../../shared/pet/petTypes';
 import type { PetLivingAuthoritySnapshot } from '../../shared/petLiving/petAuthorityTypes';
+import type { PetCareSessionEventPacket } from '../../shared/petLiving/petCare/sharedPetCareTypes';
 import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   CreatedInvite,
@@ -362,6 +363,10 @@ export function createSupabaseBackend(): WorldBackend {
           handlers.onCoupleEvent?.(payload as CoupleEventPacket);
         });
 
+        ch.on('broadcast', { event: 'pet_care_session' }, ({ payload }) => {
+          handlers.onPetCareSession?.(payload as PetCareSessionEventPacket);
+        });
+
         ch.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             handlers.onConnectionChange('connected');
@@ -408,8 +413,13 @@ export function createSupabaseBackend(): WorldBackend {
             payload: packet,
           });
         },
-        publishPetCareSession() {
-          /* Supabase RPC lands with Mission 04c — dev-LAN authoritative for preview. */
+        publishPetCareSession(packet) {
+          if (!activeChannel) return;
+          void activeChannel.send({
+            type: 'broadcast',
+            event: 'pet_care_session',
+            payload: packet,
+          });
         },
         async reconnect() {
           handlers.onConnectionChange('reconnecting');

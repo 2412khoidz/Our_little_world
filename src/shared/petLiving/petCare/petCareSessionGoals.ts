@@ -30,6 +30,8 @@ export function petCareActionToGoal(kind: PetCareActionKind): PetCareSessionGoal
     case 'pour_water':
       return 'pour_water';
     case 'toy_yarn':
+    case 'toy_ball':
+    case 'toy_wand':
     case 'toy_box':
       return 'toy';
     case 'offer_food':

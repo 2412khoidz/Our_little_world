@@ -4,6 +4,7 @@ import {
   getPetActionCooldownRemainingMs,
   getPetMoodLabelVi,
 } from '../../shared/pet/petNeeds';
+import { gameEventBus } from '../../game/eventBus';
 import type { PetActionType, PetSnapshot } from '../../shared/pet/petTypes';
 
 interface PetPanelProps {
@@ -180,8 +181,20 @@ export function PetPanel({
               style={{ fontSize: 13, margin: 0 }}
               data-testid="pet-panel-care-hint"
             >
-              Vuốt ve &amp; chơi cùng bé trong chế độ chăm sóc (gần mèo hoặc <strong>J</strong> trên bản đồ).
+              Vuốt ve, chải lông &amp; chơi cùng {pet.name} trực tiếp trong phòng khách ấm áp.
             </p>
+
+            <button
+              type="button"
+              className="btn btn--primary"
+              data-testid="pet-panel-enter-care"
+              onClick={() => {
+                gameEventBus.emit('cmd:pet-care-mode', { active: true });
+                onClose();
+              }}
+            >
+              <Cat size={16} /> Chăm sóc {pet.name} (3D)
+            </button>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <VitalBar label="Độ no (giảm chậm theo giờ)" value={pet.vitals.hunger} color="#e58f65" />
