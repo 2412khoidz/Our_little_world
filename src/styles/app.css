@@ -1740,3 +1740,187 @@
 .cozy-shipping-footer {
   margin-top: 8px;
 }
+
+/* ADV Visual Novel NPC Dialogue Overlay */
+.adv-dialogue-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 64;
+  background: rgba(24, 15, 19, 0.28);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px 12px calc(14px + var(--safe-bottom));
+}
+
+.adv-dialogue-panel {
+  width: min(760px, 100%);
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #fff9ef 0%, #f5e6cf 100%);
+  border: 3px solid #6b4322;
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(26, 15, 10, 0.34);
+  color: #3b2414;
+}
+
+.adv-dialogue-portrait {
+  flex: 0 0 auto;
+  width: 82px;
+  height: 82px;
+  border-radius: 12px;
+  border: 3px solid #d89b48;
+  background: #fff4df;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 6px rgba(96, 58, 28, 0.16);
+}
+
+.adv-dialogue-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adv-dialogue-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adv-dialogue-nameplate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 2px solid #d89b48;
+  background: #fffdf8;
+  font-size: 13.5px;
+}
+
+.adv-dialogue-role {
+  font-size: 11.5px;
+  color: #7c5636;
+  font-weight: 600;
+}
+
+.adv-dialogue-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adv-dialogue-affinity {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.adv-dialogue-body {
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.92);
+  border: 1.5px solid #dec39d;
+  cursor: pointer;
+  line-height: 1.52;
+  font-size: 14px;
+}
+
+.adv-dialogue-body p {
+  margin: 0;
+  display: inline;
+}
+
+.adv-dialogue-cursor {
+  margin-left: 2px;
+  color: #b46a34;
+  font-weight: 800;
+}
+
+.adv-dialogue-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adv-dialogue-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+}
+
+.adv-choice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 6px 11px;
+  border-radius: 10px;
+  border: 1.5px solid #c59b6d;
+  background: #fffaf0;
+  color: #3f2716;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adv-choice-btn--primary {
+  background: linear-gradient(180deg, #fce2b4 0%, #efc179 100%);
+  border-color: #8c5523;
+}
+
+.adv-choice-btn--subtle {
+  background: transparent;
+  border-style: dashed;
+  font-size: 12px;
+}
+
+.adv-choice-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(114, 71, 33, 0.14);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.adv-choice-badge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #774721;
+  color: #fff8eb;
+  font-size: 10.5px;
+}
+
+@media (max-width: 600px) {
+  .adv-dialogue-panel {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .adv-dialogue-portrait {
+    width: 60px;
+    height: 60px;
+  }
+
+  .adv-dialogue-portrait svg {
+    width: 52px;
+    height: 52px;
+  }
+}

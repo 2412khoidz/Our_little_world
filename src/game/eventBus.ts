@@ -179,6 +179,13 @@ export interface GameEventMap {
   'evt:open-study-panel': undefined;
   'evt:open-photo-frame': undefined;
   'evt:open-mailbox': undefined;
+  'evt:open-npc-dialogue': {
+    npcId: string;
+    mapId: MapId;
+    labelVi: string;
+    role: string;
+    fallbackDialogueVi: string;
+  };
   'evt:local-posture-changed': {
     posture: CouplePostureKind;
     slotIndex: number;

@@ -7,6 +7,7 @@ import extIds from './worldExtendedArtIds.json';
 export const WORLD_ART_KEY = 'world-atlas';
 export const WORLD_PROPS_KEY = 'world-props-atlas';
 export const SAKURA_POT_OVERRIDE_KEY = 'olw-sakura-pot-override';
+export const BEACH_CRAB_SHEET_KEY = 'olw-crab-sheet';
 const WORLD_ART_MANIFEST = 'world-atlas-manifest';
 const WORLD_PROPS_MANIFEST = 'world-props-manifest';
 
@@ -93,6 +94,72 @@ export function registerWorldAtlas(scene: Phaser.Scene): void {
   }
 
   ensureSakuraPotOverrideTexture(scene);
+  ensureBeachCrabTexture(scene);
+}
+
+/** Procedural CC0 4-frame 16x16 cozy coral beach crab spritesheet + animation. */
+function ensureBeachCrabTexture(scene: Phaser.Scene): void {
+  if (!scene.textures.exists(BEACH_CRAB_SHEET_KEY)) {
+    const tex = scene.textures.createCanvas(BEACH_CRAB_SHEET_KEY, 64, 16);
+    if (!tex) return;
+    const ctx = tex.getContext();
+    ctx.clearRect(0, 0, 64, 16);
+    ctx.imageSmoothingEnabled = false;
+
+    for (let f = 0; f < 4; f += 1) {
+      const ox = f * 16;
+      const clawLift = f % 2 === 0 ? 0 : -1;
+      const legShift = f === 1 ? 1 : f === 3 ? -1 : 0;
+
+      // Dark outline shell silhouette
+      ctx.fillStyle = '#5c1f16';
+      ctx.fillRect(ox + 4, 7, 8, 5);
+      ctx.fillRect(ox + 3, 8, 10, 3);
+      // Warm coral carapace
+      ctx.fillStyle = '#e86843';
+      ctx.fillRect(ox + 4, 8, 8, 3);
+      ctx.fillStyle = '#ff9868';
+      ctx.fillRect(ox + 5, 8, 5, 2);
+
+      // Eyestalks & glossy eyes
+      ctx.fillStyle = '#5c1f16';
+      ctx.fillRect(ox + 5, 5, 2, 3);
+      ctx.fillRect(ox + 9, 5, 2, 3);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(ox + 5, 5, 1, 1);
+      ctx.fillRect(ox + 9, 5, 1, 1);
+
+      // Pincers (subtle alternating snip motion)
+      ctx.fillStyle = '#cf472c';
+      ctx.fillRect(ox + 2, 6 + clawLift, 2, 2);
+      ctx.fillRect(ox + 12, 6 - clawLift, 2, 2);
+      ctx.fillStyle = '#ff9868';
+      ctx.fillRect(ox + 2, 6 + clawLift, 1, 1);
+      ctx.fillRect(ox + 13, 6 - clawLift, 1, 1);
+
+      // Scuttling legs
+      ctx.fillStyle = '#8b2f1f';
+      ctx.fillRect(ox + 3, 11 + (legShift > 0 ? 1 : 0), 2, 2);
+      ctx.fillRect(ox + 5, 12, 1, 2);
+      ctx.fillRect(ox + 10, 12, 1, 2);
+      ctx.fillRect(ox + 11, 11 + (legShift < 0 ? 1 : 0), 2, 2);
+    }
+
+    tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    tex.refresh();
+    for (let f = 0; f < 4; f += 1) {
+      tex.add(f, 0, f * 16, 0, 16, 16);
+    }
+  }
+
+  if (!scene.anims.exists('olw-crab')) {
+    scene.anims.create({
+      key: 'olw-crab',
+      frames: [0, 1, 2, 3].map((frame) => ({ key: BEACH_CRAB_SHEET_KEY, frame })),
+      frameRate: 6.5,
+      repeat: -1,
+    });
+  }
 }
 
 /**

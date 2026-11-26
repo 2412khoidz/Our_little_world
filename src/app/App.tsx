@@ -61,6 +61,8 @@ import {
   type TimeOfDayMode,
 } from '../shared/world/worldClock';
 import { FarmEconomyPanel } from '../features/farming/FarmEconomyPanel';
+import { NpcDialogueOverlay } from '../features/npc/NpcDialogueOverlay';
+import type { NpcDialogueActionKind } from '../shared/npc/npcDialogueRegistry';
 import type { FarmShopKind } from '../shared/shop/farmShopCatalog';
 import { farmContextFromWorldClock } from '../shared/farming/farmWorldClockBridge';
 import { ChillFishingModal } from '../features/donor/ChillFishingModal';
@@ -471,6 +473,13 @@ function MainCoupleApp() {
     title: string;
     body: string;
     version: string;
+  } | null>(null);
+  const [activeNpcDialogue, setActiveNpcDialogue] = useState<{
+    npcId: string;
+    mapId: MapId;
+    labelVi: string;
+    role: string;
+    fallbackDialogueVi: string;
   } | null>(null);
   const [showJoystick, setShowJoystick] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
@@ -1512,6 +1521,10 @@ function MainCoupleApp() {
       setPreviewNotice(notice);
     });
 
+    const unsubNpcDialogue = gameEventBus.on('evt:open-npc-dialogue', (dialogue) => {
+      setActiveNpcDialogue(dialogue);
+    });
+
     const unsubSelect = gameEventBus.on('evt:decorate-select', ({ placementId }) => {
       setSelectedPlacementId(placementId);
     });
@@ -1572,6 +1585,7 @@ function MainCoupleApp() {
       unsubStudyPanel();
       unsubSceneReady();
       unsubPreview();
+      unsubNpcDialogue();
       unsubSelect();
       unsubDiag();
       unsubPhoto();
@@ -2106,7 +2120,7 @@ function MainCoupleApp() {
     );
   }
 
-  const isAnyModalOpen = activeModal !== null || previewNotice !== null;
+  const isAnyModalOpen = activeModal !== null || previewNotice !== null || activeNpcDialogue !== null;
   const kibbleCount = getSharedKibbleQty(inventorySnapshot?.items ?? []);
   const petFeedCooldownMs = petSnapshot
     ? getPetActionCooldownRemainingMs('feed', petSnapshot.lastFedAtMs, coupleClockNowMs)
@@ -2226,7 +2240,8 @@ function MainCoupleApp() {
           void refreshInventorySnapshot();
         }}
         onCloseTopModal={() => {
-          if (activeModal) setActiveModal(null);
+          if (activeNpcDialogue) setActiveNpcDialogue(null);
+          else if (activeModal) setActiveModal(null);
           else if (previewNotice) setPreviewNotice(null);
         }}
         onFeedPetAuthoritative={async () => {
@@ -2738,6 +2753,75 @@ function MainCoupleApp() {
         <Suspense fallback={null}>
           <DevV03PrototypesModal onClose={() => setActiveModal(null)} />
         </Suspense>
+      )}
+
+      {activeNpcDialogue && currentUser && worldSnapshot && (
+        <NpcDialogueOverlay
+          npcId={activeNpcDialogue.npcId}
+          mapId={activeNpcDialogue.mapId}
+          fallbackLabelVi={activeNpcDialogue.labelVi}
+          fallbackRole={activeNpcDialogue.role}
+          fallbackDialogueVi={activeNpcDialogue.fallbackDialogueVi}
+          worldId={worldSnapshot.world.id}
+          userId={currentUser.userId}
+          context={{
+            mapId: activeNpcDialogue.mapId,
+            isNight: (worldClockPresentation?.lighting.night ?? 0) >= 0.45,
+            weatherKind: worldClockPresentation?.weather.kind ?? 'sunny',
+            walletCoins: farmWalletCoins,
+            hasPet: Boolean(petSnapshot),
+            petName: petSnapshot?.name,
+            playerNickname: localMember?.nickname ?? 'Bạn',
+          }}
+          onAction={(action: NpcDialogueActionKind) => {
+            setActiveNpcDialogue(null);
+            if (action === 'open_seed_shop') {
+              if (!backend.farm) {
+                showToast('Tiệm hạt giống chỉ mở khi kết nối dữ liệu nông trại.');
+                return;
+              }
+              void refreshFarmWallet();
+              setFarmShopKind('seed');
+              setActiveModal('farm_market');
+            } else if (action === 'open_tool_shop') {
+              if (!backend.farm) {
+                showToast('Tiệm dụng cụ chỉ mở khi kết nối dữ liệu nông trại.');
+                return;
+              }
+              void refreshFarmWallet();
+              setFarmShopKind('tool');
+              setActiveModal('farm_market');
+            } else if (action === 'open_shipping') {
+              if (!backend.farm) {
+                showToast('Thùng gom nông sản chỉ mở khi có dữ liệu nông trại.');
+                return;
+              }
+              void refreshFarmWallet();
+              setActiveModal('farm_shipping');
+            } else if (action === 'open_workshop') {
+              if (!donorLanPlayable) {
+                showToast('Xưởng bánh Hollow sẽ mở trên bản preview nông trại.');
+                return;
+              }
+              setDonorWorkshopFocus('bakery');
+              setActiveModal('donor_workshop');
+            } else if (action === 'open_fishing_sea') {
+              if (!donorLanPlayable) {
+                showToast('Cầu câu Vịnh Hải Âu chỉ mở khi máy chủ nông trại/cá sẵn sàng.');
+                return;
+              }
+              setDonorChillFishingSpot('gull_bay');
+              setActiveModal('donor_fishing');
+            } else if (action === 'open_pet_care') {
+              if (backend.pet) {
+                setActiveModal('pet');
+                void refreshPetSnapshot();
+                void refreshInventorySnapshot();
+              }
+            }
+          }}
+          onClose={() => setActiveNpcDialogue(null)}
+        />
       )}
 
       {previewNotice && (

@@ -2,15 +2,44 @@ import Phaser from 'phaser';
 import type { MapId } from '../../shared/types';
 import { TILE_SIZE } from '../../shared/maps';
 import extIds from '../art/worldExtendedArtIds.json';
-import { WORLD_PROPS_KEY } from '../art/worldAtlas';
+import { BEACH_CRAB_SHEET_KEY, WORLD_PROPS_KEY } from '../art/worldAtlas';
 import { createAmbientMotes, placeSoftShadow, placeWarmLight, type FloatingMote } from '../artDemos/demoHelpers';
-import { createChickenActorState, type ChickenActorState } from '../../shared/world/emergentWorldBehavior';
+import {
+  createChickenActorState,
+  createCrabActorState,
+  createDuckActorState,
+  createSheepActorState,
+  type ChickenActorState,
+  type CrabActorState,
+  type DuckActorState,
+  type SheepActorState,
+} from '../../shared/world/emergentWorldBehavior';
 import { getStaticZonePropSpecs } from '../../shared/world/zonePropColliders';
 
 export interface AmbientChickenHandle {
   sprite: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Image;
   state: ChickenActorState;
+  bubble?: Phaser.GameObjects.Text;
+}
+
+export interface AmbientDuckHandle {
+  sprite: Phaser.GameObjects.Sprite;
+  state: DuckActorState;
+  lastRippleAtMs: number;
+}
+
+export interface AmbientSheepHandle {
+  sprite: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
+  state: SheepActorState;
+  bubble?: Phaser.GameObjects.Text;
+}
+
+export interface AmbientCrabHandle {
+  sprite: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
+  state: CrabActorState;
 }
 
 type PlaceProp = (
@@ -24,6 +53,21 @@ type PlaceProp = (
 
 function pxAt(tx: number, ty: number, ox = 0.5, oy = 1): { x: number; y: number } {
   return { x: (tx + ox) * TILE_SIZE, y: (ty + oy) * TILE_SIZE };
+}
+
+function createAnimalBubble(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Text {
+  return scene.add
+    .text(x, y, '', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '7.5px',
+      color: '#fff6e4',
+      backgroundColor: '#2d1c22cc',
+      padding: { x: 2.5, y: 1 },
+      resolution: 4,
+    })
+    .setOrigin(0.5, 1)
+    .setDepth(9440)
+    .setVisible(false);
 }
 
 function addHollowmereProp(
@@ -65,6 +109,9 @@ export interface ZoneAccentResult {
   motes: FloatingMote[];
   moteBounds?: { x: number; y: number; w: number; h: number };
   chickens?: AmbientChickenHandle[];
+  ducks?: AmbientDuckHandle[];
+  sheep?: AmbientSheepHandle[];
+  crabs?: AmbientCrabHandle[];
 }
 
 /**
@@ -81,6 +128,9 @@ export function applyTiledZoneAccents(
 ): ZoneAccentResult {
   const hasProps = scene.textures.exists(WORLD_PROPS_KEY);
   const chickens: AmbientChickenHandle[] = [];
+  const ducks: AmbientDuckHandle[] = [];
+  const sheep: AmbientSheepHandle[] = [];
+  const crabs: AmbientCrabHandle[] = [];
 
   for (const spec of getStaticZonePropSpecs(mapId)) {
     addHollowmereProp(scene, pushLayer, spec.textureKey, spec.tileX, spec.tileY, spec.scale, {
@@ -91,18 +141,35 @@ export function applyTiledZoneAccents(
   }
 
   if (mapId === 'farm') {
-    // Pond animations + farm animals
     if (hasProps) {
       if (scene.anims.exists('olw-duck')) {
+        const startX = 33.5 * TILE_SIZE;
+        const startY = 9.4 * TILE_SIZE;
         const duck = scene.add
-          .sprite(33.5 * TILE_SIZE, 9.2 * TILE_SIZE, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`)
+          .sprite(startX, startY, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`)
           .setOrigin(0.5, 0.8)
-          .setDepth(Math.round(9.2 * TILE_SIZE));
+          .setDepth(Math.round(startY));
         duck.play('olw-duck');
         pushLayer(duck);
+        ducks.push({
+          sprite: duck,
+          lastRippleAtMs: 0,
+          state: createDuckActorState(
+            'farm_pond_duck_0',
+            startX,
+            startY,
+            {
+              minX: 31.8 * TILE_SIZE,
+              maxX: 35.2 * TILE_SIZE,
+              minY: 8.5 * TILE_SIZE,
+              maxY: 10.6 * TILE_SIZE,
+            },
+            0.7,
+          ),
+        });
       }
       if (scene.anims.exists('olw-chicken')) {
-        for (const [idx, [cx, cy]] of ([[10, 14], [12, 16]] as const).entries()) {
+        for (const [idx, [cx, cy]] of ([[10, 14], [12, 16], [18, 13]] as const).entries()) {
           const homeX = cx * TILE_SIZE;
           const homeY = cy * TILE_SIZE;
           const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.36);
@@ -111,23 +178,39 @@ export function applyTiledZoneAccents(
             .setOrigin(0.5, 0.85)
             .setDepth(Math.round(homeY));
           ch.play('olw-chicken');
+          const bubble = createAnimalBubble(scene, homeX, homeY - 14);
           pushLayer(shadow);
           pushLayer(ch);
+          pushLayer(bubble);
           chickens.push({
             sprite: ch,
             shadow,
+            bubble,
             state: createChickenActorState(`farm_chicken_${idx}`, homeX, homeY, idx * 1.7),
           });
         }
       }
       if (scene.anims.exists('olw-sheep')) {
-        pushLayer(placeSoftShadow(scene, 48 * TILE_SIZE, 30 * TILE_SIZE - 1, 14, 5, 30 * TILE_SIZE - 2, 0.36));
-        const sheep = scene.add
-          .sprite(48 * TILE_SIZE, 30 * TILE_SIZE, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`)
-          .setOrigin(0.5, 0.85)
-          .setDepth(Math.round(30 * TILE_SIZE));
-        sheep.play('olw-sheep');
-        pushLayer(sheep);
+        for (const [idx, [sx, sy]] of ([[29, 25], [46, 29]] as const).entries()) {
+          const homeX = sx * TILE_SIZE;
+          const homeY = sy * TILE_SIZE;
+          const shadow = placeSoftShadow(scene, homeX, homeY - 1, 14, 5, homeY - 2, 0.36);
+          const sp = scene.add
+            .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`)
+            .setOrigin(0.5, 0.85)
+            .setDepth(Math.round(homeY));
+          sp.play('olw-sheep');
+          const bubble = createAnimalBubble(scene, homeX, homeY - 18);
+          pushLayer(shadow);
+          pushLayer(sp);
+          pushLayer(bubble);
+          sheep.push({
+            sprite: sp,
+            shadow,
+            bubble,
+            state: createSheepActorState(`farm_sheep_${idx}`, homeX, homeY, idx * 2.1),
+          });
+        }
       }
       const p1 = pxAt(34.5, 16.5);
       place(extIds.props.picnic_blanket, p1.x, p1.y, 0.5, 0.5, 3);
@@ -138,11 +221,16 @@ export function applyTiledZoneAccents(
     pushLayer(placeWarmLight(scene, 29.5 * TILE_SIZE, 20 * TILE_SIZE, 44, 0xffd896, 0.22, 860));
 
     const bounds = { x: 16, y: 16, w: worldWidthPx - 32, h: worldHeightPx - 32 };
-    return { motes: createAmbientMotes(scene, bounds, 'petal', 16), moteBounds: bounds, chickens };
+    return {
+      motes: createAmbientMotes(scene, bounds, 'petal', 16),
+      moteBounds: bounds,
+      chickens,
+      ducks,
+      sheep,
+    };
   }
 
   if (mapId === 'village') {
-    // Cozy bakery / cafe patio in Hollow nook + warm streetlamps
     for (const [lx, ly] of [[42, 28], [32, 24], [27, 36], [15, 33], [79, 25]] as const) {
       pushLayer(placeWarmLight(scene, (lx + 0.5) * TILE_SIZE, (ly + 0.5) * TILE_SIZE, 42, 0xffd584, 0.24, 860));
     }
@@ -158,11 +246,14 @@ export function applyTiledZoneAccents(
           .setOrigin(0.5, 0.85)
           .setDepth(Math.round(homeY));
         ch.play('olw-chicken');
+        const bubble = createAnimalBubble(scene, homeX, homeY - 14);
         pushLayer(shadow);
         pushLayer(ch);
+        pushLayer(bubble);
         chickens.push({
           sprite: ch,
           shadow,
+          bubble,
           state: createChickenActorState('village_chicken_0', homeX, homeY, 2.3),
         });
       }
@@ -179,7 +270,32 @@ export function applyTiledZoneAccents(
       place(extIds.props.picnic_teacup, pic.x + 8, pic.y + 2, 0.5, 1, Math.round(pic.y));
     }
 
-    // Gentle sunlit ocean sparkles over eastern & southern bay
+    if (scene.textures.exists(BEACH_CRAB_SHEET_KEY) && scene.anims.exists('olw-crab')) {
+      const crabSpecs = [
+        [26.4, 12, 'y', 28],
+        [24.6, 21, 'y', 24],
+        [22.8, 26.5, 'y', 22],
+      ] as const;
+      for (const [idx, [tx, ty, axis, span]] of crabSpecs.entries()) {
+        const homeX = tx * TILE_SIZE;
+        const homeY = ty * TILE_SIZE;
+        const shadow = placeSoftShadow(scene, homeX, homeY - 1, 9, 3.5, homeY - 2, 0.34);
+        const crabSprite = scene.add
+          .sprite(homeX, homeY, BEACH_CRAB_SHEET_KEY, 0)
+          .setOrigin(0.5, 0.85)
+          .setScale(0.78)
+          .setDepth(Math.round(homeY));
+        crabSprite.play('olw-crab');
+        pushLayer(shadow);
+        pushLayer(crabSprite);
+        crabs.push({
+          sprite: crabSprite,
+          shadow,
+          state: createCrabActorState(`beach_crab_${idx}`, homeX, homeY, axis, span, idx * 1.4),
+        });
+      }
+    }
+
     for (let i = 0; i < 14; i += 1) {
       const wx = (29 + (i * 5) % 24) * TILE_SIZE + 8;
       const wy = (8 + (i * 7) % 25) * TILE_SIZE + 8;
@@ -201,7 +317,7 @@ export function applyTiledZoneAccents(
     pushLayer(placeWarmLight(scene, 34.5 * TILE_SIZE, 16.5 * TILE_SIZE, 38, 0xffdf99, 0.24, 860));
 
     const bounds = { x: 16, y: 16, w: worldWidthPx - 32, h: worldHeightPx - 32 };
-    return { motes: createAmbientMotes(scene, bounds, 'firefly', 14), moteBounds: bounds };
+    return { motes: createAmbientMotes(scene, bounds, 'firefly', 14), moteBounds: bounds, crabs };
   }
 
   if (mapId === 'forest') {

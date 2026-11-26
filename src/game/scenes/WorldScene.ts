@@ -37,8 +37,21 @@ import {
   tickTiledWorldNpcs,
   type TiledWorldNpcEntity,
 } from '../world/tiledWorldNpcs';
-import { applyTiledZoneAccents, type AmbientChickenHandle } from '../world/tiledZoneAccents';
-import { stepEmergentChicken } from '../../shared/world/emergentWorldBehavior';
+import {
+  applyTiledZoneAccents,
+  type AmbientChickenHandle,
+  type AmbientCrabHandle,
+  type AmbientDuckHandle,
+  type AmbientSheepHandle,
+} from '../world/tiledZoneAccents';
+import {
+  createChickenActorState,
+  createDuckActorState,
+  stepEmergentChicken,
+  stepEmergentCrab,
+  stepEmergentDuck,
+  stepEmergentSheep,
+} from '../../shared/world/emergentWorldBehavior';
 import { isTiledWorldMapId, TILED_MAP_PHASER_KEYS } from '../../shared/world/tiledMapRegistry';
 import { buildTiledWorldInteractableTargets } from '../../shared/world/tiledWorldInteractables';
 import {
@@ -252,6 +265,9 @@ export class WorldScene extends Phaser.Scene {
   private buildingMap = false;
   private tiledNpcs: TiledWorldNpcEntity[] = [];
   private ambientChickens: AmbientChickenHandle[] = [];
+  private ambientDucks: AmbientDuckHandle[] = [];
+  private ambientSheep: AmbientSheepHandle[] = [];
+  private ambientCrabs: AmbientCrabHandle[] = [];
   private lastInteractKeySent: string | null = null;
   private lastTileEmitKey = '';
   private lastDiagnosticsAtMs = 0;
@@ -621,6 +637,9 @@ export class WorldScene extends Phaser.Scene {
     }
     this.tiledNpcs = [];
     this.ambientChickens = [];
+    this.ambientDucks = [];
+    this.ambientSheep = [];
+    this.ambientCrabs = [];
     this.ambientMoteKind = mapId === 'beach' || mapId === 'forest' ? 'firefly' : 'petal';
     this.tilemap?.destroy();
     this.tilemap = null;
@@ -664,6 +683,9 @@ export class WorldScene extends Phaser.Scene {
         this,
       );
       this.ambientChickens = accents.chickens ?? [];
+      this.ambientDucks = accents.ducks ?? [];
+      this.ambientSheep = accents.sheep ?? [];
+      this.ambientCrabs = accents.crabs ?? [];
       if (accents.motes.length > 0 && accents.moteBounds) {
         this.motes = accents.motes;
         this.moteBounds = accents.moteBounds;
@@ -891,6 +913,17 @@ export class WorldScene extends Phaser.Scene {
       const duck = this.add.sprite(168, 168, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`).setOrigin(0.5, 0.8).setDepth(170);
       duck.play('olw-duck');
       this.mapLayers.push(duck);
+      this.ambientDucks.push({
+        sprite: duck,
+        lastRippleAtMs: 0,
+        state: createDuckActorState(
+          'garden_pond_duck_0',
+          168,
+          168,
+          { minX: 146, maxX: 174, minY: 154, maxY: 174 },
+          1.1,
+        ),
+      });
     }
 
     // 3. Romantic Sakura Picnic Glade (`tx = 1..4, ty = 8..10`)
@@ -924,10 +957,16 @@ export class WorldScene extends Phaser.Scene {
     this.placeProp(extIds.props.beehive, 266, 138, 0.5, 1, 138);
 
     if (this.anims.exists('olw-chicken')) {
-      this.mapLayers.push(placeSoftShadow(this, 184, 143, 11, 4, 135, 0.45));
+      const chShadow = placeSoftShadow(this, 184, 143, 11, 4, 135, 0.45);
+      this.mapLayers.push(chShadow);
       const ch = this.add.sprite(184, 144, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`).setOrigin(0.5, 0.85).setDepth(144);
       ch.play('olw-chicken');
       this.mapLayers.push(ch);
+      this.ambientChickens.push({
+        sprite: ch,
+        shadow: chShadow,
+        state: createChickenActorState('garden_chicken_0', 184, 144, 0.9),
+      });
     }
 
     // 5. Drifting cherry blossom petals (within walkable garden bounds)
@@ -1300,6 +1339,33 @@ export class WorldScene extends Phaser.Scene {
       if (this.decorateState.active) {
         this.handleDecorateTap(tileX, tileY);
         return;
+      }
+
+      if (this.tiledNpcs.length > 0 && this.localSprite) {
+        const tappedNpc = this.tiledNpcs.find(
+          (npc) => Math.hypot(worldPt.x - npc.body.x, worldPt.y - (npc.body.y - 8)) <= 16,
+        );
+        if (tappedNpc) {
+          const distToPlayer = Math.hypot(
+            tappedNpc.body.x - this.localSprite.x,
+            tappedNpc.body.y - this.localSprite.y,
+          );
+          if (distToPlayer <= 68) {
+            this.clearLocalPosture(true);
+            this.pathQueue = [];
+            this.tapMarker?.clear();
+            this.localFacing = facingTowardPoint(
+              this.localSprite.x,
+              this.localSprite.y,
+              tappedNpc.body.x,
+              tappedNpc.body.y,
+              this.localFacing,
+            );
+            this.playLocalMoveAnim(false, false);
+            this.openDialogueWithNpc(tappedNpc);
+            return;
+          }
+        }
       }
 
       if (this.currentMapId === 'farm') {
@@ -2068,9 +2134,10 @@ export class WorldScene extends Phaser.Scene {
       this.blockedGrid.has(`${tx},${ty}`);
 
     let nearestChickenDistPx = Infinity;
+    const running = Boolean(this.wasd?.SHIFT.isDown);
+    const toolSwinging = this.donorToolController.isMovementLocked();
+
     if (this.ambientChickens.length > 0) {
-      const running = Boolean(this.wasd?.SHIFT.isDown);
-      const toolSwinging = this.donorToolController.isMovementLocked();
       for (const ch of this.ambientChickens) {
         stepEmergentChicken(ch.state, {
           nowMs: now,
@@ -2086,15 +2153,120 @@ export class WorldScene extends Phaser.Scene {
           isTileBlocked: isBlockedTile,
         });
         ch.sprite
-          .setPosition(ch.state.x, ch.state.y)
+          .setPosition(ch.state.x, ch.state.y + ch.state.hopOffsetY)
           .setFlipX(ch.state.facing === 'left')
           .setAlpha(ch.state.activity === 'roosting_sleep' ? 0.8 : 1)
           .setDepth(Math.round(ch.state.y));
+        ch.sprite.anims.timeScale = ch.state.animRateScale;
         ch.shadow.setPosition(ch.state.x, ch.state.y - 1);
+        if (ch.bubble) {
+          if (ch.state.bubbleText) {
+            ch.bubble
+              .setText(ch.state.bubbleText)
+              .setPosition(ch.state.x, ch.state.y + ch.state.hopOffsetY - 14)
+              .setVisible(true);
+          } else {
+            ch.bubble.setVisible(false);
+          }
+        }
         if (this.petEntity) {
           const petPos = this.petEntity.getWorldPosition();
           nearestChickenDistPx = Math.min(nearestChickenDistPx, Math.hypot(petPos.x - ch.state.x, petPos.y - ch.state.y));
         }
+      }
+    }
+
+    if (this.ambientDucks.length > 0) {
+      for (const dk of this.ambientDucks) {
+        stepEmergentDuck(dk.state, {
+          nowMs: now,
+          dtSec,
+          playerX: this.localSprite?.x ?? null,
+          playerY: this.localSprite?.y ?? null,
+          playerRunning: moved && running,
+          isNight,
+        });
+        dk.sprite
+          .setPosition(dk.state.x, dk.state.y + dk.state.bobOffsetY)
+          .setFlipX(dk.state.facing === 'left')
+          .setAlpha(dk.state.activity === 'sleeping' ? 0.82 : 1)
+          .setDepth(Math.round(dk.state.y));
+        dk.sprite.anims.timeScale = dk.state.animRateScale;
+        if (dk.state.ripplePulse && now - dk.lastRippleAtMs >= 880) {
+          dk.lastRippleAtMs = now;
+          const ripple = this.add
+            .ellipse(dk.state.x, dk.state.y + 1, 7, 3.5, 0xd8f5ff, 0)
+            .setStrokeStyle(0.9, 0xe8fbff, 0.58)
+            .setDepth(3.4);
+          this.tweens.add({
+            targets: ripple,
+            scaleX: 1.9,
+            scaleY: 1.7,
+            alpha: 0,
+            duration: 520,
+            ease: 'Sine.Out',
+            onComplete: () => ripple.destroy(),
+          });
+        }
+      }
+    }
+
+    if (this.ambientSheep.length > 0) {
+      for (const sp of this.ambientSheep) {
+        stepEmergentSheep(sp.state, {
+          nowMs: now,
+          dtSec,
+          tilePx: tPx,
+          playerX: this.localSprite?.x ?? null,
+          playerY: this.localSprite?.y ?? null,
+          playerRunning: moved && running,
+          toolSwinging,
+          heldItemSku: this.heldItem.itemSku,
+          isNight,
+          weatherKind,
+          isTileBlocked: isBlockedTile,
+        });
+        sp.sprite
+          .setPosition(sp.state.x, sp.state.y + sp.state.grazeBobY)
+          .setFlipX(sp.state.facing === 'left')
+          .setAlpha(sp.state.activity === 'sleeping' ? 0.82 : 1)
+          .setDepth(Math.round(sp.state.y));
+        sp.sprite.anims.timeScale = sp.state.animRateScale;
+        sp.shadow.setPosition(sp.state.x, sp.state.y - 1);
+        if (sp.bubble) {
+          if (sp.state.bubbleText) {
+            sp.bubble
+              .setText(sp.state.bubbleText)
+              .setPosition(sp.state.x, sp.state.y - 18)
+              .setVisible(true);
+          } else {
+            sp.bubble.setVisible(false);
+          }
+        }
+      }
+    }
+
+    if (this.ambientCrabs.length > 0) {
+      for (const cr of this.ambientCrabs) {
+        stepEmergentCrab(cr.state, {
+          nowMs: now,
+          dtSec,
+          tilePx: tPx,
+          playerX: this.localSprite?.x ?? null,
+          playerY: this.localSprite?.y ?? null,
+          playerRunning: moved && running,
+          toolSwinging,
+          heldItemSku: this.heldItem.itemSku,
+          isNight,
+          weatherKind,
+          isTileBlocked: isBlockedTile,
+        });
+        cr.sprite
+          .setPosition(cr.state.x, cr.state.y)
+          .setFlipX(cr.state.facing === 'left')
+          .setDepth(Math.round(cr.state.y));
+        cr.sprite.anims.timeScale = cr.state.animRateScale;
+        cr.shadow.setPosition(cr.state.x, cr.state.y - 1);
       }
     }
 
@@ -2149,12 +2321,13 @@ export class WorldScene extends Phaser.Scene {
       this.petEntity?.update(dtSec);
     }
     this.updateRemoteEntities(deltaMs);
-    tickTiledWorldNpcs(this.tiledNpcs, time, {
+    tickTiledWorldNpcs(this, this.tiledNpcs, now, dtSec, {
       playerX: this.localSprite?.x ?? null,
       playerY: this.localSprite?.y ?? null,
       playerPosture: this.localPosture,
       isNight,
       weatherKind,
+      isTileBlocked: isBlockedTile,
     });
     this.checkPortalsAndNearbyInteractable();
     this.syncHeldItemPresentation(time);
@@ -2768,17 +2941,24 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private openDialogueWithNpc(npc: TiledWorldNpcEntity): void {
+    gameAudio.playSfx('ui_select', { volumeScale: 0.55 });
+    gameEventBus.emit('evt:open-npc-dialogue', {
+      npcId: npc.id,
+      mapId: this.currentMapId,
+      labelVi: npc.labelVi,
+      role: npc.role,
+      fallbackDialogueVi: npc.dialogueVi,
+    });
+  }
+
   private interactNearestNpc(): boolean {
     if (!this.localSprite) return false;
     const tileX = Math.floor(this.localSprite.x / this.tilePx());
     const tileY = Math.floor((this.localSprite.y - 2) / this.tilePx());
     const npc = nearestTiledNpc(this.tiledNpcs, tileX, tileY);
     if (!npc) return false;
-    gameEventBus.emit('evt:preview-notice', {
-      title: npc.labelVi,
-      version: 'Làng · V0.2 preview',
-      body: npc.dialogueVi,
-    });
+    this.openDialogueWithNpc(npc);
     return true;
   }
 
