@@ -146,10 +146,59 @@ class BilliardsSoundEngine {
 
   public playCushion(speed: number): void {
     if (this.muted || this.volume <= 0 || speed < 24) return;
+    this.playCushionNorm(Math.min(1, speed / 950));
+  }
+
+  public playBallHitMetric(speedMps: number): void {
+    if (this.muted || this.volume <= 0 || speedMps < 0.06) return;
     this.unlock();
     if (!this.ctx || !this.noiseBuf || !this.out) return;
     const now = this.ctx.currentTime;
-    const norm = Math.min(1, speed / 950);
+    if (now - this.lastHit < 0.012) return;
+    this.lastHit = now;
+
+    const norm = Math.min(1, Math.pow(speedMps / 3.2, 0.78));
+    const vol = Math.min(0.65, 0.05 + norm * 0.58);
+
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(3400 + Math.random() * 800, now);
+    bp.Q.setValueAtTime(1.6, now);
+    const gN = this.ctx.createGain();
+    gN.gain.setValueAtTime(vol * 0.9, now);
+    gN.gain.exponentialRampToValueAtTime(0.001, now + 0.007);
+    src.connect(bp);
+    bp.connect(gN);
+    gN.connect(this.out);
+    src.start(now);
+    src.stop(now + 0.01);
+
+    [2780 + Math.random() * 180, 4580 + Math.random() * 240].forEach((freq, idx) => {
+      if (!this.ctx || !this.out) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      g.gain.setValueAtTime(vol * (idx === 0 ? 0.36 : 0.2), now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + (idx === 0 ? 0.02 : 0.013));
+      osc.connect(g);
+      g.connect(this.out);
+      osc.start(now);
+      osc.stop(now + 0.024);
+    });
+  }
+
+  public playCushionMetric(speedMps: number): void {
+    if (this.muted || this.volume <= 0 || speedMps < 0.08) return;
+    this.playCushionNorm(Math.min(1, speedMps / 3.0));
+  }
+
+  private playCushionNorm(norm: number): void {
+    this.unlock();
+    if (!this.ctx || !this.noiseBuf || !this.out) return;
+    const now = this.ctx.currentTime;
     const vol = Math.min(0.4, 0.04 + norm * 0.34);
 
     const src = this.ctx.createBufferSource();

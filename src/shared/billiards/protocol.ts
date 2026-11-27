@@ -1,4 +1,10 @@
 import {
+  balls3DToWire,
+  createInitialRack3D,
+  isCueWithinTableBounds3D,
+  isWirePositionValidForCue3D,
+} from './physics3dEngine';
+import {
   PLAY_B,
   PLAY_L,
   PLAY_R,
@@ -14,6 +20,7 @@ import type {
   AimSyncPayload,
   BallGroup,
   BallState,
+  BilliardsEdition,
   BilliardsMatchPhase,
   BilliardsPlayMode,
   BilliardsRule,
@@ -31,7 +38,31 @@ import type {
 export const TURN_DURATION_MS = 30_000;
 export const OPPONENT_TIMEOUT_GRACE_MS = 2_500;
 export const CUE_POSITION_TOLERANCE_PX = 2.0;
+export const CUE_POSITION_TOLERANCE_3D_M = 0.006;
 export const MAX_RETIRED_MATCH_IDS = 32;
+
+function resolveEdition(edition?: BilliardsEdition): BilliardsEdition {
+  return edition === '3d' ? '3d' : '2d';
+}
+
+function createRackForEdition(edition: BilliardsEdition, rule: BilliardsRule, seed: number): BallState[] {
+  return edition === '3d' ? balls3DToWire(createInitialRack3D(rule, seed)) : createInitialRack(rule, seed);
+}
+
+function isCueWithinBoundsForEdition(edition: BilliardsEdition, x: number, y: number): boolean {
+  if (edition === '3d') return isCueWithinTableBounds3D(x, y);
+  return isCueWithinTableBounds(x, y);
+}
+
+function isValidCuePlacementForEdition(
+  edition: BilliardsEdition,
+  balls: BallState[],
+  x: number,
+  y: number,
+): boolean {
+  if (edition === '3d') return isWirePositionValidForCue3D(balls, x, y);
+  return isPositionValidForCue(balls, x, y);
+}
 
 function isCueWithinTableBounds(x: number, y: number): boolean {
   return (
@@ -56,6 +87,8 @@ export interface BilliardsProtocolState {
   initiatorSlot: PlayerSlot;
   createdAtMs: number;
   startedAtMs: number;
+  startAtServerMs?: number;
+  edition: BilliardsEdition;
   rule: BilliardsRule;
   rackSeed: number;
   phase: BilliardsMatchPhase;
@@ -86,15 +119,18 @@ export interface BilliardsProtocolState {
 }
 
 export function createInitialProtocolState(params: {
+  edition?: BilliardsEdition;
   rule?: BilliardsRule;
   seed?: number;
   matchId: string;
   initialScores?: ScoresTuple;
   nowMs: number;
+  startAtServerMs?: number;
   hasAuthoritativeMatch: boolean;
   matchSeq?: number;
   initiatorSlot?: PlayerSlot;
 }): BilliardsProtocolState {
+  const edition = resolveEdition(params.edition);
   const rule = params.rule ?? '8ball';
   const seed = params.seed ?? 20261126;
   const initialScores: ScoresTuple = params.initialScores
@@ -107,6 +143,8 @@ export function createInitialProtocolState(params: {
     initiatorSlot: params.initiatorSlot ?? 0,
     createdAtMs: params.nowMs,
     startedAtMs: params.nowMs,
+    startAtServerMs: params.startAtServerMs,
+    edition,
     rule,
     rackSeed: seed,
     phase: 'aim',
@@ -116,10 +154,10 @@ export function createInitialProtocolState(params: {
     provisionalSettledShotIndex: null,
     activeShotIndex: -1,
     inFlightTicks: 0,
-    balls: createInitialRack(rule, seed),
+    balls: createRackForEdition(edition, rule, seed),
     preShotBalls: null,
     groups: [null, null],
-    currentPlayer: 0,
+    currentPlayer: params.initiatorSlot ?? 0,
     canMoveCueBall: false,
     isBreakShot: true,
     turnDeadlineMs: params.nowMs + TURN_DURATION_MS,
@@ -190,15 +228,24 @@ export function validateParticipantSlot(
 export function createLocalMatchStart(
   state: BilliardsProtocolState,
   params: {
+    edition?: BilliardsEdition;
     rule: BilliardsRule;
     startingPlayer: PlayerSlot;
     seed: number;
     matchId: string;
     initiatorSlot: PlayerSlot;
     nowMs: number;
+    matchSeqOverride?: number;
+    startAtServerMs?: number;
   },
 ): { nextState: BilliardsProtocolState; startPayload: MatchStartPayload } {
-  const nextSeq = state.hasAuthoritativeMatch ? Math.max(1, state.matchSeq + 1) : 1;
+  const edition = resolveEdition(params.edition ?? state.edition);
+  const nextSeq =
+    params.matchSeqOverride !== undefined
+      ? Math.max(1, params.matchSeqOverride)
+      : state.hasAuthoritativeMatch
+        ? Math.max(1, state.matchSeq + 1)
+        : 1;
   const retired = state.hasAuthoritativeMatch
     ? retireMatchId(state.retiredMatchIds, state.matchId)
     : [...state.retiredMatchIds];
@@ -212,6 +259,8 @@ export function createLocalMatchStart(
     initiatorSlot: params.initiatorSlot,
     createdAtMs: params.nowMs,
     startedAtMs: params.nowMs,
+    startAtServerMs: params.startAtServerMs,
+    edition,
     rule: params.rule,
     rackSeed: params.seed,
     phase: 'aim',
@@ -221,7 +270,7 @@ export function createLocalMatchStart(
     provisionalSettledShotIndex: null,
     activeShotIndex: -1,
     inFlightTicks: 0,
-    balls: createInitialRack(params.rule, params.seed),
+    balls: createRackForEdition(edition, params.rule, params.seed),
     preShotBalls: null,
     groups: [null, null],
     currentPlayer: params.startingPlayer,
@@ -246,9 +295,11 @@ export function createLocalMatchStart(
     matchSeq: nextSeq,
     initiatorSlot: params.initiatorSlot,
     createdAtMs: params.nowMs,
+    edition,
     rule: params.rule,
     rackSeed: params.seed,
     startingPlayer: params.startingPlayer,
+    ...(params.startAtServerMs !== undefined ? { startAtServerMs: params.startAtServerMs } : {}),
     turnDeadlineMs,
     turnRemainingMs: TURN_DURATION_MS,
     scores,
@@ -308,6 +359,7 @@ export function applyRemoteStart(
   const retired = state.hasAuthoritativeMatch
     ? retireMatchId(state.retiredMatchIds, state.matchId)
     : [...state.retiredMatchIds];
+  const edition = resolveEdition(payload.edition);
   const turnDeadlineMs = resolveTurnDeadlineMs(
     payload.turnDeadlineMs,
     payload.turnRemainingMs,
@@ -327,6 +379,8 @@ export function applyRemoteStart(
       initiatorSlot: payload.initiatorSlot,
       createdAtMs: payload.createdAtMs,
       startedAtMs: nowMs,
+      startAtServerMs: payload.startAtServerMs,
+      edition,
       rule: payload.rule,
       rackSeed: payload.rackSeed,
       phase: 'aim',
@@ -336,7 +390,7 @@ export function applyRemoteStart(
       provisionalSettledShotIndex: null,
       activeShotIndex: -1,
       inFlightTicks: 0,
-      balls: createInitialRack(payload.rule, payload.rackSeed),
+      balls: createRackForEdition(edition, payload.rule, payload.rackSeed),
       preShotBalls: null,
       groups: [null, null],
       currentPlayer: payload.startingPlayer,
@@ -388,7 +442,7 @@ export function validateRemotePlaceCue(
     return false;
   }
   if (payload.playerSlot !== state.currentPlayer) return false;
-  return isPositionValidForCue(state.balls, payload.x, payload.y);
+  return isValidCuePlacementForEdition(state.edition, state.balls, payload.x, payload.y);
 }
 
 export type LocalShotCreation =
@@ -402,6 +456,7 @@ export function createLocalShot(
     power: number;
     spinX: number;
     spinY: number;
+    elevationDeg?: number;
     localPlayerSlot: PlayerSlot;
     mode: BilliardsPlayMode;
   },
@@ -425,8 +480,8 @@ export function createLocalShot(
     return { ok: false, reason: 'missing_cue_ball' };
   }
   const cuePosOk = state.canMoveCueBall
-    ? isPositionValidForCue(state.balls, cue.x, cue.y)
-    : isCueWithinTableBounds(cue.x, cue.y);
+    ? isValidCuePlacementForEdition(state.edition, state.balls, cue.x, cue.y)
+    : isCueWithinBoundsForEdition(state.edition, cue.x, cue.y);
   if (!cuePosOk) {
     return { ok: false, reason: 'invalid_cue_position' };
   }
@@ -434,6 +489,7 @@ export function createLocalShot(
   const clampedPower = Math.max(0.04, Math.min(1, params.power));
   const clampedSpinX = Math.max(-0.85, Math.min(0.85, params.spinX));
   const clampedSpinY = Math.max(-0.85, Math.min(0.85, params.spinY));
+  const clampedElev = Math.max(0, Math.min(45, params.elevationDeg ?? 0));
 
   return {
     ok: true,
@@ -447,7 +503,7 @@ export function createLocalShot(
       power: clampedPower,
       spinX: clampedSpinX,
       spinY: clampedSpinY,
-      elevationDeg: 0,
+      elevationDeg: clampedElev,
       cueX: cue.x,
       cueY: cue.y,
     },
@@ -509,15 +565,16 @@ export function validateRemoteShot(
     return { ok: false, reason: 'missing_cue_ball', shouldRequestSnapshot: true };
   }
   if (state.canMoveCueBall) {
-    if (!isPositionValidForCue(state.balls, shot.cueX, shot.cueY)) {
+    if (!isValidCuePlacementForEdition(state.edition, state.balls, shot.cueX, shot.cueY)) {
       return { ok: false, reason: 'invalid_cue_position', shouldRequestSnapshot: false };
     }
   } else {
-    if (!isCueWithinTableBounds(shot.cueX, shot.cueY)) {
+    if (!isCueWithinBoundsForEdition(state.edition, shot.cueX, shot.cueY)) {
       return { ok: false, reason: 'invalid_cue_position', shouldRequestSnapshot: false };
     }
+    const tol = state.edition === '3d' ? CUE_POSITION_TOLERANCE_3D_M : CUE_POSITION_TOLERANCE_PX;
     const delta = Math.hypot(shot.cueX - cue.x, shot.cueY - cue.y);
-    if (delta > CUE_POSITION_TOLERANCE_PX) {
+    if (delta > tol) {
       return { ok: false, reason: 'cue_position_mismatch', shouldRequestSnapshot: false };
     }
   }
@@ -817,6 +874,8 @@ export function applyRemoteSnapshot(
       initiatorSlot: snap.initiatorSlot,
       createdAtMs: snap.createdAtMs,
       startedAtMs: snap.startedAtMs,
+      startAtServerMs: snap.startAtServerMs,
+      edition: resolveEdition(snap.edition),
       rule: snap.rule,
       rackSeed: snap.rackSeed,
       phase: snap.phase,
@@ -893,6 +952,8 @@ export function buildMatchSnapshot(
     senderSlot,
     createdAtMs: state.createdAtMs,
     startedAtMs: state.startedAtMs,
+    ...(state.startAtServerMs !== undefined ? { startAtServerMs: state.startAtServerMs } : {}),
+    edition: state.edition,
     rule: state.rule,
     rackSeed: state.rackSeed,
     phase,

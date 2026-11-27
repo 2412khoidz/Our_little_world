@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
+import { createDevLanBilliardsLobby } from './devLanBilliardsLobby.mjs';
 
 const MAP_PIXEL_BOUNDS = new Map([
   ['home', { maxW: 16 * 16, maxH: 12 * 16 }],
@@ -73,6 +74,7 @@ function sendSseFrame(res, event, data) {
 
 export function createDevLanWsHub({
   isWorldMember,
+  getMemberRole,
   getProfile,
   getWorldStateMeta,
   heartbeatIntervalMs = 5_000,
@@ -97,6 +99,26 @@ export function createDevLanWsHub({
    * - latestConnectionSeqBySession: Map<sessionId, number>
    */
   const rooms = new Map();
+
+  function getConnectedSlots(worldId) {
+    const room = rooms.get(worldId);
+    const out = new Set();
+    if (!room) return out;
+    for (const slot of room.slots.values()) {
+      if (slot.closing || slot.superseded) continue;
+      const role = getMemberRole ? getMemberRole(worldId, slot.userId) : slot.userId === PARTNER_B_DEV_ID ? 'partner' : 'owner';
+      out.add(role === 'partner' ? 1 : 0);
+    }
+    return out;
+  }
+
+  const billiardsLobby = createDevLanBilliardsLobby({
+    getMemberRole: getMemberRole ?? ((_worldId, uid) => (uid === PARTNER_B_DEV_ID ? 'partner' : 'owner')),
+    getConnectedSlots,
+    broadcastMinigameEvent: (worldId, packet, excludeSessionId = null) => {
+      broadcastEvent(worldId, 'minigame_event', packet, excludeSessionId);
+    },
+  });
 
   function ensureRoom(worldId) {
     let room = rooms.get(worldId);
@@ -294,6 +316,7 @@ export function createDevLanWsHub({
       sessionId: slot.sessionId,
       connectionId: slot.connectionId,
       serverSeq: nextServerSeq(room),
+      serverNowMs: Date.now(),
       stateVersion: meta.stateVersion,
       domainVersions: meta.domainVersions,
       presences,
@@ -515,6 +538,7 @@ export function createDevLanWsHub({
               type: 'pong',
               clientSentMonoMs,
               serverSeq: nextServerSeq(room),
+              serverNowMs: Date.now(),
               stateVersion: meta.stateVersion,
             });
           }
@@ -546,6 +570,7 @@ export function createDevLanWsHub({
           }
           sendWelcomeSnapshot(room, slot);
           broadcastPresenceSync(qWorldId);
+          billiardsLobby.handleConnectionChange(qWorldId);
           return;
         }
 
@@ -592,7 +617,10 @@ export function createDevLanWsHub({
               actorUserId: qUserId,
               sessionId: qSessionId,
             };
-            broadcastEvent(qWorldId, 'minigame_event', stamped, qSessionId);
+            const lobbyRes = billiardsLobby.handleMinigameEvent(qWorldId, qUserId, qSessionId, stamped);
+            if (lobbyRes.relayToPeer) {
+              broadcastEvent(qWorldId, 'minigame_event', stamped, qSessionId);
+            }
           }
         }
       });
@@ -609,6 +637,7 @@ export function createDevLanWsHub({
           clearSlotGraceTimer(cur);
           room.slots.delete(qSessionId);
           broadcastPresenceSync(qWorldId);
+          billiardsLobby.handleConnectionChange(qWorldId);
           return;
         }
         cur.closing = true;
@@ -619,6 +648,7 @@ export function createDevLanWsHub({
           if (active?.connectionId === connectionId && active.closing) {
             room.slots.delete(qSessionId);
             broadcastPresenceSync(qWorldId);
+            billiardsLobby.handleConnectionChange(qWorldId);
           }
         }, disconnectGraceMs);
         cur.graceTimer.unref?.();
@@ -781,7 +811,10 @@ export function createDevLanWsHub({
         actorUserId: userId,
         sessionId: sessionId || payload.sessionId || '',
       };
-      broadcastEvent(worldId, 'minigame_event', stamped, sessionId || null);
+      const lobbyRes = billiardsLobby.handleMinigameEvent(worldId, userId, sessionId || '', stamped);
+      if (lobbyRes.relayToPeer) {
+        broadcastEvent(worldId, 'minigame_event', stamped, sessionId || null);
+      }
       return true;
     }
 
@@ -813,6 +846,7 @@ export function createDevLanWsHub({
 
   function resetAllRooms(affectedWorldIds) {
     for (const wid of affectedWorldIds) {
+      billiardsLobby.resetWorld(wid);
       broadcastEvent(wid, 'world_reset', { reset: true });
     }
     for (const room of rooms.values()) {
@@ -867,6 +901,7 @@ export function createDevLanWsHub({
   sseKeepaliveTimer.unref?.();
 
   function closeAll() {
+    billiardsLobby.closeAll();
     clearInterval(wsHeartbeatTimer);
     clearInterval(sseKeepaliveTimer);
     for (const room of rooms.values()) {
@@ -909,6 +944,9 @@ export function createDevLanWsHub({
     refreshUserProfile,
     resetAllRooms,
     closeAll,
+    getBilliardsLobbyState(worldId) {
+      return billiardsLobby.getLobbyDebugState(worldId);
+    },
     getRoomDebugStats(worldId) {
       const room = rooms.get(worldId);
       if (!room) return null;
