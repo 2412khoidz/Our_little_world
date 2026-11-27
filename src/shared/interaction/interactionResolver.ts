@@ -273,8 +273,13 @@ function actionForTarget(
       return { code: 'use_portal', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'crop_plot': {
       const plot = plotViewForTarget(target, farmPlotByIndex);
+      const plotReady = Boolean(
+        plot?.soil === 'planted' &&
+          (plot.ready ||
+            (typeof plot.harvestReadyAtMs === 'number' && serverNowMs >= plot.harvestReadyAtMs)),
+      );
       // Harvest ripe crop regardless of which tool/seed is currently held
-      if (plot?.soil === 'planted' && plot.ready) {
+      if (plotReady) {
         return {
           code: 'harvest_crop',
           keyHint: 'J',

@@ -52,9 +52,12 @@ import { setLatestSharedPetCareSession } from '../game/pet/care/petCareBridgeSta
 import { consumeHandFoodInCare } from '../features/petCare/petCareHandFeedAuthority';
 import { PetCareTouchOverlay } from '../features/petCare/PetCareTouchOverlay';
 import { MenuModal } from '../features/home/MenuModal';
+import { MobileNavDrawer } from '../features/home/mobile/MobileNavDrawer';
+import { MobileTopHud } from '../features/home/mobile/MobileTopHud';
 import { QuickNavBar } from '../features/home/QuickNavBar';
 import { TopStatusBar } from '../features/home/TopStatusBar';
 import { WorldClockHud } from '../features/home/WorldClockHud';
+import { GlobalViewportProvider, useGlobalViewport } from './viewport/GlobalViewportContext';
 import {
   loadTimeOfDayMode,
   resolveWorldClockPresentation,
@@ -267,6 +270,7 @@ function makeIdempotencyKey(prefix: string): string {
 }
 
 export function App() {
+  const appShellRef = useRef<HTMLDivElement | null>(null);
   const initialDevArtDemo = useMemo(() => readDevArtDemoId(), []);
   const initialSandbox = useMemo(() => readDevSandboxKind(), []);
   if (import.meta.env.DEV && DevArtDemoShowcase && initialDevArtDemo !== null) {
@@ -309,10 +313,26 @@ export function App() {
     );
   }
 
-  return <MainCoupleApp />;
+  return (
+    <GlobalViewportProvider rootRef={appShellRef}>
+      <MainCoupleApp appShellRef={appShellRef} />
+    </GlobalViewportProvider>
+  );
 }
 
-function MainCoupleApp() {
+function MainCoupleApp({
+  appShellRef,
+}: {
+  appShellRef: import('react').RefObject<HTMLDivElement | null>;
+}) {
+  const {
+    layoutMode,
+    hotbarStrategy,
+    isFocusExpanded,
+    joystickEnabled: showJoystick,
+    joystickMode,
+    toggleJoystickEnabled,
+  } = useGlobalViewport();
   const backend = useMemo(() => getWorldBackend(), []);
   const sessionId = useMemo(() => makeSessionId(), []);
   const donorLanPlayable = isDonorLanPlayableMode(backend.mode);
@@ -577,9 +597,6 @@ function MainCoupleApp() {
       npcId: activeNpcDialogue?.npcId ?? null,
     });
   }, [activeNpcDialogue]);
-  const [showJoystick, setShowJoystick] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
-  );
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
   const realtimeRef = useRef<RealtimeHandle | null>(null);
@@ -2833,29 +2850,78 @@ function MainCoupleApp() {
   const partnerMember =
     worldSnapshot.members.find((m) => m.userId !== currentUser.userId) ?? null;
 
+  const isMobileHud = layoutMode !== 'desktop';
+
   return (
-    <div className="app-shell olw-game-ui" data-ui-variant="warm-pixel-cottage">
+    <div
+      ref={appShellRef}
+      className="app-shell olw-game-ui"
+      data-ui-variant="warm-pixel-cottage"
+      data-hud-mode={layoutMode}
+      data-focus-expanded={isFocusExpanded ? '1' : '0'}
+    >
       <PwaStatusBanner />
 
-      <TopStatusBar
-        worldName={worldSnapshot.world.name}
-        currentMapId={currentMapId}
-        backendMode={backend.mode}
-        connectionStatus={connectionStatus}
-        members={worldSnapshot.members}
-        localUserId={currentUser.userId}
-        presences={presences}
-        onOpenInvite={() => setActiveModal('invite')}
-        isRemoteClient={isRemoteClient}
-        onOpenRemoteShare={
-          import.meta.env.DEV && backend.mode === 'dev-lan' && !isRemoteClient
-            ? () => setActiveModal('remote_share')
-            : undefined
-        }
-        onToggleDiagnostics={
-          import.meta.env.DEV ? () => setDiagnosticsOpen((cur) => !cur) : undefined
-        }
-      />
+      {!isMobileHud ? (
+        <>
+          <TopStatusBar
+            worldName={worldSnapshot.world.name}
+            currentMapId={currentMapId}
+            backendMode={backend.mode}
+            connectionStatus={connectionStatus}
+            members={worldSnapshot.members}
+            localUserId={currentUser.userId}
+            presences={presences}
+            onOpenInvite={() => setActiveModal('invite')}
+            isRemoteClient={isRemoteClient}
+            onOpenRemoteShare={
+              import.meta.env.DEV && backend.mode === 'dev-lan' && !isRemoteClient
+                ? () => setActiveModal('remote_share')
+                : undefined
+            }
+            onToggleDiagnostics={
+              import.meta.env.DEV ? () => setDiagnosticsOpen((cur) => !cur) : undefined
+            }
+          />
+
+          {worldClockPresentation ? (
+            <WorldClockHud
+              presentation={worldClockPresentation}
+              mode={timeOfDayMode}
+              hidden={petCareMode || isAnyModalOpen || decorateActive}
+              walletCoins={backend.farm ? farmWalletCoins : null}
+              onModeChange={handleTimeOfDayModeChange}
+            />
+          ) : null}
+        </>
+      ) : (
+        <MobileTopHud
+          worldName={worldSnapshot.world.name}
+          currentMapId={currentMapId}
+          backendMode={backend.mode}
+          connectionStatus={connectionStatus}
+          members={worldSnapshot.members}
+          localUserId={currentUser.userId}
+          presences={presences}
+          clockPresentation={worldClockPresentation}
+          timeOfDayMode={timeOfDayMode}
+          walletCoins={backend.farm ? farmWalletCoins : null}
+          hidden={petCareMode || isAnyModalOpen || decorateActive}
+          isRemoteClient={isRemoteClient}
+          onTimeOfDayModeChange={handleTimeOfDayModeChange}
+          onOpenMenu={() => setActiveModal('menu')}
+          onOpenInvite={() => setActiveModal('invite')}
+          onOpenOutdoorNav={() => setOutdoorNavOpen(true)}
+          onOpenRemoteShare={
+            import.meta.env.DEV && backend.mode === 'dev-lan' && !isRemoteClient
+              ? () => setActiveModal('remote_share')
+              : undefined
+          }
+          onToggleDiagnostics={
+            import.meta.env.DEV ? () => setDiagnosticsOpen((cur) => !cur) : undefined
+          }
+        />
+      )}
 
       {import.meta.env.DEV && DevNetworkDiagnosticsOverlay && diagnosticsOpen && (
         <Suspense fallback={null}>
@@ -2866,16 +2932,6 @@ function MainCoupleApp() {
         </Suspense>
       )}
 
-      {worldClockPresentation ? (
-        <WorldClockHud
-          presentation={worldClockPresentation}
-          mode={timeOfDayMode}
-          hidden={petCareMode || isAnyModalOpen || decorateActive}
-          walletCoins={backend.farm ? farmWalletCoins : null}
-          onModeChange={handleTimeOfDayModeChange}
-        />
-      ) : null}
-
       {activeFloatingStudy && derivedFloatingStudy && derivedFloatingStudy.status !== 'completed' && (
         <button
           type="button"
@@ -2884,8 +2940,8 @@ function MainCoupleApp() {
           onClick={() => setActiveModal('study')}
           style={{
             position: 'fixed',
-            top: 52,
-            right: 12,
+            top: isMobileHud ? 'calc(54px + var(--safe-top))' : 52,
+            right: isMobileHud ? 'calc(8px + var(--safe-right))' : 12,
             zIndex: 25,
             background: 'rgba(40, 30, 36, 0.88)',
             borderColor: '#f4c158',
@@ -2932,6 +2988,9 @@ function MainCoupleApp() {
         decoratePreviewRotated={decoratePreviewRotated}
         decorateDevSandbox={Boolean(import.meta.env.DEV && decorateSandboxUnlocked)}
         showJoystick={showJoystick}
+        joystickMode={joystickMode}
+        hudLayoutMode={layoutMode}
+        petCareActive={petCareMode}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
         contextualInteractionHud
@@ -2950,6 +3009,8 @@ function MainCoupleApp() {
         decorateActive={decorateActive}
         modalOpen={isAnyModalOpen}
         showJoystick={showJoystick}
+        hudLayoutMode={layoutMode}
+        hotbarSlotsPerPage={hotbarStrategy.slotsPerPage}
         petCanFeed={petCanFeed}
         interactionMutationBusy={petBusy || farmBusy}
         onOpenInventory={() => {
@@ -3079,6 +3140,7 @@ function MainCoupleApp() {
               : 0
           }
           outgoingInviteActive={outgoingInviteExpiresAtMs !== null}
+          hudLayoutMode={layoutMode}
           onSendEmote={handleSendEmote}
           onRequestHug={handleRequestHug}
           onRequestHoldHands={handleRequestHoldHands}
@@ -3136,7 +3198,7 @@ function MainCoupleApp() {
             setDecoratePreviewRotated(false);
           }}
         />
-      ) : (
+      ) : !isMobileHud ? (
         <QuickNavBar
           hidden={petCareMode || activeNpcDialogue !== null}
           currentMapId={currentMapId}
@@ -3159,7 +3221,7 @@ function MainCoupleApp() {
           onOpenAvatar={() => setActiveModal('avatar')}
           onOpenMenu={() => setActiveModal('menu')}
         />
-      )}
+      ) : null}
 
       <OutdoorWorldNavSheet
         open={outdoorNavOpen}
@@ -3186,12 +3248,149 @@ function MainCoupleApp() {
         />
       )}
 
-      {activeModal === 'menu' && (
+      {activeModal === 'menu' && isMobileHud && (
+        <MobileNavDrawer
+          open
+          worldName={worldSnapshot.world.name}
+          currentMapId={currentMapId}
+          decorateActive={decorateActive}
+          backendMode={backend.mode}
+          mailboxUnreadCount={mailboxSnapshot?.unreadCount ?? 0}
+          isRemoteClient={isRemoteClient}
+          onSelectMap={handleSelectMap}
+          onOpenOutdoorNav={() => setOutdoorNavOpen(true)}
+          onToggleDecorate={() => {
+            const target = defaultDecorateMapId(currentMapId);
+            setDecorateActive(true);
+            setActiveSku(null);
+            setSelectedPlacementId(null);
+            setDecoratePreviewRotated(false);
+            if (currentMapId !== target) {
+              setCurrentMapId(target);
+              announceZoneEntry(target);
+              const def = getMapDefinition(target);
+              gameEventBus.emit('cmd:set-map', { mapId: target, spawnTile: def.defaultSpawn });
+            }
+          }}
+          onOpenAvatar={() => setActiveModal('avatar')}
+          onOpenInvite={() => setActiveModal('invite')}
+          onOpenInventory={
+            backend.inventory
+              ? () => {
+                  setActiveModal('inventory');
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
+          onOpenPet={
+            backend.pet
+              ? () => {
+                  setActiveModal('pet');
+                  void refreshPetSnapshot();
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
+          onOpenStudy={
+            backend.study
+              ? () => {
+                  setActiveModal('study');
+                  void refreshStudySnapshot();
+                }
+              : undefined
+          }
+          onOpenMailbox={
+            backend.mailbox
+              ? () => {
+                  setActiveModal('mailbox');
+                  void refreshMailboxSnapshot();
+                  void refreshInventorySnapshot();
+                }
+              : undefined
+          }
+          onOpenBilliards={() => setActiveModal('billiards')}
+          onOpenFlowerOrchard={
+            backend.farm && worldId
+              ? () => {
+                  setDeepFarmStatusVi(null);
+                  void refreshDeepFarmSnapshot(worldId);
+                  setActiveModal('deep_flowers');
+                }
+              : undefined
+          }
+          onOpenLivestock={
+            backend.farm && worldId
+              ? () => {
+                  setDeepFarmStatusVi(null);
+                  void refreshDeepFarmSnapshot(worldId);
+                  setActiveModal('deep_livestock');
+                }
+              : undefined
+          }
+          onOpenDonorWorkshop={
+            backend.farm && worldId
+              ? () => {
+                  setDonorWorkshopFocus(undefined);
+                  void refreshDeepFarmSnapshot(worldId);
+                  setActiveModal('donor_workshop');
+                }
+              : undefined
+          }
+          onOpenOrderBoard={
+            backend.farm && worldId
+              ? () => {
+                  setDeepFarmStatusVi(null);
+                  void refreshDeepFarmSnapshot(worldId);
+                  setActiveModal('deep_orders');
+                }
+              : undefined
+          }
+          onOpenPwaGuide={() => setActiveModal('pwa')}
+          onOpenSpikeLab={
+            import.meta.env.DEV && !isRemoteClient ? () => setActiveModal('spike') : undefined
+          }
+          onOpenDevConsole={
+            import.meta.env.DEV && !isRemoteClient && backend.devConsole
+              ? () => setActiveModal('dev_console')
+              : undefined
+          }
+          onOpenV03Prototypes={
+            import.meta.env.DEV && !isRemoteClient ? () => setActiveModal('v03_proto') : undefined
+          }
+          onOpenDonorFishing={
+            import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
+              ? () => setActiveModal('donor_fishing')
+              : undefined
+          }
+          onQuickSwitchDev={
+            import.meta.env.DEV && !isRemoteClient && backend.mode === 'dev-lan'
+              ? (preset) => void handleQuickSwitchDev(preset)
+              : undefined
+          }
+          onResetDevWorld={
+            import.meta.env.DEV && !isRemoteClient && backend.mode === 'dev-lan'
+              ? () => void handleResetDevWorld()
+              : undefined
+          }
+          onOpenRemoteShare={
+            import.meta.env.DEV && !isRemoteClient && backend.mode === 'dev-lan'
+              ? () => setActiveModal('remote_share')
+              : undefined
+          }
+          onSignOut={() => {
+            setActiveModal(null);
+            void backend.signOut();
+          }}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'menu' && !isMobileHud && (
         <MenuModal
           worldName={worldSnapshot.world.name}
           backendMode={backend.mode}
           showJoystick={showJoystick}
-          onToggleJoystick={() => setShowJoystick((s) => !s)}
+          onToggleJoystick={toggleJoystickEnabled}
           onOpenInvite={() => setActiveModal('invite')}
           onOpenInventory={
             backend.inventory
@@ -3317,6 +3516,7 @@ function MainCoupleApp() {
           hotbarSlots={inventoryHotbarSlots}
           heldHotbarIndex={heldHotbarIndex}
           loading={inventoryLoading}
+          touchMode={isMobileHud}
           onClaimFreeKibble={handleClaimFreeKibble}
           onRefresh={() => refreshInventorySnapshot()}
           onClose={() => setActiveModal(null)}
