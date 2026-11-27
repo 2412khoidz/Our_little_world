@@ -527,6 +527,8 @@ function MainCoupleApp({
       setFarmServerNowMs(snap.serverNowMs);
       setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
       gameEventBus.emit('cmd:sync-farm', {
+        worldId: snap.worldId,
+        version: snap.version,
         plots: snap.plots,
         serverNowMs: snap.serverNowMs,
         growthTimeScale: snap.growthTimeScale,
@@ -3040,6 +3042,10 @@ function MainCoupleApp({
         petCareActive={petCareMode}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
+        animateUnderModal={
+          activeModal === 'donor_fishing' || activeModal === 'donor_workshop' ||
+          activeModal === 'deep_flowers' || activeModal === 'deep_livestock'
+        }
         contextualInteractionHud
         toast={toast}
       />

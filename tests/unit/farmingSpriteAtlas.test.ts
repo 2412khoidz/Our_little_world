@@ -234,7 +234,7 @@ describe('Curated Farming Sprite Atlases (Checkpoint G)', () => {
       ) as string[],
     );
     const files = fs.readdirSync(PUBLIC_FARMING_DIR);
-    expect(files.length).toBe(11);
+    expect(files).toEqual(expect.arrayContaining(['ranch-actions.png', 'ranch-fishing.png']));
     for (const name of files) {
       expect(whitelist.has(`assets/farming/${name}`), `Missing whitelist entry for ${name}`).toBe(true);
     }

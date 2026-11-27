@@ -2,6 +2,8 @@
 
 Tài liệu tham chiếu gốc: [UPSTREAM_REUSE.md](../UPSTREAM_REUSE.md) · [public/assets/farming/CREDITS.md](../../public/assets/farming/CREDITS.md) · [PROGRESS.md](../PROGRESS.md)
 
+[M3d + M3e — Hiệu ứng trang trại và câu cá](FARMING_FISHING_VISUALS.md)
+
 ## 1. Current Canonical Implementation & Exact Source Paths
 - **Catalog & Content Registry (`267` canonical SKUs):** `src/shared/catalog/deepFarmingContent.ts`, `canonicalCatalog.ts`, `canonicalCatalog.generated.json`, `src/shared/economy/{catalogConfig,types,orderBoard,balanceAudit,arbitrage,ledgerMath,shippingBin}.ts`.
 - **Deep Farming Domain (Pure TS):** `src/shared/farming/` — `crops.ts`, `deepCropSimulation.ts` (**40 crops**), `flowerGenetics.ts` & `blooms.ts` (**20 flowers** + lai 8 hướng), `orchard.ts` (**12 perennial fruit trees**), `livestock.ts` (**7 species**), `workshops.ts` (**8 workshops, 84 recipes**), `deepFarmState.ts`, `serverApply.ts`, `toolUpgrades.ts`, `farmGrowthClock.ts`, `farmPlotLayout.ts` (184 plots), `farmWorldClockBridge.ts`, `src/shared/world/{worldCalendar,worldClock,worldWeatherPresentation}.ts`.

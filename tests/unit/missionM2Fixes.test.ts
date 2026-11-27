@@ -10,7 +10,7 @@ import { buildMovementCollisionGrid } from '../../src/shared/placement';
 import { getStaticZonePropBlockedTiles } from '../../src/shared/world/zonePropColliders';
 import { farmPlotIndexForTile, farmPlotTileForIndex } from '../../src/shared/farming/farmPlotIndex';
 import { TIDEFALL_FISH_CATALOG } from '../../src/shared/donor/tidefall-phaser/tidefallFishCatalog';
-import { speciesParamsForFish } from '../../src/features/donor/ChillFishingModal';
+import { speciesParamsForFish } from '../../src/features/donor/tidefallSpeciesTuning';
 
 function makeMockVuenaRigBones() {
   const root = new THREE.Group();

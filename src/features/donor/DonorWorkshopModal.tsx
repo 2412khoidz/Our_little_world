@@ -20,8 +20,10 @@ import {
   type WorkshopsWorldState,
 } from '../../shared/farming/workshops';
 import { getWorkshopMachineSprite, spriteBackgroundStyle } from '../../shared/art/farmingSpriteAtlas';
+import { machineAtlasFrame, machineJobProgress, machinePhase, RANCH_ACTIONS_SIZE, RANCH_ACTIONS_URL } from '../../shared/art/ranchActionAtlas';
 import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
 import '../inventory/nuvora/nuvoraInventorySkin.css';
+import './ranchWorkshop.css';
 
 interface DonorWorkshopModalProps {
   worldId: string;
@@ -313,10 +315,12 @@ export function DonorWorkshopModal({
     };
   }, [worldId, applyView, deepMode, legacyVillageAvailable]);
 
+  const needsLocalClock = nowMs === undefined || legacyVillageAvailable;
   useEffect(() => {
+    if (!needsLocalClock) return;
     const id = window.setInterval(() => setNowTickMs(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [needsLocalClock]);
 
   const serverNow = nowMs ?? (nowTickMs + clockOffsetMs);
 
@@ -338,6 +342,10 @@ export function DonorWorkshopModal({
 
   const activeDef = WORKSHOP_DEFS.find((w) => w.id === selectedWorkshop) ?? WORKSHOP_DEFS[0]!;
   const activeStation = workshopsState?.stations[selectedWorkshop];
+  const phase = machinePhase(activeStation?.queue ?? [], serverNow);
+  const previewFrame = machineAtlasFrame(selectedWorkshop, phase);
+  const previewScale = 2;
+  const previewStatus = { idle: 'Đang nghỉ', working: 'Đang chế biến', ready: 'Có thành phẩm' }[phase];
   const activeRecipes = useMemo(() => recipesForWorkshop(selectedWorkshop), [selectedWorkshop]);
 
   const coop = view?.coop;
@@ -390,8 +398,8 @@ export function DonorWorkshopModal({
                     key={ws.id}
                     type="button"
                     onClick={() => setSelectedWorkshop(ws.id)}
-                    className={`btn btn--sm ${ws.id === selectedWorkshop ? 'btn--primary' : 'btn--secondary'}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    className={`btn btn--sm ranch-workshop__tab ${ws.id === selectedWorkshop ? 'btn--primary' : 'btn--secondary'}`}
+                    aria-pressed={ws.id === selectedWorkshop}
                   >
                     {wsSprite ? (
                       <span
@@ -410,6 +418,8 @@ export function DonorWorkshopModal({
             </div>
 
             <div
+              className="ranch-workshop__station"
+              data-machine-state={phase}
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -418,27 +428,28 @@ export function DonorWorkshopModal({
                 gap: 8,
                 padding: '8px 10px',
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.08)',
-                color: '#f5e6c8',
+                background: '#f1e0be',
+                color: '#503721',
                 fontSize: 12,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {(() => {
-                  const headSprite = getWorkshopMachineSprite(selectedWorkshop);
-                  return headSprite ? (
-                    <span
-                      role="img"
-                      aria-label={activeDef.nameVi}
-                      data-workshop-sprite={selectedWorkshop}
-                      style={{
-                        display: 'inline-block',
-                        flexShrink: 0,
-                        ...spriteBackgroundStyle(headSprite, 32),
-                      }}
-                    />
-                  ) : null;
-                })()}
+                <span className="ranch-workshop__machine-stage" aria-hidden="true">
+                  <span
+                    className="ranch-workshop__machine"
+                    data-workshop-sprite={selectedWorkshop}
+                    style={{
+                      width: previewFrame.w * previewScale,
+                      height: previewFrame.h * previewScale,
+                      backgroundImage: `url("${RANCH_ACTIONS_URL}")`,
+                      backgroundSize: `${RANCH_ACTIONS_SIZE.w * previewScale}px ${RANCH_ACTIONS_SIZE.h * previewScale}px`,
+                      backgroundPositionX: -previewFrame.x * previewScale,
+                      backgroundPositionY: -previewFrame.y * previewScale,
+                      '--machine-x': `${-previewFrame.x * previewScale}px`,
+                      '--machine-end-x': `${-(previewFrame.x + previewFrame.w * 4) * previewScale}px`,
+                    } as React.CSSProperties}
+                  />
+                </span>
                 <div>
                   <strong>
                     {activeDef.nameVi} (Cấp {activeStation.level}/3)
@@ -446,6 +457,9 @@ export function DonorWorkshopModal({
                   · Hàng đợi {activeStation.queue.length}/
                   {workshopCapacitySlots(selectedWorkshop, activeStation.level)}
                   <div style={{ opacity: 0.85 }}>{activeDef.descriptionVi}</div>
+                  <span className={`cozy-badge ${phase === 'ready' ? 'cozy-badge--ok' : 'cozy-badge--warm'}`}>
+                    {previewStatus}
+                  </span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -482,11 +496,13 @@ export function DonorWorkshopModal({
 
             {activeStation.queue.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#f5e6c8' }}>Hàng đợi hiện tại:</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#503721' }}>Hàng đợi</div>
                 {activeStation.queue.map((job) => {
                   const ready = serverNow >= job.endMs;
                   const remSec = Math.max(0, Math.ceil((job.endMs - serverNow) / 1000));
                   const name = getItem(job.outputSku)?.nameVi ?? job.outputSku;
+                  const waiting = serverNow < job.startMs;
+                  const progress = machineJobProgress(job, serverNow);
                   return (
                     <div
                       key={job.jobId}
@@ -497,20 +513,21 @@ export function DonorWorkshopModal({
                         gap: 8,
                         padding: '6px 8px',
                         borderRadius: 8,
-                        background: 'rgba(255,255,255,0.1)',
-                        color: '#fff',
+                        background: '#f6e9cc',
+                        color: '#503721',
                         fontSize: 12,
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <CatalogSkuIcon sku={job.outputSku} size={22} />
-                        <span>
-                          {name} ×{job.outputQty}
-                        </span>
+                        <div className="ranch-workshop__job">
+                          <span>{name} ×{job.outputQty}</span>
+                          <progress max={1} value={progress} aria-label={`Tiến độ ${name}`} />
+                        </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ color: ready ? '#9ae67e' : '#f8d794' }}>
-                          {ready ? 'Đã xong!' : `Còn ${remSec}s`}
+                        <span style={{ color: ready ? '#2a6537' : '#754327' }}>
+                          {ready ? 'Sẵn sàng thu' : waiting ? 'Đang chờ' : `Còn ${formatRemainingSec(remSec * 1000)}`}
                         </span>
                         {!ready && onCancelDeepJob ? (
                           <button
@@ -533,7 +550,7 @@ export function DonorWorkshopModal({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 210px), 1fr))',
                 gap: 8,
               }}
             >
@@ -566,10 +583,17 @@ export function DonorWorkshopModal({
                         <div style={{ fontSize: 11, opacity: 0.8 }}>{Math.round(rec.craftMs / 1000)} giây</div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#6b4e34' }}>
-                      {rec.inputs
-                        .map((inp) => `${getItem(inp.sku)?.nameVi ?? inp.sku} (${sharedQty.get(inp.sku) ?? 0}/${inp.qty})`)
-                        .join(' + ')}
+                    <div className="ranch-workshop__ingredients">
+                      {rec.inputs.map((inp) => {
+                        const label = getItem(inp.sku)?.nameVi ?? inp.sku;
+                        const quantity = `${sharedQty.get(inp.sku) ?? 0}/${inp.qty}`;
+                        return (
+                          <span key={inp.sku} title={label} aria-label={`${label} ${quantity}`}>
+                            <CatalogSkuIcon sku={inp.sku} size={20} />
+                            <span aria-hidden="true">{quantity}</span>
+                          </span>
+                        );
+                      })}
                     </div>
                     <button
                       type="button"

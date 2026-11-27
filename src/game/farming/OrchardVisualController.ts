@@ -144,10 +144,29 @@ export class OrchardVisualController {
 
   destroy(): void {
     for (const entry of this.sprites.values()) {
+      this.scene.tweens.killTweensOf(entry.sprite);
       entry.sprite.destroy();
       entry.badge?.destroy();
     }
     this.sprites.clear();
+  }
+
+  playHarvestShake(slotIndex: number) {
+    const sprite = this.sprites.get(slotIndex)?.sprite;
+    if (!sprite) return null;
+    this.scene.tweens.killTweensOf(sprite);
+    sprite.setRotation(0);
+    this.scene.tweens.add({
+      targets: sprite, rotation: { from: -0.045, to: 0.045 }, duration: 65, yoyo: true, repeat: 1,
+      onComplete: () => sprite.setRotation(0),
+    });
+    const scale = this.tilePixelSize / 16;
+    return {
+      x: sprite.x + sprite.displayWidth * 0.42,
+      y: sprite.y - sprite.displayHeight * 0.35,
+      depth: sprite.depth + 2,
+      scale,
+    };
   }
 
   sync(views: readonly OrchardTreeView[], season: CalendarSeason = 'spring'): void {
@@ -162,6 +181,7 @@ export class OrchardVisualController {
       const existing = this.sprites.get(view.slotIndex);
       if (existing?.cacheKey === cacheKey) continue;
 
+      if (existing) this.scene.tweens.killTweensOf(existing.sprite);
       existing?.sprite.destroy();
       existing?.badge?.destroy();
 
@@ -211,6 +231,7 @@ export class OrchardVisualController {
     for (const slotIdx of [...this.sprites.keys()]) {
       if (!active.has(slotIdx)) {
         const entry = this.sprites.get(slotIdx);
+        if (entry) this.scene.tweens.killTweensOf(entry.sprite);
         entry?.sprite.destroy();
         entry?.badge?.destroy();
         this.sprites.delete(slotIdx);

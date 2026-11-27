@@ -639,9 +639,105 @@ def pack_shelf_atlas(
     return frames
 
 
+def pack_ranch_action_atlases(pool: ZipPool) -> None:
+    """Keep donor strips contiguous for pixel-perfect Phaser frames and CSS step animations."""
+    donor = "FarmRanchLife_v1.0.zip"
+    root = "FarmRanchLife"
+
+    def strip(name: str, path: str, width: int, height: int, count: int):
+        image = pool.load_image(donor, f"{root}/{path}")
+        if image.size != (width * count, height):
+            raise ValueError(f"Unexpected {path} dimensions: {image.size}")
+        return (name, image, {"width": width, "height": height, "count": count})
+
+    machines = {
+        "mill": "oil_maker", "dairy": "cheese_press", "bakery": "furnace",
+        "preserves": "preserves_jar", "feed_mill": "seed_maker", "loom": "loom",
+        "florist": "bee_house", "kitchen": "mayonnaise_machine",
+    }
+    effects = {
+        "till": "soil_dust_till", "plant": "seed_scatter", "water": "water_hit",
+        "harvest": "harvest_pop", "pet": "hearts_petting",
+    }
+    farming = [
+        strip(f"machine_{key}", f"05_Buildings_Machines/Artisan_Machines/{source}_idle_work4_done_6f.png", 16, 32, 6)
+        for key, source in machines.items()
+    ] + [
+        strip(f"fx_{key}", f"10_Effects/{source}_4f.png", 16, 16, 4)
+        for key, source in effects.items()
+    ] + [strip("fx_ready", "02_Crops/ready_sparkle_overlay_4f.png", 16, 16, 4)]
+
+    # Extract the detached fruit from frames 2 and 3. The LPC orchard canopy
+    # remains in the world. Rows 34..47 of the strips contain fruit and trunk.
+    for tree in ("apple", "cherry", "fig", "lemon", "orange", "peach", "pear", "plum", "pomegranate"):
+        path = f"03_Fruit_Trees/{tree}/{tree}_harvest_shake_3f.png"
+        _, source, _ = strip(tree, path, 32, 48, 3)
+        drop = Image.new("RGBA", (32, 16))
+        for index in (1, 2):
+            for y in range(33, 48):
+                for x in range(8, 18):
+                    pixel = source.getpixel((index * 32 + x, y))
+                    if pixel[3] and pixel != source.getpixel((x, y)):
+                        drop.putpixel(((index - 1) * 16 + x - 4, y - 32), pixel)
+        farming.append((f"fruit_{tree}", drop, {"width": 16, "height": 16, "count": 2}))
+
+    fishing = [
+        strip(key, f"11_Fishing/{key}_4f.png", 16, 16, 4)
+        for key in ("bobber_float", "bobber_bite", "fishing_spot_bubbles")
+    ] + [strip("fish_minnow", "08_Items/fish/minnow.png", 16, 16, 1)]
+
+    # Reuse the 4x4 repeat of shallow water tiles already on the OLW farm map.
+    cabacos_water = Image.open(REPO_ROOT / "public/maps/donor/cabacos/ts_map.png").convert("RGBA")
+    fishing.append(("panel_water", cabacos_water.crop((176, 288, 240, 352)), {
+        "width": 64, "height": 64, "count": 1,
+    }))
+    tidefall = REPO_ROOT / "public/assets/donor/tidefall-phaser/sprites/animations"
+    ripples = Image.open(tidefall / "water_ripples_animation.png").convert("RGBA")
+    fishing.append(("water_ripple", ripples.crop((0, 16, 96, 32)), {"width": 16, "height": 16, "count": 6}))
+    shadow = Image.open(tidefall / "fish_shadow_swim_animations/small_fish/animation.png").convert("RGBA")
+    for direction, row in (("right", 0), ("left", 2)):
+        cells = Image.new("RGBA", (64, 16))
+        for index in range(4):
+            x, y = index * 32 + 8, row * 32 + 8
+            cells.paste(shadow.crop((x, y, x + 16, y + 16)), (index * 16, 0))
+        fishing.append((f"fish_shadow_{direction}", cells, {"width": 16, "height": 16, "count": 4}))
+
+    metadata = {}
+    for key, entries in (("ranch-actions", farming), ("ranch-fishing", fishing)):
+        json_path = OUT_PUBLIC / f"{key}.json"
+        strips = pack_shelf_atlas(
+            entries, 256, 2, OUT_PUBLIC / f"{key}.png", json_path, f"/assets/farming/{key}.png",
+        )
+        doc = json.loads(json_path.read_text(encoding="utf-8"))
+        frames = {}
+        for name, entry in strips.items():
+            x, y = entry["frame"]["x"], entry["frame"]["y"]
+            w, h = entry["width"], entry["height"]
+            for index in range(entry["count"]):
+                frames[f"{name}_{index}"] = {
+                    "frame": {"x": x + index * w, "y": y, "w": w, "h": h},
+                    "rotated": False, "trimmed": False,
+                    "spriteSourceSize": {"x": 0, "y": 0, "w": w, "h": h},
+                    "sourceSize": {"w": w, "h": h},
+                }
+        doc["frames"] = frames
+        metadata[key] = {
+            "image": doc["meta"]["image"], "size": doc["meta"]["size"],
+            "strips": {
+                name: {**entry["frame"], "w": entry["width"], "h": entry["height"]}
+                for name, entry in strips.items()
+            },
+        }
+        json_path.write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    metadata_path = REPO_ROOT / "src/shared/art/ranchActionAtlas.generated.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+
+
 def build_all(src_dir: Path) -> None:
     OUT_PUBLIC.mkdir(parents=True, exist_ok=True)
     pool = ZipPool(src_dir)
+    pack_ranch_action_atlases(pool)
     catalog = json.loads(CANONICAL_JSON.read_text(encoding="utf-8"))["items"]
     all_skus = [item["sku"] for item in catalog]
 
@@ -1408,7 +1504,8 @@ Original zip archives stay outside the repository and are not redistributed stan
 | **LPC Food V2** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel, thekingphoenix (`lpc-food-v2.zip`) | Grain sheaves, butter, sea salt, yeast, herbs, rhubarb | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Crops v2.1** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel (`crops-v2.1.zip`) | Multi-stage growth frames (`crops-stages.png`) for field crops | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Fruit Trees** (`lpc-fruit-trees.zip`) | Multi-stage perennial orchard tree frames (`trees-orchard.png`) | CC-BY-SA 3.0 / GPL 3.0 |
-| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons & animated livestock sprites (`livestock-ranch.png`) | Perpetual commercial/personal game license (no standalone resale) |
+| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons, animated livestock, machines, farm FX and fishing FX | Perpetual commercial/personal game license (no standalone resale) |
+| **Cabacos + Tidefall Phaser** (OLW vendored assets) | Cabacos pond tile repeat, Tidefall water ripples and small-fish shadow loop in `ranch-fishing.png` | See the Cabacos vendor credits and Tidefall Phaser MIT license |
 | **Shikashi's Fantasy Icons Pack v2** (`Shikashi's Fantasy Icons Pack v2.zip`) | Powders, spices, candles, yarn, wool knitwear, basket, scrolls | Personal & commercial project license |
 | **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-bluecarrot16_20201221.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, olive oil, vinegar, walnuts, cocoa beans, bait | CC0 / Public Domain (FGA/OCAL/Glitch/Bluecarrot16) |
 """

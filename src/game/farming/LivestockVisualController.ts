@@ -310,6 +310,13 @@ export class LivestockVisualController {
     }
   }
 
+  getEffectAnchor(animalId: string) {
+    const sprite = this.sprites.get(animalId)?.sprite;
+    if (!sprite) return null;
+    const scale = this.tilePixelSize / 16;
+    return { x: sprite.x, y: sprite.y - 15 * scale, depth: sprite.depth + 1, scale };
+  }
+
   sync(animals: readonly ProjectedLivestockAnimal[]): void {
     const active = new Set<string>();
     const useAtlas = this.scene.textures.exists(FARMING_LIVESTOCK_ATLAS_KEY);

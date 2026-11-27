@@ -79,7 +79,7 @@ export interface GameEventMap {
   'cmd:trigger-interact': undefined;
   'cmd:interact-npc': undefined;
   'cmd:set-active-npc-dialogue': { npcId: string | null };
-  'cmd:set-paused': { paused: boolean };
+  'cmd:set-paused': { paused: boolean; keepAnimating?: boolean };
   'cmd:set-render-suspended': { suspended: boolean };
   'cmd:sync-pet': PetSnapshot | null;
   'cmd:pet-reaction': { action: PetActionType };
@@ -119,6 +119,8 @@ export interface GameEventMap {
   /** Inventory desk → gameplay hotbar (inventoryHotbarAdapter slots). */
   'cmd:select-hotbar-slot': { slotIndex: number };
   'cmd:sync-farm': {
+    worldId: string;
+    version: number;
     serverNowMs: number;
     growthTimeScale?: number;
     plots: readonly import('../shared/farming/farmSnapshotTypes').FarmPlotView[];
@@ -126,6 +128,7 @@ export interface GameEventMap {
     highlightPlotId?: number;
     highlightAction?: 'till' | 'water' | 'plant' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler';
   };
+  'cmd:fishing-visual': import('../shared/art/ranchActionAtlas').FishingVisualCue;
   'cmd:sync-deep-farm': import('../shared/farming/deepFarmState').DeepFarmSnapshot;
   /** React shell → Phaser presentation-only day/night + weather overlay. */
   'cmd:sync-world-clock': import('../shared/world/worldClock').WorldClockPresentation;
