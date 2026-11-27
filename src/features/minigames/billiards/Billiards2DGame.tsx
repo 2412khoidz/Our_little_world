@@ -1,5 +1,18 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, Menu, RotateCcw, Search, Volume2, VolumeX, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Crosshair,
+  Lock,
+  Maximize2,
+  Menu,
+  Minimize2,
+  RotateCcw,
+  Smartphone,
+  Unlock,
+  Volume2,
+  VolumeX,
+  X,
+} from 'lucide-react';
 import { chooseBotBallInHand2D, computeBotShot2D, type BotShotPlan } from '../../../shared/billiards/botAi';
 import {
   BALL_COLORS,
@@ -42,13 +55,27 @@ import type {
   BallGroup,
   BallState,
   BilliardsMatchPhase,
+  BilliardsOrientation,
   BilliardsRule,
   PlayerSlot,
   ShotParams,
 } from '../../../shared/billiards/types';
 import type { BilliardsGameProps } from './billiardsGameProps';
 import { billiardsSound } from './sound';
+import {
+  TOUCH_CUE_BALL_LIFT_PX,
+  TOUCH_TAP_DEADZONE_PX,
+  computeAdaptiveAimDelta,
+  evaluatePowerPull,
+} from './touchControls';
 import { useBilliardsKeyboard } from './useBilliardsKeyboard';
+import { useFocusMode } from './useFocusMode';
+import {
+  clientToPhysics2D,
+  isPortraitTableViewport,
+  physicsToCanvasDims,
+  physicsToClient2D,
+} from './viewportTransform';
 
 const FELT_THEMES = [
   { name: 'Xanh 8-Pool', center: '#3ea4cf', edge: '#1b6d96' },
@@ -90,8 +117,16 @@ interface BilliardsSimRuntime {
   camX: number;
   camY: number;
   powerDragging: boolean;
+  powerStartX: number;
   powerStartY: number;
+  powerCancelled: boolean;
   tablePointerDown: boolean;
+  touchGestureMoved: boolean;
+  touchStartX: number;
+  touchStartY: number;
+  touchLastX: number;
+  touchLastY: number;
+  activePointerType: string;
   aiPlan: AiPlanRuntime | null;
   lastStartAtServerMs: number;
 }
@@ -168,8 +203,16 @@ function createSimRuntime(props: BilliardsGameProps): BilliardsSimRuntime {
     camX: TABLE_W / 2,
     camY: TABLE_H / 2,
     powerDragging: false,
+    powerStartX: 0,
     powerStartY: 0,
+    powerCancelled: false,
     tablePointerDown: false,
+    touchGestureMoved: false,
+    touchStartX: 0,
+    touchStartY: 0,
+    touchLastX: 0,
+    touchLastY: 0,
+    activePointerType: 'mouse',
     aiPlan: null,
     lastStartAtServerMs: cfg?.startAtServerMs ?? 0,
   };
@@ -190,6 +233,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     onMatchComplete,
   } = props;
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const powerSlotRef = useRef<HTMLDivElement | null>(null);
   const tableCacheRef = useRef<HTMLCanvasElement | null>(null);
@@ -197,8 +241,16 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const bannerTimerRef = useRef<number | null>(null);
   const fineAimIntervalRef = useRef<number | null>(null);
   const reportedMatchIdsRef = useRef<Set<string>>(new Set());
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchPrevDistRef = useRef<number | null>(null);
 
-  const [initialBoot] = useState<BilliardsSimRuntime>(() => createSimRuntime(props));
+  const [initialBoot] = useState<BilliardsSimRuntime>(() => {
+    const boot = createSimRuntime(props);
+    if (props.mode === 'practice') {
+      boot.proto.canMoveCueBall = true;
+    }
+    return boot;
+  });
   const simRef = useRef<BilliardsSimRuntime | null>(null);
   const getSim = useCallback((): BilliardsSimRuntime => {
     if (simRef.current === null) {
@@ -211,9 +263,17 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const [phaseUi, setPhaseUi] = useState<BilliardsMatchPhase>(initialBoot.proto.phase);
   const [feltIdx, setFeltIdx] = useState(0);
   const [muted, setMuted] = useState(billiardsSound.muted);
-  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [timerEnabled, setTimerEnabled] = useState(mode !== 'practice');
   const [showMenu, setShowMenu] = useState(false);
   const [showSpinModal, setShowSpinModal] = useState(false);
+  const [orientationPref, setOrientationPref] = useState<BilliardsOrientation>('auto');
+  const [isAutoPortrait, setIsAutoPortrait] = useState(() =>
+    typeof window !== 'undefined' ? isPortraitTableViewport(window.innerWidth, window.innerHeight) : false,
+  );
+  const [aimLocked, setAimLocked] = useState(false);
+  const [precisionMode, setPrecisionMode] = useState(false);
+  const [powerCancelled, setPowerCancelled] = useState(false);
+  const { isFullscreen, isFocusExpanded, toggleFocusOrFullscreen } = useFocusMode(rootRef);
   const [scores, setScores] = useState<[number, number]>([
     initialBoot.proto.scores[0],
     initialBoot.proto.scores[1],
@@ -249,6 +309,17 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     shotCount: initialBoot.proto.shots.length,
   }));
 
+  const portraitRotated =
+    orientationPref === 'portrait'
+      ? true
+      : orientationPref === 'landscape'
+        ? false
+        : isAutoPortrait;
+
+  const portraitRotatedRef = useRef(portraitRotated);
+  const aimLockedRef = useRef(aimLocked);
+  const precisionModeRef = useRef(precisionMode);
+
   const modeRef = useRef(mode);
   const botDifficultyRef = useRef(botDifficulty);
   const feltIdxRef = useRef(feltIdx);
@@ -261,6 +332,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const onMatchCompleteRef = useRef(onMatchComplete);
 
   useLayoutEffect(() => {
+    portraitRotatedRef.current = portraitRotated;
+    aimLockedRef.current = aimLocked;
+    precisionModeRef.current = precisionMode;
     modeRef.current = mode;
     botDifficultyRef.current = botDifficulty;
     feltIdxRef.current = feltIdx;
@@ -272,6 +346,20 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     syncRef.current = sync;
     onMatchCompleteRef.current = onMatchComplete;
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => {
+      setIsAutoPortrait(isPortraitTableViewport(window.innerWidth, window.innerHeight));
+    };
+    onResize();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
 
   const getServerNowMs = useCallback(() => {
     return syncRef.current?.getServerNowMs() ?? Date.now();
@@ -965,6 +1053,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
         !sim.replayActive &&
         proto.phase === 'aim' &&
         proto.hasAuthoritativeMatch &&
+        curMode !== 'practice' &&
         waitLeft <= 0 &&
         (curMode === 'online' ||
           (timerEnabledRef.current && !showMenuRef.current && !showSpinModalRef.current));
@@ -1132,7 +1221,24 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             }
 
             const nextDeadline = getServerNowMs() + TURN_DURATION_MS;
-            if (outcome.winner) {
+            if (curMode === 'practice') {
+              proto.currentPlayer = 0;
+              proto.phase = 'aim';
+              proto.turnDeadlineMs = nextDeadline;
+              proto.canMoveCueBall = true;
+              const cue = proto.balls.find((b) => b.id === 0);
+              if (cue && cue.pocketed) {
+                const spot = findOpenCueSpot(proto.balls);
+                cue.pocketed = false;
+                cue.x = spot.x;
+                cue.y = spot.y;
+                cue.vx = 0;
+                cue.vy = 0;
+                cue.rollVx = 0;
+                cue.rollVy = 0;
+                cue.spinZ = 0;
+              }
+            } else if (outcome.winner) {
               proto.phase = 'gameOver';
               proto.winner = { ...outcome.winner };
               proto.canMoveCueBall = false;
@@ -1217,13 +1323,19 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
         }
       }
 
-      // Render using cached offscreen table canvas
+      // Render using cached offscreen table canvas (with optional portrait -90deg CCW rotation)
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       if (canvas && ctx) {
+        const isPort = portraitRotatedRef.current;
+        const dims = physicsToCanvasDims(isPort);
         const cachedTable = ensureTableCache(feltIdxRef.current);
-        ctx.clearRect(0, 0, TABLE_W, TABLE_H);
+        ctx.clearRect(0, 0, dims.width, dims.height);
         ctx.save();
+        if (isPort) {
+          ctx.translate(0, TABLE_W);
+          ctx.rotate(-Math.PI / 2);
+        }
         if (sim.zoomCurrent > 1.001) {
           ctx.translate(TABLE_W / 2, TABLE_H / 2);
           ctx.scale(sim.zoomCurrent, sim.zoomCurrent);
@@ -1236,8 +1348,8 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
           if (b.pocketed) continue;
           const ballColor = BALL_COLORS[b.id] ?? '#f8fafc';
           ctx.beginPath();
-          ctx.arc(b.x + 2.5, b.y + 3, BALL_R, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.36)';
+          ctx.arc(b.x + 2.5, b.y + 3.2, BALL_R, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.42)';
           ctx.fill();
 
           if (b.id > 8) {
@@ -1260,29 +1372,43 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             ctx.fill();
           }
 
+          // Glossy spherical shading + rim shadow (8 Ball Pool style depth)
+          const gloss = ctx.createRadialGradient(
+            b.x - BALL_R * 0.34,
+            b.y - BALL_R * 0.36,
+            BALL_R * 0.08,
+            b.x,
+            b.y,
+            BALL_R,
+          );
+          gloss.addColorStop(0, 'rgba(255,255,255,0.62)');
+          gloss.addColorStop(0.32, 'rgba(255,255,255,0.1)');
+          gloss.addColorStop(0.78, 'rgba(0,0,0,0.06)');
+          gloss.addColorStop(1, 'rgba(0,0,0,0.34)');
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+          ctx.fillStyle = gloss;
+          ctx.fill();
+
           if (b.id !== 0) {
             const pole = quatRotateVec(b.q, 0, 0, 1);
             const vis = pole.z >= 0 ? pole : { x: -pole.x, y: -pole.y, z: -pole.z };
             if (vis.z > 0.18) {
+              const nx = b.x + vis.x * BALL_R * 0.6;
+              const ny = b.y + vis.y * BALL_R * 0.6;
               ctx.beginPath();
-              ctx.arc(
-                b.x + vis.x * BALL_R * 0.6,
-                b.y + vis.y * BALL_R * 0.6,
-                BALL_R * 0.44,
-                0,
-                Math.PI * 2,
-              );
+              ctx.arc(nx, ny, BALL_R * 0.44, 0, Math.PI * 2);
               ctx.fillStyle = '#f8fafc';
               ctx.fill();
+              ctx.save();
+              ctx.translate(nx, ny);
+              if (isPort) ctx.rotate(Math.PI / 2);
               ctx.fillStyle = '#0f172a';
               ctx.font = '900 9px system-ui, sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillText(
-                String(b.id),
-                b.x + vis.x * BALL_R * 0.6,
-                b.y + vis.y * BALL_R * 0.6 + 0.5,
-              );
+              ctx.fillText(String(b.id), 0, 0.5);
+              ctx.restore();
             }
           }
         }
@@ -1365,18 +1491,59 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               const tdx = hitBall.x - gx;
               const tdy = hitBall.y - gy;
               const tLen = Math.hypot(tdx, tdy) || 1;
+              const tnx = tdx / tLen;
+              const tny = tdy / tLen;
+              const impactCos = Math.max(0.15, dx * tnx + dy * tny);
+              const objLen = 65 + impactCos * 95;
               ctx.strokeStyle = 'rgba(5,8,17,0.85)';
               ctx.lineWidth = 5;
               ctx.beginPath();
               ctx.moveTo(hitBall.x, hitBall.y);
-              ctx.lineTo(hitBall.x + (tdx / tLen) * 110, hitBall.y + (tdy / tLen) * 110);
+              ctx.lineTo(hitBall.x + tnx * objLen, hitBall.y + tny * objLen);
               ctx.stroke();
               ctx.strokeStyle = '#4ade80';
               ctx.lineWidth = 2.6;
               ctx.beginPath();
               ctx.moveTo(hitBall.x, hitBall.y);
-              ctx.lineTo(hitBall.x + (tdx / tLen) * 110, hitBall.y + (tdy / tLen) * 110);
+              ctx.lineTo(hitBall.x + tnx * objLen, hitBall.y + tny * objLen);
               ctx.stroke();
+
+              // Predicted post-impact cue ball deflection / tangent line (adjusted by top/back spin)
+              const tangDot = dx * -tny + dy * tnx;
+              const tx = tangDot >= 0 ? -tny : tny;
+              const ty = tangDot >= 0 ? tnx : -tnx;
+              const cutSin = Math.sqrt(Math.max(0, 1 - impactCos * impactCos));
+              const spinShift = sim.spinY * 0.55;
+              const defDirX = tx * cutSin + dx * (0.18 + spinShift);
+              const defDirY = ty * cutSin + dy * (0.18 + spinShift);
+              const defNorm = Math.hypot(defDirX, defDirY) || 1;
+              const defLen = 42 + cutSin * 56;
+              ctx.save();
+              ctx.setLineDash([5, 4]);
+              ctx.strokeStyle = 'rgba(56,189,248,0.88)';
+              ctx.lineWidth = 2.2;
+              ctx.beginPath();
+              ctx.moveTo(gx, gy);
+              ctx.lineTo(gx + (defDirX / defNorm) * defLen, gy + (defDirY / defNorm) * defLen);
+              ctx.stroke();
+              ctx.restore();
+            } else {
+              // Rail rebound deflection hint
+              const hitV = Math.abs(gx - (PLAY_L + BALL_R)) < 1.5 || Math.abs(gx - (PLAY_R - BALL_R)) < 1.5;
+              const hitH = Math.abs(gy - (PLAY_T + BALL_R)) < 1.5 || Math.abs(gy - (PLAY_B - BALL_R)) < 1.5;
+              if (hitV || hitH) {
+                const rx = hitV ? -dx : dx;
+                const ry = hitH ? -dy : dy;
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = 'rgba(253,224,71,0.72)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(gx, gy);
+                ctx.lineTo(gx + rx * 72, gy + ry * 72);
+                ctx.stroke();
+                ctx.restore();
+              }
             }
           }
 
@@ -1429,13 +1596,15 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: TABLE_W / 2, y: TABLE_H / 2 };
     const rect = canvas.getBoundingClientRect();
-    const sx = ((clientX - rect.left) / rect.width) * TABLE_W;
-    const sy = ((clientY - rect.top) / rect.height) * TABLE_H;
-    if (sim.zoomCurrent <= 1.001) return { x: sx, y: sy };
-    return {
-      x: (sx - TABLE_W / 2) / sim.zoomCurrent + sim.camX,
-      y: (sy - TABLE_H / 2) / sim.zoomCurrent + sim.camY,
-    };
+    return clientToPhysics2D(
+      clientX,
+      clientY,
+      rect,
+      sim.zoomCurrent,
+      sim.camX,
+      sim.camY,
+      portraitRotatedRef.current,
+    );
   };
 
   const startFineAim = (deltaRad: number) => {
@@ -1531,12 +1700,18 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const localWantRematch = Boolean(lobbyState?.players[localPlayerSlot]?.wantRematch);
   const peerWantRematch = Boolean(lobbyState?.players[localPlayerSlot === 0 ? 1 : 0]?.wantRematch);
 
+  const canvasDims = physicsToCanvasDims(portraitRotated);
+
   return (
     <div
+      ref={rootRef}
       style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+      className={isFocusExpanded ? 'olw-billiards-overlay--focus' : undefined}
       data-testid="billiards-2d-game"
       data-edition="2d"
       data-mode={mode}
+      data-portrait={portraitRotated ? '1' : '0'}
+      data-aim-locked={aimLocked ? '1' : '0'}
       data-phase={phaseUi}
       data-rule={rule}
       data-current-player={String(currentPlayer)}
@@ -1552,7 +1727,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
         : {})}
     >
       <header className="olw-billiards-header">
-        <div className="olw-billiards-row">
+        <div className="olw-hud-actions">
           <button
             type="button"
             onClick={() => setShowMenu(true)}
@@ -1564,15 +1739,36 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
           </button>
           <button
             type="button"
-            onClick={() => {
-              const sim = getSim();
-              const steps = [1.0, 1.5, 2.0, 2.5];
-              sim.zoomTarget = steps.find((v) => v > sim.zoomTarget + 0.05) ?? 1.0;
-              setZoomLabel(`${sim.zoomTarget.toFixed(1)}x`);
-            }}
-            className="olw-billiards-pill"
+            data-testid="billiards-aim-lock"
+            onClick={() => setAimLocked((v) => !v)}
+            title={aimLocked ? 'Mở khóa góc ngắm' : 'Khóa góc ngắm trước khi kéo lực'}
+            className={`olw-billiards-pill${aimLocked ? ' olw-billiards-pill--active' : ''}`}
           >
-            <Search size={14} /> {zoomLabel}
+            {aimLocked ? <Lock size={13} /> : <Unlock size={13} />}
+            <span className="olw-hide-sm">{aimLocked ? 'Đã khóa' : 'Khóa góc'}</span>
+          </button>
+          <button
+            type="button"
+            data-testid="billiards-precision-btn"
+            onClick={() => {
+              const next = !precisionMode;
+              setPrecisionMode(next);
+              const sim = getSim();
+              const cue = sim.proto.balls.find((b) => b.id === 0);
+              if (next && sim.zoomTarget < 1.5 && cue) {
+                sim.zoomFocusX = cue.x + Math.cos(sim.aimAngle) * 140;
+                sim.zoomFocusY = cue.y + Math.sin(sim.aimAngle) * 140;
+                sim.zoomTarget = 1.7;
+                setZoomLabel('1.7x');
+              } else if (!next && sim.zoomTarget > 1.05) {
+                sim.zoomTarget = 1.0;
+                setZoomLabel('1.0x');
+              }
+            }}
+            title="Ngắm tinh (Precision)"
+            className={`olw-billiards-pill${precisionMode ? ' olw-billiards-pill--active' : ''}`}
+          >
+            <Crosshair size={13} /> {zoomLabel}
           </button>
           <button
             type="button"
@@ -1590,6 +1786,15 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             className="olw-billiards-pill olw-hide-sm"
           >
             <RotateCcw size={14} /> Replay
+          </button>
+          <button
+            type="button"
+            data-testid="billiards-fullscreen-btn"
+            onClick={toggleFocusOrFullscreen}
+            title={isFullscreen || isFocusExpanded ? 'Thu nhỏ' : 'Chế độ tập trung / Toàn màn hình'}
+            className={`olw-billiards-pill olw-billiards-icon-btn${isFullscreen || isFocusExpanded ? ' olw-billiards-pill--active' : ''}`}
+          >
+            {isFullscreen || isFocusExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
         </div>
 
@@ -1632,15 +1837,17 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                     : '#473d54',
             }}
           >
-            <div className="olw-avatar-inner">{mode === 'ai' ? '🤖' : '🌙'}</div>
+            <div className="olw-avatar-inner">
+              {mode === 'ai' ? '🤖' : mode === 'practice' ? '🎯' : '🌙'}
+            </div>
           </div>
           <div className="olw-player-col olw-player-col--left">
-            <div className="olw-player-name">{playerNames[1]}</div>
+            <div className="olw-player-name">{mode === 'practice' ? 'Luyện tập' : playerNames[1]}</div>
             <div className="olw-rack-row">{renderSlots(1)}</div>
           </div>
         </div>
 
-        <div className="olw-billiards-row">
+        <div className="olw-hud-right">
           <button
             type="button"
             onClick={() => setShowSpinModal(true)}
@@ -1666,7 +1873,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
         </div>
       </header>
 
-      <main className="olw-billiards-main">
+      <main className={`olw-billiards-main${portraitRotated ? ' olw-billiards-main--portrait' : ''}`}>
         <div className="olw-power-col">
           <button
             type="button"
@@ -1682,23 +1889,47 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
           </button>
           <div
             ref={powerSlotRef}
-            className="olw-power-slot"
+            className={`olw-power-slot${powerCancelled ? ' olw-power-slot--cancelled' : ''}`}
             data-testid="billiards-power-slot"
             onPointerDown={(e) => {
               const sim = getSim();
               if (!canHumanInteractNow()) return;
               billiardsSound.unlock();
-              e.currentTarget.setPointerCapture(e.pointerId);
+              try {
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+              } catch {
+                // Ignore synthetic events without active browser pointer
+              }
               sim.powerDragging = true;
+              sim.powerStartX = e.clientX;
               sim.powerStartY = e.clientY;
+              sim.powerCancelled = false;
+              setPowerCancelled(false);
             }}
             onPointerMove={(e) => {
               const sim = getSim();
               if (!sim.powerDragging || !powerSlotRef.current) return;
-              const h = powerSlotRef.current.clientHeight * 0.72;
-              sim.power = Math.max(0, Math.min(1, (e.clientY - sim.powerStartY) / h));
-              setPowerPct(Math.round(sim.power * 100));
-              if (mode === 'online') {
+              const isTouch = e.pointerType === 'touch';
+              if (isTouch) {
+                const res = evaluatePowerPull({
+                  startX: sim.powerStartX,
+                  startY: sim.powerStartY,
+                  curX: e.clientX,
+                  curY: e.clientY,
+                  trackHeight: powerSlotRef.current.clientHeight,
+                });
+                sim.power = res.power;
+                sim.powerCancelled = res.cancelled;
+                setPowerCancelled(res.cancelled);
+                setPowerPct(res.cancelled ? 0 : Math.round(res.power * 100));
+              } else {
+                const h = powerSlotRef.current.clientHeight * 0.72;
+                sim.power = Math.max(0, Math.min(1, (e.clientY - sim.powerStartY) / h));
+                sim.powerCancelled = false;
+                setPowerCancelled(false);
+                setPowerPct(Math.round(sim.power * 100));
+              }
+              if (mode === 'online' && !sim.powerCancelled) {
                 sync?.broadcastAim({
                   matchId: sim.proto.matchId,
                   stateVersion: sim.proto.stateVersion,
@@ -1712,6 +1943,13 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               const sim = getSim();
               if (!sim.powerDragging) return;
               sim.powerDragging = false;
+              if (sim.powerCancelled) {
+                sim.power = 0;
+                sim.powerCancelled = false;
+                setPowerCancelled(false);
+                setPowerPct(0);
+                return;
+              }
               fireLocalShot();
             }}
             onPointerCancel={() => {
@@ -1719,15 +1957,23 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               if (!sim.powerDragging) return;
               sim.powerDragging = false;
               sim.power = 0;
+              sim.powerCancelled = false;
+              setPowerCancelled(false);
               setPowerPct(0);
             }}
           >
             <div className="olw-power-fill" style={{ height: `${powerPct}%` }} />
             <div className="olw-power-cue" style={{ top: `${cueTopPx}px` }} />
           </div>
-          <span className="olw-power-pct" data-testid="billiards-power-pct">
-            {powerPct}%
-          </span>
+          {powerCancelled ? (
+            <span className="olw-power-cancel-tag" data-testid="billiards-power-cancel-tag">
+              Hủy
+            </span>
+          ) : (
+            <span className="olw-power-pct" data-testid="billiards-power-pct">
+              {powerPct}%
+            </span>
+          )}
           <button
             type="button"
             title="Xoay phải mịn (→)"
@@ -1745,9 +1991,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
         <div className="olw-stage-wrap">
           <canvas
             ref={canvasRef}
-            width={TABLE_W}
-            height={TABLE_H}
-            className="olw-canvas"
+            width={canvasDims.width}
+            height={canvasDims.height}
+            className={`olw-canvas${portraitRotated ? ' olw-canvas--portrait' : ''}`}
             data-testid="billiards-canvas"
             onWheel={(e) => {
               e.preventDefault();
@@ -1770,34 +2016,94 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 setZoomLabel('Cận');
                 return;
               }
+              activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+              if (activePointersRef.current.size === 2) {
+                const pts = [...activePointersRef.current.values()];
+                pinchPrevDistRef.current = Math.hypot(pts[1]!.x - pts[0]!.x, pts[1]!.y - pts[0]!.y);
+                sim.tablePointerDown = false;
+                sim.draggingCueBall = false;
+                return;
+              }
               if (!canHumanInteractNow()) return;
-              const pt = getTablePt(e.clientX, e.clientY);
+              const isTouch = e.pointerType === 'touch';
+              sim.activePointerType = e.pointerType || 'mouse';
+              const rawY = isTouch && sim.proto.canMoveCueBall ? e.clientY - TOUCH_CUE_BALL_LIFT_PX : e.clientY;
+              const pt = getTablePt(e.clientX, rawY);
+              const directPt = getTablePt(e.clientX, e.clientY);
               const cue = sim.proto.balls.find((b) => b.id === 0);
               if (!cue) return;
-              e.currentTarget.setPointerCapture(e.pointerId);
-              if (sim.proto.canMoveCueBall && Math.hypot(pt.x - cue.x, pt.y - cue.y) < BALL_R * 3.4) {
+              try {
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+              } catch {
+                // Ignore synthetic events
+              }
+              const hitRadius = isTouch ? BALL_R * 4.2 : BALL_R * 3.4;
+              if (
+                sim.proto.canMoveCueBall &&
+                (Math.hypot(directPt.x - cue.x, directPt.y - cue.y) < hitRadius ||
+                  Math.hypot(pt.x - cue.x, pt.y - cue.y) < hitRadius)
+              ) {
                 sim.draggingCueBall = true;
                 return;
               }
               sim.tablePointerDown = true;
-              sim.aimAngle = Math.atan2(pt.y - cue.y, pt.x - cue.x);
-              if (mode === 'online') {
-                sync?.broadcastAim({
-                  matchId: sim.proto.matchId,
-                  stateVersion: sim.proto.stateVersion,
-                  playerSlot: sim.proto.currentPlayer,
-                  angle: sim.aimAngle,
-                  power: sim.power,
-                });
+              sim.touchGestureMoved = false;
+              sim.touchStartX = e.clientX;
+              sim.touchStartY = e.clientY;
+              sim.touchLastX = e.clientX;
+              sim.touchLastY = e.clientY;
+
+              // Touch NEVER snaps aimAngle immediately on tap; only desktop mouse snaps directly
+              if (!isTouch && !aimLockedRef.current) {
+                sim.aimAngle = Math.atan2(directPt.y - cue.y, directPt.x - cue.x);
+                if (mode === 'online') {
+                  sync?.broadcastAim({
+                    matchId: sim.proto.matchId,
+                    stateVersion: sim.proto.stateVersion,
+                    playerSlot: sim.proto.currentPlayer,
+                    angle: sim.aimAngle,
+                    power: sim.power,
+                  });
+                }
               }
             }}
             onPointerMove={(e) => {
               const sim = getSim();
-              const pt = getTablePt(e.clientX, e.clientY);
+              if (activePointersRef.current.has(e.pointerId)) {
+                activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+              }
+              if (activePointersRef.current.size === 2) {
+                const pts = [...activePointersRef.current.values()];
+                const dist = Math.hypot(pts[1]!.x - pts[0]!.x, pts[1]!.y - pts[0]!.y);
+                const prev = pinchPrevDistRef.current;
+                pinchPrevDistRef.current = dist;
+                if (prev && prev > 10) {
+                  const midX = (pts[0]!.x + pts[1]!.x) * 0.5;
+                  const midY = (pts[0]!.y + pts[1]!.y) * 0.5;
+                  const midPt = getTablePt(midX, midY);
+                  sim.zoomFocusX = midPt.x;
+                  sim.zoomFocusY = midPt.y;
+                  sim.zoomTarget = Math.max(
+                    1.0,
+                    Math.min(2.8, +(sim.zoomTarget * (dist / prev)).toFixed(2)),
+                  );
+                  setZoomLabel(`${sim.zoomTarget.toFixed(1)}x`);
+                }
+                return;
+              }
+
+              const isTouch = e.pointerType === 'touch' || sim.activePointerType === 'touch';
+              const pt = getTablePt(
+                e.clientX,
+                isTouch && sim.draggingCueBall ? e.clientY - TOUCH_CUE_BALL_LIFT_PX : e.clientY,
+              );
               if (sim.zoomTarget > 1.02 || sim.zoomHoverHold) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                sim.zoomFocusX = ((e.clientX - rect.left) / rect.width) * TABLE_W;
-                sim.zoomFocusY = ((e.clientY - rect.top) / rect.height) * TABLE_H;
+                const canvasEl = canvasRef.current;
+                if (canvasEl) {
+                  const raw = getTablePt(e.clientX, e.clientY);
+                  sim.zoomFocusX = raw.x;
+                  sim.zoomFocusY = raw.y;
+                }
               }
               const cue = sim.proto.balls.find((b) => b.id === 0);
               if (!cue) return;
@@ -1820,7 +2126,47 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 return;
               }
               if (sim.tablePointerDown && canHumanInteractNow()) {
-                sim.aimAngle = Math.atan2(pt.y - cue.y, pt.x - cue.x);
+                if (aimLockedRef.current) return;
+                if (isTouch) {
+                  const totalMoved = Math.hypot(
+                    e.clientX - sim.touchStartX,
+                    e.clientY - sim.touchStartY,
+                  );
+                  if (!sim.touchGestureMoved && totalMoved < TOUCH_TAP_DEADZONE_PX) {
+                    return;
+                  }
+                  sim.touchGestureMoved = true;
+                  const dx = e.clientX - sim.touchLastX;
+                  const dy = e.clientY - sim.touchLastY;
+                  sim.touchLastX = e.clientX;
+                  sim.touchLastY = e.clientY;
+                  const canvasEl = canvasRef.current;
+                  if (canvasEl) {
+                    const rect = canvasEl.getBoundingClientRect();
+                    const cueClient = physicsToClient2D(
+                      cue.x,
+                      cue.y,
+                      rect,
+                      sim.zoomCurrent,
+                      sim.camX,
+                      sim.camY,
+                      portraitRotatedRef.current,
+                    );
+                    const delta = computeAdaptiveAimDelta({
+                      dx,
+                      dy,
+                      cueClientX: cueClient.x,
+                      cueClientY: cueClient.y,
+                      pointerClientX: e.clientX,
+                      pointerClientY: e.clientY,
+                      precisionMode: precisionModeRef.current,
+                      flippedHandedness: portraitRotatedRef.current,
+                    });
+                    sim.aimAngle += delta;
+                  }
+                } else {
+                  sim.aimAngle = Math.atan2(pt.y - cue.y, pt.x - cue.x);
+                }
                 if (mode === 'online') {
                   sync?.broadcastAim({
                     matchId: sim.proto.matchId,
@@ -1834,6 +2180,10 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             }}
             onPointerUp={(e) => {
               const sim = getSim();
+              activePointersRef.current.delete(e.pointerId);
+              if (activePointersRef.current.size < 2) {
+                pinchPrevDistRef.current = null;
+              }
               if (e.button === 2) {
                 sim.zoomHoverHold = false;
                 setZoomLabel(`${sim.zoomTarget.toFixed(1)}x`);
@@ -1855,12 +2205,18 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               }
               sim.draggingCueBall = false;
               sim.tablePointerDown = false;
+              sim.touchGestureMoved = false;
             }}
-            onPointerCancel={() => {
+            onPointerCancel={(e) => {
               const sim = getSim();
+              activePointersRef.current.delete(e.pointerId);
+              if (activePointersRef.current.size < 2) {
+                pinchPrevDistRef.current = null;
+              }
               sim.zoomHoverHold = false;
               sim.draggingCueBall = false;
               sim.tablePointerDown = false;
+              sim.touchGestureMoved = false;
             }}
           />
 
@@ -1944,7 +2300,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
           )}
         </div>
 
-        <div className="olw-return-track">
+        <div className={`olw-return-track${portraitRotated ? ' olw-return-track--horizontal' : ''}`}>
           {returnedIds.map((id) => (
             <span key={id} style={{ background: BALL_COLORS[id] }} className="olw-return-ball">
               {id}
@@ -2000,6 +2356,24 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               </div>
             )}
             <div className="olw-modal-row">
+              <span><Smartphone size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />Hướng bàn</span>
+              <button
+                type="button"
+                data-testid="billiards-orientation-toggle"
+                onClick={() => {
+                  const order: BilliardsOrientation[] = ['auto', 'portrait', 'landscape'];
+                  setOrientationPref(order[(order.indexOf(orientationPref) + 1) % order.length] ?? 'auto');
+                }}
+                className="olw-billiards-pill"
+              >
+                {orientationPref === 'auto'
+                  ? `Tự động (${portraitRotated ? 'Dọc' : 'Ngang'})`
+                  : orientationPref === 'portrait'
+                    ? 'Dọc (8-Pool)'
+                    : 'Ngang'}
+              </button>
+            </div>
+            <div className="olw-modal-row">
               <span>Màu nỉ bàn</span>
               <button
                 type="button"
@@ -2048,6 +2422,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 Chơi ván mới
               </button>
             )}
+            <div style={{ fontSize: 11, color: '#cbd5e1', lineHeight: 1.4 }}>
+              Mẹo iPhone / Android: Bấm nút phóng to ở góc trên để vào chế độ tập trung. Nếu dùng iPhone, chọn <strong>Chia sẻ → Thêm vào Màn hình chính</strong> để ẩn thanh địa chỉ (lưu ý link Quick Tunnel thay đổi mỗi phiên host).
+            </div>
             <button
               type="button"
               data-testid="billiards-exit-to-menu"

@@ -20,6 +20,8 @@ export interface BilliardsOnlineLobbyProps {
   onChangeConfig: (edition: BilliardsEdition, rule: BilliardsRule, startingPlayer: PlayerSlot) => void;
   onToggleReady: (ready: boolean) => void;
   onCancelCountdown: () => void;
+  onResumeActiveMatch?: () => void;
+  onResetToNewLobby?: () => void;
   onLeaveLobby: () => void;
   onClose: () => void;
 }
@@ -37,6 +39,8 @@ export const BilliardsOnlineLobby: React.FC<BilliardsOnlineLobbyProps> = ({
   onChangeConfig,
   onToggleReady,
   onCancelCountdown,
+  onResumeActiveMatch,
+  onResetToNewLobby,
   onLeaveLobby,
   onClose,
 }) => {
@@ -101,6 +105,36 @@ export const BilliardsOnlineLobby: React.FC<BilliardsOnlineLobbyProps> = ({
             <X size={18} />
           </button>
         </div>
+
+        {lobbyState?.status === 'in_match' && lobbyState.activeMatchId && (
+          <div className="olw-resume-banner" data-testid="billiards-lobby-in-match-banner">
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#d1fae5' }}>
+              Đang có ván {lobbyState.edition.toUpperCase()} ({lobbyState.rule === '8ball' ? '8-Bi' : '9-Bi'}) chưa kết thúc. Bạn muốn làm gì?
+            </div>
+            <div className="olw-billiards-row" style={{ flexWrap: 'wrap' }}>
+              {onResumeActiveMatch && (
+                <button
+                  type="button"
+                  data-testid="billiards-lobby-resume-btn"
+                  onClick={onResumeActiveMatch}
+                  className="olw-billiards-btn-cozy"
+                >
+                  Tiếp tục ván đang dở
+                </button>
+              )}
+              {onResetToNewLobby && (
+                <button
+                  type="button"
+                  data-testid="billiards-lobby-reset-btn"
+                  onClick={onResetToNewLobby}
+                  className="olw-billiards-pill"
+                >
+                  Tạo phòng mới
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="olw-inline-bar">
           <div className="olw-billiards-row" style={{ flexWrap: 'wrap' }}>

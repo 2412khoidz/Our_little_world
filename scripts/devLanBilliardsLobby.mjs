@@ -310,7 +310,19 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:lobby_leave') {
-      if (p.reason === 'cancel') {
+      if (p.reason === 'new_lobby') {
+        clearCountdownToLobby(rec);
+        rec.status = 'lobby';
+        rec.confirmedConfig = null;
+        rec.activeMatchId = null;
+        rec.lastMatchSnapshot = null;
+        rec.players[actorSlot].joined = true;
+        rec.players[actorSlot].connected = true;
+        for (const pl of rec.players) {
+          pl.ready = false;
+          pl.wantRematch = false;
+        }
+      } else if (p.reason === 'cancel') {
         rec.players[actorSlot].ready = false;
         rec.players[actorSlot].wantRematch = false;
         cancelCountdownToLobby(rec);
@@ -320,12 +332,10 @@ export function createDevLanBilliardsLobby({
         rec.players[actorSlot].wantRematch = false;
         cancelCountdownToLobby(rec);
         if (!rec.players[0].joined && !rec.players[1].joined) {
-          if (rec.status !== 'in_match' || (rec.activeMatchId && rec.endedMatchIds.has(rec.activeMatchId))) {
-            rec.status = 'idle';
-            rec.confirmedConfig = null;
-            rec.activeMatchId = null;
-            rec.lastMatchSnapshot = null;
-          }
+          rec.status = 'idle';
+          rec.confirmedConfig = null;
+          rec.activeMatchId = null;
+          rec.lastMatchSnapshot = null;
         }
       }
       emitLobbyState(rec);

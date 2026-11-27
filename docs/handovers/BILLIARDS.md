@@ -7,8 +7,8 @@
   - `src/shared/billiards/physics3dEngine.ts` (deterministic 3D real-scale metric engine transplanted từ donor 3D: `FIXED_STEP_3D = 1/120`, `SUBSTEPS_3D = 6`, bàn 9ft `2.54m × 1.27m`, `BALL_R_3D = 0.028575`, hỗ trợ Massé elevation `0°..45°`)
   - `src/shared/billiards/botAi.ts` (`computeBotShot2D`, `chooseBotBallInHand2D`, `computeBotShot3D`, `chooseBotBallInHand3D`)
   - `src/shared/billiards/protocol.ts` & `src/shared/billiards/lobbyProtocol.ts` (versioned match state machine + shared lobby ready check, asset-readiness gating, countdown & rematch state machine)
-- **React UI, Keyboard, Audio & Lazy Modules:**
-  - `src/features/minigames/billiards/`: `BilliardsModal.tsx` (wrapper + `React.lazy` boundary), `LazyBilliardsModal.tsx`, `BilliardsEntryMenu.tsx`, `BilliardsOnlineLobby.tsx`, `Billiards2DGame.tsx` (giữ bản 2D nhẹ), `Billiards3DGame.tsx` (transplanted Three.js 3D table/lighting/cue/ribbons/cameras + WebGL disposal), `useBilliardsKeyboard.ts`, `useBilliardsSync.ts`, `localStats.ts`, `sound.ts`, `billiards.css`, `billiards3d.css`, `billiardsGameProps.ts`.
+- **React UI, Keyboard, Touch, Portrait & Lazy Modules:**
+  - `src/features/minigames/billiards/`: `BilliardsModal.tsx` (wrapper + `React.lazy` boundary, chỉ auto-vào bàn khi countdown do chính phiên lobby vừa kích hoạt kết thúc), `LazyBilliardsModal.tsx`, `BilliardsEntryMenu.tsx` (kèm SVG bàn 2D/3D & card **Luyện tập tự do**), `BilliardsOnlineLobby.tsx` (banner chọn `Tiếp tục ván đang dở` vs `Tạo phòng mới`), `Billiards2DGame.tsx` (bàn dọc `-90°` auto/dọc/ngang trên mobile, shading cầu 3D, tia ngắm bi cái + bi mục tiêu, pinch zoom), `Billiards3DGame.tsx` (Three.js 3D, portrait top-view & follow framing, tách gesture 1 ngón ngắm vs 2 ngón camera), `viewportTransform.ts`, `touchControls.ts`, `useFocusMode.ts`, `useBilliardsKeyboard.ts`, `useBilliardsSync.ts`, `localStats.ts`, `sound.ts`, `billiards.css` (mobile 2-row zero-overlap HUD), `billiards3d.css`, `billiardsGameProps.ts`.
 - **Overworld Suspension Bridge:** `src/game/eventBus.ts`, `src/game/scenes/WorldScene.ts`, `src/app/App.tsx` (kèm `billiards-invite-banner` và phân tách `handleBilliardsMatchComplete` chỉ lưu DB khi `mode === 'online'`), `src/features/study/ambientAudio.ts`.
 - **Backend / Server / SQL:** `scripts/devLanBilliardsLobby.mjs`, `scripts/devLanBilliardsHandlers.mjs`, `scripts/devLanWsHub.mjs` (`serverNowMs` trong `welcome`/`pong`, `SERVER_LOBBY_SESSION_ID`), `src/lib/backend/devLanRealtimeClient.ts` (EWMA server clock offset), `supabase/migrations/20261126000100_v02_billiards_minigame.sql`.
 
@@ -21,7 +21,8 @@
 ## 3. Supported Editions × Modes Matrix
 - **2D × Local 2P (8-Bi & 9-Bi):** Playable & E2E verified (desktop + 430×932 mobile touch).
 - **2D × Bot (Dễ / Vừa / Cao thủ, 8-Bi & 9-Bi):** Playable & unit/E2E verified, thống kê tách riêng ở `localStorage`.
-- **2D × Online (8-Bi & 9-Bi):** Playable & 2-client WS E2E verified (invite, ready check, asset gate, countdown, full match, reconnect, mutual rematch, idempotent DB stats).
+- **2D × Online (8-Bi & 9-Bi):** Playable & 2-client WS E2E verified (invite, ready check, asset gate, countdown, full match, reconnect, mutual rematch, idempotent DB stats, ghép được giữa PC màn ngang và mobile màn dọc).
+- **2D & 3D × Luyện tập tự do (`practice`):** Playable & E2E verified — không giới hạn lượt/đồng hồ, đặt lại bi cái tự do.
 - **3D × Local 2P (8-Bi & 9-Bi):** Playable & E2E verified (3 cameras, Massé slider, `Space` shoot, 3x open/close disposal).
 - **3D × Bot (Dễ / Vừa / Cao thủ, 8-Bi & 9-Bi):** Playable & unit/E2E verified.
 - **3D × Online (8-Bi & 9-Bi):** Playable & 2-client WS E2E verified (invite toast, 3D asset preload gate, synchronized countdown start, deterministic synced shot & reload recovery).
@@ -39,7 +40,7 @@
 
 ## 6. Focused Test Commands
 ```bash
-npx vitest run tests/unit/billiards3dPhysicsDeterminism.test.ts tests/unit/billiardsBotAi.test.ts tests/unit/billiardsControlsAndLifecycle.test.tsx tests/unit/billiardsLobbyProtocol.test.ts tests/unit/billiardsModalLifecycle.test.tsx tests/unit/billiardsPhysicsDeterminism.test.ts tests/unit/billiardsProtocol.test.ts tests/server/billiardsLobbyWs.test.ts tests/server/billiardsDevLan.test.ts
+npx vitest run tests/unit/billiardsTouchAndViewport.test.ts tests/unit/billiards3dPhysicsDeterminism.test.ts tests/unit/billiardsBotAi.test.ts tests/unit/billiardsControlsAndLifecycle.test.tsx tests/unit/billiardsLobbyProtocol.test.ts tests/unit/billiardsModalLifecycle.test.tsx tests/unit/billiardsPhysicsDeterminism.test.ts tests/unit/billiardsProtocol.test.ts tests/server/billiardsLobbyWs.test.ts tests/server/billiardsDevLan.test.ts
 npx playwright test tests/e2e/billiards-multiplayer.spec.ts tests/e2e/billiards-v3-modes.spec.ts --project=chromium-desktop
 npx playwright test tests/e2e/billiards-v3-modes.spec.ts -g "mobile touch controls" --project=chromium-iphone-16-pro-max
 ```

@@ -2,9 +2,10 @@ import { z } from 'zod';
 
 export type BilliardsRule = '8ball' | '9ball';
 export type BilliardsEdition = '2d' | '3d';
-export type BilliardsPlayMode = 'online' | 'local_pvp' | 'ai';
+export type BilliardsPlayMode = 'online' | 'local_pvp' | 'ai' | 'practice';
 export type BotDifficulty = 'easy' | 'medium' | 'hard';
 export type Billiards3DQuality = 'auto' | 'low' | 'medium' | 'high';
+export type BilliardsOrientation = 'auto' | 'portrait' | 'landscape';
 export type BallGroup = 'solid' | 'stripe' | null;
 export type PlayerSlot = 0 | 1;
 export type BilliardsMatchPhase = 'aim' | 'moving' | 'gameOver';
@@ -270,7 +271,7 @@ export type LobbyReadyPayload = z.infer<typeof LobbyReadyPayloadSchema>;
 
 export const LobbyLeavePayloadSchema = z.object({
   playerSlot: PlayerSlotSchema,
-  reason: z.enum(['leave', 'cancel']),
+  reason: z.enum(['leave', 'cancel', 'new_lobby']),
 });
 export type LobbyLeavePayload = z.infer<typeof LobbyLeavePayloadSchema>;
 

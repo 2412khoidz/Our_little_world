@@ -247,6 +247,19 @@ export function applyLobbyLeave(
     return next;
   }
 
+  if (payload.reason === 'new_lobby') {
+    next.status = 'lobby';
+    next.confirmedConfig = null;
+    next.activeMatchId = null;
+    next.players[slot].joined = true;
+    next.players[slot].connected = true;
+    for (const p of next.players) {
+      p.ready = false;
+      p.wantRematch = false;
+    }
+    return next;
+  }
+
   next.players[slot].joined = false;
   next.players[slot].ready = false;
   next.players[slot].wantRematch = false;
@@ -258,9 +271,10 @@ export function applyLobbyLeave(
   }
 
   const anyJoined = next.players[0].joined || next.players[1].joined;
-  if (!anyJoined && next.status !== 'in_match') {
+  if (!anyJoined) {
     next.status = 'idle';
     next.confirmedConfig = null;
+    next.activeMatchId = null;
   }
   return next;
 }

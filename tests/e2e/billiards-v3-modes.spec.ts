@@ -325,6 +325,22 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await expect(game3dB).toHaveAttribute('data-match-id', matchIdA!, { timeout: 10_000 });
     await expect(game3dB).toHaveAttribute('data-shot-seq', '1', { timeout: 10_000 });
 
+    // Regression check: after exiting 3D Online, entering Online from Entry Menu stays in Lobby (never auto-opens 3D)
+    await pageA.getByTestId('billiards-menu-btn').click();
+    await pageA.getByTestId('billiards-exit-to-menu').click();
+    await expect(pageA.getByTestId('billiards-entry-menu')).toBeVisible({ timeout: 5_000 });
+    await pageB.getByTestId('billiards-menu-btn').click();
+    await pageB.getByTestId('billiards-exit-to-menu').click();
+
+    await pageA.getByTestId('billiards-edition-3d').click();
+    await pageA.getByTestId('billiards-mode-online').click();
+    await pageA.getByTestId('billiards-start-btn').click();
+    await expect(pageA.getByTestId('billiards-online-lobby')).toBeVisible({ timeout: 5_000 });
+    await pageA.waitForTimeout(400);
+    await expect(game3dA).toBeHidden();
+    await pageA.getByTestId('lobby-edition-2d').click();
+    await expect(pageA.getByTestId('billiards-online-lobby')).toBeVisible();
+
     expect(errors).toEqual([]);
     await ctxA.close();
     await ctxB.close();
@@ -343,44 +359,99 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
 
+    const boxesOverlap = (
+      a: { x: number; y: number; width: number; height: number } | null,
+      b: { x: number; y: number; width: number; height: number } | null,
+    ) => {
+      if (!a || !b) return false;
+      return (
+        a.x < b.x + b.width - 1 &&
+        a.x + a.width > b.x + 1 &&
+        a.y < b.y + b.height - 1 &&
+        a.y + a.height > b.y + 1
+      );
+    };
+
     await page.goto('/');
     await joinSingleClient(page, 'preset-partner-a');
 
     await openEntryMenu(page);
     await page.getByTestId('billiards-edition-2d').click();
-    await page.getByTestId('billiards-mode-local').click();
+    await page.getByTestId('billiards-mode-practice').click();
     await page.getByTestId('billiards-start-btn').click();
     const game2d = page.getByTestId('billiards-2d-game');
     await expect(game2d).toBeVisible({ timeout: 10_000 });
 
-    // Mobile aim buttons visible & functional
+    // Verify 2D Portrait Vertical Table & Zero-Overlap 2-Row HUD on 430x932
+    await expect(game2d).toHaveAttribute('data-portrait', '1');
+    const canvas2dBox = await page.getByTestId('billiards-canvas').boundingBox();
+    expect(canvas2dBox).not.toBeNull();
+    expect(canvas2dBox!.height).toBeGreaterThan(canvas2dBox!.width * 1.3);
+
+    const menuBox = await page.getByTestId('billiards-menu-btn').boundingBox();
+    const lockBox = await page.getByTestId('billiards-aim-lock').boundingBox();
+    const spinBox = await page.getByTestId('billiards-spin-btn').boundingBox();
+    const scoreBox = await page.getByTestId('billiards-score').boundingBox();
+    expect(boxesOverlap(menuBox, scoreBox)).toBe(false);
+    expect(boxesOverlap(lockBox, scoreBox)).toBe(false);
+    expect(boxesOverlap(spinBox, scoreBox)).toBe(false);
+
+    // Aim Lock toggles cleanly
+    await page.getByTestId('billiards-aim-lock').click();
+    await expect(game2d).toHaveAttribute('data-aim-locked', '1');
+    await page.getByTestId('billiards-aim-lock').click();
+    await expect(game2d).toHaveAttribute('data-aim-locked', '0');
+
+    // Touch power cancel zone: pulling sideways aborts shot without firing
+    const slot = page.getByTestId('billiards-power-slot');
+    const box = await slot.boundingBox();
+    expect(box).not.toBeNull();
+    await slot.dispatchEvent('pointerdown', {
+      pointerId: 11,
+      pointerType: 'touch',
+      clientX: box!.x + box!.width / 2,
+      clientY: box!.y + 16,
+    });
+    await slot.dispatchEvent('pointermove', {
+      pointerId: 11,
+      pointerType: 'touch',
+      clientX: box!.x + box!.width / 2 + 80,
+      clientY: box!.y + 110,
+    });
+    await expect(page.getByTestId('billiards-power-cancel-tag')).toBeVisible();
+    await slot.dispatchEvent('pointerup', { pointerId: 11, pointerType: 'touch' });
+    await expect(game2d).toHaveAttribute('data-shot-count', '0');
+
+    // Mobile aim buttons visible & functional + normal power pull shoots (Practice mode keeps cue free!)
     await expect(page.getByTestId('billiards-aim-left')).toBeVisible();
     await expect(page.getByTestId('billiards-aim-right')).toBeVisible();
     await page.getByTestId('billiards-aim-right').dispatchEvent('pointerdown');
     await page.waitForTimeout(120);
     await page.getByTestId('billiards-aim-right').dispatchEvent('pointerup');
 
-    // Touch drag on power slot
-    const slot = page.getByTestId('billiards-power-slot');
-    const box = await slot.boundingBox();
-    expect(box).not.toBeNull();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + 12);
     await page.mouse.down();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height * 0.65, { steps: 6 });
     await page.mouse.up();
 
     await expect(game2d).toHaveAttribute('data-shot-count', '1', { timeout: 10_000 });
+    await expect(game2d).toHaveAttribute('data-phase', 'aim', { timeout: 15_000 });
 
-    // Switch to 3D on mobile 430x932 and verify no broken/zero-sized canvas
+    // Switch to 3D on mobile 430x932 and verify zero HUD overlap + non-zero 3D canvas
     await page.getByTestId('billiards-menu-btn').click();
     await page.getByTestId('billiards-exit-to-menu').click();
     await page.getByTestId('billiards-edition-3d').click();
+    await page.getByTestId('billiards-mode-local').click();
     await page.getByTestId('billiards-start-btn').click();
     await expect(page.getByTestId('billiards-3d-game')).toBeVisible({ timeout: 20_000 });
     const box3d = await page.getByTestId('billiards-canvas-3d').boundingBox();
     expect(box3d).not.toBeNull();
     expect(box3d!.width).toBeGreaterThan(250);
     expect(box3d!.height).toBeGreaterThan(180);
+
+    const cam3dBox = await page.getByTestId('billiards-3d-cam-btn').boundingBox();
+    const score3dBox = await page.getByTestId('billiards-score').boundingBox();
+    expect(boxesOverlap(cam3dBox, score3dBox)).toBe(false);
 
     expect(errors).toEqual([]);
     await ctx.close();

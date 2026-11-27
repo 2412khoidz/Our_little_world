@@ -3,17 +3,22 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  height: 100dvh;
+  height: var(--olw-vvh, 100dvh);
   width: 100vw;
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  background: radial-gradient(circle at 50% 28%, #2a2433 0%, #1a1622 68%, #100d17 100%);
+  background: radial-gradient(circle at 50% 18%, #1d322c 0%, #161822 52%, #0c0a12 100%);
   color: #fef7ed;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior: none;
   user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+.olw-billiards-overlay--focus {
+  padding: max(2px, env(safe-area-inset-top, 0px)) max(4px, env(safe-area-inset-right, 0px)) max(2px, env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px));
 }
 
 .olw-billiards-header {
@@ -22,6 +27,20 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(16, 13, 24, 0.86) 0%, rgba(16, 13, 24, 0.35) 100%);
+  border-bottom: 1px solid rgba(251, 207, 155, 0.14);
+}
+.olw-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.olw-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -108,16 +127,24 @@
 
 .olw-billiards-panel {
   width: 100%;
-  max-width: 760px;
-  background: rgba(31, 25, 42, 0.94);
-  border: 2px solid rgba(251, 207, 155, 0.34);
+  max-width: 780px;
+  background: linear-gradient(165deg, rgba(28, 36, 42, 0.96) 0%, rgba(22, 18, 32, 0.97) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.36);
   border-radius: 22px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   margin: auto 0;
+}
+
+.olw-edition-art {
+  width: 100%;
+  height: 58px;
+  display: block;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
 .olw-entry-header {
@@ -467,6 +494,19 @@
   background: linear-gradient(180deg, #38bdf8 0%, #38bdf8 3%, #f8fafc 3%, #f8fafc 6%, #fef3c7 6%, #d6b27c 56%, #0284c7 58%, #1e293b 60%, #090d16 100%);
   pointer-events: none;
 }
+.olw-power-slot--cancelled {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45), inset 0 4px 12px rgba(0, 0, 0, 0.8);
+}
+.olw-power-cancel-tag {
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: rgba(220, 38, 38, 0.92);
+  color: #ffffff;
+  white-space: nowrap;
+}
 .olw-power-pct {
   font-size: 10px;
   font-weight: 800;
@@ -493,6 +533,9 @@
   touch-action: none;
   cursor: crosshair;
 }
+.olw-canvas--portrait {
+  aspect-ratio: 540 / 1000;
+}
 
 .olw-return-track {
   width: 34px;
@@ -507,6 +550,16 @@
   gap: 2px;
   overflow: hidden;
   flex-shrink: 0;
+}
+.olw-return-track--horizontal {
+  width: 100%;
+  max-width: 340px;
+  height: 30px;
+  border-radius: 9999px;
+  flex-direction: row;
+  justify-content: center;
+  padding: 0 8px;
+  gap: 4px;
 }
 .olw-return-ball {
   width: 21px;
@@ -624,16 +677,137 @@
   pointer-events: none;
 }
 
-@media (max-width: 640px) {
-  .olw-billiards-header { padding: 6px 8px; gap: 4px; }
-  .olw-player-name { max-width: 72px; font-size: 11px; }
-  .olw-rack-slot { width: 13px; height: 13px; font-size: 7px; }
-  .olw-avatar-timer { width: 34px; height: 34px; }
-  .olw-score-box { min-width: 54px; padding: 3px 6px; }
-  .olw-hide-sm { display: none; }
-  .olw-card-grid-3 { grid-template-columns: 1fr; }
-  .olw-card-grid-2 { grid-template-columns: 1fr; }
-  .olw-stats-strip { grid-template-columns: 1fr; }
-  .olw-billiards-main { gap: 6px; padding: 0 6px 8px; }
-  .olw-hand-hint { font-size: 10px; max-width: 90vw; white-space: normal; text-align: center; }
+@media (max-width: 720px) {
+  .olw-billiards-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'actions right'
+      'players players';
+    padding: 6px 8px;
+    gap: 6px 8px;
+    align-items: center;
+  }
+  .olw-hud-actions {
+    grid-area: actions;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .olw-hud-right {
+    grid-area: right;
+    gap: 5px;
+  }
+  .olw-players-hud {
+    grid-area: players;
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 12px;
+    background: rgba(12, 10, 18, 0.62);
+    border: 1px solid rgba(251, 207, 155, 0.16);
+  }
+  .olw-billiards-pill {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+  .olw-billiards-btn-cozy-sq,
+  .olw-billiards-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .olw-spin-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .olw-player-col {
+    flex: 1;
+    min-width: 0;
+  }
+  .olw-player-name {
+    max-width: 84px;
+    font-size: 11px;
+  }
+  .olw-rack-slot {
+    width: 13px;
+    height: 13px;
+    font-size: 7px;
+  }
+  .olw-avatar-timer {
+    width: 32px;
+    height: 32px;
+    padding: 2.5px;
+  }
+  .olw-avatar-inner {
+    font-size: 15px;
+  }
+  .olw-score-box {
+    min-width: 56px;
+    padding: 2px 7px;
+  }
+  .olw-score-val {
+    font-size: 13px;
+  }
+  .olw-hide-sm {
+    display: none;
+  }
+  .olw-card-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .olw-card-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .olw-stats-strip {
+    grid-template-columns: 1fr;
+  }
+  .olw-billiards-panel {
+    padding: 13px;
+    border-radius: 16px;
+    gap: 11px;
+  }
+  .olw-billiards-main {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 6px;
+    padding: 4px 6px 8px;
+  }
+  .olw-billiards-main--portrait {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    gap: 6px;
+  }
+  .olw-billiards-main--portrait .olw-power-col {
+    grid-column: 1;
+    grid-row: 1;
+    justify-content: center;
+  }
+  .olw-billiards-main--portrait .olw-stage-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    height: 100%;
+    min-height: 0;
+  }
+  .olw-billiards-main--portrait .olw-return-track--horizontal {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+  }
+  .olw-power-slot {
+    width: 44px;
+    height: min(46dvh, 248px);
+  }
+  .olw-fine-aim-btn {
+    width: 44px;
+    height: 30px;
+  }
+  .olw-hand-hint {
+    font-size: 10px;
+    max-width: 90vw;
+    white-space: normal;
+    text-align: center;
+  }
 }

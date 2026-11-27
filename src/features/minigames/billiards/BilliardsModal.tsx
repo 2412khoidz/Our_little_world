@@ -99,6 +99,8 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
   const matchHandlersRef = useRef<BilliardsMatchSyncHandlers | null>(null);
   const recoveredSnapshotRef = useRef<MatchSnapshot | null>(null);
   const countdownTimerRef = useRef<number | null>(null);
+  const scheduledCountdownMatchIdRef = useRef<string | null>(null);
+  const activeCountdownMatchIdRef = useRef<string | null>(null);
   const onMatchCompleteRef = useRef(onMatchComplete);
   const localPlayerSlotRef = useRef(localPlayerSlot);
   const viewRef = useRef(view);
@@ -115,6 +117,7 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
       window.clearTimeout(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
+    scheduledCountdownMatchIdRef.current = null;
   }, []);
 
   useEffect(() => () => clearCountdownTimer(), [clearCountdownTimer]);
@@ -154,11 +157,23 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
       if (nextLobby.confirmedConfig) {
         setConfirmedOnlineConfig(nextLobby.confirmedConfig);
       }
-      if (nextLobby.status === 'in_match' && viewRef.current === 'lobby') {
-        const targetEdition = recoveredSnapshotRef.current?.edition ?? nextLobby.edition;
+      if (nextLobby.status === 'countdown' && nextLobby.confirmedConfig) {
+        activeCountdownMatchIdRef.current = nextLobby.confirmedConfig.matchId;
+      } else if (nextLobby.status === 'lobby' || nextLobby.status === 'idle') {
+        activeCountdownMatchIdRef.current = null;
+      } else if (
+        nextLobby.status === 'in_match' &&
+        viewRef.current === 'lobby' &&
+        nextLobby.activeMatchId &&
+        nextLobby.activeMatchId === activeCountdownMatchIdRef.current
+      ) {
+        // Countdown initiated while local player was actively in this lobby just completed on server
+        activeCountdownMatchIdRef.current = null;
+        const cfg = nextLobby.confirmedConfig;
+        const targetEdition = cfg?.edition ?? nextLobby.edition;
         setMode('online');
         setEdition(targetEdition);
-        setRule(recoveredSnapshotRef.current?.rule ?? nextLobby.rule);
+        setRule(cfg?.rule ?? nextLobby.rule);
         setView(targetEdition === '3d' ? 'game3d' : 'game2d');
       }
     },
@@ -227,15 +242,29 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
 
   // Synchronized countdown timer transition
   useEffect(() => {
-    clearCountdownTimer();
-    if (!lobbyState) return;
-    if (view !== 'lobby' && view !== 'game2d' && view !== 'game3d') return;
-    if (lobbyState.status !== 'countdown' || !lobbyState.confirmedConfig) return;
+    if (!lobbyState || (view !== 'lobby' && view !== 'game2d' && view !== 'game3d')) {
+      clearCountdownTimer();
+      return;
+    }
+    if (lobbyState.status === 'lobby' || lobbyState.status === 'idle') {
+      clearCountdownTimer();
+      return;
+    }
+    if (lobbyState.status !== 'countdown' || !lobbyState.confirmedConfig) {
+      return;
+    }
 
     const cfg = lobbyState.confirmedConfig;
+    if (scheduledCountdownMatchIdRef.current === cfg.matchId) {
+      return;
+    }
+    clearCountdownTimer();
+    scheduledCountdownMatchIdRef.current = cfg.matchId;
     const delayMs = Math.max(0, cfg.startAtServerMs - sync.getServerNowMs());
     countdownTimerRef.current = window.setTimeout(() => {
       countdownTimerRef.current = null;
+      scheduledCountdownMatchIdRef.current = null;
+      activeCountdownMatchIdRef.current = null;
       setConfirmedOnlineConfig(cfg);
       setMode('online');
       setEdition(cfg.edition);
@@ -296,6 +325,19 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
       });
       sync.requestLobbySync();
     }
+  };
+
+  const handleResetToNewLobby = () => {
+    setConfirmedOnlineConfig(null);
+    setRecoveredSnapshot(null);
+    sync.broadcastLobbyLeave({ playerSlot: localPlayerSlot, reason: 'new_lobby' });
+    sync.broadcastLobbyJoin({
+      playerSlot: localPlayerSlot,
+      edition,
+      rule,
+      startingPlayer: 0,
+      assetsReady: false,
+    });
   };
 
   const handleExitToMenu = () => {
@@ -388,6 +430,8 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
           onCancelCountdown={() => {
             sync.broadcastLobbyLeave({ playerSlot: localPlayerSlot, reason: 'cancel' });
           }}
+          onResumeActiveMatch={handleResumeOnline}
+          onResetToNewLobby={handleResetToNewLobby}
           onLeaveLobby={() => {
             sync.broadcastLobbyLeave({ playerSlot: localPlayerSlot, reason: 'leave' });
             setView('entry');

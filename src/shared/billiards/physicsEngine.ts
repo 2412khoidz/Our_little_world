@@ -492,14 +492,14 @@ function resolveRailAndJaws(b: BallState, onCushion: (speed: number) => void): v
           const spd = -b.vy; b.y = seg.y + BALL_R;
           if (spd > 0) {
             b.vy = spd * CUSHION_RESTITUTION; b.rollVy *= -0.35;
-            if (Math.abs(b.spinZ) > 1) { b.vx += b.spinZ * 0.28; b.spinZ *= 0.62; }
+            if (Math.abs(b.spinZ) > 1) { b.vx += b.spinZ * 0.34; b.spinZ *= 0.66; }
             onCushion(spd);
           }
         } else if (seg.ny < 0 && b.y + BALL_R > seg.y) {
           const spd = b.vy; b.y = seg.y - BALL_R;
           if (spd > 0) {
             b.vy = -spd * CUSHION_RESTITUTION; b.rollVy *= -0.35;
-            if (Math.abs(b.spinZ) > 1) { b.vx -= b.spinZ * 0.28; b.spinZ *= 0.62; }
+            if (Math.abs(b.spinZ) > 1) { b.vx -= b.spinZ * 0.34; b.spinZ *= 0.66; }
             onCushion(spd);
           }
         }
@@ -509,14 +509,14 @@ function resolveRailAndJaws(b: BallState, onCushion: (speed: number) => void): v
         const spd = -b.vx; b.x = seg.x + BALL_R;
         if (spd > 0) {
           b.vx = spd * CUSHION_RESTITUTION; b.rollVx *= -0.35;
-          if (Math.abs(b.spinZ) > 1) { b.vy -= b.spinZ * 0.28; b.spinZ *= 0.62; }
+          if (Math.abs(b.spinZ) > 1) { b.vy -= b.spinZ * 0.34; b.spinZ *= 0.66; }
           onCushion(spd);
         }
       } else if (seg.nx < 0 && b.x + BALL_R > seg.x) {
         const spd = b.vx; b.x = seg.x - BALL_R;
         if (spd > 0) {
           b.vx = -spd * CUSHION_RESTITUTION; b.rollVx *= -0.35;
-          if (Math.abs(b.spinZ) > 1) { b.vy += b.spinZ * 0.28; b.spinZ *= 0.62; }
+          if (Math.abs(b.spinZ) > 1) { b.vy += b.spinZ * 0.34; b.spinZ *= 0.66; }
           onCushion(spd);
         }
       }
