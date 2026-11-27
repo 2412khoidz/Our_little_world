@@ -313,11 +313,15 @@ export class BootScene extends Phaser.Scene {
             ? 6
             : actName === 'swarm'
               ? 7
-              : actName.startsWith('eat_')
-                ? 3.5
-                : actName.startsWith('sleep_')
-                  ? 1
-                  : 3;
+              : actName.startsWith('swim_sleep_')
+                ? 1
+                : actName.startsWith('swim_')
+                  ? 3.5
+                  : actName.startsWith('eat_')
+                    ? 3.5
+                    : actName.startsWith('sleep_')
+                      ? 1
+                      : 3;
           this.anims.create({
             key: animKey,
             frames: frameKeys.map((frame) => ({ key: FARMING_LIVESTOCK_ATLAS_KEY, frame })),

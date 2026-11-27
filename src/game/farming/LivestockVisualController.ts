@@ -129,6 +129,7 @@ export class LivestockVisualController {
   private readonly sprites = new Map<string, AnimalVisualEntry>();
   private fallbackAnimPhase = 0;
   private fallbackAnimTimerMs = 0;
+  private fallbackWarned = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -313,6 +314,17 @@ export class LivestockVisualController {
     const active = new Set<string>();
     const useAtlas = this.scene.textures.exists(FARMING_LIVESTOCK_ATLAS_KEY);
     const tileUnit = this.tilePixelSize / 16;
+    const dataset = this.scene.game?.canvas?.dataset;
+    if (dataset) {
+      dataset.livestockAtlasMode =
+        animals.length > 0 && !useAtlas ? 'fallback:procedural' : useAtlas ? 'donor:FarmRanchLife' : 'idle';
+    }
+    if (animals.length > 0 && !useAtlas && import.meta.env.DEV && !this.fallbackWarned) {
+      this.fallbackWarned = true;
+      console.warn(
+        `[LivestockVisualController] Missing donor atlas "${FARMING_LIVESTOCK_ATLAS_KEY}" for ${animals.length} livestock entity(ies); falling back to procedural Canvas textures.`,
+      );
+    }
 
     animals.forEach((item, index) => {
       const tile = this.slotTiles[index];

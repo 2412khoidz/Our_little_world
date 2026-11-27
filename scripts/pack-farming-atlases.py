@@ -492,6 +492,33 @@ def make_satin_ribbon_icon() -> Image.Image:
     return img
 
 
+def make_swimming_duck_frame(src: Image.Image, is_sleep: bool, ripple_phase: int) -> Image.Image:
+    """Adapt FarmRanchLife mallard sprite onto water by submerging feet and adding pixel ripples."""
+    canvas = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    if is_sleep:
+        # Sleep frame already tucks legs; shift down 1px and clip bottom edge at waterline
+        body = src.crop((0, 0, 16, 15))
+        canvas.paste(body, (0, 1), body)
+    else:
+        # Remove standing legs (y >= 13) and lower body 2px into the water
+        body = src.crop((0, 0, 16, 13))
+        canvas.paste(body, (0, 2), body)
+    # Crisp 2-frame pixel waterline ripple under the duck's chest
+    foam = (224, 248, 255, 235)
+    ripple = (128, 206, 242, 215)
+    if ripple_phase % 2 == 0:
+        for px in range(4, 12):
+            canvas.putpixel((px, 14), foam if px % 2 == 0 else ripple)
+        for px in (3, 12):
+            canvas.putpixel((px, 13), ripple)
+    else:
+        for px in range(3, 13):
+            canvas.putpixel((px, 14), ripple if px % 2 == 0 else foam)
+        for px in (2, 13):
+            canvas.putpixel((px, 14), ripple)
+    return canvas
+
+
 def pack_grid_atlas(
     entries: list[tuple[str, Image.Image, dict]],
     cell_size: int,
@@ -1207,11 +1234,33 @@ def build_all(src_dir: Path) -> None:
                 frame_keys.append(fkey)
             anims_meta[act_name] = frame_keys
             sources_meta[act_name] = member
+
+        # Add water-specific swimming frames for Mallard duck (clipped waterline + pixel ripples)
+        if sp_id == "duck":
+            for swim_dir in ("left", "right"):
+                idle_member = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_idle_{swim_dir}_2f.png"
+                sleep_member = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_sleep_{swim_dir}_1f.png"
+                swim_keys: list[str] = []
+                for f_idx in range(2):
+                    src_im = pool.strip_frame(FRL_Z, idle_member, f_idx, fw, fh)
+                    fkey = f"duck_swim_{swim_dir}_{f_idx}"
+                    livestock_entries.append((fkey, make_swimming_duck_frame(src_im, False, f_idx), {"donor": "FarmRanchLife+waterline", "species": "duck", "action": f"swim_{swim_dir}"}))
+                    swim_keys.append(fkey)
+                anims_meta[f"swim_{swim_dir}"] = swim_keys
+                sources_meta[f"swim_{swim_dir}"] = idle_member
+
+                sleep_im = pool.strip_frame(FRL_Z, sleep_member, 0, fw, fh)
+                sleep_fkey = f"duck_swim_sleep_{swim_dir}_0"
+                livestock_entries.append((sleep_fkey, make_swimming_duck_frame(sleep_im, True, 0), {"donor": "FarmRanchLife+waterline", "species": "duck", "action": f"swim_sleep_{swim_dir}"}))
+                anims_meta[f"swim_sleep_{swim_dir}"] = [sleep_fkey]
+                sources_meta[f"swim_sleep_{swim_dir}"] = sleep_member
+
         livestock_meta[sp_id] = {
             "donor": "FarmRanchLife",
             "variant": prefix,
             "frameW": fw,
             "frameH": fh,
+            "portraitFrame": anims_meta["idle_down"][0],
             "animations": anims_meta,
             "sources": sources_meta,
         }
@@ -1232,6 +1281,7 @@ def build_all(src_dir: Path) -> None:
         "frameH": 32,
         "swarmFrameW": 16,
         "swarmFrameH": 16,
+        "portraitFrame": "bee_hive_0",
         "animations": {
             "hive": ["bee_hive_0"],
             "swarm": bee_swarm_keys,
@@ -1250,6 +1300,10 @@ def build_all(src_dir: Path) -> None:
         OUT_PUBLIC / "livestock-ranch.json",
         "/assets/farming/livestock-ranch.png",
     )
+
+    for sp_id, meta in livestock_meta.items():
+        pf = meta["portraitFrame"]
+        meta["portrait"] = livestock_frames[pf]["frame"]
 
     # ------------------------------------------------------------------
     # 5. Write shared TS lookup index + CREDITS.md

@@ -5,6 +5,7 @@ import { getMapDefinition } from '../../shared/maps';
 import { getDemoEZoneLayout } from '../../shared/world/demoEZoneLayouts';
 import extIds from '../art/worldExtendedArtIds.json';
 import { WORLD_PROPS_KEY } from '../art/worldAtlas';
+import { spawnAmbientDonorAnimal } from '../farming/ambientAnimalVisualAdapter';
 import { isDemoEWorldZone } from './privateArtCapability';
 
 type PlaceProp = (
@@ -93,14 +94,17 @@ function placeDemoEFarmAnimations(
     windmill.play('olw-windmill');
     pushLayer(windmill);
   }
-  if (scene.textures.exists(WORLD_PROPS_KEY) && scene.anims.exists('olw-chicken')) {
-    const cx = 11 * TILE_SIZE;
-    const cy = 10 * TILE_SIZE;
-    const chicken = scene.add
-      .sprite(cx, cy, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
-      .setOrigin(0.5, 0.85)
-      .setDepth(Math.round(cy));
-    chicken.play('olw-chicken');
-    pushLayer(chicken);
+  const chX = 11 * TILE_SIZE;
+  const chY = 10 * TILE_SIZE;
+  const spawnedChicken = spawnAmbientDonorAnimal(scene, {
+    kind: 'chicken',
+    x: chX,
+    y: chY,
+    depth: Math.round(chY),
+    legacyFrame: `${extIds.sheets.chicken}:0`,
+    legacyAnimKey: 'olw-chicken',
+  });
+  if (spawnedChicken) {
+    pushLayer(spawnedChicken.sprite);
   }
 }

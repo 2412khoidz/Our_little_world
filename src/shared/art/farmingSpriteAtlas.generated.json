@@ -4583,6 +4583,7 @@
       "variant": "chicken_speckled",
       "frameW": 16,
       "frameH": 16,
+      "portraitFrame": "chicken_idle_down_0",
       "animations": {
         "idle_down": [
           "chicken_idle_down_0",
@@ -4652,6 +4653,12 @@
         "eat_right": "FarmRanchLife/04_Ranch_Animals/chicken/chicken_speckled/chicken_speckled_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/chicken/chicken_speckled/chicken_speckled_sleep_left_1f.png",
         "sleep_right": "FarmRanchLife/04_Ranch_Animals/chicken/chicken_speckled/chicken_speckled_sleep_right_1f.png"
+      },
+      "portrait": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
       }
     },
     "duck": {
@@ -4659,6 +4666,7 @@
       "variant": "duck_mallard",
       "frameW": 16,
       "frameH": 16,
+      "portraitFrame": "duck_idle_down_0",
       "animations": {
         "idle_down": [
           "duck_idle_down_0",
@@ -4713,6 +4721,20 @@
         ],
         "sleep_right": [
           "duck_sleep_right_0"
+        ],
+        "swim_left": [
+          "duck_swim_left_0",
+          "duck_swim_left_1"
+        ],
+        "swim_sleep_left": [
+          "duck_swim_sleep_left_0"
+        ],
+        "swim_right": [
+          "duck_swim_right_0",
+          "duck_swim_right_1"
+        ],
+        "swim_sleep_right": [
+          "duck_swim_sleep_right_0"
         ]
       },
       "sources": {
@@ -4727,7 +4749,17 @@
         "eat_left": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_eat_left_2f.png",
         "eat_right": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_sleep_left_1f.png",
-        "sleep_right": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_sleep_right_1f.png"
+        "sleep_right": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_sleep_right_1f.png",
+        "swim_left": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_idle_left_2f.png",
+        "swim_sleep_left": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_sleep_left_1f.png",
+        "swim_right": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_idle_right_2f.png",
+        "swim_sleep_right": "FarmRanchLife/04_Ranch_Animals/duck/duck_mallard/duck_mallard_sleep_right_1f.png"
+      },
+      "portrait": {
+        "x": 0,
+        "y": 17,
+        "w": 16,
+        "h": 16
       }
     },
     "cow": {
@@ -4735,6 +4767,7 @@
       "variant": "cow_jersey",
       "frameW": 32,
       "frameH": 32,
+      "portraitFrame": "cow_idle_down_0",
       "animations": {
         "idle_down": [
           "cow_idle_down_0",
@@ -4806,6 +4839,12 @@
         "eat_right": "FarmRanchLife/04_Ranch_Animals/cow/cow_jersey/cow_jersey_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/cow/cow_jersey/cow_jersey_sleep_left_2f.png",
         "sleep_right": "FarmRanchLife/04_Ranch_Animals/cow/cow_jersey/cow_jersey_sleep_right_2f.png"
+      },
+      "portrait": {
+        "x": 102,
+        "y": 34,
+        "w": 32,
+        "h": 32
       }
     },
     "goat": {
@@ -4813,6 +4852,7 @@
       "variant": "goat_alpine",
       "frameW": 32,
       "frameH": 32,
+      "portraitFrame": "goat_idle_down_0",
       "animations": {
         "idle_down": [
           "goat_idle_down_0",
@@ -4884,6 +4924,12 @@
         "eat_right": "FarmRanchLife/04_Ranch_Animals/goat/goat_alpine/goat_alpine_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/goat/goat_alpine/goat_alpine_sleep_left_2f.png",
         "sleep_right": "FarmRanchLife/04_Ranch_Animals/goat/goat_alpine/goat_alpine_sleep_right_2f.png"
+      },
+      "portrait": {
+        "x": 165,
+        "y": 100,
+        "w": 32,
+        "h": 32
       }
     },
     "sheep": {
@@ -4891,6 +4937,7 @@
       "variant": "sheep_brown",
       "frameW": 32,
       "frameH": 32,
+      "portraitFrame": "sheep_idle_down_0",
       "animations": {
         "idle_down": [
           "sheep_idle_down_0",
@@ -4962,6 +5009,12 @@
         "eat_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_sleep_left_2f.png",
         "sleep_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_sleep_right_2f.png"
+      },
+      "portrait": {
+        "x": 231,
+        "y": 166,
+        "w": 32,
+        "h": 32
       }
     },
     "rabbit": {
@@ -4969,6 +5022,7 @@
       "variant": "rabbit_angora",
       "frameW": 16,
       "frameH": 16,
+      "portraitFrame": "rabbit_idle_down_0",
       "animations": {
         "idle_down": [
           "rabbit_idle_down_0",
@@ -5038,6 +5092,12 @@
         "eat_right": "FarmRanchLife/04_Ranch_Animals/rabbit/rabbit_angora/rabbit_angora_eat_right_2f.png",
         "sleep_left": "FarmRanchLife/04_Ranch_Animals/rabbit/rabbit_angora/rabbit_angora_sleep_left_1f.png",
         "sleep_right": "FarmRanchLife/04_Ranch_Animals/rabbit/rabbit_angora/rabbit_angora_sleep_right_1f.png"
+      },
+      "portrait": {
+        "x": 297,
+        "y": 232,
+        "w": 16,
+        "h": 16
       }
     },
     "bee": {
@@ -5047,6 +5107,7 @@
       "frameH": 32,
       "swarmFrameW": 16,
       "swarmFrameH": 16,
+      "portraitFrame": "bee_hive_0",
       "animations": {
         "hive": [
           "bee_hive_0"
@@ -5061,6 +5122,12 @@
       "sources": {
         "hive": "FarmRanchLife/05_Buildings_Machines/Ranch_Props/beehive_super_stack.png",
         "swarm": "FarmRanchLife/10_Effects/bees_swarm_4f.png"
+      },
+      "portrait": {
+        "x": 306,
+        "y": 265,
+        "w": 16,
+        "h": 32
       }
     }
   }

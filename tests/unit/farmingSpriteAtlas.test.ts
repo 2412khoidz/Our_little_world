@@ -11,6 +11,7 @@ import {
   getFarmingItemSprite,
   getFarmingTreeFrame,
   getLivestockAtlasSpec,
+  getLivestockPortraitSprite,
   getWorkshopMachineSprite,
   livestockAnimKey,
   spriteBackgroundStyle,
@@ -207,6 +208,17 @@ describe('Curated Farming Sprite Atlases (Checkpoint G)', () => {
           expect(livestockAnimKey(def.speciesId, animName)).toBe(`olw-livestock-${def.speciesId}-${animName}`);
         }
       }
+      if (def.speciesId === 'duck') {
+        for (const swimAnim of ['swim_left', 'swim_right', 'swim_sleep_left', 'swim_sleep_right']) {
+          expect(spec!.animations[swimAnim]?.length, `duck:${swimAnim}`).toBeGreaterThanOrEqual(1);
+        }
+      }
+      const portrait = getLivestockPortraitSprite(def.speciesId);
+      expect(portrait, `missing portrait for ${def.speciesId}`).not.toBeNull();
+      expect(portrait!.w).toBeGreaterThan(0);
+      expect(portrait!.h).toBeGreaterThan(0);
+      expect(portrait!.x + portrait!.w).toBeLessThanOrEqual(portrait!.sheetW);
+      expect(portrait!.y + portrait!.h).toBeLessThanOrEqual(portrait!.sheetH);
       for (const frameKeys of Object.values(spec!.animations)) {
         for (const key of frameKeys) {
           expect(livestockJson.frames[key], `missing atlas frame ${key}`).toBeDefined();

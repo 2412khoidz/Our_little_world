@@ -74,9 +74,13 @@ function makeObj(kind: string, x: number, y: number, extra: Partial<MockGameObj>
 function createMockScene(options: { hasAtlas: boolean }) {
   const createdObjects: MockGameObj[] = [];
   const canvasTextures: string[] = [];
+  const dataset: Record<string, string> = {};
   const existingKeys = new Set<string>(options.hasAtlas ? [FARMING_LIVESTOCK_ATLAS_KEY] : []);
 
   const scene = {
+    game: {
+      canvas: { dataset },
+    },
     textures: {
       exists: vi.fn((key: string) => existingKeys.has(key)),
       createCanvas: vi.fn((key: string) => {
@@ -125,7 +129,7 @@ function createMockScene(options: { hasAtlas: boolean }) {
     },
   };
 
-  return { scene: scene as unknown as Phaser.Scene, createdObjects, canvasTextures };
+  return { scene: scene as unknown as Phaser.Scene, createdObjects, canvasTextures, dataset };
 }
 
 function makeProjectedAnimals(): ProjectedLivestockAnimal[] {
@@ -155,13 +159,14 @@ function makeProjectedAnimals(): ProjectedLivestockAnimal[] {
 
 describe('LivestockVisualController (M3c Animated Donor Transplant)', () => {
   it('renders all 7 species using FarmRanchLife atlas sprites, feet origins, shadows, and bee swarm without procedural canvas', () => {
-    const { scene, createdObjects, canvasTextures } = createMockScene({ hasAtlas: true });
+    const { scene, createdObjects, canvasTextures, dataset } = createMockScene({ hasAtlas: true });
     const pushed: unknown[] = [];
     const controller = new LivestockVisualController(scene, (obj) => pushed.push(obj));
     const projected = makeProjectedAnimals();
 
     controller.sync(projected);
 
+    expect(dataset.livestockAtlasMode).toBe('donor:FarmRanchLife');
     expect(canvasTextures).toHaveLength(0);
     const sprites = createdObjects.filter((o) => o.kind === 'sprite');
     const shadows = createdObjects.filter((o) => o.kind === 'ellipse');
@@ -197,14 +202,18 @@ describe('LivestockVisualController (M3c Animated Donor Transplant)', () => {
     expect(createdObjects.every((o) => o.destroyed)).toBe(true);
   });
 
-  it('falls back to procedural Canvas textures when the donor atlas is missing', () => {
-    const { scene, createdObjects, canvasTextures } = createMockScene({ hasAtlas: false });
+  it('falls back to procedural Canvas textures with DEV warning and diagnostic marker when the donor atlas is missing', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { scene, createdObjects, canvasTextures, dataset } = createMockScene({ hasAtlas: false });
     const controller = new LivestockVisualController(scene, () => {});
 
     controller.sync(makeProjectedAnimals().slice(0, 2));
 
+    expect(dataset.livestockAtlasMode).toBe('fallback:procedural');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(canvasTextures.length).toBeGreaterThan(0);
     expect(createdObjects.filter((o) => o.kind === 'image')).toHaveLength(2);
     controller.destroy();
+    warnSpy.mockRestore();
   });
 });

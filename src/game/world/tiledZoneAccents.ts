@@ -17,18 +17,23 @@ import {
   type SnailActorState,
 } from '../../shared/world/emergentWorldBehavior';
 import { getStaticZonePropSpecs } from '../../shared/world/zonePropColliders';
+import { spawnAmbientDonorAnimal } from '../farming/ambientAnimalVisualAdapter';
 
 export interface AmbientChickenHandle {
   sprite: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Image;
   state: ChickenActorState;
   bubble?: Phaser.GameObjects.Text;
+  usesDonorAtlas?: boolean;
+  currentAnimKey?: string;
 }
 
 export interface AmbientDuckHandle {
   sprite: Phaser.GameObjects.Sprite;
   state: DuckActorState;
   lastRippleAtMs: number;
+  usesDonorAtlas?: boolean;
+  currentAnimKey?: string;
 }
 
 export interface AmbientSheepHandle {
@@ -36,6 +41,8 @@ export interface AmbientSheepHandle {
   shadow: Phaser.GameObjects.Image;
   state: SheepActorState;
   bubble?: Phaser.GameObjects.Text;
+  usesDonorAtlas?: boolean;
+  currentAnimKey?: string;
 }
 
 export interface AmbientCrabHandle {
@@ -175,92 +182,114 @@ export function applyTiledZoneAccents(
   }
 
   if (mapId === 'farm') {
+    // Verified Pond 0 water tiles: x=31..34, y=5..7; Pond 1 water tiles: x=50..53, y=8..10
+    const farmPondDucks = [
+      { id: 'farm_pond_duck_0', x: 32.3, y: 6.1, bounds: { minX: 31.4 * TILE_SIZE, maxX: 34.6 * TILE_SIZE, minY: 5.4 * TILE_SIZE, maxY: 7.4 * TILE_SIZE }, phase: 0.4 },
+      { id: 'farm_pond_duck_1', x: 33.7, y: 6.9, bounds: { minX: 31.4 * TILE_SIZE, maxX: 34.6 * TILE_SIZE, minY: 5.4 * TILE_SIZE, maxY: 7.4 * TILE_SIZE }, phase: 1.9 },
+      { id: 'farm_pond_duck_2', x: 51.3, y: 9.1, bounds: { minX: 50.4 * TILE_SIZE, maxX: 53.6 * TILE_SIZE, minY: 8.4 * TILE_SIZE, maxY: 10.4 * TILE_SIZE }, phase: 1.1 },
+      { id: 'farm_pond_duck_3', x: 52.7, y: 9.8, bounds: { minX: 50.4 * TILE_SIZE, maxX: 53.6 * TILE_SIZE, minY: 8.4 * TILE_SIZE, maxY: 10.4 * TILE_SIZE }, phase: 2.7 },
+    ] as const;
+    for (const d of farmPondDucks) {
+      const sx = d.x * TILE_SIZE;
+      const sy = d.y * TILE_SIZE;
+      const state = createDuckActorState(d.id, sx, sy, d.bounds, d.phase);
+      const spawned = spawnAmbientDonorAnimal(scene, {
+        kind: 'duck',
+        x: sx,
+        y: sy,
+        depth: Math.round(sy),
+        facing: state.facing,
+        waterMode: true,
+        legacyFrame: `${extIds.sheets.duck}:0`,
+        legacyAnimKey: 'olw-duck',
+      });
+      if (!spawned) continue;
+      pushLayer(spawned.sprite);
+      ducks.push({
+        sprite: spawned.sprite,
+        lastRippleAtMs: 0,
+        state,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
+    }
+
+    for (const [idx, [cx, cy]] of (
+      [
+        [10, 14],
+        [12, 16],
+        [15, 24],
+        [24, 25],
+        [35, 17],
+        [44, 19],
+      ] as const
+    ).entries()) {
+      const homeX = cx * TILE_SIZE;
+      const homeY = cy * TILE_SIZE;
+      const state = createChickenActorState(`farm_chicken_${idx}`, homeX, homeY, idx * 1.5);
+      const spawned = spawnAmbientDonorAnimal(scene, {
+        kind: 'chicken',
+        x: homeX,
+        y: homeY,
+        depth: Math.round(homeY),
+        facing: state.facing,
+        legacyFrame: `${extIds.sheets.chicken}:0`,
+        legacyAnimKey: 'olw-chicken',
+      });
+      if (!spawned) continue;
+      const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.36);
+      const bubble = createAnimalBubble(scene, homeX, homeY - 14);
+      pushLayer(shadow);
+      pushLayer(spawned.sprite);
+      pushLayer(bubble);
+      chickens.push({
+        sprite: spawned.sprite,
+        shadow,
+        bubble,
+        state,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
+    }
+
+    // Real open green grass pastures away from plowed soil
+    for (const [idx, [sx, sy]] of (
+      [
+        [37, 6],
+        [42, 7],
+        [46, 14],
+        [55, 16],
+      ] as const
+    ).entries()) {
+      const homeX = sx * TILE_SIZE;
+      const homeY = sy * TILE_SIZE;
+      const state = createSheepActorState(`farm_sheep_${idx}`, homeX, homeY, idx * 1.9);
+      const spawned = spawnAmbientDonorAnimal(scene, {
+        kind: 'sheep',
+        x: homeX,
+        y: homeY,
+        depth: Math.round(homeY),
+        facing: state.facing,
+        legacyFrame: `${extIds.sheets.sheep}:0`,
+        legacyAnimKey: 'olw-sheep',
+      });
+      if (!spawned) continue;
+      const shadow = placeSoftShadow(scene, homeX, homeY - 1, 14, 5, homeY - 2, 0.36);
+      const bubble = createAnimalBubble(scene, homeX, homeY - 18);
+      pushLayer(shadow);
+      pushLayer(spawned.sprite);
+      pushLayer(bubble);
+      sheep.push({
+        sprite: spawned.sprite,
+        shadow,
+        bubble,
+        state,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
+    }
+
     if (hasProps) {
-      if (scene.anims.exists('olw-duck')) {
-        // Verified Pond 0 water tiles: x=31..34, y=5..7; Pond 1 water tiles: x=50..53, y=8..10
-        const farmPondDucks = [
-          { id: 'farm_pond_duck_0', x: 32.3, y: 6.1, bounds: { minX: 31.4 * TILE_SIZE, maxX: 34.6 * TILE_SIZE, minY: 5.4 * TILE_SIZE, maxY: 7.4 * TILE_SIZE }, phase: 0.4 },
-          { id: 'farm_pond_duck_1', x: 33.7, y: 6.9, bounds: { minX: 31.4 * TILE_SIZE, maxX: 34.6 * TILE_SIZE, minY: 5.4 * TILE_SIZE, maxY: 7.4 * TILE_SIZE }, phase: 1.9 },
-          { id: 'farm_pond_duck_2', x: 51.3, y: 9.1, bounds: { minX: 50.4 * TILE_SIZE, maxX: 53.6 * TILE_SIZE, minY: 8.4 * TILE_SIZE, maxY: 10.4 * TILE_SIZE }, phase: 1.1 },
-          { id: 'farm_pond_duck_3', x: 52.7, y: 9.8, bounds: { minX: 50.4 * TILE_SIZE, maxX: 53.6 * TILE_SIZE, minY: 8.4 * TILE_SIZE, maxY: 10.4 * TILE_SIZE }, phase: 2.7 },
-        ] as const;
-        for (const d of farmPondDucks) {
-          const sx = d.x * TILE_SIZE;
-          const sy = d.y * TILE_SIZE;
-          const duck = scene.add
-            .sprite(sx, sy, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`)
-            .setOrigin(0.5, 0.8)
-            .setDepth(Math.round(sy));
-          duck.play('olw-duck');
-          pushLayer(duck);
-          ducks.push({
-            sprite: duck,
-            lastRippleAtMs: 0,
-            state: createDuckActorState(d.id, sx, sy, d.bounds, d.phase),
-          });
-        }
-      }
-      if (scene.anims.exists('olw-chicken')) {
-        for (const [idx, [cx, cy]] of (
-          [
-            [10, 14],
-            [12, 16],
-            [15, 24],
-            [24, 25],
-            [35, 17],
-            [44, 19],
-          ] as const
-        ).entries()) {
-          const homeX = cx * TILE_SIZE;
-          const homeY = cy * TILE_SIZE;
-          const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.36);
-          const ch = scene.add
-            .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
-            .setOrigin(0.5, 0.85)
-            .setDepth(Math.round(homeY));
-          ch.play('olw-chicken');
-          const bubble = createAnimalBubble(scene, homeX, homeY - 14);
-          pushLayer(shadow);
-          pushLayer(ch);
-          pushLayer(bubble);
-          chickens.push({
-            sprite: ch,
-            shadow,
-            bubble,
-            state: createChickenActorState(`farm_chicken_${idx}`, homeX, homeY, idx * 1.5),
-          });
-        }
-      }
-      if (scene.anims.exists('olw-sheep')) {
-        // Real open green grass pastures away from plowed soil
-        for (const [idx, [sx, sy]] of (
-          [
-            [37, 6],
-            [42, 7],
-            [46, 14],
-            [55, 16],
-          ] as const
-        ).entries()) {
-          const homeX = sx * TILE_SIZE;
-          const homeY = sy * TILE_SIZE;
-          const shadow = placeSoftShadow(scene, homeX, homeY - 1, 14, 5, homeY - 2, 0.36);
-          const sp = scene.add
-            .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`)
-            .setOrigin(0.5, 0.85)
-            .setDepth(Math.round(homeY));
-          sp.play('olw-sheep');
-          const bubble = createAnimalBubble(scene, homeX, homeY - 18);
-          pushLayer(shadow);
-          pushLayer(sp);
-          pushLayer(bubble);
-          sheep.push({
-            sprite: sp,
-            shadow,
-            bubble,
-            state: createSheepActorState(`farm_sheep_${idx}`, homeX, homeY, idx * 1.9),
-          });
-        }
-      }
       const p1 = pxAt(34.5, 16.5);
       place(extIds.props.picnic_blanket, p1.x, p1.y, 0.5, 0.5, 3);
       place(extIds.props.beehive, 40.5 * TILE_SIZE, 27 * TILE_SIZE, 0.5, 1, 27 * TILE_SIZE);
@@ -298,68 +327,81 @@ export function applyTiledZoneAccents(
     if (hasProps) {
       const pic = pxAt(47, 29);
       place(extIds.props.picnic_blanket, pic.x, pic.y, 0.5, 0.5, 3);
-      if (scene.anims.exists('olw-duck')) {
-        // Verified upper pond water tiles in village.json (x=36..43, y=9)
-        const vDucks = [
-          { id: 'village_pond_duck_0', x: 38.0, y: 9.2 },
-          { id: 'village_pond_duck_1', x: 41.2, y: 9.4 },
-        ] as const;
-        for (const [idx, d] of vDucks.entries()) {
-          const sx = d.x * TILE_SIZE;
-          const sy = d.y * TILE_SIZE;
-          const duck = scene.add
-            .sprite(sx, sy, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`)
-            .setOrigin(0.5, 0.8)
-            .setDepth(Math.round(sy));
-          duck.play('olw-duck');
-          pushLayer(duck);
-          ducks.push({
-            sprite: duck,
-            lastRippleAtMs: 0,
-            state: createDuckActorState(
-              d.id,
-              sx,
-              sy,
-              {
-                minX: 36.8 * TILE_SIZE,
-                maxX: 43.0 * TILE_SIZE,
-                minY: 8.9 * TILE_SIZE,
-                maxY: 9.7 * TILE_SIZE,
-              },
-              idx * 2.1,
-            ),
-          });
-        }
-      }
-      if (scene.anims.exists('olw-chicken')) {
-        for (const [idx, [cx, cy]] of (
-          [
-            [23, 32],
-            [24, 30],
-            [47, 30],
-            [52, 28],
-          ] as const
-        ).entries()) {
-          const homeX = cx * TILE_SIZE;
-          const homeY = cy * TILE_SIZE;
-          const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.34);
-          const ch = scene.add
-            .sprite(homeX, homeY, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`)
-            .setOrigin(0.5, 0.85)
-            .setDepth(Math.round(homeY));
-          ch.play('olw-chicken');
-          const bubble = createAnimalBubble(scene, homeX, homeY - 14);
-          pushLayer(shadow);
-          pushLayer(ch);
-          pushLayer(bubble);
-          chickens.push({
-            sprite: ch,
-            shadow,
-            bubble,
-            state: createChickenActorState(`village_chicken_${idx}`, homeX, homeY, idx * 1.8),
-          });
-        }
-      }
+    }
+    // Verified upper pond water tiles in village.json (x=36..43, y=9)
+    const vDucks = [
+      { id: 'village_pond_duck_0', x: 38.0, y: 9.2 },
+      { id: 'village_pond_duck_1', x: 41.2, y: 9.4 },
+    ] as const;
+    for (const [idx, d] of vDucks.entries()) {
+      const sx = d.x * TILE_SIZE;
+      const sy = d.y * TILE_SIZE;
+      const state = createDuckActorState(
+        d.id,
+        sx,
+        sy,
+        {
+          minX: 36.8 * TILE_SIZE,
+          maxX: 43.0 * TILE_SIZE,
+          minY: 8.9 * TILE_SIZE,
+          maxY: 9.7 * TILE_SIZE,
+        },
+        idx * 2.1,
+      );
+      const spawned = spawnAmbientDonorAnimal(scene, {
+        kind: 'duck',
+        x: sx,
+        y: sy,
+        depth: Math.round(sy),
+        facing: state.facing,
+        waterMode: true,
+        legacyFrame: `${extIds.sheets.duck}:0`,
+        legacyAnimKey: 'olw-duck',
+      });
+      if (!spawned) continue;
+      pushLayer(spawned.sprite);
+      ducks.push({
+        sprite: spawned.sprite,
+        lastRippleAtMs: 0,
+        state,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
+    }
+    for (const [idx, [cx, cy]] of (
+      [
+        [23, 32],
+        [24, 30],
+        [47, 30],
+        [52, 28],
+      ] as const
+    ).entries()) {
+      const homeX = cx * TILE_SIZE;
+      const homeY = cy * TILE_SIZE;
+      const state = createChickenActorState(`village_chicken_${idx}`, homeX, homeY, idx * 1.8);
+      const spawned = spawnAmbientDonorAnimal(scene, {
+        kind: 'chicken',
+        x: homeX,
+        y: homeY,
+        depth: Math.round(homeY),
+        facing: state.facing,
+        legacyFrame: `${extIds.sheets.chicken}:0`,
+        legacyAnimKey: 'olw-chicken',
+      });
+      if (!spawned) continue;
+      const shadow = placeSoftShadow(scene, homeX, homeY - 1, 10, 4, homeY - 2, 0.34);
+      const bubble = createAnimalBubble(scene, homeX, homeY - 14);
+      pushLayer(shadow);
+      pushLayer(spawned.sprite);
+      pushLayer(bubble);
+      chickens.push({
+        sprite: spawned.sprite,
+        shadow,
+        bubble,
+        state,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
     }
     spawnSnails(
       scene,

@@ -28,6 +28,7 @@ import {
   type FloatingMote,
 } from '../artDemos/demoHelpers';
 import { HeldItemRenderer } from '../interaction/HeldItemRenderer';
+import { spawnAmbientDonorAnimal } from '../farming/ambientAnimalVisualAdapter';
 import {
   createLocomotionSnapshot,
   stepPetLocomotion,
@@ -547,10 +548,17 @@ export class WorldExpansionScene extends Phaser.Scene {
       frog.play('olw-frog');
       this.layerGroup.push(frog);
     }
-    if (this.anims.exists('olw-duck')) {
-      const duck = this.add.sprite(ox + 168, oy + 168, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`).setOrigin(0.5, 0.8).setDepth(oy + 170);
-      duck.play('olw-duck');
-      this.layerGroup.push(duck);
+    const sandboxDuck = spawnAmbientDonorAnimal(this, {
+      kind: 'duck',
+      x: ox + 168,
+      y: oy + 168,
+      depth: oy + 170,
+      waterMode: true,
+      legacyFrame: `${extIds.sheets.duck}:0`,
+      legacyAnimKey: 'olw-duck',
+    });
+    if (sandboxDuck) {
+      this.layerGroup.push(sandboxDuck.sprite);
     }
 
     // Romantic Sakura Picnic Glade & Crop Garden inside Homestead
@@ -572,11 +580,17 @@ export class WorldExpansionScene extends Phaser.Scene {
     this.placeProp(extIds.props.cabbage, ox + 248, oy + 128, 0.5, 1, oy + 128);
     this.placeProp(extIds.props.radish, ox + 216, oy + 146, 0.5, 1, oy + 146);
     this.placeProp(extIds.props.beehive, ox + 266, oy + 138, 0.5, 1, oy + 138, 20);
-    if (this.anims.exists('olw-chicken')) {
+    const sandboxChicken = spawnAmbientDonorAnimal(this, {
+      kind: 'chicken',
+      x: ox + 184,
+      y: oy + 144,
+      depth: oy + 144,
+      legacyFrame: `${extIds.sheets.chicken}:0`,
+      legacyAnimKey: 'olw-chicken',
+    });
+    if (sandboxChicken) {
       this.layerGroup.push(placeSoftShadow(this, ox + 184, oy + 143, 11, 4, oy + 135, 0.45));
-      const ch = this.add.sprite(ox + 184, oy + 144, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`).setOrigin(0.5, 0.85).setDepth(oy + 144);
-      ch.play('olw-chicken');
-      this.layerGroup.push(ch);
+      this.layerGroup.push(sandboxChicken.sprite);
     }
 
     // Panorama Countryside Framing beside Homestead (Side Cottage, Windmill, Sheep, Trees)
@@ -590,11 +604,17 @@ export class WorldExpansionScene extends Phaser.Scene {
       wm.play('olw-windmill');
       this.layerGroup.push(wm);
     }
-    if (this.anims.exists('olw-sheep')) {
+    const sandboxSheep = spawnAmbientDonorAnimal(this, {
+      kind: 'sheep',
+      x: ox - 52,
+      y: oy + 171,
+      depth: oy + 171,
+      legacyFrame: `${extIds.sheets.sheep}:0`,
+      legacyAnimKey: 'olw-sheep',
+    });
+    if (sandboxSheep) {
       this.layerGroup.push(placeSoftShadow(this, ox - 52, oy + 170, 18, 6, oy + 165, 0.45));
-      const sheep = this.add.sprite(ox - 52, oy + 171, WORLD_PROPS_KEY, `${extIds.sheets.sheep}:0`).setOrigin(0.5, 0.84).setDepth(oy + 171);
-      sheep.play('olw-sheep');
-      this.layerGroup.push(sheep);
+      this.layerGroup.push(sandboxSheep.sprite);
     }
 
     // Drifting cherry blossom petals in Homestead atmosphere
