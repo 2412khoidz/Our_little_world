@@ -235,3 +235,40 @@
     transition: none;
   }
 }
+
+.olw-item-usage {
+  color: #42291c;
+  font-size: 12px;
+}
+
+.olw-item-usage summary {
+  width: max-content;
+  padding: 5px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.olw-item-usage p {
+  margin: 4px 0;
+}
+
+.olw-held-usage {
+  position: relative;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: #fff0d2;
+  pointer-events: auto;
+}
+
+.olw-held-usage details > div {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  width: min(250px, 82vw);
+  padding: 8px 10px;
+  background: #fff0d2;
+  border: 1px solid #946840;
+  border-radius: 8px;
+  transform: translateX(-50%);
+}

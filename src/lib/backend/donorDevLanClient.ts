@@ -107,6 +107,7 @@ export function postDonorFishingSync(
     phase: TidefallFishingPhase;
     progressPermille: number;
     pointerNorm: number;
+    roundSeed?: number;
     targetCenter?: number;
     targetWidth?: number;
     pointerDir?: number;
@@ -119,7 +120,7 @@ export function postDonorFishingSync(
   });
 }
 
-export function postDonorFishingResolve(worldId: string, reelProgressPermille: number) {
+export function postDonorFishingResolve(worldId: string, reelProgressPermille: number, roundSeed?: number) {
   return donorDevLanJson<{
     escaped: boolean;
     itemSku: string | null;
@@ -134,7 +135,7 @@ export function postDonorFishingResolve(worldId: string, reelProgressPermille: n
     `/donor/fishing/resolve?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',
-      body: JSON.stringify({ worldId, reelProgressPermille }),
+      body: JSON.stringify({ worldId, reelProgressPermille, roundSeed }),
     },
   );
 }

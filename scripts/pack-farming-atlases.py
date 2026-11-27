@@ -650,19 +650,107 @@ def pack_ranch_action_atlases(pool: ZipPool) -> None:
             raise ValueError(f"Unexpected {path} dimensions: {image.size}")
         return (name, image, {"width": width, "height": height, "count": count})
 
-    machines = {
-        "mill": "oil_maker", "dairy": "cheese_press", "bakery": "furnace",
-        "preserves": "preserves_jar", "feed_mill": "seed_maker", "loom": "loom",
-        "florist": "bee_house", "kitchen": "mayonnaise_machine",
-    }
+    buildings = "05_Buildings_Machines"
+    art_root = REPO_ROOT / "public/assets/unified"
+    props_doc = json.loads((art_root / "props-manifest.json").read_text(encoding="utf-8"))
+    props_art = Image.open(art_root / props_doc["texture"]["file"]).convert("RGBA")
+    props = {entry["id"]: entry["rect"] for entry in props_doc["entries"]}
+    inventory_art = Image.open(OUT_PUBLIC / "items-16.png").convert("RGBA")
+    inventory_frames = json.loads((OUT_PUBLIC / "items-16.json").read_text(encoding="utf-8"))["frames"]
+    large_item_art = Image.open(OUT_PUBLIC / "items-32.png").convert("RGBA")
+    large_item_frames = json.loads((OUT_PUBLIC / "items-32.json").read_text(encoding="utf-8"))["frames"]
+    sparkle = pool.load_image(donor, f"{root}/02_Crops/ready_sparkle_overlay_4f.png")
+
+    def crop_rect(image: Image.Image, rect: dict) -> Image.Image:
+        x, y = rect["x"], rect["y"]
+        return image.crop((x, y, x + rect["w"], y + rect["h"]))
+
+    def item(sku: str) -> Image.Image:
+        atlas, frames = (inventory_art, inventory_frames) if sku in inventory_frames else (large_item_art, large_item_frames)
+        image = crop_rect(atlas, frames[sku]["frame"])
+        bounds = image.getbbox()
+        return image.crop(bounds) if bounds else image
+
+    def fit(image: Image.Image, width: int, height: int) -> Image.Image:
+        image = image.copy()
+        image.thumbnail((width, height), Image.Resampling.NEAREST)
+        return image
+
+    def ranch_prop(name: str) -> Image.Image:
+        return pool.load_image(donor, f"{root}/{buildings}/Ranch_Props/{name}.png")
+
+    def artisan(name: str, index: int) -> Image.Image:
+        path = f"{buildings}/Artisan_Machines/{name}_idle_work4_done_6f.png"
+        _, source, _ = strip(name, path, 16, 32, 6)
+        # Keep the working artwork and replace the donor's unrelated result balloon.
+        frame = index if index < 5 else 0
+        return source.crop((16 * frame, 0, 16 * (frame + 1), 32))
+
+    windmill = fit(Image.open(REPO_ROOT / "public/maps/donor/hollowmere/sprites/windmill.png").convert("RGBA"), 17, 30)
+    grain = fit(ranch_prop("sack_grain"), 9, 9)
+    milk = fit(ranch_prop("milk_pail_empty_full_2f").crop((16, 0, 32, 16)), 9, 9)
+    feed = fit(ranch_prop("sack_chicken_feed"), 9, 9)
+    compositor = ranch_prop("compost_bin_4f")
+    hearth = fit(crop_rect(props_art, props["prop.fireplace_brick"]), 21, 22)
+    fire = crop_rect(props_art, props["sheet.fire"])
+    counter = crop_rect(props_art, props["prop.kitchen_counter_fruit"]).crop((0, 11, 32, 24))
+    counter = fit(counter, 23, 11)
+    rose = fit(item("rose_pink"), 9, 10)
+    bouquet = fit(item("sakura_bouquet"), 12, 13)
+    soup = fit(item("carrot_soup"), 10, 11)
+    bread = fit(item("bread"), 9, 8)
+    dust = pool.load_image(donor, f"{root}/10_Effects/soil_dust_till_4f.png")
+
+    def machine_frame(station: str, index: int) -> Image.Image:
+        cell = Image.new("RGBA", (24, 32))
+        working = 1 <= index <= 4
+        if station == "mill":
+            cell.alpha_composite(windmill, (2, 32 - windmill.height))
+            cell.alpha_composite(grain, (15, 32 - grain.height))
+            if working:
+                cell.alpha_composite(dust.crop(((index - 1) * 16, 0, index * 16, 16)), (7, 15))
+        elif station == "dairy":
+            cell.alpha_composite(artisan("butter_churn", index), (0, 0))
+            cell.alpha_composite(milk, (14, 32 - milk.height))
+        elif station == "bakery":
+            cell.alpha_composite(hearth, (1, 32 - hearth.height))
+            if working:
+                flame = fit(fire.crop(((index - 1) * 16, 0, index * 16, 16)), 9, 9)
+                cell.alpha_composite(flame, (7, 22))
+            cell.alpha_composite(bread, (15, 25 - bread.height))
+        elif station == "feed_mill":
+            frame = index - 1 if working else 0
+            cell.alpha_composite(compositor.crop((frame * 16, 0, (frame + 1) * 16, 32)), (1, 0))
+            cell.alpha_composite(feed, (15, 32 - feed.height))
+        elif station == "florist":
+            cell.alpha_composite(counter, (0, 32 - counter.height))
+            cell.alpha_composite(rose, (2, 25 - rose.height))
+            cell.alpha_composite(bouquet, (10 + (index % 2 if working else 0), 25 - bouquet.height))
+        elif station == "kitchen":
+            cell.alpha_composite(hearth, (0, 32 - hearth.height))
+            cell.alpha_composite(fit(counter, 13, 9), (11, 26))
+            cell.alpha_composite(soup, (12, 27 - soup.height))
+            if working:
+                vapor = fit(fire.crop(((index - 1) * 16, 0, index * 16, 16)), 8, 8)
+                cell.alpha_composite(vapor, (6, 22))
+        else:
+            cell.alpha_composite(artisan("preserves_jar" if station == "preserves" else "loom", index), (4, 0))
+        if index == 5:
+            cell.alpha_composite(sparkle.crop((0, 0, 16, 16)), (8, 1))
+        return cell
+
+    farming = []
+    for station in ("mill", "dairy", "bakery", "preserves", "feed_mill", "loom", "florist", "kitchen"):
+        cells = Image.new("RGBA", (24 * 6, 32))
+        for index in range(6):
+            cells.alpha_composite(machine_frame(station, index), (index * 24, 0))
+        farming.append((f"machine_{station}", cells, {"width": 24, "height": 32, "count": 6}))
+
     effects = {
         "till": "soil_dust_till", "plant": "seed_scatter", "water": "water_hit",
         "harvest": "harvest_pop", "pet": "hearts_petting",
     }
-    farming = [
-        strip(f"machine_{key}", f"05_Buildings_Machines/Artisan_Machines/{source}_idle_work4_done_6f.png", 16, 32, 6)
-        for key, source in machines.items()
-    ] + [
+    farming += [
         strip(f"fx_{key}", f"10_Effects/{source}_4f.png", 16, 16, 4)
         for key, source in effects.items()
     ] + [strip("fx_ready", "02_Crops/ready_sparkle_overlay_4f.png", 16, 16, 4)]
@@ -737,7 +825,6 @@ def pack_ranch_action_atlases(pool: ZipPool) -> None:
 def build_all(src_dir: Path) -> None:
     OUT_PUBLIC.mkdir(parents=True, exist_ok=True)
     pool = ZipPool(src_dir)
-    pack_ranch_action_atlases(pool)
     catalog = json.loads(CANONICAL_JSON.read_text(encoding="utf-8"))["items"]
     all_skus = [item["sku"] for item in catalog]
 
@@ -1518,6 +1605,7 @@ Original zip archives stay outside the repository and are not redistributed stan
         f"trees={len(orchard_map)} ({len(tree_frames)} frames), "
         f"livestock={len(livestock_meta)} ({len(livestock_frames)} frames)"
     )
+    pack_ranch_action_atlases(pool)
     pool.close()
 
 

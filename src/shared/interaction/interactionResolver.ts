@@ -466,7 +466,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
       return isFarmPlotPixelAdjacent(playerX, playerY, Math.floor(t.x / 16), Math.floor(t.y / 16), 16);
     });
 
-  const scored: Array<{ target: InteractableTarget; action: ContextualAction; score: number }> = [];
+  const scored: Array<{ target: InteractableTarget; action: ContextualAction; alternate?: ContextualAction; score: number }> = [];
   for (const t of interactables) {
     const dx = t.x - playerX;
     const dy = t.y - playerY;
@@ -480,8 +480,10 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
       }
     }
 
-    const action = actionForTarget(t, heldItem, economyPlayable, input.farmPlotByIndex, serverNowMs);
-    if (shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;
+    const options = t.kind === 'deep_farm' ? input.deepFarmActions?.(t, serverNowMs) : undefined;
+    const action = t.kind === 'deep_farm' ? options?.[0] : actionForTarget(t, heldItem, economyPlayable, input.farmPlotByIndex, serverNowMs);
+    if (!action) continue;
+    if (t.kind !== 'deep_farm' && shouldOmitEconomyTargetFromResolve(t, action, economyPlayable)) continue;
     const nx = dist > 0.01 ? dx / dist : 0;
     const ny = dist > 0.01 ? dy / dist : 0;
     const facingDot = nx * fVec.x + ny * fVec.y;
@@ -496,8 +498,9 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
           ? 500
           : 28
         : 0;
-    const score = dist + contextBonus + facingBonus + portalYield + petYield;
-    scored.push({ target: t, action, score });
+    const deepFarmBonus = t.kind === 'deep_farm' ? -8 : 0;
+    const score = dist + contextBonus + facingBonus + portalYield + petYield + deepFarmBonus;
+    scored.push({ target: t, action, alternate: options?.[1], score });
   }
 
   scored.sort((a, b) => a.score - b.score || a.target.id.localeCompare(b.target.id));
@@ -529,6 +532,6 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
   return {
     targetId: best.target.id,
     primary: best.action,
-    secondary,
+    secondary: best.alternate ? { ...best.alternate, keyHint: 'K' } : secondary,
   };
 }

@@ -1,3 +1,4 @@
+import { preferredLivestockFeed } from '../../shared/interaction/deepFarmContextActions';
 import { useMemo, useState } from 'react';
 import { X, Heart, Sparkles, Utensils } from 'lucide-react';
 import { getItem } from '../../shared/economy/catalogConfig';
@@ -5,7 +6,6 @@ import type { InventoryEntry } from '../../shared/inventory/inventoryTypes';
 import {
   LIVESTOCK_MAX_SLOTS,
   LIVESTOCK_SPECIES_LIST,
-  isAcceptableFeedForSpecies,
   type LivestockSpeciesId,
   type ProjectedLivestockAnimal,
 } from '../../shared/farming/livestock';
@@ -107,6 +107,7 @@ export function LivestockPanelModal({
     return m;
   }, [inventory]);
 
+  const sharedFeedSkus = useMemo(() => new Set(FEED_OPTIONS.filter((sku) => (sharedQty.get(sku) ?? 0) > 0)), [sharedQty]);
   if (!open) return null;
 
   return (
@@ -171,13 +172,7 @@ export function LivestockPanelModal({
               ) : (
                 <div className="olw-deep-grid-2">
                   {animals.map((item) => {
-                    const availableFeeds = FEED_OPTIONS.filter(
-                      (f) =>
-                        isAcceptableFeedForSpecies(item.def.speciesId, f) &&
-                        (sharedQty.get(f) ?? 0) > 0,
-                    );
-                    const chosenFeed =
-                      availableFeeds.find((f) => f === item.def.feedSku) ?? availableFeeds[0];
+                    const chosenFeed = preferredLivestockFeed(item.def, sharedFeedSkus);
                     const pct = Math.floor(item.progressPermille / 10);
 
                     return (

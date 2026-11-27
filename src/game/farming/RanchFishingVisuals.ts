@@ -1,3 +1,4 @@
+import { fishingReelMotion } from '../../shared/art/fishingReelMotion';
 import Phaser from 'phaser';
 import {
   fishingStripForPhase, RANCH_FISHING_ATLAS, type FishingVisualCue,
@@ -41,6 +42,7 @@ type Angler = {
   bobber: Phaser.GameObjects.Sprite;
   line: Phaser.GameObjects.Graphics;
   fish: Phaser.GameObjects.Image | null;
+  reelProgress: number;
 };
 
 export class RanchFishingVisuals {
@@ -75,7 +77,10 @@ export class RanchFishingVisuals {
     }
     const now = performance.now();
     if (entry?.cue.phase === cue.phase) {
-      if (cue.phase !== 'landed' && cue.phase !== 'escaped') entry.expiresAt = now + 25_000;
+      if (cue.phase !== 'landed' && cue.phase !== 'escaped') {
+        entry.expiresAt = now + 25_000;
+        entry.cue = cue;
+      }
       return false;
     }
     if (!entry) {
@@ -95,6 +100,7 @@ export class RanchFishingVisuals {
         bobber: this.scene.add.sprite(0, 0, RANCH_FISHING_ATLAS, 'bobber_float_0'),
         line: this.scene.add.graphics(),
         fish: null,
+        reelProgress: 0,
       };
       entry.bobber.setScale(this.tileSize / 16);
       this.anglers.set(userId, entry);
@@ -150,16 +156,18 @@ export class RanchFishingVisuals {
       const casting = cue.phase === 'casting';
       const reeling = cue.phase === 'minigame' || cue.phase === 'reeling';
       const cast = casting ? Math.min(1, age / 260) : 1;
-      const pull = reeling ? (1 + Math.sin(age / 70)) * 0.045 : 0;
+      entry.reelProgress += ((cue.reelProgress ?? 0) - entry.reelProgress) * 0.16;
+      const reel = reeling ? fishingReelMotion(entry.reelProgress, age, cue.activelyPulling) : null;
+      const pull = reel?.lineShorten ?? 0;
       const handX = Math.round(avatar.x + sign * 4 * scale);
       const handY = Math.round(avatar.y - 10 * scale);
-      const tilt = casting ? (1 - cast) * 1.2 : pull;
+      const tilt = casting ? (1 - cast) * 1.2 : (reel?.bend ?? 0) * 0.55;
       rod.setDepth(avatar.depth + 1).setScale(0.75 * scale).setFlipX(sign < 0).setOrigin(sign < 0 ? 0.75 : 0.25, 0.75)
         .setPosition(handX, handY).setRotation(-sign * tilt);
       const tipX = handX + Math.round(10 * scale * sign * Math.cos(tilt));
       const tipY = handY - Math.round((9 + 5 * Math.sin(tilt)) * scale);
       const x = Math.round(tipX + (spot.waterX - tipX) * (cast - pull));
-      const y = Math.round(tipY + (spot.waterY - tipY) * (cast - pull) - Math.sin(cast * Math.PI) * 16 * scale);
+      const y = Math.round(tipY + (spot.waterY - tipY) * (cast - pull) - (Math.sin(cast * Math.PI) * 16 + (reel?.liftPx ?? 0)) * scale);
       bobber.setPosition(x, y).setDepth(avatar.depth + 2);
       line.clear().setDepth(avatar.depth + 1);
       if (cue.phase !== 'landed') {

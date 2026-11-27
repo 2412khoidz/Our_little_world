@@ -838,3 +838,10 @@ html[data-olw-focus-expanded='1'] {
 .app-shell[data-hud-mode='mobile-landscape'] .olw-dev-banner--extended-world {
   display: none;
 }
+
+.olw-m-action-btn[data-context-action="apply_deep_farm"] .olw-m-action-btn__caption {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: center;
+}

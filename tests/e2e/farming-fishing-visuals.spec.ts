@@ -25,7 +25,7 @@ test('both fishing modes restore shared focus and keep controls reachable on rot
   await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
 
   await openFishing('east_stream');
-  await chill.getByRole('button', { name: 'Kéo dây giữ lực' }).click();
+  await chill.getByRole('button', { name: 'Tension · Giữ rồi thả' }).click();
   const tension = page.getByTestId('donor-stream-fishing-modal');
   await expect(tension.getByRole('button', { name: 'Quăng cần' })).toBeInViewport();
   if (isMobile) await page.setViewportSize({ width: 430, height: 932 });

@@ -1,3 +1,4 @@
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 /**
  * Procedural perennial fruit tree textures & world sprites (`OrchardVisualController`).
  *
@@ -149,6 +150,14 @@ export class OrchardVisualController {
       entry.badge?.destroy();
     }
     this.sprites.clear();
+  }
+
+  interactionTargets(): InteractableTarget[] {
+    return Array.from(this.sprites, ([slotIndex, { sprite }]) => ({
+      id: `orchard:${slotIndex}`, kind: 'deep_farm', labelVi: 'Cây ăn quả',
+      x: sprite.x, y: sprite.y, maxRadiusPx: 25 * this.tilePixelSize / 16,
+      deepFarmTarget: { kind: 'tree', slotIndex },
+    }));
   }
 
   playHarvestShake(slotIndex: number) {

@@ -557,3 +557,8 @@
 .nuvora-shop-row__buy {
   min-width: 52px;
 }
+.nuvora-inspector__usage {
+  display: block;
+  margin-top: .3rem;
+  font-weight: 650;
+}

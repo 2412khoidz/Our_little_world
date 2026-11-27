@@ -65,6 +65,8 @@ export interface FishingVisualCue {
   spotId: import('../donor/donorFishingSpots').DonorFishingSpotId;
   phase: FishingVisualPhase;
   spriteUrl?: string;
+  reelProgress?: number;
+  activelyPulling?: boolean;
 }
 
 export function fishingStripForPhase(phase: FishingVisualPhase): FishingStrip | null {

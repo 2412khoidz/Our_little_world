@@ -1,3 +1,4 @@
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 import Phaser from 'phaser';
 import {
   farmActionAnimations, harvestDropTrees, machineFrameKey, machinePhase, machinePhaseFrames,
@@ -58,14 +59,22 @@ export class WorkshopMachineVisuals {
   private readonly machines = new Map<WorkshopId, { sprite: Phaser.GameObjects.Sprite; phase: MachinePhase }>();
   private transitionTimer: ReturnType<typeof setTimeout> | undefined;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, tileSize: number) {
+  constructor(scene: Phaser.Scene, x: number, private readonly walkwayY: number, private readonly tileSize: number) {
     for (const [index, { id }] of WORKSHOP_DEFS.entries()) {
-      const baseX = x + (index * 1.18 - 2.1) * tileSize;
-      const baseY = y - 2.35 * tileSize;
+      const baseX = x + (index * 1.45 - 2.1) * tileSize;
+      const baseY = walkwayY - 2.35 * tileSize;
       const sprite = scene.add.sprite(Math.round(baseX), Math.round(baseY), RANCH_ACTIONS_ATLAS, machineFrameKey(id, 0))
         .setOrigin(0.5, 1).setScale(tileSize / 16).setDepth(Math.round(baseY));
       this.machines.set(id, { sprite, phase: 'idle' });
     }
+  }
+
+  interactionTargets(): InteractableTarget[] {
+    return Array.from(this.machines, ([workshopId, { sprite }]) => ({
+      id: `workshop:${workshopId}`, kind: 'deep_farm', labelVi: 'Xưởng chế biến',
+      x: sprite.x, y: this.walkwayY, maxRadiusPx: 20 * this.tileSize / 16,
+      deepFarmTarget: { kind: 'workshop', workshopId },
+    }));
   }
 
   sync(workshops: WorkshopsWorldState, serverNowMs: number): void {

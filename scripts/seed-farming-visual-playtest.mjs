@@ -68,6 +68,7 @@ try {
     seed_wheat: 15, seed_carrot: 15, seed_potato: 15, sapling_cherry: 2, sapling_plum: 1, sapling_cocoa: 1,
     wheat: 24, carrot: 24, wild_herb: 20, milk: 16, flour: 14, egg: 14, cabbage: 15, wool: 12,
     rose_pink: 12, sunflower: 8, ribbon: 8, bait_free_worm: 30,
+    feed_chicken: 8, feed_livestock: 8, feed_rabbit: 8,
   })) {
     await spawn(sku, qty);
   }

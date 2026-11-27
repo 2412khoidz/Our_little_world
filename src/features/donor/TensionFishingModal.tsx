@@ -37,7 +37,10 @@ export function TensionFishingModal({
   const [error, setError] = useState('');
   const [pulling, setPulling] = useState(false);
   const active = useRef(false);
-  const ownsRound = useRef(false);
+  const roundSeed = useRef<number | null>(null);
+  const resolving = useRef(false);
+  const castPending = useRef(false);
+  const [retryCatch, setRetryCatch] = useState(false);
   const holding = useRef(false);
   const reel = useRef(createTensionReelReady(0.35));
   const canvas = useRef<HTMLCanvasElement | null>(null);
@@ -63,9 +66,10 @@ export function TensionFishingModal({
       active.current = false;
       holding.current = false;
       gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
-      if (ownsRound.current) {
-        ownsRound.current = false;
-        void postDonorFishingSync(worldId, { spotId, phase: 'idle', progressPermille: 0, pointerNorm: 0.5 })
+      if (roundSeed.current !== null) {
+        const seed = roundSeed.current;
+        roundSeed.current = null;
+        void postDonorFishingSync(worldId, { spotId, phase: 'idle', roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
           .catch(() => undefined);
       }
     };
@@ -86,13 +90,16 @@ export function TensionFishingModal({
   }, []);
 
   const startCast = async () => {
+    if (castPending.current || roundSeed.current !== null) return;
+    castPending.current = true;
     setCasting(true);
+    setRetryCatch(false);
     setError('');
     setOutcome(null);
     try {
-      const { preview } = await postDonorFishingStart(worldId, spotId);
+      const { seed, preview } = await postDonorFishingStart(worldId, spotId);
       if (!active.current) return;
-      ownsRound.current = true;
+      roundSeed.current = seed;
       const fallback = resolveCanonicalFishByCritterId(preview.critterId ?? preview.name);
       setTarget({ name: preview.labelVi ?? fallback.labelVi, spriteUrl: preview.spriteUrl ?? fallback.spriteUrl });
       reel.current = createTensionReelReady(0.35);
@@ -103,46 +110,71 @@ export function TensionFishingModal({
     } catch {
       if (active.current) setError('Chưa quăng được cần. Thử lại nhé.');
     } finally {
+      castPending.current = false;
       if (active.current) setCasting(false);
     }
   };
 
+  const resolve = useCallback(async () => {
+    if (resolving.current || roundSeed.current === null) return;
+    resolving.current = true;
+    setRetryCatch(false);
+    setError('');
+    setCasting(true);
+    hold(false);
+    try {
+      const result = await postDonorFishingResolve(worldId, tensionProgressPermille(reel.current), roundSeed.current);
+      if (!active.current) return;
+      roundSeed.current = null;
+      const fallback = resolveCanonicalFishByCritterId(result.critterId ?? '');
+      const spriteUrl = result.spriteUrl ?? fallback.spriteUrl;
+      setOutcome({ escaped: result.escaped, labelVi: result.labelVi || fallback.labelVi, rarity: result.rarity ?? fallback.rarity, spriteUrl });
+      renderState.current = createTidefallFishingIdle();
+      gameEventBus.emit('cmd:fishing-visual', {
+        spotId, phase: result.escaped ? 'escaped' : 'landed', spriteUrl,
+      });
+      if (result.escaped) playEscapeSplash();
+      else playCatchFanfare(['rare', 'epic', 'legendary'].includes(result.rarity ?? fallback.rarity));
+      void refreshInventory.current().catch(() => undefined);
+    } catch {
+      if (!active.current) return;
+      renderState.current = createTidefallFishingIdle();
+      setError('Chưa nhận được kết quả lượt câu.');
+      setRetryCatch(true);
+      gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
+    } finally {
+      resolving.current = false;
+      if (active.current) {
+        setPhase('done');
+        setCasting(false);
+      }
+    }
+  }, [worldId, spotId, hold]);
+
+  function discardCatch() {
+    const seed = roundSeed.current;
+    roundSeed.current = null;
+    if (seed !== null) {
+      void postDonorFishingSync(worldId, { spotId, phase: 'idle', roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
+        .catch(() => undefined);
+    }
+    setRetryCatch(false);
+    setError('');
+    setPhase('idle');
+  }
+
   useEffect(() => {
     let frame = 0;
     let lastTime: number | undefined;
-    let resolving = false;
+    let lastReelCue = -1;
+    let lastHolding = false;
     const ctx = canvas.current?.getContext('2d');
-    const resolve = async () => {
-      resolving = true;
-      hold(false);
-      try {
-        const result = await postDonorFishingResolve(worldId, tensionProgressPermille(reel.current));
-        if (!active.current) return;
-        ownsRound.current = false;
-        const fallback = resolveCanonicalFishByCritterId(result.critterId ?? '');
-        const spriteUrl = result.spriteUrl ?? fallback.spriteUrl;
-        setOutcome({ escaped: result.escaped, labelVi: result.labelVi, rarity: result.rarity ?? fallback.rarity, spriteUrl });
-        renderState.current = { ...renderState.current, phase: result.escaped ? 'escaped' : 'landed', elapsedMs: 0 };
-        gameEventBus.emit('cmd:fishing-visual', {
-          spotId, phase: result.escaped ? 'escaped' : 'landed', spriteUrl,
-        });
-        if (result.escaped) playEscapeSplash();
-        else playCatchFanfare(['rare', 'epic', 'legendary'].includes(result.rarity ?? fallback.rarity));
-        void refreshInventory.current().catch(() => undefined);
-      } catch {
-        if (!active.current) return;
-        setError('Chưa lưu được kết quả. Thử quăng lại nhé.');
-        gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
-      } finally {
-        if (active.current) setPhase('done');
-      }
-    };
     const loop = (now: number) => {
       const elapsed = Math.min(50, now - (lastTime ?? now));
       lastTime = now;
       const visual = renderState.current;
       const elapsedMs = visual.elapsedMs + elapsed;
-      if (phase === 'reeling' && !resolving) {
+      if (phase === 'reeling' && !resolving.current) {
         reel.current = tickTensionReel({ ...reel.current, holding: holding.current }, elapsed / 1000, Math.random);
         const { reelTension, reelProgress, phase: reelPhase } = reel.current;
         if (tensionMeter.current) {
@@ -151,10 +183,15 @@ export function TensionFishingModal({
         }
         if (progressMeter.current) progressMeter.current.value = reelProgress;
         if (visual.phase === 'casting' && elapsedMs >= 520) {
-          gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'reeling' });
-          renderState.current = { ...visual, phase: 'minigame', elapsedMs: 0 };
+          renderState.current = { ...visual, phase: 'minigame', elapsedMs: 0, progress: reelProgress };
         } else {
-          renderState.current = { ...visual, elapsedMs, bobberDip: holding.current ? 0.1 + reelTension * 0.3 : 0 };
+          renderState.current = { ...visual, elapsedMs, progress: reelProgress, bobberDip: holding.current ? 0.1 + reelTension * 0.3 : 0 };
+        }
+        const progressStep = Math.floor(reelProgress * 20);
+        if (renderState.current.phase === 'minigame' && (progressStep !== lastReelCue || holding.current !== lastHolding)) {
+          lastReelCue = progressStep;
+          lastHolding = holding.current;
+          gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'reeling', reelProgress, activelyPulling: lastHolding });
         }
         if (reelPhase === 'caught' || reelPhase === 'escaped') void resolve();
       } else {
@@ -162,17 +199,17 @@ export function TensionFishingModal({
       }
       if (ctx && art.current) {
         drawTidefallFishingScene(ctx, 360, 210, renderState.current, art.current, spotId, frenzy.current, {
-          localAvatarCanvas: avatar.current, useTensionMeter: true,
+          localAvatarCanvas: avatar.current, useTensionMeter: true, reelHeld: holding.current,
         });
       }
       frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [phase, spotId, worldId, hold]);
+  }, [phase, spotId, resolve]);
 
   return (
-    <FishingModalFrame title={titleVi} testId="donor-stream-fishing-modal" onClose={onClose}>
+    <FishingModalFrame title={`${titleVi} · Tension`} testId="donor-stream-fishing-modal" onClose={onClose}>
       <div className="ranch-fishing__body">
         <canvas ref={canvas} width={360} height={210} className="ranch-fishing__canvas" />
         <div className="ranch-fishing__side">
@@ -224,17 +261,33 @@ export function TensionFishingModal({
                   }}
                 >{pulling ? 'Đang kéo…' : 'Giữ để kéo'}</button>
               </div>
-              <p className="ranch-fishing__status">Giữ kim trong vùng xanh. Thả tay khi dây căng.</p>
+              <p className="ranch-fishing__status" aria-live="polite">
+                {casting ? 'Đang ghi kết quả…' : 'Giữ kim trong vùng xanh. Thả tay khi dây căng.'}
+              </p>
             </>
           ) : (
             <>
               {!outcome && <p className="ranch-fishing__status">Giữ nút để kéo cá, thả tay để nới dây.</p>}
               <div className="ranch-fishing__actions">
-                <button type="button" className="btn btn--primary" disabled={casting} onClick={() => void startCast()}>
-                  {phase === 'done' ? 'Quăng lại' : 'Quăng cần'}
-                </button>
-                {onSwitchMode && (
-                  <button type="button" className="btn btn--secondary" disabled={casting} onClick={onSwitchMode}>Câu theo nhịp</button>
+                {retryCatch ? (
+                  <>
+                    <button type="button" className="btn btn--primary" disabled={casting} onClick={() => void resolve()}>Thử nhận kết quả</button>
+                    <button type="button" className="btn btn--secondary" disabled={casting} onClick={discardCatch}>Bỏ lượt</button>
+                  </>
+                ) : (
+                  <button type="button" className="btn btn--primary" disabled={casting} onClick={() => void startCast()}>
+                    {outcome ? 'Quăng lại' : 'Quăng cần'}
+                  </button>
+                )}
+                {outcome && (
+                  <button type="button" className="btn btn--secondary" onClick={() => {
+                    setOutcome(null);
+                    setPhase('idle');
+                    gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
+                  }}>Xong</button>
+                )}
+                {onSwitchMode && !retryCatch && (
+                  <button type="button" className="btn btn--secondary" disabled={casting} onClick={onSwitchMode}>Chill · Bấm theo nhịp</button>
                 )}
               </div>
             </>

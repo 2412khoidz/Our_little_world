@@ -1,3 +1,4 @@
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 /**
  * Phaser world presentation for shared cooperative livestock.
  * Uses real animated donor sprites from `FarmRanchLife` (`livestock-ranch.png`),
@@ -308,6 +309,14 @@ export class LivestockVisualController {
         }
       }
     }
+  }
+
+  interactionTargets(): InteractableTarget[] {
+    return Array.from(this.sprites, ([animalId, { sprite }]) => ({
+      id: `livestock:${animalId}`, kind: 'deep_farm', labelVi: 'Vật nuôi',
+      x: sprite.x, y: sprite.y, maxRadiusPx: 24 * this.tilePixelSize / 16,
+      deepFarmTarget: { kind: 'animal', animalId },
+    }));
   }
 
   getEffectAnchor(animalId: string) {

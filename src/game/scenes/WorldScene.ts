@@ -2066,7 +2066,7 @@ export class WorldScene extends Phaser.Scene {
         if (session.anglerUserId === this.localUserId) return;
         const remote = this.remoteEntities.get(session.anglerUserId);
         if (remote?.mapId !== this.currentMapId) return;
-        if (this.ranchFishing?.sync(session.anglerUserId, session, remote.sprite, true) && session.phase === 'casting') {
+        if (this.ranchFishing?.sync(session.anglerUserId, { ...session, reelProgress: session.progressPermille / 1000 }, remote.sprite, true) && session.phase === 'casting') {
           playDonorToolUseAnim(this, remote.sprite, remote.textureKey, remote.facing, 'fish');
         }
       }),
@@ -4324,6 +4324,13 @@ export class WorldScene extends Phaser.Scene {
     }
     const economyPlayable = isDonorEconomyUiEnabled();
     interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId, economyPlayable));
+    if (this.currentMapId === 'farm') {
+      interactables.push(
+        ...(this.orchardVisual?.interactionTargets() ?? []),
+        ...(this.livestockVisual?.interactionTargets() ?? []),
+        ...(this.workshopMachines?.interactionTargets() ?? []),
+      );
+    }
     return interactables;
   }
 

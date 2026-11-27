@@ -1,3 +1,4 @@
+import { fishingReelMotion } from '../../shared/art/fishingReelMotion';
 import type { FishingFrenzyArtBundle } from '../../shared/donor/fishing-frenzy/fishingFrenzyArt';
 import { fisherImageForPhase } from '../../shared/donor/fishing-frenzy/fishingFrenzyArt';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
@@ -13,6 +14,7 @@ export interface FishingSceneRenderOptions {
   partnerAvatarCanvas?: HTMLCanvasElement | null;
   isObserver?: boolean;
   useTensionMeter?: boolean;
+  reelHeld?: boolean;
 }
 
 interface BiomePalette {
@@ -351,9 +353,10 @@ function drawAnglersAndRod(
 
   // Animated wooden fishing rod + curved fishing line
   const castingBack = state.phase === 'casting' && state.elapsedMs < 180;
+  const reel = state.phase === 'minigame' ? fishingReelMotion(state.progress, state.elapsedMs, opts?.reelHeld) : null;
   const rodBend =
     state.phase === 'bite' || state.phase === 'minigame'
-      ? 9 + Math.sin(state.elapsedMs * 0.028) * 3
+      ? reel ? 5 + reel.bend * 11 : 9 + Math.sin(state.elapsedMs * 0.028) * 3
       : state.phase === 'casting'
         ? -4
         : 0;
@@ -385,7 +388,7 @@ function drawAnglersAndRod(
   ctx.stroke();
 
   if (state.phase !== 'idle' && state.phase !== 'landed') {
-    const sag = state.phase === 'minigame' ? 2 : 10;
+    const sag = reel ? 9 - reel.bend * 8 : 10;
     ctx.strokeStyle = 'rgba(255, 252, 240, 0.85)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -401,6 +404,7 @@ function drawBobberAndWaterAction(
   waterTop: number,
   state: TidefallFishingState,
   art: RanchFishingUiArt,
+  reelHeld?: boolean,
 ): { bobberX: number; bobberY: number } {
   const restX = Math.round(w * 0.62);
   const restY = waterTop + 34;
@@ -420,6 +424,11 @@ function drawBobberAndWaterAction(
       ctx.stroke();
     }
   } else if (state.phase !== 'idle') {
+    if (state.phase === 'minigame') {
+      const reel = fishingReelMotion(state.progress, state.elapsedMs, reelHeld);
+      bobberX -= (restX - 122) * reel.lineShorten;
+      bobberY -= reel.liftPx;
+    }
     // Fish silhouette gently circling / approaching the bobber
     const angle = state.elapsedMs * 0.0022;
     const swimRadius = state.phase === 'bite' ? 6 : state.phase === 'minigame' ? 4 : 24;
@@ -570,7 +579,7 @@ export function drawTidefallFishingScene(
     ctx.restore();
   }
   const { pierTopY } = drawWoodenPier(ctx, waterTop, h);
-  const { bobberX, bobberY } = drawBobberAndWaterAction(ctx, w, waterTop, state, art);
+  const { bobberX, bobberY } = drawBobberAndWaterAction(ctx, w, waterTop, state, art, opts?.reelHeld);
   drawAnglersAndRod(ctx, pierTopY, state, bobberX, bobberY, frenzy, opts);
   if (!opts?.useTensionMeter) drawHybridMinigameBar(ctx, w, h, state);
 }

@@ -45,17 +45,6 @@
   gap: 4px;
 }
 
-.ranch-workshop__ingredients > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 5px;
-  border: 1px solid #bda47d;
-  border-radius: 6px;
-  background: #efe1c8;
-  color: #563b23;
-}
-
 .ranch-workshop__job {
   min-width: 78px;
 }
@@ -71,4 +60,33 @@
   [data-machine-state="working"] .ranch-workshop__machine {
     animation: none;
   }
+}
+
+.ranch-workshop__ingredient {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: 5px;
+  border-radius: 6px;
+  background: #efe1c8;
+}
+
+.ranch-workshop__ingredient > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ranch-workshop__machine-stage {
+  position: relative;
+}
+
+.ranch-workshop__ready-art {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  background: #fff3ce;
+  border: 1px solid #887249;
+  border-radius: 6px;
 }

@@ -1,6 +1,6 @@
 import { resolveContextualActions } from '../../shared/interaction/interactionResolver';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
-import type { ContextualAction, ContextualResolution, HeldItemState } from '../../shared/interaction/interactionTypes';
+import type { ContextualAction, ContextualResolution, HeldItemState, InteractionResolveInput } from '../../shared/interaction/interactionTypes';
 import type { MapId } from '../../shared/types';
 import type { InteractionFramePayload } from '../../game/eventBus';
 
@@ -9,7 +9,10 @@ export function isSameContextualAction(
   b: ContextualAction | null | undefined,
 ): boolean {
   if (!a || !b) return false;
-  return a.code === b.code && a.targetId === b.targetId && a.available === b.available;
+  if (a.code !== b.code || a.targetId !== b.targetId || a.available !== b.available) return false;
+  if (a.deepFarmIntent?.kind !== b.deepFarmIntent?.kind) return false;
+  return a.deepFarmIntent?.kind !== 'feed_livestock' ||
+    (b.deepFarmIntent?.kind === 'feed_livestock' && a.deepFarmIntent.feedSku === b.deepFarmIntent.feedSku);
 }
 
 /**
@@ -23,6 +26,7 @@ export function validateActionAgainstLatestFrame(
   which: 'primary' | 'secondary',
   farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>,
   serverNowMs?: number,
+  deepFarmActions?: InteractionResolveInput['deepFarmActions'],
 ): boolean {
   if (!frame || frame.mapId !== expectedMapId) return false;
   const fresh = resolveContextualActions({
@@ -34,6 +38,7 @@ export function validateActionAgainstLatestFrame(
     economyPlayable: frame.economyPlayable ?? true,
     farmPlotByIndex,
     serverNowMs,
+    deepFarmActions,
   });
   const intendedAction = which === 'primary' ? intended.primary : intended.secondary;
   const freshAction = which === 'primary' ? fresh.primary : fresh.secondary;
