@@ -62,15 +62,28 @@ import type {
 } from '../../../shared/billiards/types';
 import type { BilliardsGameProps } from './billiardsGameProps';
 import { BilliardsAvatarPortrait } from './BilliardsAvatarPortrait';
+import { BilliardsTouchCameraSettings } from './BilliardsTouchCameraSettings';
 import { billiardsSound } from './sound';
 import {
   TOUCH_CUE_BALL_LIFT_PX,
-  TOUCH_TAP_MAX_MS,
   TOUCH_TAP_SLOP_PX,
+  applyPinchZoomSensitivity,
+  beginTapGesture,
+  cancelTapGesture,
+  completeTapGesture,
   computeDirectAimAngle2D,
   computeRelativeFineAimDelta2D,
   evaluatePowerPull,
+  markTapMultiTouch,
+  updateTapGesture,
+  type TapGestureState,
 } from './touchControls';
+import {
+  loadTouchPreferences,
+  normalizeSensitivityMultipliers,
+  subscribeTouchPreferences,
+  type BilliardsTouchPreferences,
+} from './touchPreferences';
 import { useBilliardsKeyboard } from './useBilliardsKeyboard';
 import { useFocusMode } from './useFocusMode';
 import {
@@ -250,7 +263,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchPrevDistRef = useRef<number | null>(null);
   const multiTouchLockRef = useRef<boolean>(false);
+  const tapGestureRef = useRef<TapGestureState | null>(null);
   const cueStickImgRef = useRef<HTMLImageElement | null>(null);
+  const [touchPrefs, setTouchPrefs] = useState<BilliardsTouchPreferences>(() => loadTouchPreferences());
 
   const [initialBoot] = useState<BilliardsSimRuntime>(() => {
     const boot = createSimRuntime(props);
@@ -327,6 +342,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
   const portraitRotatedRef = useRef(portraitRotated);
   const aimLockedRef = useRef(aimLocked);
   const precisionModeRef = useRef(precisionMode);
+  const touchPrefsRef = useRef(touchPrefs);
 
   const modeRef = useRef(mode);
   const botDifficultyRef = useRef(botDifficulty);
@@ -343,6 +359,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     portraitRotatedRef.current = portraitRotated;
     aimLockedRef.current = aimLocked;
     precisionModeRef.current = precisionMode;
+    touchPrefsRef.current = touchPrefs;
     modeRef.current = mode;
     botDifficultyRef.current = botDifficulty;
     feltIdxRef.current = feltIdx;
@@ -354,6 +371,10 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
     syncRef.current = sync;
     onMatchCompleteRef.current = onMatchComplete;
   });
+
+  useEffect(() => {
+    return subscribeTouchPreferences(() => setTouchPrefs(loadTouchPreferences()));
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2159,6 +2180,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
               if (activePointersRef.current.size >= 2) {
                 multiTouchLockRef.current = true;
+                markTapMultiTouch(tapGestureRef.current);
                 const pts = [...activePointersRef.current.values()];
                 pinchPrevDistRef.current = Math.hypot(pts[1]!.x - pts[0]!.x, pts[1]!.y - pts[0]!.y);
                 sim.tablePointerDown = false;
@@ -2181,11 +2203,19 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 // Ignore synthetic events
               }
               const hitRadius = isTouch ? BALL_R * 4.2 : BALL_R * 3.4;
-              if (
+              const isCueDrag =
                 sim.proto.canMoveCueBall &&
                 (Math.hypot(directPt.x - cue.x, directPt.y - cue.y) < hitRadius ||
-                  Math.hypot(pt.x - cue.x, pt.y - cue.y) < hitRadius)
-              ) {
+                  Math.hypot(pt.x - cue.x, pt.y - cue.y) < hitRadius);
+              tapGestureRef.current = beginTapGesture({
+                pointerId: e.pointerId,
+                pointerType: sim.activePointerType,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                timeMs: performance.now(),
+                isBallInHandDrag: isCueDrag,
+              });
+              if (isCueDrag) {
                 sim.draggingCueBall = true;
                 return;
               }
@@ -2211,7 +2241,7 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                   })
                 : null;
 
-              // Desktop mouse aims directly on down; touch waits for release tap or continuous drag
+              // Desktop mouse aims directly on down when unlocked; locked cue preserves angle until dragged
               if (!isTouch && !aimLockedRef.current) {
                 sim.aimAngle = Math.atan2(directPt.y - cue.y, directPt.x - cue.x);
                 if (mode === 'online') {
@@ -2230,8 +2260,10 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
               if (activePointersRef.current.has(e.pointerId)) {
                 activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
               }
+              updateTapGesture(tapGestureRef.current, e.pointerId, e.clientX, e.clientY);
               if (activePointersRef.current.size >= 2) {
                 multiTouchLockRef.current = true;
+                markTapMultiTouch(tapGestureRef.current);
                 const pts = [...activePointersRef.current.values()];
                 const dist = Math.hypot(pts[1]!.x - pts[0]!.x, pts[1]!.y - pts[0]!.y);
                 const prev = pinchPrevDistRef.current;
@@ -2240,9 +2272,16 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                   const midX = (pts[0]!.x + pts[1]!.x) * 0.5;
                   const midY = (pts[0]!.y + pts[1]!.y) * 0.5;
                   const midPt = getTablePt(midX, midY);
+                  const { pinchZoomMul } = normalizeSensitivityMultipliers(touchPrefsRef.current);
                   sim.zoomFocusX = midPt.x;
                   sim.zoomFocusY = midPt.y;
-                  sim.zoomTarget = Math.max(1.0, Math.min(2.8, sim.zoomTarget * (dist / prev)));
+                  sim.zoomTarget = applyPinchZoomSensitivity(
+                    sim.zoomTarget,
+                    dist / prev,
+                    pinchZoomMul,
+                    1.0,
+                    2.8,
+                  );
                   setZoomLabel(`${sim.zoomTarget.toFixed(1)}x`);
                 }
                 return;
@@ -2283,12 +2322,11 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 return;
               }
               if (sim.tablePointerDown && canHumanInteractNow()) {
-                if (aimLockedRef.current) return;
+                const totalMoved = Math.hypot(
+                  e.clientX - sim.touchStartX,
+                  e.clientY - sim.touchStartY,
+                );
                 if (isTouch) {
-                  const totalMoved = Math.hypot(
-                    e.clientX - sim.touchStartX,
-                    e.clientY - sim.touchStartY,
-                  );
                   if (!sim.touchGestureMoved && totalMoved < TOUCH_TAP_SLOP_PX) {
                     return;
                   }
@@ -2309,18 +2347,66 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                       portraitRotated: portraitRotatedRef.current,
                     });
                     if (directAngle !== null) {
-                      if (precisionModeRef.current) {
+                      const { aimMul, lockedFineMul } = normalizeSensitivityMultipliers(
+                        touchPrefsRef.current,
+                      );
+                      if (aimLockedRef.current) {
+                        // Locked cue allows micro fine-adjustments at user's locked-cue sensitivity
                         if (sim.lastTouchPhysicsAngle !== null) {
                           sim.aimAngle += computeRelativeFineAimDelta2D({
                             prevPhysicsAngle: sim.lastTouchPhysicsAngle,
                             curPhysicsAngle: directAngle,
-                            scale: 0.28,
+                            scale: 0.28 * lockedFineMul,
                           });
                         }
+                      } else if (precisionModeRef.current) {
+                        if (sim.lastTouchPhysicsAngle !== null) {
+                          sim.aimAngle += computeRelativeFineAimDelta2D({
+                            prevPhysicsAngle: sim.lastTouchPhysicsAngle,
+                            curPhysicsAngle: directAngle,
+                            scale: 0.28 * aimMul,
+                          });
+                        }
+                      } else if (sim.lastTouchPhysicsAngle !== null) {
+                        sim.aimAngle += computeRelativeFineAimDelta2D({
+                          prevPhysicsAngle: sim.lastTouchPhysicsAngle,
+                          curPhysicsAngle: directAngle,
+                          scale: aimMul,
+                        });
                       } else {
                         sim.aimAngle = directAngle;
                       }
                       sim.lastTouchPhysicsAngle = directAngle;
+                    }
+                  }
+                } else if (aimLockedRef.current) {
+                  if (totalMoved >= TOUCH_TAP_SLOP_PX) {
+                    const rect = canvasRef.current?.getBoundingClientRect();
+                    if (rect) {
+                      const directAngle = computeDirectAimAngle2D({
+                        clientX: e.clientX,
+                        clientY: e.clientY,
+                        rect,
+                        cueX: cue.x,
+                        cueY: cue.y,
+                        zoomCurrent: sim.zoomCurrent,
+                        camX: sim.camX,
+                        camY: sim.camY,
+                        portraitRotated: portraitRotatedRef.current,
+                      });
+                      if (directAngle !== null) {
+                        const { lockedFineMul } = normalizeSensitivityMultipliers(
+                          touchPrefsRef.current,
+                        );
+                        if (sim.lastTouchPhysicsAngle !== null) {
+                          sim.aimAngle += computeRelativeFineAimDelta2D({
+                            prevPhysicsAngle: sim.lastTouchPhysicsAngle,
+                            curPhysicsAngle: directAngle,
+                            scale: 0.28 * lockedFineMul,
+                          });
+                        }
+                        sim.lastTouchPhysicsAngle = directAngle;
+                      }
                     }
                   }
                 } else {
@@ -2349,22 +2435,30 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 setZoomLabel(`${sim.zoomTarget.toFixed(1)}x`);
               }
               if (multiTouchLockRef.current) {
+                cancelTapGesture(tapGestureRef.current);
                 sim.draggingCueBall = false;
                 sim.tablePointerDown = false;
                 sim.touchGestureMoved = false;
                 sim.lastTouchPhysicsAngle = null;
                 if (activePointersRef.current.size === 0) {
                   multiTouchLockRef.current = false;
+                  tapGestureRef.current = null;
                 }
                 return;
               }
+              const validShortTap = completeTapGesture(tapGestureRef.current, {
+                pointerId: e.pointerId,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                timeMs: performance.now(),
+              });
+              tapGestureRef.current = null;
               if (
                 isTouch &&
                 sim.tablePointerDown &&
-                !sim.touchGestureMoved &&
+                validShortTap &&
                 !aimLockedRef.current &&
-                canHumanInteractNow() &&
-                performance.now() - sim.touchDownTimeMs <= TOUCH_TAP_MAX_MS
+                canHumanInteractNow()
               ) {
                 const rect = canvasRef.current?.getBoundingClientRect();
                 const cue = sim.proto.balls.find((b) => b.id === 0);
@@ -2416,6 +2510,8 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             }}
             onPointerCancel={(e) => {
               const sim = getSim();
+              cancelTapGesture(tapGestureRef.current);
+              tapGestureRef.current = null;
               activePointersRef.current.delete(e.pointerId);
               if (activePointersRef.current.size < 2) {
                 pinchPrevDistRef.current = null;
@@ -2431,6 +2527,8 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
             }}
             onLostPointerCapture={(e) => {
               const sim = getSim();
+              cancelTapGesture(tapGestureRef.current);
+              tapGestureRef.current = null;
               activePointersRef.current.delete(e.pointerId);
               if (activePointersRef.current.size < 2) {
                 pinchPrevDistRef.current = null;
@@ -2634,6 +2732,12 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 {muted ? <VolumeX size={14} /> : <Volume2 size={14} />} {muted ? 'Tắt' : 'Bật'}
               </button>
             </div>
+            <BilliardsTouchCameraSettings
+              prefs={touchPrefs}
+              onChange={setTouchPrefs}
+              showCameraRotation={false}
+              showShotCameraMode={false}
+            />
             {mode !== 'online' && (
               <button
                 type="button"

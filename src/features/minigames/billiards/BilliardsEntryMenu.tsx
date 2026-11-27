@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bot, Gamepad2, Globe, Play, SlidersHorizontal, Sparkles, Target, Users, X } from 'lucide-react';
 import type {
   Billiards3DQuality,
@@ -8,7 +8,13 @@ import type {
   BilliardsRule,
   BotDifficulty,
 } from '../../../shared/billiards/types';
+import { BilliardsTouchCameraSettings } from './BilliardsTouchCameraSettings';
 import type { BilliardsLocalStats } from './localStats';
+import {
+  loadTouchPreferences,
+  subscribeTouchPreferences,
+  type BilliardsTouchPreferences,
+} from './touchPreferences';
 
 export interface BilliardsEntryMenuProps {
   edition: BilliardsEdition;
@@ -54,6 +60,11 @@ export const BilliardsEntryMenu: React.FC<BilliardsEntryMenuProps> = ({
   onClose,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [touchPrefs, setTouchPrefs] = useState<BilliardsTouchPreferences>(() => loadTouchPreferences());
+
+  useEffect(() => {
+    return subscribeTouchPreferences(() => setTouchPrefs(loadTouchPreferences()));
+  }, []);
 
   const hasActiveOnlineMatch = lobbyState?.status === 'in_match' && Boolean(lobbyState.activeMatchId);
   const partnerWaitingInLobby =
@@ -349,6 +360,13 @@ export const BilliardsEntryMenu: React.FC<BilliardsEntryMenuProps> = ({
                 </span>
               </div>
             </div>
+
+            <BilliardsTouchCameraSettings
+              prefs={touchPrefs}
+              onChange={setTouchPrefs}
+              showCameraRotation={true}
+              showShotCameraMode={false}
+            />
           </div>
         </div>
       )}

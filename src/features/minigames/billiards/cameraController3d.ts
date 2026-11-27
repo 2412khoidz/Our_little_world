@@ -17,6 +17,8 @@ export interface CameraPoseInput {
   draggingCueBall: boolean;
   hoverZoomActive: boolean;
   hoverWorldPt: { x: number; z: number } | null;
+  focusedBallId?: number | null;
+  focusedBallPos?: { x: number; z: number } | null;
 }
 
 export interface ComputedCameraPose {
@@ -77,13 +79,14 @@ export function computeCameraPose3D(input: CameraPoseInput): ComputedCameraPose 
   }
 
   if (input.mode === 'top' || input.draggingCueBall) {
+    const zoomAnchor = input.hoverWorldPt ?? input.focusedBallPos;
     const focusX =
-      clampedZoom > 1.05 && input.hoverWorldPt && !input.draggingCueBall
-        ? Math.max(-HALF_W_3D * 0.85, Math.min(HALF_W_3D * 0.85, input.hoverWorldPt.x)) * (1 - zFactor)
+      clampedZoom > 1.05 && zoomAnchor && !input.draggingCueBall
+        ? Math.max(-HALF_W_3D * 0.85, Math.min(HALF_W_3D * 0.85, zoomAnchor.x)) * (1 - zFactor)
         : 0;
     const focusZ =
-      clampedZoom > 1.05 && input.hoverWorldPt && !input.draggingCueBall
-        ? Math.max(-HALF_H_3D * 0.85, Math.min(HALF_H_3D * 0.85, input.hoverWorldPt.z)) * (1 - zFactor)
+      clampedZoom > 1.05 && zoomAnchor && !input.draggingCueBall
+        ? Math.max(-HALF_H_3D * 0.85, Math.min(HALF_H_3D * 0.85, zoomAnchor.z)) * (1 - zFactor)
         : 0;
     const topHeight = isPortrait
       ? Math.max(3.05, 1.85 / Math.max(0.45, safeAspect)) * zFactor
@@ -101,6 +104,31 @@ export function computeCameraPose3D(input: CameraPoseInput): ComputedCameraPose 
     !input.cuePocketed &&
     (input.phase === 'aim' || input.isStriking)
   ) {
+    if (
+      input.focusedBallId !== undefined &&
+      input.focusedBallId !== null &&
+      input.focusedBallId !== 0 &&
+      input.focusedBallPos &&
+      input.phase === 'aim' &&
+      !input.isStriking
+    ) {
+      const fdx = input.focusedBallPos.x - input.cueX;
+      const fdz = input.focusedBallPos.z - input.cueZ;
+      const fDist = Math.hypot(fdx, fdz);
+      const fAngle = fDist > 0.05 ? Math.atan2(fdz, fdx) : input.visualAimAngle;
+      const focusPullback = (isPortrait ? 1.15 : 0.98) * zFactor;
+      const focusHeight = Math.max(0.38, (isPortrait ? 0.78 : 0.65) * zFactor);
+      return {
+        position: [
+          input.focusedBallPos.x - Math.cos(fAngle) * focusPullback,
+          focusHeight,
+          input.focusedBallPos.z - Math.sin(fAngle) * focusPullback,
+        ],
+        lookAt: [input.focusedBallPos.x, 0.03, input.focusedBallPos.z],
+        up: [0, 1, 0],
+        fov: baseFov,
+      };
+    }
     const distBack = (isPortrait ? 1.48 : 1.25) * zFactor;
     const camHeight = Math.max(0.26, (isPortrait ? 0.74 : 0.62) * zFactor);
     return {
@@ -141,6 +169,7 @@ export class Billiards3DCameraController {
   private visualAimAngle = 0;
   private lastMode: Billiards3DCamMode = 'follow';
   private orbitBlendRemaining = 0;
+  private orbitTargetGoal: THREE.Vector3 | null = null;
   private readonly targetPos = new THREE.Vector3();
   private readonly targetLook = new THREE.Vector3();
   private readonly targetUp = new THREE.Vector3(0, 1, 0);
@@ -164,6 +193,19 @@ export class Billiards3DCameraController {
       TWO: THREE.TOUCH.DOLLY_PAN,
     };
     this.controls.enabled = false;
+  }
+
+  setSensitivity(rotateSpeed: number, zoomSpeed: number): void {
+    this.controls.rotateSpeed = Math.max(0.05, Math.min(2.5, rotateSpeed));
+    this.controls.zoomSpeed = Math.max(0.05, Math.min(2.5, zoomSpeed));
+  }
+
+  focusOrbitTarget(pos: { x: number; z: number } | null): void {
+    if (!pos) {
+      this.orbitTargetGoal = new THREE.Vector3(0, 0, 0);
+    } else {
+      this.orbitTargetGoal = new THREE.Vector3(pos.x, 0.03, pos.z);
+    }
   }
 
   snapInitialPose(input: CameraPoseInput): void {
@@ -216,7 +258,11 @@ export class Billiards3DCameraController {
           Math.sin(0.68) * r + 0.12,
           Math.sin(0.6) * Math.cos(0.68) * r,
         );
-        this.targetLook.set(0, 0, 0);
+        if (rawInput.focusedBallId && rawInput.focusedBallId !== 0 && rawInput.focusedBallPos) {
+          this.targetLook.set(rawInput.focusedBallPos.x, 0.03, rawInput.focusedBallPos.z);
+        } else {
+          this.targetLook.set(0, 0, 0);
+        }
         this.targetUp.set(0, 1, 0);
         this.lookMatrix.lookAt(this.targetPos, this.targetLook, this.targetUp);
         this.targetQuat.setFromRotationMatrix(this.lookMatrix);
@@ -224,10 +270,20 @@ export class Billiards3DCameraController {
         this.camera.position.lerp(this.targetPos, a);
         this.camera.quaternion.slerp(this.targetQuat, a);
         if (this.orbitBlendRemaining <= 0) {
-          this.controls.target.set(0, 0, 0);
+          this.controls.target.copy(this.targetLook);
           this.controls.update();
         }
         return;
+      }
+      if (this.orbitTargetGoal && !rawInput.gestureBlocked) {
+        this.controls.target.lerp(this.orbitTargetGoal, smoothFactor(10, dt));
+        if (this.controls.target.distanceTo(this.orbitTargetGoal) < 0.004) {
+          this.controls.target.copy(this.orbitTargetGoal);
+          this.orbitTargetGoal = null;
+        }
+      } else if (rawInput.gestureBlocked) {
+        // Player started manual OrbitControls interaction; yield target control immediately
+        this.orbitTargetGoal = null;
       }
       this.controls.enabled = !rawInput.gestureBlocked;
       this.controls.update();

@@ -16,11 +16,26 @@ import {
 } from '../../src/features/minigames/billiards/viewportTransform';
 import {
   MIN_DIRECT_AIM_SCREEN_PX,
+  applyPinchZoomSensitivity,
+  beginTapGesture,
+  cancelTapGesture,
+  completeTapGesture,
   computeDirectAimAngle2D,
   computeRelativeFineAimDelta2D,
   evaluatePowerPull,
+  markTapMultiTouch,
   normalizeAngleDelta,
+  updateTapGesture,
 } from '../../src/features/minigames/billiards/touchControls';
+import {
+  TOUCH_PREFS_STORAGE_KEY,
+  createDefaultTouchPreferences,
+  loadTouchPreferences,
+  normalizeSensitivityMultipliers,
+  resetTouchPreferences,
+  sanitizeTouchPreferences,
+  saveTouchPreferences,
+} from '../../src/features/minigames/billiards/touchPreferences';
 import {
   computeCameraPose3D,
   shortestAngleDelta3D,
@@ -302,5 +317,159 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
     expect(afterNewLobby.status).toBe('lobby');
     expect(afterNewLobby.activeMatchId).toBeNull();
     expect(afterNewLobby.confirmedConfig).toBeNull();
+  });
+
+  it('P0-A: normalizes, clamps, persists & resets touch sensitivity preferences', () => {
+    const def = createDefaultTouchPreferences();
+    expect(def.aimSensitivityPct).toBe(65);
+    expect(def.lockedFineSensitivityPct).toBe(30);
+    expect(def.cameraRotationSensitivityPct).toBe(75);
+    expect(def.pinchZoomSensitivityPct).toBe(80);
+
+    const clamped = sanitizeTouchPreferences({
+      aimSensitivityPct: 999,
+      lockedFineSensitivityPct: 1,
+      cameraRotationSensitivityPct: -10,
+      pinchZoomSensitivityPct: 250,
+    });
+    expect(clamped.aimSensitivityPct).toBe(200);
+    expect(clamped.lockedFineSensitivityPct).toBe(5);
+    expect(clamped.cameraRotationSensitivityPct).toBe(10);
+    expect(clamped.pinchZoomSensitivityPct).toBe(200);
+
+    const baselineMuls = normalizeSensitivityMultipliers(
+      sanitizeTouchPreferences({
+        aimSensitivityPct: 100,
+        lockedFineSensitivityPct: 100,
+        cameraRotationSensitivityPct: 100,
+        pinchZoomSensitivityPct: 100,
+      }),
+    );
+    expect(baselineMuls).toEqual({
+      aimMul: 1,
+      lockedFineMul: 1,
+      cameraRotateMul: 1,
+      pinchZoomMul: 1,
+    });
+
+    // Pinch sensitivity 1.0 matches baseline ratio; <1.0 dampens, >1.0 amplifies
+    expect(applyPinchZoomSensitivity(1.2, 1.25, 1.0, 0.7, 2.6)).toBeCloseTo(1.5, 5);
+    expect(applyPinchZoomSensitivity(1.2, 1.25, 0.5, 0.7, 2.6)).toBeLessThan(1.5);
+    expect(applyPinchZoomSensitivity(1.2, 1.25, 1.8, 0.7, 2.6)).toBeGreaterThan(1.5);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(TOUCH_PREFS_STORAGE_KEY);
+      saveTouchPreferences({
+        ...def,
+        aimSensitivityPct: 120,
+        lockedFineSensitivityPct: 15,
+      });
+      expect(loadTouchPreferences().aimSensitivityPct).toBe(120);
+      expect(loadTouchPreferences().lockedFineSensitivityPct).toBe(15);
+      resetTouchPreferences();
+      expect(loadTouchPreferences().aimSensitivityPct).toBe(65);
+      expect(loadTouchPreferences().lockedFineSensitivityPct).toBe(30);
+    }
+  });
+
+  it('P0-B: classifies taps strictly on completed single-touch gestures without drag, pinch, cancel or UI bleed', () => {
+    // Valid genuine tap
+    let g = beginTapGesture({
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+    });
+    updateTapGesture(g, 1, 104, 203);
+    expect(
+      completeTapGesture(g, { pointerId: 1, clientX: 103, clientY: 202, timeMs: 1180 }),
+    ).toBe(true);
+
+    // Dragged > 8 CSS px then returned near start -> MUST be rejected as tap!
+    g = beginTapGesture({
+      pointerId: 2,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+    });
+    updateTapGesture(g, 2, 125, 200);
+    updateTapGesture(g, 2, 101, 200);
+    expect(
+      completeTapGesture(g, { pointerId: 2, clientX: 100, clientY: 200, timeMs: 1150 }),
+    ).toBe(false);
+
+    // Held too long (> 450ms) -> rejected
+    g = beginTapGesture({
+      pointerId: 3,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+    });
+    expect(
+      completeTapGesture(g, { pointerId: 3, clientX: 101, clientY: 201, timeMs: 1600 }),
+    ).toBe(false);
+
+    // Escalated to multitouch pinch -> rejected
+    g = beginTapGesture({
+      pointerId: 4,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+    });
+    markTapMultiTouch(g);
+    expect(
+      completeTapGesture(g, { pointerId: 4, clientX: 100, clientY: 200, timeMs: 1100 }),
+    ).toBe(false);
+
+    // Cancelled / ball-in-hand / UI blocked -> rejected
+    g = beginTapGesture({
+      pointerId: 5,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+    });
+    cancelTapGesture(g);
+    expect(
+      completeTapGesture(g, { pointerId: 5, clientX: 100, clientY: 200, timeMs: 1100 }),
+    ).toBe(false);
+
+    const gUi = beginTapGesture({
+      pointerId: 6,
+      pointerType: 'touch',
+      clientX: 100,
+      clientY: 200,
+      timeMs: 1000,
+      blockedByUi: true,
+    });
+    expect(
+      completeTapGesture(gUi, { pointerId: 6, clientX: 100, clientY: 200, timeMs: 1100 }),
+    ).toBe(false);
+  });
+
+  it('P0-B: focuses 3D follow/top camera on tapped ball without altering visualAimAngle', () => {
+    const focusedPose = computeCameraPose3D({
+      mode: 'follow',
+      aspect: 430 / 820,
+      zoomLevel: 1.0,
+      visualAimAngle: 0.25,
+      cueX: -0.6,
+      cueZ: 0.1,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+      focusedBallId: 9,
+      focusedBallPos: { x: 0.85, z: -0.35 },
+    });
+    expect(focusedPose.lookAt[0]).toBeCloseTo(0.85, 4);
+    expect(focusedPose.lookAt[2]).toBeCloseTo(-0.35, 4);
+    expect(focusedPose.position[1]).toBeGreaterThan(0.5);
   });
 });
