@@ -34,6 +34,11 @@ interface NuvoraInteractiveTrayProps {
   onInspect?: (ref: InspectedSlotRef | null) => void;
   plateLabel?: string;
   showHotbarStrip?: boolean;
+  /** Touch-friendly mode: single tap inspects/selects instead of picking up a floating cursor; drag remains optional. */
+  touchMode?: boolean;
+  /** Optional bag slot queued for tap-to-swap move without dragging. */
+  pendingMoveBagIndex?: number | null;
+  onCompleteTouchMove?: (destKind: 'bag' | 'hotbar', destIndex: number) => void;
 }
 
 interface TrayDisplayCell {
@@ -70,6 +75,9 @@ export function NuvoraInteractiveTray({
   onInspect,
   plateLabel = 'TÚI CHUNG',
   showHotbarStrip = true,
+  touchMode = false,
+  pendingMoveBagIndex = null,
+  onCompleteTouchMove,
 }: NuvoraInteractiveTrayProps) {
   const [cursor, setCursor] = useState<InventoryPickedCursor | null>(null);
   const [pointerPos, setPointerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -96,6 +104,21 @@ export function NuvoraInteractiveTray({
   const labelForSkuRef = useRef(labelForSku);
   const heldHotbarIndexRef = useRef(heldHotbarIndex);
   const onInspectRef = useRef(onInspect);
+  const touchModeRef = useRef(touchMode);
+  const pendingMoveBagIndexRef = useRef(pendingMoveBagIndex);
+  const onCompleteTouchMoveRef = useRef(onCompleteTouchMove);
+
+  useEffect(() => {
+    touchModeRef.current = touchMode;
+  }, [touchMode]);
+
+  useEffect(() => {
+    pendingMoveBagIndexRef.current = pendingMoveBagIndex;
+  }, [pendingMoveBagIndex]);
+
+  useEffect(() => {
+    onCompleteTouchMoveRef.current = onCompleteTouchMove;
+  }, [onCompleteTouchMove]);
 
   useEffect(() => {
     latestCursorRef.current = cursor;
@@ -175,6 +198,16 @@ export function NuvoraInteractiveTray({
 
   const handleSlotAction = useCallback(
     (kind: 'bag' | 'hotbar', index: number, rightClick: boolean, shiftKey: boolean) => {
+      if (touchModeRef.current && !rightClick && !shiftKey && !latestCursorRef.current) {
+        if (pendingMoveBagIndexRef.current !== null) {
+          onCompleteTouchMoveRef.current?.(kind, index);
+          return;
+        }
+        if (kind === 'bag') {
+          onInspectRef.current?.({ kind: 'bag', scope: scopeRef.current, index });
+          return;
+        }
+      }
       const res = applyInventorySlotInteraction(
         latestLayoutRef.current,
         latestCursorRef.current,
@@ -230,7 +263,8 @@ export function NuvoraInteractiveTray({
 
       if (!activeDragRef.current) {
         const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
-        if (dist >= 6 && pending.cell.sku) {
+        const dragThreshold = touchModeRef.current ? 12 : 6;
+        if (dist >= dragThreshold && pending.cell.sku) {
           const started: ActiveDragState = {
             sourceKind: pending.kind,
             sourceIndex: pending.index,
@@ -299,7 +333,8 @@ export function NuvoraInteractiveTray({
       }
 
       const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
-      if (dist < 6) {
+      const tapThreshold = touchModeRef.current ? 12 : 6;
+      if (dist < tapThreshold) {
         skipClickUntilRef.current = performance.now() + 90;
         const targetKind = hitValid ? hitKindAttr : pending.kind;
         const targetIdx = hitValid ? hitIdxNum : pending.index;
@@ -334,6 +369,7 @@ export function NuvoraInteractiveTray({
       inspectedRef.kind === kind &&
       inspectedRef.index === idx &&
       (isHot || inspectedRef.scope === scope);
+    const isMoveSource = !isHot && pendingMoveBagIndex !== null && pendingMoveBagIndex === idx;
     const isDropTarget = dropHover !== null && dropHover.kind === kind && dropHover.index === idx;
     const isDragOrigin =
       activeDrag !== null && activeDrag.sourceKind === kind && activeDrag.sourceIndex === idx;
@@ -362,7 +398,7 @@ export function NuvoraInteractiveTray({
         type="button"
         className={`nuvora-sl ${isHot ? 'nuvora-sl--hot' : ''} ${selected ? 'nuvora-sl--selected' : ''} ${
           inspected ? 'nuvora-sl--inspected' : ''
-        } ${isDropTarget ? 'nuvora-sl--drop-target' : ''}`}
+        } ${isDropTarget ? 'nuvora-sl--drop-target' : ''} ${isMoveSource ? 'nuvora-sl--move-source' : ''}`}
         data-slot-kind={kind}
         data-slot-index={idx}
         data-testid={
@@ -376,7 +412,9 @@ export function NuvoraInteractiveTray({
         data-tip={tipText || undefined}
         style={isDragOrigin ? { opacity: 0.35 } : undefined}
         onPointerDown={(e) => {
-          e.preventDefault();
+          if (!touchModeRef.current || e.pointerType === 'mouse') {
+            e.preventDefault();
+          }
           setPointerPos({ x: e.clientX, y: e.clientY });
           dragStartRef.current = {
             kind,

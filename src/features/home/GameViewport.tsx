@@ -11,6 +11,8 @@ import type {
   PresencePayload,
   WorldMember,
 } from '../../shared/types';
+import type { HudLayoutMode, JoystickMode } from '../../shared/viewport/viewportPolicy';
+import { TouchJoystick } from './mobile/TouchJoystick';
 
 interface GameViewportProps {
   worldId: string;
@@ -26,6 +28,9 @@ interface GameViewportProps {
   decoratePreviewRotated: boolean;
   decorateDevSandbox?: boolean;
   showJoystick: boolean;
+  joystickMode?: JoystickMode;
+  hudLayoutMode?: HudLayoutMode;
+  petCareActive?: boolean;
   isModalOpen: boolean;
   /** When true, legacy E/nearby button is hidden (main game J/K HUD). */
   contextualInteractionHud?: boolean;
@@ -47,6 +52,9 @@ export function GameViewport({
   decoratePreviewRotated,
   decorateDevSandbox = false,
   showJoystick,
+  joystickMode = 'fixed',
+  hudLayoutMode = 'desktop',
+  petCareActive = false,
   isModalOpen,
   contextualInteractionHud = false,
   movementConnection,
@@ -56,12 +64,6 @@ export function GameViewport({
   const [sceneReady, setSceneReady] = useState(false);
   const [nearby, setNearby] = useState<NearbyInteractable | null>(null);
   const [livingPetTelemetry, setLivingPetTelemetry] = useState<LivingPetDevTelemetry | null>(null);
-  const [knobOffset, setKnobOffset] = useState({ x: 0, y: 0 });
-  const joyDragRef = useRef<{ active: boolean; centerX: number; centerY: number }>({
-    active: false,
-    centerX: 0,
-    centerY: 0,
-  });
 
   // Dynamically import Phaser only when rendering game stage (keeps initial shell lean)
   useEffect(() => {
@@ -71,6 +73,19 @@ export function GameViewport({
     let destroyed = false;
     let gameInstance: import('phaser').Game | null = null;
     let resizeObserver: ResizeObserver | null = null;
+
+    const syncGameSize = () => {
+      if (!gameInstance || destroyed) return;
+      const el = hostRef.current;
+      if (!el) return;
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w > 0 && h > 0) {
+        gameInstance.scale.setParentSize(w, h);
+        gameInstance.scale.resize(w, h);
+        gameInstance.scale.refresh();
+      }
+    };
 
     const unsubReady = gameEventBus.on('evt:scene-ready', () => {
       setSceneReady(true);
@@ -85,23 +100,30 @@ export function GameViewport({
           })
         : () => {};
 
+    const onOrientationResize = () => {
+      syncGameSize();
+      window.setTimeout(syncGameSize, 100);
+      window.setTimeout(syncGameSize, 260);
+    };
+
+    window.visualViewport?.addEventListener('resize', syncGameSize);
+    window.addEventListener('orientationchange', onOrientationResize);
+
     void import('../../game/createGame').then(({ createWorldGame }) => {
       if (destroyed || !hostRef.current) return;
       const el = hostRef.current;
       gameInstance = createWorldGame(el);
       if (typeof ResizeObserver !== 'undefined') {
-        resizeObserver = new ResizeObserver(() => {
-          if (!gameInstance || destroyed) return;
-          if (el.clientWidth > 0 && el.clientHeight > 0) {
-            gameInstance.scale.setParentSize(el.clientWidth, el.clientHeight);
-          }
-        });
+        resizeObserver = new ResizeObserver(syncGameSize);
         resizeObserver.observe(el);
       }
+      syncGameSize();
     });
 
     return () => {
       destroyed = true;
+      window.visualViewport?.removeEventListener('resize', syncGameSize);
+      window.removeEventListener('orientationchange', onOrientationResize);
       resizeObserver?.disconnect();
       unsubReady();
       unsubNearby();
@@ -152,28 +174,6 @@ export function GameViewport({
     if (!sceneReady) return;
     gameEventBus.emit('cmd:set-movement-connection', movementConnection);
   }, [sceneReady, movementConnection]);
-
-  function updateJoystickFromPointer(clientX: number, clientY: number) {
-    const maxRadius = 32;
-    const dx = clientX - joyDragRef.current.centerX;
-    const dy = clientY - joyDragRef.current.centerY;
-    const dist = Math.hypot(dx, dy);
-    const clamped = Math.min(dist, maxRadius);
-    const angle = Math.atan2(dy, dx);
-    const ox = dist > 0 ? Math.cos(angle) * clamped : 0;
-    const oy = dist > 0 ? Math.sin(angle) * clamped : 0;
-    setKnobOffset({ x: ox, y: oy });
-    gameEventBus.emit('cmd:set-joystick', {
-      vx: ox / maxRadius,
-      vy: oy / maxRadius,
-    });
-  }
-
-  function resetJoystick() {
-    joyDragRef.current.active = false;
-    setKnobOffset({ x: 0, y: 0 });
-    gameEventBus.emit('cmd:set-joystick', { vx: 0, vy: 0 });
-  }
 
   return (
     <div className="stage-area">
@@ -247,35 +247,12 @@ export function GameViewport({
         </div>
       )}
 
-      {showJoystick && !decorateActive && (
-        <div
-          className="joystick-zone"
-          aria-label="Cần điều khiển di chuyển"
-          onPointerDown={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            joyDragRef.current = {
-              active: true,
-              centerX: rect.left + rect.width / 2,
-              centerY: rect.top + rect.height / 2,
-            };
-            e.currentTarget.setPointerCapture(e.pointerId);
-            updateJoystickFromPointer(e.clientX, e.clientY);
-          }}
-          onPointerMove={(e) => {
-            if (!joyDragRef.current.active) return;
-            updateJoystickFromPointer(e.clientX, e.clientY);
-          }}
-          onPointerUp={() => resetJoystick()}
-          onPointerCancel={() => resetJoystick()}
-        >
-          <div
-            className="joystick-knob"
-            style={{
-              transform: `translate(${knobOffset.x}px, ${knobOffset.y}px)`,
-            }}
-          />
-        </div>
-      )}
+      <TouchJoystick
+        visible={showJoystick}
+        disabled={decorateActive || isModalOpen || petCareActive}
+        mode={joystickMode}
+        layoutMode={hudLayoutMode}
+      />
     </div>
   );
 }

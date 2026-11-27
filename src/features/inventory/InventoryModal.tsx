@@ -7,6 +7,7 @@ import {
   resolveCanonicalFishBySku,
 } from '../../shared/donor/fishing/canonicalFishRegistry';
 import {
+  applyDirectSlotDrop,
   assignStackToHotbar,
   clearHotbarBinding,
   splitBagSlotInPlace,
@@ -35,6 +36,7 @@ interface InventoryModalProps {
   hotbarSlots: readonly HotbarSlot[];
   heldHotbarIndex: number | null;
   loading: boolean;
+  touchMode?: boolean;
   onClaimFreeKibble: () => Promise<void>;
   onRefresh: () => Promise<void>;
   onClose: () => void;
@@ -91,12 +93,14 @@ export function InventoryModal({
   hotbarSlots,
   heldHotbarIndex,
   loading,
+  touchMode = false,
   onClaimFreeKibble,
   onRefresh,
   onClose,
 }: InventoryModalProps) {
   const [tab, setTab] = useState<'shared' | 'personal'>('shared');
   const [inspectedRef, setInspectedRef] = useState<InspectedSlotRef | null>(null);
+  const [pendingMoveBagIndex, setPendingMoveBagIndex] = useState<number | null>(null);
 
   const catalogMap = useMemo(
     () => new Map((snapshot?.catalog ?? []).map((c) => [c.sku, c])),
@@ -253,6 +257,7 @@ export function InventoryModal({
             onClick={() => {
               setTab('shared');
               setInspectedRef(null);
+              setPendingMoveBagIndex(null);
             }}
           >
             Túi chung ({sharedQty})
@@ -265,6 +270,7 @@ export function InventoryModal({
             onClick={() => {
               setTab('personal');
               setInspectedRef(null);
+              setPendingMoveBagIndex(null);
             }}
           >
             <Gift size={14} /> Ngăn riêng ({personalQty})
@@ -321,6 +327,23 @@ export function InventoryModal({
             inspectedRef={resolvedInspect?.ref ?? null}
             onInspect={setInspectedRef}
             plateLabel={tab === 'shared' ? 'TÚI CHUNG' : 'NGĂN RIÊNG'}
+            touchMode={touchMode}
+            pendingMoveBagIndex={pendingMoveBagIndex}
+            onCompleteTouchMove={(destKind, destIndex) => {
+              if (pendingMoveBagIndex === null) return;
+              const res = applyDirectSlotDrop(
+                layout,
+                { kind: 'bag', scope: tab, index: pendingMoveBagIndex },
+                { kind: destKind, scope: tab, index: destIndex },
+                { labelForSku, heldHotbarIndex },
+              );
+              onChangeLayout(res.layout);
+              if (res.selectHotbarIndex !== undefined) {
+                gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.selectHotbarIndex });
+              }
+              setPendingMoveBagIndex(null);
+              setInspectedRef({ kind: destKind, scope: tab, index: destIndex });
+            }}
           />
 
           {inspectorDetails && resolvedInspect && (
@@ -367,6 +390,7 @@ export function InventoryModal({
                       className={`nuvora-hotbar-num-btn ${isAssignedHere ? 'nuvora-hotbar-num-btn--active' : ''}`}
                       data-testid={`btn-assign-hotbar-${slotIdx + 1}`}
                       onClick={() => {
+                        setPendingMoveBagIndex(null);
                         const res = assignStackToHotbar(layout, resolvedInspect.stack, slotIdx);
                         onChangeLayout(res.layout);
                         gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.slotIndex });
@@ -377,12 +401,47 @@ export function InventoryModal({
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  data-testid="btn-equip-inspected-item"
+                  onClick={() => {
+                    setPendingMoveBagIndex(null);
+                    const preferred =
+                      inspectorDetails.hotbarIndex !== null
+                        ? inspectorDetails.hotbarIndex
+                        : heldHotbarIndex !== null && heldHotbarIndex >= 0
+                          ? heldHotbarIndex
+                          : undefined;
+                    const res = assignStackToHotbar(layout, resolvedInspect.stack, preferred);
+                    onChangeLayout(res.layout);
+                    gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.slotIndex });
+                    onClose();
+                  }}
+                >
+                  Cầm ngay
+                </button>
+                {inspectorDetails.bagIndex !== null && (
+                  <button
+                    type="button"
+                    className={`btn btn--sm ${pendingMoveBagIndex === inspectorDetails.bagIndex ? 'btn--primary' : 'btn--secondary'}`}
+                    data-testid="btn-touch-move-slot"
+                    onClick={() => {
+                      setPendingMoveBagIndex((cur) =>
+                        cur === inspectorDetails.bagIndex ? null : inspectorDetails.bagIndex!,
+                      );
+                    }}
+                  >
+                    {pendingMoveBagIndex === inspectorDetails.bagIndex ? 'Chạm ô đích…' : 'Đổi ô'}
+                  </button>
+                )}
                 {inspectorDetails.bagIndex !== null && inspectorDetails.qty >= 2 && (
                   <button
                     type="button"
                     className="btn btn--secondary btn--sm"
                     data-testid="btn-split-stack"
                     onClick={() => {
+                      setPendingMoveBagIndex(null);
                       const next = splitBagSlotInPlace(layout, tab, inspectorDetails.bagIndex!);
                       onChangeLayout(next);
                     }}
@@ -410,7 +469,9 @@ export function InventoryModal({
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 11.5, color: '#462818', opacity: 0.85 }}>
-            Click hoặc kéo thả để đổi vị trí · Chuột phải tách đôi / đặt 1 món · Shift+click gán thanh nhanh
+            {touchMode
+              ? 'Chạm ô để chọn · Bấm "Cầm ngay" hoặc 1–8 để đưa lên thanh nhanh · Bấm "Đổi ô" hoặc kéo để sắp xếp'
+              : 'Click hoặc kéo thả để đổi vị trí · Chuột phải tách đôi / đặt 1 món · Shift+click gán thanh nhanh'}
           </span>
           <button type="button" className="btn btn--secondary btn--sm" disabled={loading} onClick={() => void onRefresh()}>
             Làm mới túi đồ

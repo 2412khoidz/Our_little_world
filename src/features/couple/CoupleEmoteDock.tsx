@@ -7,6 +7,7 @@ import {
   type CouplePostureKind,
 } from '../../shared/couple/coupleTypes';
 import { getCoupleInteractionMeta } from '../../shared/couple/coupleProtocol';
+import type { HudLayoutMode } from '../../shared/viewport/viewportPolicy';
 import { CoupleActionBar, CoupleInviteToast } from './CoupleActionBar';
 
 const DOCK_OPEN_KEY = 'olw-couple-emote-dock-open';
@@ -17,6 +18,7 @@ interface CoupleEmoteDockProps {
   incomingInvite: CoupleInvitePayload | null;
   inviteRemainingSec: number;
   outgoingInviteActive: boolean;
+  hudLayoutMode?: HudLayoutMode;
   onSendEmote: (emote: CoupleEmoteId) => void;
   onRequestHug: () => void;
   onRequestHoldHands?: () => void;
@@ -45,8 +47,14 @@ export function CoupleEmoteDock(props: CoupleEmoteDockProps) {
         ? getCoupleInteractionMeta(props.localPosture).shortExitVi
         : 'Đứng dậy';
 
+  const isMobileHud = props.hudLayoutMode !== undefined && props.hudLayoutMode !== 'desktop';
+
   return (
-    <div className="couple-emote-dock" data-testid="couple-emote-dock">
+    <div
+      className="couple-emote-dock"
+      data-testid="couple-emote-dock"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <CoupleInviteToast
         incomingInvite={props.incomingInvite}
         inviteRemainingSec={props.inviteRemainingSec}
@@ -68,13 +76,32 @@ export function CoupleEmoteDock(props: CoupleEmoteDockProps) {
           )}
           <button
             type="button"
-            className={`couple-emote-dock__fab${invitePending ? ' couple-emote-dock__fab--pulse' : ''}`}
+            className={
+              isMobileHud
+                ? `olw-m-couple-fab${invitePending ? ' olw-m-couple-fab--pulse' : ''}`
+                : `couple-emote-dock__fab${invitePending ? ' couple-emote-dock__fab--pulse' : ''}`
+            }
             data-testid="couple-emote-fab"
             aria-label={invitePending ? 'Mở cảm xúc — có lời mời từ người thương' : 'Mở thanh cảm xúc'}
             aria-expanded={false}
             onClick={() => setOpen(true)}
           >
-            ♥
+            {isMobileHud ? (
+              <img
+                src={
+                  invitePending
+                    ? '/assets/ui/hybrid/emotes/hearts_double.png'
+                    : '/assets/ui/hybrid/emotes/heart.png'
+                }
+                alt="Cảm xúc"
+                width={22}
+                height={22}
+                draggable={false}
+                style={{ imageRendering: 'pixelated', display: 'block' }}
+              />
+            ) : (
+              '♥'
+            )}
           </button>
         </div>
       ) : (

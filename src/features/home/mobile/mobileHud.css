@@ -1,0 +1,840 @@
+/* M0 Mobile-First Game HUD, Touch Controls & Global Fullscreen
+ * Scoped under data-hud-mode="mobile-portrait" and "mobile-landscape" so desktop stays untouched.
+ * Uses verified Kiln Harvest 9-slice wood panels, buttons, and pixel-art emotes/items.
+ */
+
+.app-shell[data-hud-mode='mobile-portrait'],
+.app-shell[data-hud-mode='mobile-landscape'] {
+  height: var(--olw-vvh, 100dvh);
+  overscroll-behavior: none;
+}
+
+body[data-olw-focus-expanded='1'],
+html[data-olw-focus-expanded='1'] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ===== Pixel-Art Wooden Surfaces (Kiln Harvest Free Sampler) ===== */
+.olw-m-plaque {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  max-width: 100%;
+  background-color: #dec096;
+  border: 6px solid #4c2d1f;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 6px / 0 stretch;
+  box-shadow: 0 3px 0 rgba(32, 16, 8, 0.52), 0 6px 14px rgba(18, 10, 6, 0.35);
+  color: #3e2313;
+  font-family: var(--ui-font);
+  font-size: 11px;
+  font-weight: 800;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.olw-m-plaque__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-right: 5px;
+  border-right: 1.5px solid rgba(94, 54, 28, 0.35);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.olw-m-plaque__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #3e2313;
+  font-weight: 800;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.olw-m-zone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(45, 27, 17, 0.88);
+  border: 1.5px solid #c9944f;
+  color: #fff3d6;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: auto;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  touch-action: manipulation;
+}
+
+.olw-m-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #dfbf95;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0 3px 0 #3f2314, 0 5px 12px rgba(18, 10, 6, 0.35);
+  color: #3e2313;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  touch-action: manipulation;
+  transition: transform 80ms ease;
+}
+
+.olw-m-icon-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #3f2314;
+}
+
+.olw-m-icon-btn.is-active {
+  background-image: url('/assets/ui/hybrid/slot_selected.png');
+  color: #5b2610;
+}
+
+.olw-m-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 0 8px;
+  max-width: 82px;
+  background: rgba(45, 27, 17, 0.9);
+  border: 2px solid #c9944f;
+  border-radius: 6px;
+  box-shadow: 0 3px 0 #26140b;
+  color: #fff6e2;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.olw-m-status-btn.is-offline {
+  border-color: #eb7878;
+  color: #ffd7d7;
+}
+
+.olw-m-status-btn__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.olw-m-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.olw-m-dot--ok {
+  background: #7fe087;
+  box-shadow: 0 0 0 2px rgba(127, 224, 135, 0.25);
+}
+
+.olw-m-dot--warn {
+  background: #f6c453;
+}
+
+.olw-m-dot--off {
+  background: #ef6a6a;
+}
+
+.olw-m-wood-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 10px;
+  border: 6px solid #59331c;
+  border-image: url('/assets/ui/hybrid/button_wide_wood_normal.png') 5 fill / 6px / 0 stretch;
+  background-color: #c88e50;
+  color: #361c0d;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+  transition: transform 80ms ease;
+}
+
+.olw-m-wood-btn:active {
+  border-image-source: url('/assets/ui/hybrid/button_wide_wood_pressed.png');
+  transform: translateY(1px);
+}
+
+.olw-m-wood-btn.is-active {
+  border-image-source: url('/assets/ui/hybrid/button_wide_wood_hover.png');
+  outline: 2px solid #ffd56b;
+  outline-offset: -2px;
+  color: #2c1507;
+}
+
+.olw-m-wood-btn--sm {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.olw-m-wood-btn--danger {
+  background-color: #c65345;
+  color: #fff6f2;
+}
+
+/* ===== Top HUD Anchors (Portrait & Landscape) ===== */
+.olw-mobile-top-hud {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 36;
+  pointer-events: none;
+}
+
+.olw-mobile-top-left {
+  position: fixed;
+  top: calc(8px + var(--safe-top));
+  left: calc(8px + var(--safe-left));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: calc(100vw - 188px - var(--safe-left) - var(--safe-right));
+}
+
+.olw-mobile-top-right {
+  position: fixed;
+  top: calc(8px + var(--safe-top));
+  right: calc(8px + var(--safe-right));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.olw-m-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  width: min(244px, calc(100vw - 24px));
+  padding: 10px;
+  background-color: #ebd4ab;
+  border: 10px solid #59331c;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 10px / 0 stretch;
+  box-shadow: 0 10px 24px rgba(18, 10, 6, 0.45);
+  color: #3e2313;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 45;
+  image-rendering: pixelated;
+}
+
+.olw-m-popover--left {
+  left: 0;
+}
+
+.olw-m-popover--right {
+  right: 0;
+}
+
+.olw-m-popover__title {
+  font-weight: 800;
+  color: #4b2b15;
+}
+
+.olw-m-popover__list,
+.olw-m-popover__audio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.olw-m-popover__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.olw-m-popover__sub {
+  font-size: 12px;
+  color: #5b3820;
+}
+
+.olw-m-rotate-hint {
+  position: fixed;
+  top: calc(56px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(45, 27, 17, 0.94);
+  border: 1.5px solid #e5ad43;
+  color: #fff6e2;
+  font-size: 11.5px;
+  font-weight: 700;
+  pointer-events: auto;
+  max-width: calc(100vw - 24px);
+}
+
+.olw-m-rotate-hint button {
+  border: none;
+  background: transparent;
+  color: #ffd57f;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+/* ===== Mobile Touch Joystick (Fixed + Floating) ===== */
+.olw-touch-joystick {
+  position: fixed;
+  z-index: 33;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+
+.olw-touch-joystick--fixed {
+  left: calc(10px + var(--safe-left));
+  bottom: calc(92px + var(--safe-bottom));
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.olw-touch-joystick--floating {
+  left: calc(6px + var(--safe-left));
+  bottom: calc(86px + var(--safe-bottom));
+  width: 140px;
+  height: 140px;
+}
+
+.olw-touch-joystick__ring {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(64, 39, 24, 0.34) 0%, rgba(44, 26, 16, 0.62) 74%, rgba(30, 17, 10, 0.8) 100%);
+  border: 3px solid #c9944f;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 232, 185, 0.24),
+    0 4px 12px rgba(18, 10, 6, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.olw-touch-joystick__ring::before,
+.olw-touch-joystick__ring::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 232, 185, 0.22);
+}
+
+.olw-touch-joystick__ring::before {
+  width: 2px;
+  height: 70%;
+}
+
+.olw-touch-joystick__ring::after {
+  height: 2px;
+  width: 70%;
+}
+
+.olw-touch-joystick__ring--floating {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.olw-touch-joystick__floating-hint {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  opacity: 0.56;
+  pointer-events: none;
+}
+
+.olw-touch-joystick__ring--ghost {
+  border-style: dashed;
+}
+
+.olw-touch-joystick__knob {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff4da 0%, #e5b76a 56%, #a66c35 100%);
+  border: 2.5px solid #4c2d1f;
+  box-shadow: 0 3px 6px rgba(22, 12, 6, 0.48);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.olw-touch-joystick.is-active .olw-touch-joystick__knob {
+  background: radial-gradient(circle at 35% 30%, #fffaf0 0%, #ffd06d 58%, #ba7631 100%);
+}
+
+/* ===== Portrait & Landscape Coordinated Bottom & Action Zones ===== */
+.app-shell[data-hud-mode='mobile-portrait'] .main-game-interaction-stack {
+  bottom: calc(10px + var(--safe-bottom));
+  max-width: calc(100vw - 12px - var(--safe-left) - var(--safe-right));
+  gap: 5px;
+}
+
+.app-shell[data-hud-mode='mobile-portrait'] .main-game-touch-actions {
+  right: calc(10px + var(--safe-right));
+  bottom: calc(92px + var(--safe-bottom));
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.app-shell[data-hud-mode='mobile-portrait'] .couple-emote-dock {
+  right: calc(10px + var(--safe-right));
+  bottom: calc(164px + var(--safe-bottom));
+}
+
+/* Landscape Layout: full-bleed world, joystick lower-left, 8-slot hotbar bottom-center, actions lower-right */
+.app-shell[data-hud-mode='mobile-landscape'] .olw-mobile-top-left {
+  top: calc(6px + var(--safe-top));
+  left: calc(10px + var(--safe-left));
+  flex-direction: row;
+  align-items: center;
+  max-width: calc(100vw - 210px - var(--safe-left) - var(--safe-right));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-mobile-top-right {
+  top: calc(6px + var(--safe-top));
+  right: calc(10px + var(--safe-right));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-touch-joystick--fixed {
+  left: calc(12px + var(--safe-left));
+  bottom: calc(14px + var(--safe-bottom));
+  width: 82px;
+  height: 82px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-touch-joystick--floating {
+  left: calc(8px + var(--safe-left));
+  bottom: calc(10px + var(--safe-bottom));
+  width: 130px;
+  height: 120px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-touch-joystick__ring {
+  width: 78px;
+  height: 78px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-touch-joystick__knob {
+  width: 34px;
+  height: 34px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .main-game-interaction-stack {
+  bottom: calc(8px + var(--safe-bottom));
+  max-width: calc(100vw - 230px - var(--safe-left) - var(--safe-right));
+  gap: 4px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .main-game-touch-actions {
+  right: calc(12px + var(--safe-right));
+  bottom: calc(14px + var(--safe-bottom));
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .couple-emote-dock {
+  right: calc(12px + var(--safe-right));
+  bottom: calc(86px + var(--safe-bottom));
+}
+
+/* ===== Pixel-Art Game Action Buttons (No J/K Keycaps on Mobile) ===== */
+.olw-m-action-btn {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 10px;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+  transition: transform 80ms ease;
+}
+
+.olw-m-action-btn:active {
+  transform: translateY(2px) scale(0.96);
+}
+
+.olw-m-action-btn--primary {
+  width: 64px;
+  height: 64px;
+  background: radial-gradient(circle at 35% 25%, #ef8e6c 0%, #cf6244 65%, #9e432c 100%);
+  border: 3px solid #4c2d1f;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 232, 198, 0.35),
+    0 4px 0 #3a1d11,
+    0 8px 16px rgba(18, 10, 6, 0.42);
+  color: #fffaf0;
+}
+
+.olw-m-action-btn--secondary {
+  width: 48px;
+  height: 48px;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #e9cda2;
+  border: 2.5px solid #4c2d1f;
+  box-shadow: 0 3px 0 #3a1d11, 0 6px 12px rgba(18, 10, 6, 0.34);
+  color: #3e2313;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-m-action-btn--primary {
+  width: 58px;
+  height: 58px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-m-action-btn--secondary {
+  width: 44px;
+  height: 44px;
+}
+
+.olw-m-action-btn__caption {
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.05;
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.olw-m-action-btn--secondary .olw-m-action-btn__caption {
+  text-shadow: none;
+  font-size: 9.5px;
+}
+
+/* ===== Pixel-Art Couple Heart Medallion ===== */
+.olw-m-couple-fab {
+  pointer-events: auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  border: 2.5px solid #4c2d1f;
+  background: url('/assets/ui/hybrid/slot_normal.png') center / 100% 100% no-repeat #f6dfb8;
+  box-shadow: 0 3px 0 #3a1d11, 0 6px 12px rgba(18, 10, 6, 0.34);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+}
+
+.olw-m-couple-fab--pulse {
+  background-image: url('/assets/ui/hybrid/slot_selected.png');
+  animation: coupleFabPulse 1.4s ease-in-out infinite;
+}
+
+/* ===== Mobile Hotbar Refinements ===== */
+.olw-hotbar-tray--mobile {
+  gap: 5px;
+  padding: 5px 6px;
+  align-items: center;
+  overflow-x: visible;
+  touch-action: pan-y;
+}
+
+.olw-hotbar-tray--mobile-portrait .olw-hotbar-slot {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.olw-hotbar-tray--mobile-landscape .olw-hotbar-slot {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.olw-hotbar-page-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 40px;
+  min-width: 40px;
+  height: 48px;
+  padding: 2px;
+  border-radius: 4px;
+  border: 2px solid #59331c;
+  background: #ead1a5;
+  color: #3e2313;
+  font-size: 9.5px;
+  font-weight: 800;
+  touch-action: manipulation;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-hotbar-page-btn {
+  height: 40px;
+}
+
+.olw-hotbar-page-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.olw-hotbar-page-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(76, 45, 31, 0.3);
+}
+
+.olw-hotbar-page-dots span.is-on {
+  background: #c75a3e;
+}
+
+.olw-m-held-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(45, 27, 17, 0.9);
+  border: 1.5px solid #c9944f;
+  color: #fff6e2;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.olw-m-held-pill button {
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff6e2;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* ===== Expandable Mobile Navigation Drawer ===== */
+.olw-m-drawer-backdrop {
+  align-items: center;
+  padding: calc(10px + var(--safe-top)) calc(10px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(10px + var(--safe-left));
+}
+
+.olw-m-drawer {
+  width: min(520px, 100%);
+  max-height: calc(var(--olw-vvh, 100dvh) - 20px - var(--safe-top) - var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  background-color: #dec096;
+  border: 12px solid #6b4125;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 12px / 0 stretch;
+  box-shadow: 0 14px 34px rgba(18, 10, 6, 0.5);
+  color: #3e2313;
+  image-rendering: pixelated;
+}
+
+.olw-m-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 10px;
+  border-bottom: 2px solid rgba(114, 72, 41, 0.3);
+}
+
+.olw-m-drawer__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.olw-m-drawer__subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b4428;
+}
+
+.olw-m-drawer__scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.olw-m-drawer__section {
+  background: rgba(255, 248, 232, 0.52);
+  border: 2px solid #b5844a;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.olw-m-drawer__section--dev {
+  background: rgba(246, 224, 184, 0.65);
+  border-style: dashed;
+}
+
+.olw-m-drawer__section-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b3820;
+}
+
+.olw-m-drawer__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.olw-m-drawer__grid--2col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.olw-m-drawer__control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.olw-m-drawer__control-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.olw-m-segmented {
+  display: inline-flex;
+  border: 2px solid #59331c;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #ead1a5;
+}
+
+.olw-m-segmented button {
+  border: none;
+  border-right: 1px solid rgba(94, 54, 28, 0.35);
+  background: transparent;
+  padding: 6px 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #4b2b15;
+  min-height: 32px;
+}
+
+.olw-m-segmented button:last-child {
+  border-right: none;
+}
+
+.olw-m-segmented button.is-active {
+  background: #c75a3e;
+  color: #fffaf0;
+}
+
+.olw-m-drawer__note {
+  margin: 0;
+  font-size: 11px;
+  color: #6b4428;
+}
+
+.olw-m-drawer__audio-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.olw-m-drawer__audio-box label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.olw-m-drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ===== Landscape Compact Adjustments for Modals & Overlays ===== */
+.app-shell[data-hud-mode='mobile-landscape'] .modal-backdrop {
+  align-items: center;
+  padding: calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) calc(8px + var(--safe-bottom)) calc(12px + var(--safe-left));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .modal-panel {
+  max-height: calc(var(--olw-vvh, 100dvh) - 16px - var(--safe-top) - var(--safe-bottom));
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .olw-m-drawer__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .zone-arrival-banner,
+.app-shell[data-hud-mode='mobile-portrait'] .zone-arrival-banner {
+  top: calc(56px + var(--safe-top));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .stage-overlay-top,
+.app-shell[data-hud-mode='mobile-portrait'] .stage-overlay-top {
+  top: calc(54px + var(--safe-top));
+}
+
+.app-shell[data-hud-mode='mobile-portrait'] .olw-dev-banner--living-pet,
+.app-shell[data-hud-mode='mobile-landscape'] .olw-dev-banner--living-pet {
+  display: none;
+}
+
+.app-shell[data-hud-mode='mobile-portrait'] .olw-dev-banner--extended-world,
+.app-shell[data-hud-mode='mobile-landscape'] .olw-dev-banner--extended-world {
+  display: none;
+}
