@@ -129,11 +129,12 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
       await expect(pageHost.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'home');
       await expect(pageHost.getByTestId('btn-top-invite')).toBeVisible();
 
-      // 2. Host opens "Chơi cùng người thương" and starts the authenticated remote-share proxy
+      // 2. Host opens "Chơi cùng người thương" and waits for the single durable HTTPS tunnel link (never temporary 192.168 LAN IP)
       await pageHost.getByTestId('btn-remote-share').click();
       await expect(pageHost.getByTestId('remote-share-modal')).toBeVisible();
       await pageHost.getByTestId('remote-share-start-btn').click();
-      await expect(pageHost.getByTestId('remote-share-url-input')).toBeVisible({ timeout: 15_000 });
+      await expect(pageHost.getByTestId('remote-share-url-input')).toBeVisible({ timeout: 25_000 });
+      await expect(pageHost.getByTestId('remote-share-url-input')).toHaveValue(/^https:\/\//);
       await pageHost.getByTestId('remote-share-modal').getByRole('button', { name: 'Đóng' }).click();
       await expect(pageHost.getByTestId('partner-presence-pill')).toContainText('Nắng');
 

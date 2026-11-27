@@ -2,12 +2,14 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
-## DOCS RECONCILIATION — ROADMAP V3, APPROVED `M3a` & `M0` TRACKING (`main`)
+## DOCS RECONCILIATION — ROADMAP V3, APPROVED `M3a`, `M0` & MULTIPLAYER MAINTENANCE (`main`)
 
-- **Hợp nhất chỉ tài liệu & metadata vào `main` (từ `chore/master-roadmap-v3` @ `f900d09` + `chore/m3a-asset-library-audit` @ `3134f1a`):**
+- **Hợp nhất chỉ tài liệu & metadata (từ `chore/master-roadmap-v3` @ `f900d09` + `chore/m3a-asset-library-audit` @ `3134f1a`):**
   - **`M3a` (`OWNER APPROVED`):** Hợp nhất trọn vẹn 4 tài liệu kiểm kê kho donor `28` pack (`8,079` PNG duy nhất, `424` đang dùng = `5.25%`, `32` SKU sai/trùng ảnh & kế hoạch transplant): [ASSET_LIBRARY_INVENTORY.md](art/ASSET_LIBRARY_INVENTORY.md), [ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md), [asset-library-inventory.json](art/asset-library-inventory.json), và [NEXT_MISSIONS.md](NEXT_MISSIONS.md).
-  - **`M0` (`IN PROGRESS`):** Bổ sung mission **Mobile-First HUD, Touch Controls & Global Fullscreen** (`feat/mobile-first-hud` tại `C:\Users\admin\Downloads\OLW-Mobile-HUD`, phối hợp single `fullscreenOwner` / `--olw-vvh` contract với Billiards V3).
-  - **Không sửa gameplay, không import asset thô vào `public/`, không đụng `.dev-lan-state.json` hay private assets.**
+- **Hợp nhất `M0` Mobile HUD Phase 1 (`OWNER APPROVED`, `feat/mobile-first-hud` @ `cfd3099`):**
+  - Tích hợp HUD mobile-first (`MobileTopHud`, `MobileNavDrawer`, `TouchJoystick`, `mobileHud.css`, `virtualJoystickController.ts`, `viewportPolicy.ts`), bộ điều phối `GlobalViewportContext` (`--olw-vvh` & single `fullscreenOwner` contract tại [VIEWPORT_FULLSCREEN_CONTRACT.md](handovers/VIEWPORT_FULLSCREEN_CONTRACT.md)), giữ nguyên Billiards V2 trên `main`.
+- **Hợp nhất `fix/remote-share-single-link` (`143a822` — Multiplayer Maintenance):**
+  - `scripts/olwRemoteShare.mjs` (`buildInfo`) & `src/features/couple/RemoteShareModal.tsx`: ẩn link LAN tạm khi tunnel đang `starting`, chỉ xuất duy nhất link HTTPS bền vững khi tunnel `ready` (chỉ fallback LAN khi `tunnelStatus === 'error'` hoặc tắt tunnel).
 
 ## MASTER ROADMAP V3 RECONCILIATION (`main` @ `e5de4ac` / `v0.2.5+`)
 
