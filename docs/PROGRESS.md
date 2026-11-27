@@ -2,6 +2,27 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## FEATURE BRANCH — BILLIARDS V4 (`feat/billiards-v4-camera`)
+
+- **Nhánh & Worktree:** `feat/billiards-v4-camera` tại `C:\Users\admin\Downloads\OLW-Billiards-V4` (tách từ `origin/main` @ `e5de4ac`, tích hợp nền tảng Billiards V3.2 từ `feat/billiards-v3` @ `696a9be`, giữ nguyên physics 2D/3D & không đụng primary workspace `C:\Users\admin\Downloads\Our_little_world`).
+- **P0-A — Điều khiển độ nhạy cảm ứng cục bộ (`touchPreferences.ts`, `BilliardsTouchCameraSettings.tsx`, `Billiards2DGame.tsx`, `Billiards3DGame.tsx`, `BilliardsEntryMenu.tsx`):**
+  - Bổ sung 4 thanh trượt độ nhạy độc lập lưu qua `localStorage` (`olw.billiards.touchCameraPrefs.v1`, không đồng bộ multiplayer) + nút **Mặc định**: **Độ nhạy ngắm cơ** (`65%`, `10–200%`), **Tinh chỉnh khi khóa cơ** (`30%`, `5–100%`), **Độ nhạy xoay camera** (`75%`, `10–200%`), **Độ nhạy thu phóng** (`80%`, `10–200%`).
+  - Mức `100%` tương ứng đúng baseline cảm ứng gốc; không phụ thuộc FPS hay DPR; khóa cơ (`billiards-aim-lock`) chặn chạm nhầm nhảy góc nhưng vẫn cho phép kéo ngón tinh chỉnh góc cực nhỏ theo độ nhạy `lockedFineSensitivityPct`.
+- **P0-B — Phân biệt thao tác cảm ứng & Raycast chọn bi 3D chính xác (`touchControls.ts`, `Billiards3DGame.tsx`, `cameraController3d.ts`):**
+  - Chuẩn hóa bộ phân loại `TapGestureState` theo CSS px (`TOUCH_TAP_SLOP_PX = 8`, `TOUCH_TAP_MAX_MS = 450`, theo dõi `maxDistPx` suốt cử chỉ, loại bỏ drag bắt đầu từ bi, chuyển đa chạm pinch, hủy sự kiện, kéo đặt bi cái và UI touch).
+  - Trong 3D, chỉ nhận diện đổi mục tiêu camera (`focusedBallId`) khi `pointerup` đạt tap hợp lệ và `THREE.Raycaster.intersectObjects` trúng đúng mesh bi nhìn thấy (không bao giờ kích hoạt khi tap mặt bàn trống, băng, lỗ, sàn hoặc viền). Đổi mục tiêu camera không làm thay đổi `aimAngle`, `aimLocked` hay `power`.
+- **P1/P2/P3/P4 — Tactical Overview & Adaptive Cinematic Camera (`cameraController3d.ts`, `Billiards3DGame.tsx`, `billiards.css`):**
+  - Triển khai máy trạng thái nhẹ `aiming → shot_transition → tracking → overview` + `manual_override` đọc trực tiếp vị trí/vận tốc `Ball3DState`, `onFirstHit`, `onPocket` (không chạy mô phỏng phụ hay thêm render camera).
+  - **Adaptive Cinematic** (mặc định trên mobile 3D; desktop giữ `Manual`): tự nâng camera lên góc nghiêng điện ảnh trên cao theo vùng bao các bi chuyển động, tự động chuyển sang bi va chạm thật nếu đánh trượt mục tiêu dự kiến, giữ lỗ bi cái / lỗ mục tiêu & kết quả bi rơi vào lỗ (`1.15s`), tự mở rộng toàn bàn khi phá bi hoặc nhiều bi tản rộng, và áp dụng giảm chấn bất đối xứng (mở rộng nhanh `10.5`, thu gọn chậm `2.1` kèm hysteresis cooldown `480ms` & deadband `0.09m`).
+  - Sau khi bi dừng, reset `zoomLevel = 1.0x` và giữ góc nhìn **Toàn bàn** (`overview`) quan sát đủ 6 lỗ cho tới khi người chơi chủ động chọn góc nhìn khác; chạm/kéo/zoom khi bi đang chạy lập tức nhường quyền điều khiển (`manual_override`) cho tới hết cú đánh; sửa thêm responsive header `@media (max-width: 960px), (max-height: 520px)` cho màn hình ngang mobile (`844×390`) hết đè HUD.
+- **Kiểm chứng sau chỉnh sửa cuối trên `feat/billiards-v4-camera` (Windows Chromium / Dev LAN WS):**
+  - `npm run typecheck`: **PASSED** (`tsc -b`, exit 0).
+  - `npm run lint`: **PASSED** (`0` errors, `1` warning pre-existing tại `ChillFishingModal.tsx:90`).
+  - Vitest (7 suites Bi-a + `privateAssetSync.test.ts`): **8/8 suites, 26/26 tests PASSED**.
+  - Production build (`npm run build` — 2617 modules, 45 PWA precache entries / `4926.82 KiB`) + `node scripts/verify-prod-guard.mjs` + `npm run assets:private:verify`: **PASSED**.
+  - Playwright E2E (`PLAYWRIGHT_PORT=4181`, `billiards-multiplayer.spec.ts` + `billiards-v3-modes.spec.ts` + `billiards-v4-camera.spec.ts`): **`chromium-desktop` 9/9 PASSED**, **`chromium-iphone-16-pro-max` 6/6 PASSED** (tổng **15/15 PASSED**). Mobile 3D frame-time đo thực tế từ DEV RAF profiler: **p50 `16.7ms`, p95 `33.4ms`**; desktop: **p50 `49.9ms`, p95 `50.1ms`** dưới software WebGL E2E.
+  - **Phần chưa kiểm chứng:** Chơi thử trên thiết bị iPhone / Android vật lý thật (Safari PWA & cảm giác vuốt ngón thật).
+
 ## FEATURE BRANCH — BILLIARDS V3 (`feat/billiards-v3`, merged into `feat/billiards-v4-camera`)
 
 - **Nhánh & Worktree:** `feat/billiards-v3` tại `C:\Users\admin\Downloads\OLW-Billiards-V3` (tách từ `origin/main` / `v0.2.5`, không sửa primary workspace `C:\Users\admin\Downloads\Our_little_world`).

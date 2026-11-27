@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { HALF_H_3D, HALF_W_3D } from '../../../shared/billiards/physics3dEngine';
+import {
+  HALF_H_3D,
+  HALF_W_3D,
+  POCKETS_3D,
+  type Ball3DState,
+} from '../../../shared/billiards/physics3dEngine';
 import type { Billiards3DShotCameraMode } from './touchPreferences';
 
 export type Billiards3DCamMode = 'follow' | 'top' | 'orbit';
@@ -10,6 +15,41 @@ export type Billiards3DCameraStage =
   | 'tracking'
   | 'overview'
   | 'manual_override';
+
+export interface AdaptivePocketEvent {
+  id: number;
+  x: number;
+  z: number;
+  atMs: number;
+}
+
+export interface AdaptiveShotContext {
+  isBreakShot: boolean;
+  intendedTargetId: number | null;
+  firstContactId: number | null;
+  cueStopGraceUntilMs: number;
+  firstContactGraceUntilMs: number;
+  recentPockets: readonly AdaptivePocketEvent[];
+  nowMs: number;
+}
+
+export interface AdaptiveFramingRegion {
+  cx: number;
+  cz: number;
+  spanX: number;
+  spanZ: number;
+  targetHeight: number;
+  fullTable: boolean;
+  valid: boolean;
+}
+
+export interface AdaptiveSmootherState {
+  initialized: boolean;
+  cx: number;
+  cz: number;
+  height: number;
+  holdWideUntilMs: number;
+}
 
 export interface CameraPoseInput {
   mode: Billiards3DCamMode;
@@ -28,6 +68,8 @@ export interface CameraPoseInput {
   hoverWorldPt: { x: number; z: number } | null;
   focusedBallId?: number | null;
   focusedBallPos?: { x: number; z: number } | null;
+  balls?: readonly Ball3DState[];
+  adaptiveContext?: AdaptiveShotContext | null;
 }
 
 export interface ComputedCameraPose {
@@ -35,6 +77,258 @@ export interface ComputedCameraPose {
   lookAt: [number, number, number];
   up: [number, number, number];
   fov: number;
+}
+
+export function createAdaptiveSmootherState(): AdaptiveSmootherState {
+  return {
+    initialized: false,
+    cx: 0,
+    cz: 0,
+    height: 2.8,
+    holdWideUntilMs: 0,
+  };
+}
+
+/**
+ * Pure linear-time (`O(16)`) Adaptive Cinematic ROI & height calculation.
+ * Prioritizes visibility of cue ball, first contact / intended target, active movers,
+ * approaching pockets (including scratch risks), and recent pocketing drops.
+ * Falls back gracefully to full-table Tactical Overview on breaks, widespread scatters, or missing data.
+ */
+export function computeAdaptiveFramingRegion3D(
+  balls: readonly Ball3DState[] | undefined,
+  ctx: AdaptiveShotContext | null | undefined,
+  aspect: number,
+): AdaptiveFramingRegion {
+  const overview = computeTacticalOverviewPose3D(aspect);
+  const overviewH = overview.position[1];
+  const safeAspect = Math.max(0.4, aspect || 1);
+  const isPortrait = safeAspect < 0.85;
+  const fov = overview.fov;
+  const vHalfTan = Math.tan((fov * Math.PI) / 360);
+  const hHalfTan = vHalfTan * safeAspect;
+
+  const fallbackOverview: AdaptiveFramingRegion = {
+    cx: 0,
+    cz: 0,
+    spanX: (HALF_W_3D + 0.19) * 2,
+    spanZ: (HALF_H_3D + 0.22) * 2,
+    targetHeight: overviewH,
+    fullTable: true,
+    valid: false,
+  };
+
+  if (!balls || balls.length === 0 || !ctx) {
+    return fallbackOverview;
+  }
+
+  let movingCount = 0;
+  let mMinX = Infinity;
+  let mMaxX = -Infinity;
+  let mMinZ = Infinity;
+  let mMaxZ = -Infinity;
+
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i]!;
+    if (!Number.isFinite(b.x) || !Number.isFinite(b.z)) {
+      return fallbackOverview;
+    }
+    if (b.pocketed && !b.falling) continue;
+    const spdSq = b.vx * b.vx + b.vz * b.vz;
+    if (b.falling || spdSq > 0.032 * 0.032) {
+      movingCount++;
+      if (b.x < mMinX) mMinX = b.x;
+      if (b.x > mMaxX) mMaxX = b.x;
+      if (b.z < mMinZ) mMinZ = b.z;
+      if (b.z > mMaxZ) mMaxZ = b.z;
+    }
+  }
+
+  const widespreadScatter =
+    movingCount >= 2 && mMaxX - mMinX > 1.72 && mMaxZ - mMinZ > 0.86;
+  if (ctx.isBreakShot || movingCount >= 5 || widespreadScatter) {
+    return {
+      ...fallbackOverview,
+      valid: true,
+    };
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  let count = 0;
+
+  const includePt = (px: number, pz: number) => {
+    if (!Number.isFinite(px) || !Number.isFinite(pz)) return;
+    const cx = Math.max(-HALF_W_3D - 0.12, Math.min(HALF_W_3D + 0.12, px));
+    const cz = Math.max(-HALF_H_3D - 0.12, Math.min(HALF_H_3D + 0.12, pz));
+    if (cx < minX) minX = cx;
+    if (cx > maxX) maxX = cx;
+    if (cz < minZ) minZ = cz;
+    if (cz > maxZ) maxZ = cz;
+    count++;
+  };
+
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i]!;
+    const spd = Math.hypot(b.vx, b.vz);
+    const isMoving = !b.pocketed && (b.falling || spd > 0.032);
+
+    const isCueRetained =
+      b.id === 0 &&
+      !b.pocketed &&
+      (ctx.firstContactId === null || ctx.nowMs <= ctx.cueStopGraceUntilMs);
+
+    // Before contact: keep cue ball & intended target ball in view.
+    // Once real first contact happens: follow the actual struck ball (adapts automatically on missed target).
+    const isIntendedPreContact =
+      ctx.firstContactId === null &&
+      ctx.intendedTargetId !== null &&
+      b.id === ctx.intendedTargetId &&
+      !b.pocketed;
+
+    const isActualContact =
+      ctx.firstContactId !== null &&
+      b.id === ctx.firstContactId &&
+      !b.pocketed &&
+      ctx.nowMs <= ctx.firstContactGraceUntilMs;
+
+    if (isMoving || isCueRetained || isIntendedPreContact || isActualContact) {
+      includePt(b.x, b.z);
+      if (isMoving && !b.falling) {
+        const lookX = Math.max(-0.28, Math.min(0.28, b.vx * 0.18));
+        const lookZ = Math.max(-0.28, Math.min(0.28, b.vz * 0.18));
+        includePt(b.x + lookX, b.z + lookZ);
+      }
+    }
+
+    // Preserve pocket visibility for both approaching object balls and potential cue-ball scratches
+    if (isMoving && spd > 0.06 && !b.falling) {
+      for (let pi = 0; pi < POCKETS_3D.length; pi++) {
+        const pocket = POCKETS_3D[pi]!;
+        const pdx = pocket.x - b.x;
+        const pdz = pocket.z - b.z;
+        const pDist = Math.hypot(pdx, pdz);
+        if (pDist < 0.64) {
+          const align = (b.vx * pdx + b.vz * pdz) / (spd * Math.max(0.001, pDist));
+          if (align > 0.6) {
+            includePt(pocket.x, pocket.z);
+          }
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < ctx.recentPockets.length; i++) {
+    const ev = ctx.recentPockets[i]!;
+    if (ctx.nowMs - ev.atMs <= 1150) {
+      includePt(ev.x, ev.z);
+    }
+  }
+
+  if (count === 0 || !Number.isFinite(minX)) {
+    return {
+      ...fallbackOverview,
+      valid: true,
+    };
+  }
+
+  const rawSpanX = maxX - minX;
+  const rawSpanZ = maxZ - minZ;
+  const spanX = Math.max(0.92, rawSpanX + 0.44);
+  const spanZ = Math.max(0.54, rawSpanZ + 0.38);
+
+  const reqH = isPortrait
+    ? Math.max((spanX * 0.5) / vHalfTan, (spanZ * 0.5) / hHalfTan)
+    : Math.max((spanX * 0.5) / hHalfTan, (spanZ * 0.5) / vHalfTan);
+
+  const targetHeight = Math.max(1.36, Math.min(overviewH, reqH * 1.15));
+  const fullTable = targetHeight >= overviewH * 0.94;
+
+  // Blend center toward (0,0) as frame widens toward full-table overview
+  const zoomFrac = Math.max(
+    0,
+    Math.min(1, (overviewH - targetHeight) / Math.max(0.25, overviewH - 1.36)),
+  );
+  const maxOffsetX = HALF_W_3D * 0.72;
+  const maxOffsetZ = HALF_H_3D * 0.68;
+  const rawCx = Math.max(-maxOffsetX, Math.min(maxOffsetX, (minX + maxX) * 0.5));
+  const rawCz = Math.max(-maxOffsetZ, Math.min(maxOffsetZ, (minZ + maxZ) * 0.5));
+
+  return {
+    cx: fullTable ? 0 : rawCx * zoomFrac,
+    cz: fullTable ? 0 : rawCz * zoomFrac,
+    spanX,
+    spanZ,
+    targetHeight,
+    fullTable,
+    valid: true,
+  };
+}
+
+/**
+ * Applies asymmetric damping (widens rapidly to protect shot visibility, tightens gently
+ * with deadband hysteresis to prevent zoom oscillation) and returns an elevated camera pose.
+ */
+export function stepAdaptiveShotCamera(
+  smoother: AdaptiveSmootherState,
+  region: AdaptiveFramingRegion,
+  aspect: number,
+  dt: number,
+  nowMs: number,
+): ComputedCameraPose {
+  const overview = computeTacticalOverviewPose3D(aspect);
+  const overviewH = overview.position[1];
+  const isPortrait = Math.max(0.4, aspect || 1) < 0.85;
+
+  if (!smoother.initialized) {
+    smoother.initialized = true;
+    smoother.cx = region.cx;
+    smoother.cz = region.cz;
+    smoother.height = region.targetHeight;
+    smoother.holdWideUntilMs = nowMs + 250;
+  } else {
+    const heightDiff = region.targetHeight - smoother.height;
+    if (heightDiff > 0.02) {
+      // Widen quickly so fast-moving balls never clip outside frame
+      smoother.height += heightDiff * smoothFactor(10.5, dt);
+      if (heightDiff > 0.06) {
+        smoother.holdWideUntilMs = Math.max(smoother.holdWideUntilMs, nowMs + 480);
+      }
+    } else if (heightDiff < -0.09 && nowMs >= smoother.holdWideUntilMs) {
+      // Tighten slowly with hysteresis deadband to prevent zoom pumping
+      smoother.height += heightDiff * smoothFactor(2.1, dt);
+    }
+
+    const posRate = heightDiff > 0.02 ? 8.0 : 5.2;
+    const posAlpha = smoothFactor(posRate, dt);
+    const dx = region.cx - smoother.cx;
+    const dz = region.cz - smoother.cz;
+    if (Math.abs(dx) > 0.006) smoother.cx += dx * posAlpha;
+    if (Math.abs(dz) > 0.006) smoother.cz += dz * posAlpha;
+  }
+
+  const tiltRatio = Math.max(
+    0,
+    Math.min(1, (overviewH - smoother.height) / Math.max(0.3, overviewH - 1.36)),
+  );
+  const tiltDist = Math.min(0.4, smoother.height * 0.22) * tiltRatio;
+
+  if (isPortrait) {
+    return {
+      position: [smoother.cx - tiltDist, smoother.height, smoother.cz],
+      lookAt: [smoother.cx, 0.02, smoother.cz],
+      up: overview.up,
+      fov: overview.fov,
+    };
+  }
+  return {
+    position: [smoother.cx, smoother.height, smoother.cz + Math.max(0.01, tiltDist)],
+    lookAt: [smoother.cx, 0.02, smoother.cz],
+    up: overview.up,
+    fov: overview.fov,
+  };
 }
 
 /**
@@ -232,6 +526,8 @@ export class Billiards3DCameraController {
   private lastMode: Billiards3DCamMode = 'follow';
   private orbitBlendRemaining = 0;
   private orbitTargetGoal: THREE.Vector3 | null = null;
+  private adaptiveSmoother: AdaptiveSmootherState = createAdaptiveSmootherState();
+  private lastShotStage: Billiards3DCameraStage = 'aiming';
   private readonly targetPos = new THREE.Vector3();
   private readonly targetLook = new THREE.Vector3();
   private readonly targetUp = new THREE.Vector3(0, 1, 0);
@@ -296,6 +592,21 @@ export class Billiards3DCameraController {
       rawInput.cameraStage === 'overview';
     const effectiveMode: Billiards3DCamMode = automaticStageOverride ? 'top' : rawInput.mode;
 
+    const enteringAutoShot =
+      (rawInput.cameraStage === 'shot_transition' || rawInput.cameraStage === 'tracking') &&
+      this.lastShotStage !== 'shot_transition' &&
+      this.lastShotStage !== 'tracking';
+    if (enteringAutoShot) {
+      // Seed adaptive smoother smoothly from current elevated perspective/center
+      this.adaptiveSmoother.initialized = true;
+      this.adaptiveSmoother.cx = this.targetLook.x;
+      this.adaptiveSmoother.cz = this.targetLook.z;
+      this.adaptiveSmoother.height = Math.max(1.15, this.camera.position.y);
+      this.adaptiveSmoother.holdWideUntilMs =
+        (rawInput.adaptiveContext?.nowMs ?? 0) + 220;
+    }
+    this.lastShotStage = rawInput.cameraStage ?? 'aiming';
+
     const enteringOrbit = effectiveMode === 'orbit' && this.lastMode !== 'orbit';
     const leavingOrbit = effectiveMode !== 'orbit' && this.lastMode === 'orbit';
     this.lastMode = effectiveMode;
@@ -358,13 +669,31 @@ export class Billiards3DCameraController {
       return;
     }
 
-    // Strict ownership: OrbitControls is disabled during Follow / Top / Ball-in-Hand
+    // Strict ownership: OrbitControls is disabled during Follow / Top / Ball-in-Hand / Auto Shot
     this.controls.enabled = false;
 
-    const pose = computeCameraPose3D({
-      ...rawInput,
-      visualAimAngle: this.visualAimAngle,
-    });
+    const useAdaptiveTracking =
+      rawInput.shotCameraMode === 'adaptive' &&
+      !rawInput.draggingCueBall &&
+      !rawInput.hoverZoomActive &&
+      (rawInput.cameraStage === 'shot_transition' || rawInput.cameraStage === 'tracking');
+
+    const pose = useAdaptiveTracking
+      ? stepAdaptiveShotCamera(
+          this.adaptiveSmoother,
+          computeAdaptiveFramingRegion3D(
+            rawInput.balls,
+            rawInput.adaptiveContext,
+            rawInput.aspect || 1,
+          ),
+          rawInput.aspect || 1,
+          dt,
+          rawInput.adaptiveContext?.nowMs ?? 0,
+        )
+      : computeCameraPose3D({
+          ...rawInput,
+          visualAimAngle: this.visualAimAngle,
+        });
     this.targetPos.set(...pose.position);
     this.targetLook.set(...pose.lookAt);
     this.targetUp.set(...pose.up);
@@ -378,7 +707,7 @@ export class Billiards3DCameraController {
     this.targetQuat.setFromRotationMatrix(this.lookMatrix);
 
     const alpha = smoothFactor(
-      effectiveMode === 'top' || automaticStageOverride ? 8.5 : 10,
+      useAdaptiveTracking ? 9.5 : effectiveMode === 'top' || automaticStageOverride ? 8.5 : 10,
       dt,
     );
     this.camera.position.lerp(this.targetPos, alpha);

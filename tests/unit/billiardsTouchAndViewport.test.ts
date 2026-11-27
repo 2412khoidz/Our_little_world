@@ -33,14 +33,19 @@ import {
   loadTouchPreferences,
   normalizeSensitivityMultipliers,
   resetTouchPreferences,
+  resolveEffectiveShotCameraMode,
   sanitizeTouchPreferences,
   saveTouchPreferences,
 } from '../../src/features/minigames/billiards/touchPreferences';
 import {
+  computeAdaptiveFramingRegion3D,
   computeCameraPose3D,
   computeTacticalOverviewPose3D,
+  createAdaptiveSmootherState,
   shortestAngleDelta3D,
+  stepAdaptiveShotCamera,
 } from '../../src/features/minigames/billiards/cameraController3d';
+import { POCKETS_3D, makeBall3D } from '../../src/shared/billiards/physics3dEngine';
 
 describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobby', () => {
   it('rotates 2D table -90deg cleanly for portrait mobile and preserves coordinates round-trip', () => {
@@ -501,5 +506,121 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
     });
     expect(heldPose.lookAt).toEqual([0, 0, 0]);
     expect(heldPose.position[1]).toBeCloseTo(portraitOv.position[1], 5);
+  });
+
+  it('P2/P3/P4: Adaptive Cinematic tracks tight shots, adapts on missed targets, preserves pockets/break, applies asymmetric hysteresis, and defaults to adaptive on mobile', () => {
+    const def = createDefaultTouchPreferences();
+    expect(resolveEffectiveShotCameraMode(def, true)).toBe('adaptive');
+    expect(resolveEffectiveShotCameraMode(def, false)).toBe('manual');
+    expect(resolveEffectiveShotCameraMode({ shotCameraMode: 'overview' }, false)).toBe('overview');
+
+    const aspect = 430 / 820;
+    const overviewH = computeTacticalOverviewPose3D(aspect).position[1];
+
+    // 1. Tight nearby shot: cue & ball 2 close together on right side -> tighter than full overview
+    const cue = makeBall3D(0, 0.55, 0.15);
+    cue.vx = 0.8;
+    const b2 = makeBall3D(2, 0.78, 0.18);
+    const b5 = makeBall3D(5, -0.85, -0.45);
+    const tightRegion = computeAdaptiveFramingRegion3D(
+      [cue, b2, b5],
+      {
+        isBreakShot: false,
+        intendedTargetId: 2,
+        firstContactId: null,
+        cueStopGraceUntilMs: 2000,
+        firstContactGraceUntilMs: 0,
+        recentPockets: [],
+        nowMs: 1000,
+      },
+      aspect,
+    );
+    expect(tightRegion.valid).toBe(true);
+    expect(tightRegion.fullTable).toBe(false);
+    expect(tightRegion.targetHeight).toBeLessThan(overviewH - 0.3);
+    expect(tightRegion.cx).toBeGreaterThan(0.2);
+
+    // 2. Break shot: immediately returns full-table overview
+    const breakRegion = computeAdaptiveFramingRegion3D(
+      [cue, b2, b5],
+      {
+        isBreakShot: true,
+        intendedTargetId: 1,
+        firstContactId: null,
+        cueStopGraceUntilMs: 2000,
+        firstContactGraceUntilMs: 0,
+        recentPockets: [],
+        nowMs: 1000,
+      },
+      aspect,
+    );
+    expect(breakRegion.fullTable).toBe(true);
+    expect(breakRegion.targetHeight).toBeCloseTo(overviewH, 4);
+
+    // 3. Missed target (intended 5, actually hit 2 moving at +0.75) -> ignores stationary missed 5, follows real contact 2
+    cue.vx = 0;
+    b2.vx = 0.7;
+    const realContactRegion = computeAdaptiveFramingRegion3D(
+      [cue, b2, b5],
+      {
+        isBreakShot: false,
+        intendedTargetId: 5,
+        firstContactId: 2,
+        cueStopGraceUntilMs: 500, // expired grace
+        firstContactGraceUntilMs: 1600,
+        recentPockets: [],
+        nowMs: 1000,
+      },
+      aspect,
+    );
+    expect(realContactRegion.cx).toBeGreaterThan(0.2);
+    expect(realContactRegion.fullTable).toBe(false);
+
+    // 4. Cue scratch risk toward top-right corner pocket -> includes pocket in framing
+    const scratchCue = makeBall3D(0, 1.02, -0.48);
+    const topRightCorner = POCKETS_3D[2]!;
+    scratchCue.vx = (topRightCorner.x - scratchCue.x) * 3;
+    scratchCue.vz = (topRightCorner.z - scratchCue.z) * 3;
+    const scratchRegion = computeAdaptiveFramingRegion3D(
+      [scratchCue],
+      {
+        isBreakShot: false,
+        intendedTargetId: null,
+        firstContactId: null,
+        cueStopGraceUntilMs: 1500,
+        firstContactGraceUntilMs: 0,
+        recentPockets: [],
+        nowMs: 1000,
+      },
+      aspect,
+    );
+    expect(scratchRegion.valid).toBe(true);
+    expect(scratchRegion.cx).toBeGreaterThan(0.3);
+
+    // 5. Asymmetric widen vs tighten hysteresis
+    const smoother = createAdaptiveSmootherState();
+    smoother.initialized = true;
+    smoother.height = 1.5;
+    smoother.cx = 0;
+    smoother.cz = 0;
+    stepAdaptiveShotCamera(smoother, breakRegion, aspect, 0.1, 1000);
+    const widenedDelta = smoother.height - 1.5;
+    expect(widenedDelta).toBeGreaterThan(0.8);
+
+    // Immediately requesting tighter height during cooldown is blocked (hysteresis!)
+    const afterCooldownStart = smoother.height;
+    stepAdaptiveShotCamera(smoother, tightRegion, aspect, 0.05, 1100);
+    expect(smoother.height).toBeCloseTo(afterCooldownStart, 5);
+
+    // After cooldown expires, tightens slowly (much less than widen rate)
+    stepAdaptiveShotCamera(smoother, tightRegion, aspect, 0.1, 2000);
+    const tightenedDelta = afterCooldownStart - smoother.height;
+    expect(tightenedDelta).toBeGreaterThan(0.01);
+    expect(tightenedDelta).toBeLessThan(widenedDelta * 0.5);
+
+    // 6. Invalid / empty input falls back safely to Tactical Overview
+    const fallback = computeAdaptiveFramingRegion3D(undefined, undefined, aspect);
+    expect(fallback.fullTable).toBe(true);
+    expect(Number.isFinite(fallback.targetHeight)).toBe(true);
   });
 });

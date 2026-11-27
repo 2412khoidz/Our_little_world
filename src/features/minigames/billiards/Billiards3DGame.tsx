@@ -63,6 +63,8 @@ import { BilliardsAvatarPortrait } from './BilliardsAvatarPortrait';
 import { BilliardsTouchCameraSettings } from './BilliardsTouchCameraSettings';
 import {
   Billiards3DCameraController,
+  type AdaptivePocketEvent,
+  type AdaptiveShotContext,
   type Billiards3DCamMode,
   type Billiards3DCameraStage,
 } from './cameraController3d';
@@ -180,6 +182,9 @@ interface Sim3DRuntime {
   focusedBallId: number | null;
   cameraStage: Billiards3DCameraStage;
   manualShotOverride: boolean;
+  adaptiveContext: AdaptiveShotContext;
+  adaptiveRecentPockets: AdaptivePocketEvent[];
+  cueWasMovingInShot: boolean;
   zoomLevel: number;
   hoverZoomActive: boolean;
   hoverWorldPt: { x: number; z: number } | null;
@@ -262,6 +267,17 @@ function createSim3DRuntime(props: BilliardsGameProps): Sim3DRuntime {
     focusedBallId: null,
     cameraStage: 'aiming',
     manualShotOverride: false,
+    adaptiveContext: {
+      isBreakShot: false,
+      intendedTargetId: null,
+      firstContactId: null,
+      cueStopGraceUntilMs: 0,
+      firstContactGraceUntilMs: 0,
+      recentPockets: [],
+      nowMs: 0,
+    },
+    adaptiveRecentPockets: [],
+    cueWasMovingInShot: false,
     zoomLevel: 1.0,
     hoverZoomActive: false,
     hoverWorldPt: null,
@@ -560,6 +576,25 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
       const nextStage: Billiards3DCameraStage =
         effectiveShotCam !== 'manual' ? 'shot_transition' : 'aiming';
       sim.cameraStage = nextStage;
+      if (effectiveShotCam !== 'manual' && sim.zoomLevel !== 1.0) {
+        sim.zoomLevel = 1.0;
+        sim.hoverWorldPt = null;
+        setZoomLabel('1.0x');
+        setPrecisionMode(false);
+      }
+      sim.adaptiveRecentPockets.length = 0;
+      sim.cueWasMovingInShot = false;
+      const cueBeforeShot = sim.balls3D.find((b) => b.id === 0);
+      const aimRayBeforeShot =
+        cueBeforeShot && !cueBeforeShot.pocketed
+          ? computeAimRay3D(sim.balls3D, cueBeforeShot, shot.angle)
+          : null;
+      sim.adaptiveContext.isBreakShot = sim.proto.isBreakShot;
+      sim.adaptiveContext.intendedTargetId = aimRayBeforeShot?.hitBall?.id ?? null;
+      sim.adaptiveContext.firstContactId = null;
+      sim.adaptiveContext.cueStopGraceUntilMs = 0;
+      sim.adaptiveContext.firstContactGraceUntilMs = 0;
+      sim.adaptiveContext.recentPockets = sim.adaptiveRecentPockets;
       setCameraStage(nextStage);
       setFocusedBallId(null);
       sim.aimAngle = shot.angle;
@@ -1968,6 +2003,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     let rafId = 0;
     let lastTime = performance.now();
     let lastReportedAimDeg = -1;
+    let lastReportedCamY = '';
 
     const frame = (now: number) => {
       if (!active) return;
@@ -2060,11 +2096,18 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
         while (sim.accumulator >= FIXED_STEP_DT_3D && stepsRun < 12) {
           stillMoving = stepBilliards3DFixedTick(sim.balls3D, {
             onFirstHit: (id) => {
-              if (!isRep && proto.shotFirstHit === null) proto.shotFirstHit = id;
+              if (!isRep && proto.shotFirstHit === null) {
+                proto.shotFirstHit = id;
+                sim.adaptiveContext.firstContactId = id;
+                sim.adaptiveContext.firstContactGraceUntilMs = now + 520;
+              }
             },
-            onPocket: (b) => {
+            onPocket: (b, px, pz) => {
               billiardsSound.playPocket();
               if (!isRep) {
+                if (sim.adaptiveRecentPockets.length < 16) {
+                  sim.adaptiveRecentPockets.push({ id: b.id, x: px, z: pz, atMs: now });
+                }
                 if (b.id === 0) proto.cueScratched = true;
                 else {
                   proto.shotPocketed.push(b.id);
@@ -2084,6 +2127,28 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
           if (!stillMoving) {
             sim.accumulator = 0;
             break;
+          }
+        }
+        if (!isRep) {
+          const cueNow = sim.balls3D.find((b) => b.id === 0);
+          if (cueNow && !cueNow.pocketed) {
+            const cSpdSq = cueNow.vx * cueNow.vx + cueNow.vz * cueNow.vz;
+            if (cSpdSq > 0.032 * 0.032) {
+              sim.cueWasMovingInShot = true;
+              sim.adaptiveContext.cueStopGraceUntilMs = now + 380;
+            } else if (!sim.cueWasMovingInShot) {
+              sim.adaptiveContext.cueStopGraceUntilMs = now + 380;
+            }
+          }
+          if (sim.adaptiveContext.firstContactId !== null) {
+            const fcBall = sim.balls3D.find((b) => b.id === sim.adaptiveContext.firstContactId);
+            if (
+              fcBall &&
+              !fcBall.pocketed &&
+              fcBall.vx * fcBall.vx + fcBall.vz * fcBall.vz > 0.032 * 0.032
+            ) {
+              sim.adaptiveContext.firstContactGraceUntilMs = now + 480;
+            }
           }
         }
 
@@ -2494,6 +2559,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
         sim.focusedBallId !== null
           ? sim.balls3D.find((b) => b.id === sim.focusedBallId && !b.pocketed) ?? null
           : null;
+      sim.adaptiveContext.nowMs = now;
       camCtrl.update(realDt, sim.aimAngle, {
         mode: camModeRef.current,
         shotCameraMode: effectiveShotCam,
@@ -2510,6 +2576,8 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
         hoverWorldPt: sim.hoverWorldPt,
         focusedBallId: focusedBall ? focusedBall.id : null,
         focusedBallPos: focusedBall ? { x: focusedBall.x, z: focusedBall.z } : null,
+        balls: sim.balls3D,
+        adaptiveContext: sim.adaptiveContext,
         gestureBlocked: sim.pointerDown || sim.draggingCueBall || multiTouchLock,
       });
 
@@ -2518,6 +2586,13 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
         if (deg !== lastReportedAimDeg) {
           lastReportedAimDeg = deg;
           rootRef.current.setAttribute('data-aim-deg', String(deg));
+        }
+        if (import.meta.env.DEV) {
+          const cy = camera.position.y.toFixed(2);
+          if (cy !== lastReportedCamY) {
+            lastReportedCamY = cy;
+            rootRef.current.setAttribute('data-cam-y', cy);
+          }
         }
       }
 

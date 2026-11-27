@@ -987,6 +987,69 @@
   pointer-events: none;
 }
 
+@media (max-width: 960px), (max-height: 520px) {
+  .olw-hide-sm {
+    display: none;
+  }
+  .olw-billiards-pill {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+  .olw-billiards-btn-cozy-sq,
+  .olw-billiards-icon-btn,
+  .olw-spin-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .olw-player-name {
+    max-width: 76px;
+    font-size: 11px;
+  }
+  .olw-rack-row {
+    gap: 2px;
+  }
+  .olw-rack-slot {
+    width: 12px;
+    height: 12px;
+    font-size: 7px;
+  }
+  .olw-avatar-timer {
+    width: 32px;
+    height: 32px;
+    padding: 2.5px;
+  }
+  .olw-avatar-inner {
+    font-size: 15px;
+  }
+  .olw-score-box {
+    min-width: 54px;
+    padding: 2px 6px;
+  }
+  .olw-score-val {
+    font-size: 13px;
+  }
+}
+
+@media (max-height: 460px) {
+  .olw-billiards-header {
+    padding: 4px 8px;
+    gap: 5px;
+  }
+  .olw-player-name {
+    max-width: 58px;
+  }
+  .olw-rack-slot {
+    width: 11px;
+    height: 11px;
+    font-size: 6.5px;
+  }
+  .olw-power-slot {
+    height: min(48dvh, 172px);
+  }
+}
+
 @media (max-width: 720px) {
   .olw-billiards-header {
     display: grid;
@@ -1017,51 +1080,16 @@
     background: rgba(12, 10, 18, 0.62);
     border: 1px solid rgba(251, 207, 155, 0.16);
   }
-  .olw-billiards-pill {
-    height: 32px;
-    padding: 0 8px;
-    font-size: 11px;
-    border-radius: 10px;
-  }
-  .olw-billiards-btn-cozy-sq,
-  .olw-billiards-icon-btn {
-    width: 32px;
-    height: 32px;
-  }
-  .olw-spin-btn {
-    width: 32px;
-    height: 32px;
-  }
   .olw-player-col {
     flex: 1;
     min-width: 0;
   }
   .olw-player-name {
     max-width: 84px;
-    font-size: 11px;
   }
   .olw-rack-slot {
     width: 13px;
     height: 13px;
-    font-size: 7px;
-  }
-  .olw-avatar-timer {
-    width: 32px;
-    height: 32px;
-    padding: 2.5px;
-  }
-  .olw-avatar-inner {
-    font-size: 15px;
-  }
-  .olw-score-box {
-    min-width: 56px;
-    padding: 2px 7px;
-  }
-  .olw-score-val {
-    font-size: 13px;
-  }
-  .olw-hide-sm {
-    display: none;
   }
   .olw-card-grid-3 {
     grid-template-columns: 1fr;
