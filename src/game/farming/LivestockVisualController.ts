@@ -45,7 +45,7 @@ const SPECIES_SCALE_BY_ID: Readonly<Record<LivestockSpeciesId, number>> = {
   rabbit: 0.95,
   cow: 1.0,
   goat: 0.95,
-  sheep: 0.95,
+  sheep: 1.0,
   bee: 0.85,
 };
 

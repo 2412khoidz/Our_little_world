@@ -1183,7 +1183,7 @@ def build_all(src_dir: Path) -> None:
         ("duck", "duck/duck_mallard", "duck_mallard", 16, 16),
         ("cow", "cow/cow_jersey", "cow_jersey", 32, 32),
         ("goat", "goat/goat_alpine", "goat_alpine", 32, 32),
-        ("sheep", "sheep/sheep_brown", "sheep_brown", 32, 32),
+        ("sheep", "sheep/sheep_brown_baby", "sheep_brown_baby", 32, 32),
         ("rabbit", "rabbit/rabbit_angora", "rabbit_angora", 16, 16),
     ]
     livestock_actions = (

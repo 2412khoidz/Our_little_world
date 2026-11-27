@@ -4934,7 +4934,7 @@
     },
     "sheep": {
       "donor": "FarmRanchLife",
-      "variant": "sheep_brown",
+      "variant": "sheep_brown_baby",
       "frameW": 32,
       "frameH": 32,
       "portraitFrame": "sheep_idle_down_0",
@@ -4997,18 +4997,18 @@
         ]
       },
       "sources": {
-        "idle_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_idle_down_2f.png",
-        "idle_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_idle_left_2f.png",
-        "idle_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_idle_right_2f.png",
-        "walk_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_walk_down_4f.png",
-        "walk_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_walk_left_4f.png",
-        "walk_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_walk_right_4f.png",
-        "walk_up": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_walk_up_4f.png",
-        "eat_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_eat_down_2f.png",
-        "eat_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_eat_left_2f.png",
-        "eat_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_eat_right_2f.png",
-        "sleep_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_sleep_left_2f.png",
-        "sleep_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown/sheep_brown_sleep_right_2f.png"
+        "idle_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_idle_down_2f.png",
+        "idle_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_idle_left_2f.png",
+        "idle_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_idle_right_2f.png",
+        "walk_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_walk_down_4f.png",
+        "walk_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_walk_left_4f.png",
+        "walk_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_walk_right_4f.png",
+        "walk_up": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_walk_up_4f.png",
+        "eat_down": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_eat_down_2f.png",
+        "eat_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_eat_left_2f.png",
+        "eat_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_eat_right_2f.png",
+        "sleep_left": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_sleep_left_2f.png",
+        "sleep_right": "FarmRanchLife/04_Ranch_Animals/sheep/sheep_brown_baby/sheep_brown_baby_sleep_right_2f.png"
       },
       "portrait": {
         "x": 231,
