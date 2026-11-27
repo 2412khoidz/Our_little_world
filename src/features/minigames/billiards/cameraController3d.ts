@@ -1,11 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { HALF_H_3D, HALF_W_3D } from '../../../shared/billiards/physics3dEngine';
+import type { Billiards3DShotCameraMode } from './touchPreferences';
 
 export type Billiards3DCamMode = 'follow' | 'top' | 'orbit';
+export type Billiards3DCameraStage =
+  | 'aiming'
+  | 'shot_transition'
+  | 'tracking'
+  | 'overview'
+  | 'manual_override';
 
 export interface CameraPoseInput {
   mode: Billiards3DCamMode;
+  shotCameraMode?: Billiards3DShotCameraMode;
+  cameraStage?: Billiards3DCameraStage;
   aspect: number;
   zoomLevel: number;
   visualAimAngle: number;
@@ -26,6 +35,33 @@ export interface ComputedCameraPose {
   lookAt: [number, number, number];
   up: [number, number, number];
   fov: number;
+}
+
+/**
+ * Computes aspect-aware full-table Tactical Overview camera pose that frames
+ * the complete playable felt, wood rails, and all six pockets inside HUD safe margins.
+ */
+export function computeTacticalOverviewPose3D(aspect: number): ComputedCameraPose {
+  const safeAspect = Math.max(0.4, aspect || 1);
+  const isPortrait = safeAspect < 0.85;
+  const fov = isPortrait ? 54 : 44;
+  const vHalfTan = Math.tan((fov * Math.PI) / 360);
+  const hHalfTan = vHalfTan * safeAspect;
+
+  const halfSpanX = HALF_W_3D + (isPortrait ? 0.19 : 0.24);
+  const halfSpanZ = HALF_H_3D + (isPortrait ? 0.23 : 0.19);
+
+  const reqHeight = isPortrait
+    ? Math.max(halfSpanX / vHalfTan, halfSpanZ / hHalfTan)
+    : Math.max(halfSpanX / hHalfTan, halfSpanZ / vHalfTan);
+
+  const height = Math.max(2.65, Math.min(4.8, reqHeight));
+  return {
+    position: [0, height, isPortrait ? 0 : 0.01],
+    lookAt: [0, 0, 0],
+    up: isPortrait ? [1, 0, 0] : [0, 1, 0],
+    fov,
+  };
 }
 
 export function shortestAngleDelta3D(fromAngle: number, toAngle: number): number {
@@ -78,8 +114,36 @@ export function computeCameraPose3D(input: CameraPoseInput): ComputedCameraPose 
     };
   }
 
+  // Automatic Tactical Overview during active shot / post-shot hold (when not overridden manually)
+  if (
+    !input.draggingCueBall &&
+    !input.hoverZoomActive &&
+    (input.cameraStage === 'shot_transition' ||
+      input.cameraStage === 'tracking' ||
+      input.cameraStage === 'overview')
+  ) {
+    if (clampedZoom <= 1.05 || input.phase === 'moving') {
+      return computeTacticalOverviewPose3D(safeAspect);
+    }
+    const overview = computeTacticalOverviewPose3D(safeAspect);
+    const zoomAnchor = input.focusedBallPos ?? input.hoverWorldPt;
+    const focusX = zoomAnchor
+      ? Math.max(-HALF_W_3D * 0.85, Math.min(HALF_W_3D * 0.85, zoomAnchor.x)) * (1 - zFactor)
+      : 0;
+    const focusZ = zoomAnchor
+      ? Math.max(-HALF_H_3D * 0.85, Math.min(HALF_H_3D * 0.85, zoomAnchor.z)) * (1 - zFactor)
+      : 0;
+    return {
+      position: [focusX, overview.position[1] * zFactor, isPortrait ? focusZ : focusZ + 0.01],
+      lookAt: [focusX, 0, focusZ],
+      up: overview.up,
+      fov: overview.fov,
+    };
+  }
+
   if (input.mode === 'top' || input.draggingCueBall) {
     const zoomAnchor = input.hoverWorldPt ?? input.focusedBallPos;
+    const overview = computeTacticalOverviewPose3D(safeAspect);
     const focusX =
       clampedZoom > 1.05 && zoomAnchor && !input.draggingCueBall
         ? Math.max(-HALF_W_3D * 0.85, Math.min(HALF_W_3D * 0.85, zoomAnchor.x)) * (1 - zFactor)
@@ -88,14 +152,12 @@ export function computeCameraPose3D(input: CameraPoseInput): ComputedCameraPose 
       clampedZoom > 1.05 && zoomAnchor && !input.draggingCueBall
         ? Math.max(-HALF_H_3D * 0.85, Math.min(HALF_H_3D * 0.85, zoomAnchor.z)) * (1 - zFactor)
         : 0;
-    const topHeight = isPortrait
-      ? Math.max(3.05, 1.85 / Math.max(0.45, safeAspect)) * zFactor
-      : 3.05 * zFactor;
+    const topHeight = overview.position[1] * zFactor;
     return {
       position: [focusX, topHeight, isPortrait ? focusZ : focusZ + 0.01],
       lookAt: [focusX, 0, focusZ],
-      up: isPortrait ? [1, 0, 0] : [0, 1, 0],
-      fov: baseFov,
+      up: overview.up,
+      fov: overview.fov,
     };
   }
 
@@ -228,9 +290,15 @@ export class Billiards3DCameraController {
     const diff = shortestAngleDelta3D(this.visualAimAngle, authoritativeAimAngle);
     this.visualAimAngle += diff * smoothFactor(14, dt);
 
-    const enteringOrbit = rawInput.mode === 'orbit' && this.lastMode !== 'orbit';
-    const leavingOrbit = rawInput.mode !== 'orbit' && this.lastMode === 'orbit';
-    this.lastMode = rawInput.mode;
+    const automaticStageOverride =
+      rawInput.cameraStage === 'shot_transition' ||
+      rawInput.cameraStage === 'tracking' ||
+      rawInput.cameraStage === 'overview';
+    const effectiveMode: Billiards3DCamMode = automaticStageOverride ? 'top' : rawInput.mode;
+
+    const enteringOrbit = effectiveMode === 'orbit' && this.lastMode !== 'orbit';
+    const leavingOrbit = effectiveMode !== 'orbit' && this.lastMode === 'orbit';
+    this.lastMode = effectiveMode;
 
     if (enteringOrbit) {
       // Smoothly transition into an ergonomic table orbit view without snapping camera.up
@@ -243,7 +311,7 @@ export class Billiards3DCameraController {
       this.controls.enabled = false;
     }
 
-    if (rawInput.mode === 'orbit' && !rawInput.draggingCueBall && !rawInput.hoverZoomActive) {
+    if (effectiveMode === 'orbit' && !rawInput.draggingCueBall && !rawInput.hoverZoomActive) {
       const targetFov = rawInput.aspect < 0.85 ? 54 : 44;
       if (Math.abs(this.camera.fov - targetFov) > 0.02) {
         this.camera.fov += (targetFov - this.camera.fov) * smoothFactor(8, dt);
@@ -309,7 +377,10 @@ export class Billiards3DCameraController {
     this.lookMatrix.lookAt(this.targetPos, this.targetLook, this.targetUp);
     this.targetQuat.setFromRotationMatrix(this.lookMatrix);
 
-    const alpha = smoothFactor(rawInput.mode === 'top' ? 11 : 10, dt);
+    const alpha = smoothFactor(
+      effectiveMode === 'top' || automaticStageOverride ? 8.5 : 10,
+      dt,
+    );
     this.camera.position.lerp(this.targetPos, alpha);
     this.camera.quaternion.slerp(this.targetQuat, alpha);
   }

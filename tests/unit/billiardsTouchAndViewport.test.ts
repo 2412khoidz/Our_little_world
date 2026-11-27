@@ -38,6 +38,7 @@ import {
 } from '../../src/features/minigames/billiards/touchPreferences';
 import {
   computeCameraPose3D,
+  computeTacticalOverviewPose3D,
   shortestAngleDelta3D,
 } from '../../src/features/minigames/billiards/cameraController3d';
 
@@ -471,5 +472,34 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
     expect(focusedPose.lookAt[0]).toBeCloseTo(0.85, 4);
     expect(focusedPose.lookAt[2]).toBeCloseTo(-0.35, 4);
     expect(focusedPose.position[1]).toBeGreaterThan(0.5);
+  });
+
+  it('P1: frames full table and all 6 pockets in Tactical Overview across portrait & landscape', () => {
+    const portraitOv = computeTacticalOverviewPose3D(430 / 820);
+    expect(portraitOv.up).toEqual([1, 0, 0]);
+    expect(portraitOv.position[1]).toBeGreaterThanOrEqual(2.8);
+
+    const landscapeOv = computeTacticalOverviewPose3D(1280 / 680);
+    expect(landscapeOv.up).toEqual([0, 1, 0]);
+    expect(landscapeOv.position[1]).toBeGreaterThanOrEqual(2.65);
+
+    const heldPose = computeCameraPose3D({
+      mode: 'follow',
+      shotCameraMode: 'overview',
+      cameraStage: 'overview',
+      aspect: 430 / 820,
+      zoomLevel: 1.0,
+      visualAimAngle: 0,
+      cueX: -0.5,
+      cueZ: 0,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+    });
+    expect(heldPose.lookAt).toEqual([0, 0, 0]);
+    expect(heldPose.position[1]).toBeCloseTo(portraitOv.position[1], 5);
   });
 });

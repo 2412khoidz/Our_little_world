@@ -365,7 +365,7 @@ export const BilliardsEntryMenu: React.FC<BilliardsEntryMenuProps> = ({
               prefs={touchPrefs}
               onChange={setTouchPrefs}
               showCameraRotation={true}
-              showShotCameraMode={false}
+              showShotCameraMode={true}
             />
           </div>
         </div>
