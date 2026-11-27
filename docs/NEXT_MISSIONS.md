@@ -1,6 +1,6 @@
-# Next 10 Development Missions (`docs/NEXT_MISSIONS.md`)
+# Next Development Missions (`docs/NEXT_MISSIONS.md`)
 
-*Cập nhật: 27/11/2026 | Canonical Baseline: `main` (`e5de4ac`) | Tích hợp kết quả kiểm kê tài nguyên **`M3a`** ([ASSET_LIBRARY_INVENTORY.md](art/ASSET_LIBRARY_INVENTORY.md), [ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md))*
+*Cập nhật: 27/11/2026 | Canonical Baseline: `main` (`v0.2.5+`) | Đã phê duyệt & hợp nhất kiểm kê tài nguyên **`M3a`** ([ASSET_LIBRARY_INVENTORY.md](art/ASSET_LIBRARY_INVENTORY.md), [ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md), [asset-library-inventory.json](art/asset-library-inventory.json))*
 *Mọi mission dưới đây bắt buộc khởi tạo worktree riêng bằng `npm run worktree:new -- --name <slug>` từ `origin/main` và tuân thủ [REGRESSION_CHECKLIST.md](REGRESSION_CHECKLIST.md).*
 
 ---
@@ -8,28 +8,39 @@
 ## Tổng quan Điều phối (Parallel vs Sequential)
 
 ```text
-[M3a: Donor Asset Library Audit] (AUDIT DELIVERED on chore/m3a-asset-library-audit)
+[M3a: Donor Asset Library Audit] (OWNER APPROVED on main)
          │
          ▼ (Feeds curated icons, animal sheets, VFX & cooking art into M2..M10)
-[M1: Billiards V3 + 3D] (IN PROGRESS in OLW-Billiards-V3) ──┐
-[M2: Couple P1 Animations (Kiss & Poses)] ──────────────────┼─▶ Merge vào main (V0.2.x)
-[M3: Farming/Pet Polish + Icon Fixes + Animal Transplant] ──┘         │
-                                                                      ▼
-                                                     [M4: Home Progression & Shop (V0.2.4)]
-                                                              │
-              ┌───────────────────────────────────────────────┴────────────────────┐
-              ▼                                                                    ▼
-[M5: Interactive Cooking UI (V0.3)]                              [M6: Real Shared Life UI (Diary/Calendar/Picnic)]
+[M0: Mobile-First HUD & Global Fullscreen] (IN PROGRESS in OLW-Mobile-HUD) ──┐ (Shared --olw-vvh & fullscreen contract)
+[M1: Billiards V3 + 3D] (IN PROGRESS in OLW-Billiards-V3) ────────────────────┼─▶ Merge vào main (V0.2.x)
+[M2: Couple P1 Animations (Kiss & Poses)] ────────────────────────────────────┤
+[M3: Farming/Pet Polish + Icon Fixes + Animal Transplant] ────────────────────┘         │
+                                                                                        ▼
+                                                                       [M4: Home Progression & Shop (V0.2.4)]
+                                                                                │
+                              ┌─────────────────────────────────────────────────┴────────────────────┐
+                              ▼                                                                      ▼
+[M5: Interactive Cooking UI (V0.3)]                                [M6: Real Shared Life UI (Diary/Calendar/Picnic)]
 [M7: S0-5b Cinema Transport Benchmark (Spike)]  (Chạy độc lập song song bất kỳ lúc nào có iPhone 4G)
-              │
-              ▼ (Chỉ chạy M8 khi M7 PASS Go)
+                              │
+                              ▼ (Chỉ chạy M8 khi M7 PASS Go)
 [M8: Cinema Player + Subtitles & Co-op Minigames (V0.4)]
-              │
-              ▼
+                              │
+                              ▼
 [M9: Living Polish, Save Backup/Restore & Mobile Perf (V0.5)] ──▶ [M10: Our Island Expansion (V1.0)]
 ```
 
 ---
+
+## Mission 0 — Mobile-First HUD, Touch Controls & Global Fullscreen (`V0.2.x` · `IN PROGRESS`)
+- **Phạm vi & Trải nghiệm người chơi:** Tái thiết kế HUD mobile-first với khung gỗ 9-slice **Kiln Harvest** (`TouchJoystick`, `MobileTopHud`, `MobileNavDrawer`, `MainGameInteractionLayer`, `CoupleEmoteDock`, `GameHotbar`), joystick Pointer Events (`fixed`/`floating` thumb anchor + radial deadzone), và bộ điều phối toàn màn hình/hướng màn hình dùng chung (`GlobalViewportContext`, `--olw-vvh`, `viewportPolicy.ts`) với **quy tắc 1 chủ sở hữu (`fullscreenOwner`)** để thoát Bi-a/Câu cá/Pet Care không làm rớt fullscreen toàn app và hỗ trợ safe-area/Add-to-Home-Screen trên iPhone Safari (không xoay CSS gốc).
+- **Dependencies:** Hợp đồng phối hợp viewport với **M1** (`OLW-Billiards-V3`) theo mô hình `VIEWPORT_FULLSCREEN_CONTRACT.md` trong worktree M0 (`GlobalViewportContext` + `useSharedFocusMode`). Cần hoàn tất phát triển, test & reconcile lên `main` mới nhất trước khi merge.
+- **Branch / Worktree đề xuất:** Tiếp tục `feat/mobile-first-hud` tại `C:\Users\admin\Downloads\OLW-Mobile-HUD`.
+- **Hệ thống & File chồng chéo:** `src/app/App.tsx`, `src/app/viewport/GlobalViewportContext.tsx`, `src/shared/viewport/viewportPolicy.ts`, `src/shared/input/virtualJoystickController.ts`, `src/features/home/mobile/*`, `src/features/minigames/billiards/*` (đối chiếu contract fullscreen).
+- **Song song / Tuần tự:** **COORDINATED** với M1 (`App.tsx` & shared fullscreen lifecycle); **PARALLEL SAFE** với M2, M3, M7.
+- **Focused Acceptance:** `mobileInteractablesAndHud.test.ts`, unit test cho `virtualJoystickController` & `viewportPolicy`, Playwright desktop + `430×932` portrait/landscape không che HUD và không kẹt joystick/fullscreen khi mở-đóng modal.
+- **Donor sẵn có:** `Kiln Harvest` (`KILN-HARVEST-LICENSE.txt`), nghiên cứu clean-room `floating-thumb-dungeon` (`78e6337`), `nipplejs` (`ea425b3`), `mini-market-game` (`4fc4d96`), `phaser-toolkit`/`rex-notes`, mở rộng từ `useFocusMode.ts` của Billiards V3.2.
+- **Agent / Model đề xuất:** **Pro** (Pointer Events + DOM/Phaser viewport & fullscreen ownership).
 
 ## Mission 1 — Hoàn tất Billiards V3 & Tích hợp 3D (`V0.2.x` · `IN PROGRESS`)
 - **Phạm vi & Trải nghiệm người chơi:** Hoàn thiện màn hình chọn chế độ (Chơi với Bot AI, Local 2P chung màn hình, Online Ready Check Lobby), khôi phục đầy đủ điều khiển bàn phím desktop gốc (`useBilliardsKeyboard.ts`) và tích hợp cảnh bi-a 3D từ gói nguồn chủ dự án (`our_little_billiards_3d_*`), giữ lazy-load để không làm chậm lúc vào game.

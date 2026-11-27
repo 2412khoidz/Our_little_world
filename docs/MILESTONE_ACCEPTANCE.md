@@ -15,15 +15,17 @@
 | A5 | Living Pet (`Quýt` 2D + `vuena-cat.glb` 3D) & ưu tiên ô ruộng | `OWNER APPROVED` | Hotfix chặn tap nhầm mở Pet Care 3D (`5de7317`) đã được chủ dự án duyệt; `OLW_ACCEPTANCE_LONG=1` còn `UNVERIFIED` |
 | A6 | Billiards V2 (`BilliardsModal`, NET.1 WS sync) | `OWNER APPROVED` | Đã gộp `v0.2.5` + 3/3 E2E Chromium; bản nâng cấp Billiards V3 + 3D (`feat/billiards-v3`) đang `IN PROGRESS` |
 | A7 | Production Build & Guard (`dist/` + `sw.js`) | `OWNER APPROVED` | `npm run build && node scripts/verify-prod-guard.mjs` exit 0, zero dev/private leaks |
+| A8 | Kiểm kê Tài nguyên Donor `M3a` (`docs/art/ASSET_*`) | `OWNER APPROVED` | Kiểm kê `28` pack (`8,079` PNG duy nhất), 267 SKU & backlog tái sử dụng (`chore/m3a-asset-library-audit` @ `3134f1a` đã gộp `main`) |
 
 ---
 
 ## Tier B — Tiêu chí Thoát cho Các Milestone Tiếp theo (`V0.2.x → V1.0`)
 
 - **`V0.2.x` (Gameplay Foundation Polish):**
-  - **Billiards V3 + 3D:** Chơi mượt 3 chế độ (Bot, Local 2P, Online Ready Lobby), bàn phím desktop & chạm mobile, giải phóng WebGL sạch khi thoát, owner playtest pass.
-  - **Couple P1:** Hình ảnh cặp đôi hôn/tựa vai/tặng hoa bảo toàn 100% `AvatarConfig`, không giật vị trí hay trùng tay, owner duyệt hình ảnh trước khi bật `COUPLE_P1_ENABLED = true`.
-  - **Polish & Discoverability:** Nút `J`/ngữ cảnh mobile rõ ràng ở orchard, chuồng nuôi, order board, xưởng & ao cá; `npm run lint` đạt 0 errors, 0 warnings.
+  - **Mobile-First HUD & Global Fullscreen (`M0`):** Khung HUD Kiln mobile-first gọn trên `430×932` & landscape, joystick đa chạm không kẹt, single `fullscreenOwner` giữ nguyên fullscreen khi mở/đóng Bi-a & tôn trọng iPhone Safari safe-area.
+  - **Billiards V3 + 3D (`M1`):** Chơi mượt 3 chế độ (Bot, Local 2P, Online Ready Lobby), bàn phím desktop & chạm mobile, giải phóng WebGL sạch khi thoát, owner playtest pass.
+  - **Couple P1 (`M2`):** Hình ảnh cặp đôi hôn/tựa vai/tặng hoa bảo toàn 100% `AvatarConfig`, không giật vị trí hay trùng tay, owner duyệt hình ảnh trước khi bật `COUPLE_P1_ENABLED = true`.
+  - **Polish, Icon Fixes & Livestock Transplant (`M3`):** Nút `J`/ngữ cảnh mobile rõ ràng; sửa SKU sai nghĩa & thay vẽ thú Canvas bằng spritesheet `FarmRanchLife` theo `ASSET_REUSE_BACKLOG.md`; `npm run lint` đạt 0 errors, 0 warnings.
 - **`V0.2.4` (Home Progression):**
   - Shop nội thất `Pastel / Modern / Cottage / Rustic` tiêu coin đúng server ledger; mở rộng phòng không làm mất bất kỳ món đồ hay vị trí lưu cũ trong `.dev-lan-state.json`.
 - **`V0.3` (Shared Life):**

@@ -16,7 +16,10 @@
 
 ## 2. Việc còn lại của `V0.2.x` (Complete the Gameplay Foundation)
 
-### 2.1 Billiards V3 & 3D Transplant — **`IN PROGRESS`** (`OLW-Billiards-V3` / `feat/billiards-v3`)
+### 2.0 `M0` — Mobile-First HUD, Touch Controls & Global Fullscreen — **`IN PROGRESS`** (`OLW-Mobile-HUD` / `feat/mobile-first-hud`)
+- **Phạm vi:** HUD gỗ 9-slice `Kiln Harvest`, joystick Pointer Events mượt (`src/shared/input/virtualJoystickController.ts`), chính sách viewport `--olw-vvh` (`src/shared/viewport/viewportPolicy.ts`), và `GlobalViewportContext` quản lý single `fullscreenOwner` phối hợp với `Billiards V3` (`M1`).
+
+### 2.1 `M1` — Billiards V3 & 3D Transplant — **`IN PROGRESS`** (`OLW-Billiards-V3` / `feat/billiards-v3`)
 - **Đã có trên worktree `feat/billiards-v3` (chưa merge / chưa owner verify):**
   - Module mới: `botAi.ts`, `lobbyProtocol.ts`, `physics3dEngine.ts`, `BilliardsEntryMenu.tsx`, `BilliardsOnlineLobby.tsx`, `billiards3d.css`, `localStats.ts`, `useBilliardsKeyboard.ts`, `scripts/devLanBilliardsLobby.mjs`.
   - Mở rộng: `physicsEngine.ts`, `protocol.ts`, `types.ts`, `netcode/protocol.ts`, `devLanServerPlugin.mjs`, `devLanWsHub.mjs`.
@@ -30,10 +33,9 @@
 - **Hiện trạng:** Schema & protocol đã có sẵn trong `src/shared/couple/coupleTypes.ts` (`COUPLE_P1_ENABLED = false`), `CoupleActionBar.tsx` đã có label.
 - **Cần làm:** Tạo cặp frame pixel-paired `couplePairedPoseTextures.ts` giữ nguyên `AvatarConfig` của 2 người chơi cho `kiss` (ưu tiên) và các dáng P1 còn lại, âm thanh/emote nhẹ nhàng, bật `COUPLE_P1_ENABLED = true` sau khi chủ dự án duyệt hình ảnh.
 
-### 2.3 Farming, Fishing, Pet Polish & Discoverability — **`PLANNED`**
-- Rà soát độ rõ của nút ngữ cảnh mobile / `J` gần các điểm: cây ăn quả (trồng/thu hoạch), chuồng nuôi, bảng đơn hàng, xưởng chế biến & bàn câu cá.
-- Tinh chỉnh UX chọn giống / túi đồ nhanh khi làm ruộng liên tục, không thêm nút giả.
-- Bổ sung E2E/unit regression cho tương tác `Quýt` + ô ruộng và cây ăn quả.
+### 2.3 `M3` — Farming, Fishing, Pet Polish + Icon Fixes & Livestock Transplant — **`PLANNED`**
+- Sửa nhóm SKU sai nghĩa / trùng ảnh trong `scripts/pack-farming-atlases.py` và transplant spritesheet thú nuôi (`FarmRanchLife/04_Ranch_Animals`) + VFX thay hình học Canvas thủ công theo kế hoạch đã duyệt ở **`M3a`** ([ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md)).
+- Rà soát độ rõ của nút ngữ cảnh mobile / `J` gần các điểm: cây ăn quả (trồng/thu hoạch), chuồng nuôi, bảng đơn hàng, xưởng chế biến & bàn câu cá; bổ sung E2E/unit regression cho tương tác `Quýt` + ô ruộng và cây ăn quả.
 
 ---
 
