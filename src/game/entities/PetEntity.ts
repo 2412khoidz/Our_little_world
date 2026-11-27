@@ -50,7 +50,7 @@ export class PetEntity {
   private careCloseUp = false;
   private lastLocoAtMs = 0;
 
-  constructor(scene: Phaser.Scene, onTap: (pointer?: Phaser.Input.Pointer) => void) {
+  constructor(scene: Phaser.Scene, _onTap?: (pointer?: Phaser.Input.Pointer) => void) {
     this.scene = scene;
 
     ensureLivingCatSpritesheet(scene, this.variant, this.accessory);
@@ -70,12 +70,6 @@ export class PetEntity {
       .setVisible(false);
 
     this.applySpriteScale();
-    this.sprite.setInteractive({ useHandCursor: true, pixelPerfect: true });
-    this.sprite.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.getDistance() <= 22) {
-        onTap(pointer);
-      }
-    });
 
     this.nameTag = scene.add
       .text(startX, startY - 21, 'Bé mèo', {

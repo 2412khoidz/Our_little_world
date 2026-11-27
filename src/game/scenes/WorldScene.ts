@@ -152,7 +152,7 @@ import { gameAudio } from '../audio/gameAudioManager';
 import { resolveFootstepSurface } from '../../shared/audio/surfaceFootsteps';
 import { farmPlotIndexForTile } from '../../shared/farming/farmPlotIndex';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
-import { OrchardVisualController } from '../farming/OrchardVisualController';
+import { DEFAULT_ORCHARD_SLOT_TILES, OrchardVisualController } from '../farming/OrchardVisualController';
 import { LivestockVisualController } from '../farming/LivestockVisualController';
 import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
 import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
@@ -359,7 +359,6 @@ export class WorldScene extends Phaser.Scene {
     targetY: number;
     reachPx: number;
   } | null = null;
-  private lastEntityTapTimeMs = -1;
   private readonly donorToolController = new DonorPydewToolController();
   private localMoving = false;
   private prePosturePos: { x: number; y: number } | null = null;
@@ -423,10 +422,7 @@ export class WorldScene extends Phaser.Scene {
     this.createLocalAvatar();
     this.heldRenderer = new HeldItemRenderer(this);
     this.coupleAnimationRenderer = new CoupleAnimationRenderer(this);
-    this.petEntity = new PetEntity(this, (pointer) => {
-      this.lastEntityTapTimeMs = pointer?.upTime ?? performance.now();
-      this.handleTapPetEntity();
-    });
+    this.petEntity = new PetEntity(this);
     // Canonical collision-safe 2D pet locomotion is ALWAYS active on all URLs (dev & production).
     this.livingPetDriver = new PetLivingMainGameDriver(13.5 * this.tilePx(), 10.2 * this.tilePx());
     this.petEntity.setLivingDriver(this.livingPetDriver);
@@ -1258,9 +1254,23 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private rebuildFurnitureAndCollisions(): void {
-    this.blockedGrid = buildMovementCollisionGrid(this.currentMapId, this.placements);
+  private refreshBlockedGrid(): void {
+    const blocked = buildMovementCollisionGrid(this.currentMapId, this.placements);
+    if (this.currentMapId === 'farm' && this.deepFarmCache) {
+      for (const view of this.deepFarmCache.orchardViews) {
+        if (!view.tree || !view.stage) continue;
+        const tile = DEFAULT_ORCHARD_SLOT_TILES[view.slotIndex];
+        if (tile) {
+          blocked.add(`${tile[0]},${tile[1]}`);
+        }
+      }
+    }
+    this.blockedGrid = blocked;
     this.mapDebugOverlay?.redraw(this.currentMapId, this.blockedGrid);
+  }
+
+  private rebuildFurnitureAndCollisions(): void {
+    this.refreshBlockedGrid();
     for (const img of this.furnitureSprites.values()) {
       img.destroy();
     }
@@ -1466,7 +1476,6 @@ export class WorldScene extends Phaser.Scene {
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       void gameAudio.unlock();
       if (this.paused || this.renderSuspended || document.hidden) return;
-      if (pointer.upTime === this.lastEntityTapTimeMs) return;
       // Ignore slight drag gestures
       if (pointer.getDistance() > 14) return;
 
@@ -1512,14 +1521,6 @@ export class WorldScene extends Phaser.Scene {
             this.openDialogueWithNpc(tappedNpc);
             return;
           }
-        }
-      }
-
-      if (this.petEntity?.isOnMapVisible() && FOLLOW_CAT_MAPS.has(this.currentMapId)) {
-        const petPos = this.petEntity.getWorldPosition();
-        if (Math.hypot(worldPt.x - petPos.x, worldPt.y - (petPos.y - 6)) <= 22) {
-          this.handleTapPetEntity();
-          return;
         }
       }
 
@@ -1986,6 +1987,7 @@ export class WorldScene extends Phaser.Scene {
         if (this.currentMapId === 'farm') {
           this.orchardVisual?.sync(deep.orchardViews, deep.calendar.season);
           this.livestockVisual?.sync(deep.projectedLivestock);
+          this.refreshBlockedGrid();
         }
       }),
 
@@ -4302,31 +4304,6 @@ export class WorldScene extends Phaser.Scene {
       facing: this.localFacing,
       interactables,
       economyPlayable: isDonorEconomyUiEnabled(),
-    });
-  }
-
-  private handleTapPetEntity(): void {
-    if (!this.localSprite || !this.petEntity?.isOnMapVisible()) return;
-    gameAudio.playNaturalCatMeow('greeting', { force: true });
-    if (!this.petSnapshot) {
-      gameEventBus.emit('evt:open-pet-panel');
-      return;
-    }
-    const petPos = this.petEntity.getWorldPosition();
-    const dist = Math.hypot(petPos.x - this.localSprite.x, petPos.y - this.localSprite.y);
-    if (dist <= 76) {
-      this.clearTemporaryStaticPosture();
-      this.pathQueue = [];
-      this.tapMarker?.clear();
-      this.pendingTapAction = null;
-      gameEventBus.emit('cmd:pet-care-mode', { active: true });
-      return;
-    }
-    this.walkTowardAndTriggerAction({
-      kind: 'pet_care',
-      targetX: petPos.x,
-      targetY: petPos.y,
-      reachPx: 76,
     });
   }
 

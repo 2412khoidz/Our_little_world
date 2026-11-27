@@ -433,10 +433,33 @@ function actionForTarget(
   }
 }
 
+function isFarmingToolOrSeed(held: HeldItemState): boolean {
+  if (held.itemKind === 'tool' || held.itemKind === 'water_pitcher') return true;
+  const sku = held.itemSku;
+  if (!sku) return false;
+  return (
+    sku.startsWith('seed_') ||
+    sku.startsWith('fert_') ||
+    sku.startsWith('sprinkler_') ||
+    sku === 'tool_hoe' ||
+    sku.startsWith('tool_hoe_') ||
+    sku === 'tool_watering_can' ||
+    sku.startsWith('tool_can_')
+  );
+}
+
 export function resolveContextualActions(input: InteractionResolveInput): ContextualResolution {
   const serverNowMs = input.serverNowMs ?? Date.now();
   const { playerX, playerY, facing, heldItem, interactables, economyPlayable = true } = input;
   const fVec = facingVector(facing);
+  const farmingHeld = isFarmingToolOrSeed(heldItem);
+  const hasReachableCropPlot =
+    farmingHeld &&
+    interactables.some((t) => {
+      if (t.kind !== 'crop_plot') return false;
+      if (Math.hypot(t.x - playerX, t.y - playerY) > t.maxRadiusPx) return false;
+      return isFarmPlotPixelAdjacent(playerX, playerY, Math.floor(t.x / 16), Math.floor(t.y / 16), 16);
+    });
 
   const scored: Array<{ target: InteractableTarget; action: ContextualAction; score: number }> = [];
   for (const t of interactables) {
@@ -463,7 +486,11 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
     const facingBonus = -facingDot * 10;
     const portalYield = t.kind === 'portal' ? 22 : 0;
     const petYield =
-      t.kind === 'pet' && heldItem.itemKind !== 'food' && heldItem.itemKind !== 'toy' ? 28 : 0;
+      t.kind === 'pet' && heldItem.itemKind !== 'food' && heldItem.itemKind !== 'toy'
+        ? hasReachableCropPlot
+          ? 500
+          : 28
+        : 0;
     const score = dist + contextBonus + facingBonus + portalYield + petYield;
     scored.push({ target: t, action, score });
   }

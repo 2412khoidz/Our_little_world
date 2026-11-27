@@ -2,6 +2,19 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## HOTFIX POST-`v0.2.5` — Pet Interaction Priority & Orchard Collision (`fix/pet-interaction-and-orchard-collision`)
+
+- **Nghiệm thu từ chủ dự án:** Chủ dự án đã playtest và phê duyệt cả hai bản sửa lỗi nóng trên baseline `v0.2.5` (`6c1bc66` → `main`):
+  1. **Ngăn mở nhầm Pet Care 3D khi đang làm vườn:**
+     - Gỡ `setInteractive` / tap handler trực tiếp trên mèo 2D trong [PetEntity.ts](../src/game/entities/PetEntity.ts) và bỏ nhánh bắt click vào Quýt trong `WorldScene.ts`, giúp click/chạm một lần lên mèo không tự mở Pet Care 3D và không cướp click xuống ô ruộng hay đi bộ.
+     - Cập nhật [interactionResolver.ts](../src/shared/interaction/interactionResolver.ts) (`isFarmingToolOrSeed` + `hasReachableCropPlot`) để khi cầm nông cụ, hạt giống, phân bón hoặc vòi phun đứng cạnh ô ruộng, ô ruộng luôn thắng ưu tiên trước mèo cho phím `J` và nút tương tác ngữ cảnh mobile; giữ nguyên mở Pet Care 3D có chủ ý qua `J`/nút ngữ cảnh, cho ăn (`offer_food_pet`) và chơi đồ chơi (`roll_toy`).
+  2. **Chặn noclip gốc cây ăn quả (Orchard Trees):**
+     - Bổ sung `refreshBlockedGrid()` trong [WorldScene.ts](../src/game/scenes/WorldScene.ts) đồng bộ các ô gốc `DEFAULT_ORCHARD_SLOT_TILES[view.slotIndex]` của những cây đang trồng trong `deepFarmCache.orchardViews` vào `blockedGrid` khi dựng map và khi nhận `cmd:sync-deep-farm`, chặn cả nhân vật và Quýt đi xuyên qua 3 cây ăn quả (và các cây trồng thêm về sau).
+- **Kiểm chứng tập trung (Focused checks):**
+  - `npx vitest run tests/unit/mobileInteractablesAndHud.test.ts tests/unit/farmVisualScaleParity.test.ts`: **2/2 files, 5/5 tests PASSED** (bao gồm case mới xác nhận ưu tiên `crop_plot` trước `pet` khi cầm nông cụ).
+  - `npm run typecheck`: **PASSED** (`tsc -b`, exit 0).
+  - **Chính sách quy trình:** Các thay đổi được commit trên nhánh fix riêng `fix/pet-interaction-and-orchard-collision` rồi gộp an toàn vào `main` (từ task kế tiếp trở đi bắt buộc phát triển trong worktree riêng tạo bằng `npm run worktree:new -- --name <slug>`).
+
 ## CANONICAL STABLE RELEASE (`main` / tag `v0.2.5`)
 
 - **Phê duyệt phát hành:** Chủ dự án đã playtest và phê duyệt `integration/olw-canonical-rc1` (`a800e12`), thăng hạng thành **Canonical Stable Baseline `v0.2.5`** trên nhánh **`main`**.
