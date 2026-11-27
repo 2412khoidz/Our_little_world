@@ -46,3 +46,31 @@ Giống nâng cao chỉ sau: `varietyId`, `geneVersion`, cặp allele, `parents`
 Authority dùng thời gian server và version, chốt snapshot các điều kiện thay đổi trước khi thay đổi trạng thái; không tính toàn khoảng quá khứ bằng thời tiết hiện tại. Seed RNG theo world, plot, cycle, event loại và version algorithm; cố định kết quả khi commit, không reroll khi retry. Trong một transaction khóa/version-check plot + inventory, validate, reconcile, debit/credit, ghi receipt idempotency và outbox/phiên bản; hai harvest đồng thời tối đa một thành công. Định nghĩa retry trả lại receipt hay conflict nhất quán theo contract, không khẳng định đã có toàn bộ. Tính ô đang cần, tra hàng xóm qua chỉ số grid cố định, cache dirty; Phaser chỉ vẽ vùng nhìn thấy. Bounded catch-up phải quy định rõ kết quả khi vắng lâu, không đánh rơi reward đã hứa. Benchmark 184 ô, hai client, thời gian reconnect và kích thước save trước khi tối ưu thêm; không đưa ECS/service mới.
 
 UI: kiểm tra ô hiển thị “đang lớn / sẵn thu hoạch”, gợi ý tích cực như “đổi họ cây giúp đất màu mỡ”, chi tiết nâng cao trong phần mở rộng. Không hiển thị thuật ngữ backend hay yêu cầu tính toán. Playtest casual chỉ trồng hoa và thu hoạch; advanced thử các bố trí, kể lại quyết định, kiểm số thao tác và niềm vui, không chỉ đếm test.
+
+## R1.1 — hợp đồng dữ liệu và tiến thời gian để thảo luận
+
+OLW_PROPOSAL, chưa triển khai. Để tránh đòi sửa inventory trong Phase 1, dữ liệu bonus đất có thể là bản ghi per-plot bên cạnh state hiện hữu: `{version: 1, plotId, lastFamily: string|null, balance: 0..100}`. Cây tiếp tục giữ SKU/cycle hiện tại; không thêm `balance` nếu thử nghiệm A chỉ cần `lastFamily`. Nếu giống cá thể được duyệt về sau, `PlantInstance` cần ID bất biến, schema/algorithm version, species, allele, phenotype được suy ra, tên và parent ID; identity phải đi cùng vật phẩm qua mọi backend, không thể dựa vào `InventoryEntry.qty`. Không cam kết migration khi chưa có hợp đồng inventory.
+
+Một cách chốt tiến độ theo mốc (chỉ minh họa, dùng số nguyên fixed-point trong triển khai):
+
+```text
+reconcile(plot, through):
+  assert through >= plot.lastEvaluatedAt
+  for segment in boundaries(plot.lastEvaluatedAt, through,
+                            weather/season changes, accepted mutations):
+    rate = boundedRate(segment.environment, plot.snapshot)
+    progress = min(cycleTarget, progress + rate * segment.duration)
+    if progress == cycleTarget: freeze ready state; stop cycle
+  plot.lastEvaluatedAt = through
+  return plot
+
+transaction(action):
+  lock/version-check plot + inventory and dedupe by world/action key
+  reconcile(plot, serverNow) using prior environment
+  validate(action); apply exactly once; persist progress, inventory, receipt
+  notify after commit; retry returns committed receipt or defined conflict
+```
+
+Thứ tự đồng timestamp phải có tie-breaker nhất quán, ví dụ chốt đoạn cũ rồi áp mutation được chấp nhận; UI chỉ trình bày snapshot. Nếu môi trường sinh từ seed/time, phải cố định version generator và epoch để tái dựng; nếu có thao tác sprinkler/phân, phải lưu mốc thay đổi hoặc chốt progress trước mutation. Các mốc trong downtime không được bịa từ weather hiện tại. Tích phân lớn cần giới hạn công việc, giữ cursor và tiếp tục, hoặc phép cộng dồn chính xác; không âm thầm cắt bỏ tiến độ. Với regrow, thời điểm chu kỳ tiếp theo nên được xác lập theo luật thu hoạch hiện có và phải kiểm thử trước khi thay. Thử 184 ô và đo thực tế trước khi tạo spatial index mới.
+
+Ví dụ trade-off giống giả định: dòng A chín sau 12 phút, yield 1–2, phù hợp phiên ngắn; dòng B sau 20 phút, yield 2–3, ít thao tác hơn. Đánh giá tiền trên ô/giờ, số click và đầu ra theo nhu cầu xưởng; cùng giá, B có thể mạnh trong một horizon còn A có thể vừa deadline ngắn hơn. Không biểu diễn hai con số này là giá trị cân bằng đã duyệt. Khi mutation/genetics chưa được phê duyệt, người trồng hoa vẫn dùng album và công thức SKU sẵn có.

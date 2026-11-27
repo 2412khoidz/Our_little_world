@@ -1,4 +1,4 @@
-# R1 — Tổng quan nghiên cứu (bản nghiên cứu có giới hạn)
+# R1 / R1.1 — Tổng quan nghiên cứu
 
 Baseline `origin/main` fe1937b7d26db484f5caedc8d93376c82b614bf6. Đây là nghiên cứu, không phải cam kết triển khai. Chỉ số nguồn, SHA và nhãn bằng chứng xem [09](09_SOURCE_INDEX.md); dấu vết và giới hạn trong từng tài liệu. Những phần chưa truy vết được ghi rõ, không suy diễn thành kết luận.
 
@@ -9,3 +9,7 @@ Baseline `origin/main` fe1937b7d26db484f5caedc8d93376c82b614bf6. Đây là nghi�
 **Điều phối:** `M3d` theo roadmap là hoạt ảnh xưởng/VFX; `M3e` là mỹ thuật câu cá. Không có `M3g` trong tài liệu baseline được tìm; worktree `feat/farming-fishing-visuals` có thay đổi chưa commit và handover tự mô tả đã triển khai M3d+M3e, chờ owner playtest; nhánh fishing progression có prototype chưa commit; `fix/inventory-integrity` có commit 5be8de5. Đây là ảnh chụp trạng thái, không khẳng định trạng thái agent hoặc đã tích hợp. Xác nhận trách nhiệm thực tế trước khi giao. M3d không nên bị giao gameplay trong tài liệu này nếu chưa có chủ dự án đổi phạm vi.
 
 **Giới hạn:** chưa hoàn thành truy vết toàn bộ kinh tế, nghề nghiệp và sprinkler Stardew; tuning và mạng DST; dữ liệu cây Vintage; cloning/định tuyến đầy đủ ACNH; chưa khảo sát diff chưa commit của worktree khác. Cloud SQL và iPhone thật không được kiểm thử. Đây là bản đầu vào kỹ thuật có các lỗ hổng nêu tại từng tài liệu, chưa đáp ứng toàn bộ phạm vi R1.
+
+## Cập nhật R1.1 — 28/11/2026
+
+Đã bổ sung dấu vết phân/sprinkler/giá/XP, tuning và save DST, vòng fast-forward và nhiệt Vintage, ví dụ lai nhiều thế hệ và giới hạn bằng chứng inventory ACNH. [Ma trận so sánh và ví dụ kinh tế](10_COMPARISON_AND_BALANCE.md) và [phase, nghiệm thu, vấn đề mở](11_PHASES_ACCEPTANCE_AND_OPEN_QUESTIONS.md) là tài liệu mới. Các đoạn “chưa hoàn tất” ở bản R1 là lịch sử tại 27/11; danh sách chưa đủ bằng chứng hiện hành nằm ở tài liệu 11. Chưa thực hiện benchmark hay playtest và chưa đối chiếu mọi backend, vì vậy không coi các đề xuất là nghiệm thu gameplay.
