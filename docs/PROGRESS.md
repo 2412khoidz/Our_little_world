@@ -2,6 +2,15 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## CANONICAL RC2 INTEGRATION (`integration/olw-canonical-rc2` → `main`)
+
+- **Hợp nhất thống nhất Canonical RC2 (`M0 Phase 1` + `M1 Billiards V4.1` + `M3a–M3c.2` + Multiplayer Maintenance):**
+  - **Cơ sở:** `main` @ `692d508` (đã có `M0` Mobile HUD Phase 1 `cfd3099`, `fix/remote-share-single-link` `143a822`, Roadmap V3 `f900d09`, và `M3a` Audit `3134f1a`).
+  - **M3 (`feat/farming-art-recovery` @ `0018d10`):** Sửa `32` SKU sai/trùng ảnh (`4bf8061`), transplant toàn bộ 7 loài vật nuôi động (`0cf17fb`, `livestock-ranch.{png,json}`), khôi phục chân dung UI + ambient animals tại `farm`/`village`/`garden` (`469d3de`), và chỉnh biến thể cừu `sheep_brown_baby` scale `1.00` (`0018d10`); giữ nguyên mèo `Quýt` 2D/3D.
+  - **M1 (`feat/billiards-v4-camera` @ `fecb746`):** Billiards V4.1 (2D & 3D, Practice/Bot/Local 2P/Online Ready Check Lobby, độ nhạy cảm ứng, raycast chọn bi, camera nghiêng V4.1 + trở về góc cơ khi ngắm, và chọn người khai cuộc công bằng + luân phiên tái đấu `fecb746`).
+  - **Ranh giới tích hợp đã vá sạch:** Nối `useFocusMode.ts` → `GlobalViewportContext` (`useOptionalGlobalViewport`) giữ 1 `fullscreenOwner` duy nhất; đồng bộ `handleOpenBilliards` cho cả `MobileNavDrawer` và `MenuModal`; vá triệt để lỗi **HTTP 404 cold-start** trên `/donor/workshop/queue` (`scripts/devLanServerPlugin.mjs` chờ async `ssrLoadModule` promises cho `/donor/` & `/farm`).
+  - **Bảo toàn save & phạm vi mở:** Save gốc `.dev-lan-state.json` được backup nguyên vẹn (`80D55386...`); tạo thêm save nghiệm thu cô lập `.dev-lan-state-acceptance-rc2.json` (`50,000` xu, `37` nhóm vật phẩm & đủ 7 loài); giữ nguyên `M0` auxiliary mobile menu improvements, `M2`, `M3d`, `M3e` và `M4–M10` là nhiệm vụ tiếp theo.
+
 ## DOCS RECONCILIATION — ROADMAP V3, APPROVED `M3a`, `M0` & MULTIPLAYER MAINTENANCE (`main`)
 
 - **Hợp nhất chỉ tài liệu & metadata (từ `chore/master-roadmap-v3` @ `f900d09` + `chore/m3a-asset-library-audit` @ `3134f1a`):**

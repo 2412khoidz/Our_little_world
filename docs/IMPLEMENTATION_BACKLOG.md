@@ -5,11 +5,10 @@
 
 > [!IMPORTANT]
 > **Backlog V3 Hiện hành:** Phần lớn task trong `Phần A` lịch sử dưới đây (`V0.1-1..7`, `OLW-010-01..03`, `V0.1.5`, `V0.2.0`) đã được hợp nhất vào canonical `main` (`v0.2.5`). Danh sách **Mission hành động hiện tại (`M0`..`M10`)** nằm tại **[NEXT_MISSIONS.md](NEXT_MISSIONS.md)** cùng kết quả kiểm kê tài nguyên **`M3a` (`OWNER APPROVED`)** tại **[ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md)**:
-> - **M3a (`OWNER APPROVED`):** Kiểm kê 28 pack donor & backlog sửa icon / transplant thú nuôi (`ASSET_LIBRARY_INVENTORY.md`, `ASSET_REUSE_BACKLOG.md`, `asset-library-inventory.json`)
-> - **M0 (`Phase 1 OWNER APPROVED`):** Mobile-First HUD, Touch Controls & Global Fullscreen đã gộp `main` (`cfd3099`); tối ưu menu phụ trợ vẫn còn mở
-> - **M1 (`IN PROGRESS` · V4 `NOT APPROVED`):** Billiards V3/V4.1 & 3D Transplant (chờ sửa camera V4.1; giữ Billiards V2 trên `main`)
-> - **M2 (`V0.2.x`):** Couple P1 Animations (`kiss`, `lean_shoulder`, `dance`, `give_flower`)
-> - **M3 (`V0.2.x`):** Farming, Fishing, Pet Polish + Sửa 32 SKU sai/trùng & Transplant Thú Nuôi (`FarmRanchLife`)
+> - **Đã hoàn tất & duyệt (`RC2` trên `main`):** **M0 Phase 1** (Mobile HUD & Fullscreen), **M1** (Billiards V4.1 + Fair Start), **M3a** (Asset Audit), **M3b** (32 SKU fixes), **M3c / M3c.1 / M3c.2** (Animated Livestock, Portraits & Ambient Animals).
+> - **M0 Follow-up (`PENDING`):** Cải tiến/tối ưu menu phụ trợ (auxiliary mobile menu improvements).
+> - **M2 (`V0.2.x` · `PLANNED`):** Couple P1 Animations (`kiss`, `lean_shoulder`, `dance`, `give_flower`)
+> - **M3d–M3e (`V0.2.x` · `PLANNED`):** Animated Processing Machines/VFX (`M3d`) & Fishing Artwork/Anim Transplant (`M3e`)
 > - **M4 (`V0.2.4`):** Home Progression (Shop nội thất 4 phong cách + mở rộng nhà giữ nguyên đồ cũ)
 > - **M5 (`V0.3`):** Interactive Cooking UI (`src/shared/cooking/`) nối nguyên liệu nông trại
 > - **M6 (`V0.3`):** Persistent Shared Life UI (Nhật ký, Wishlist, Lịch hẹn, Picnic)
