@@ -1149,7 +1149,110 @@ def build_all(src_dir: Path) -> None:
     )
 
     # ------------------------------------------------------------------
-    # 4. Write shared TS lookup index + CREDITS.md
+    # 4. Animated Ranch Livestock (7 species) -> livestock-ranch.png
+    # ------------------------------------------------------------------
+    livestock_specs = [
+        ("chicken", "chicken/chicken_speckled", "chicken_speckled", 16, 16),
+        ("duck", "duck/duck_mallard", "duck_mallard", 16, 16),
+        ("cow", "cow/cow_jersey", "cow_jersey", 32, 32),
+        ("goat", "goat/goat_alpine", "goat_alpine", 32, 32),
+        ("sheep", "sheep/sheep_brown", "sheep_brown", 32, 32),
+        ("rabbit", "rabbit/rabbit_angora", "rabbit_angora", 16, 16),
+    ]
+    livestock_actions = (
+        ("idle_down", 2),
+        ("idle_left", 2),
+        ("idle_right", 2),
+        ("walk_down", 4),
+        ("walk_left", 4),
+        ("walk_right", 4),
+        ("walk_up", 4),
+        ("eat_down", 2),
+        ("eat_left", 2),
+        ("eat_right", 2),
+        ("sleep_left", None),
+        ("sleep_right", None),
+    )
+
+    livestock_entries: list[tuple[str, Image.Image, dict]] = []
+    livestock_meta: dict[str, dict] = {}
+    frl_zip = pool._open(FRL_Z)
+    frl_names = set(frl_zip.namelist())
+
+    for sp_id, sub_dir, prefix, fw, fh in livestock_specs:
+        anims_meta: dict[str, list[str]] = {}
+        sources_meta: dict[str, str] = {}
+        for act_name, expected_frames in livestock_actions:
+            candidate_suffix = f"_{expected_frames}f.png" if expected_frames is not None else None
+            member = None
+            if candidate_suffix:
+                cand = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_{act_name}{candidate_suffix}"
+                if cand in frl_names:
+                    member = cand
+            else:
+                for n_f in (2, 1):
+                    cand = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_{act_name}_{n_f}f.png"
+                    if cand in frl_names:
+                        member = cand
+                        break
+            if member is None:
+                raise RuntimeError(f"Missing FarmRanchLife livestock strip for {sp_id}:{act_name}")
+            sheet = pool.load_image(FRL_Z, member)
+            frame_count = max(1, sheet.width // fw)
+            frame_keys: list[str] = []
+            for f_idx in range(frame_count):
+                frame_img = pool.strip_frame(FRL_Z, member, f_idx, fw, fh)
+                fkey = f"{sp_id}_{act_name}_{f_idx}"
+                livestock_entries.append((fkey, frame_img, {"donor": "FarmRanchLife", "species": sp_id, "action": act_name}))
+                frame_keys.append(fkey)
+            anims_meta[act_name] = frame_keys
+            sources_meta[act_name] = member
+        livestock_meta[sp_id] = {
+            "donor": "FarmRanchLife",
+            "variant": prefix,
+            "frameW": fw,
+            "frameH": fh,
+            "animations": anims_meta,
+            "sources": sources_meta,
+        }
+
+    # Bee species: grounded beehive_super_stack (16x32) + animated bees_swarm_4f (4x 16x16)
+    bee_hive_member = "FarmRanchLife/05_Buildings_Machines/Ranch_Props/beehive_super_stack.png"
+    bee_swarm_member = "FarmRanchLife/10_Effects/bees_swarm_4f.png"
+    livestock_entries.append(("bee_hive_0", pool.load_image(FRL_Z, bee_hive_member), {"donor": "FarmRanchLife", "species": "bee", "action": "hive"}))
+    bee_swarm_keys: list[str] = []
+    for f_idx in range(4):
+        fkey = f"bee_swarm_{f_idx}"
+        livestock_entries.append((fkey, pool.strip_frame(FRL_Z, bee_swarm_member, f_idx, 16, 16), {"donor": "FarmRanchLife", "species": "bee", "action": "swarm"}))
+        bee_swarm_keys.append(fkey)
+    livestock_meta["bee"] = {
+        "donor": "FarmRanchLife",
+        "variant": "beehive_super_stack+bees_swarm_4f",
+        "frameW": 16,
+        "frameH": 32,
+        "swarmFrameW": 16,
+        "swarmFrameH": 16,
+        "animations": {
+            "hive": ["bee_hive_0"],
+            "swarm": bee_swarm_keys,
+        },
+        "sources": {
+            "hive": bee_hive_member,
+            "swarm": bee_swarm_member,
+        },
+    }
+
+    livestock_frames = pack_shelf_atlas(
+        livestock_entries,
+        512,
+        1,
+        OUT_PUBLIC / "livestock-ranch.png",
+        OUT_PUBLIC / "livestock-ranch.json",
+        "/assets/farming/livestock-ranch.png",
+    )
+
+    # ------------------------------------------------------------------
+    # 5. Write shared TS lookup index + CREDITS.md
     # ------------------------------------------------------------------
     generated = {
         "version": 1,
@@ -1176,11 +1279,17 @@ def build_all(src_dir: Path) -> None:
                 "w": Image.open(OUT_PUBLIC / "trees-orchard.png").width,
                 "h": Image.open(OUT_PUBLIC / "trees-orchard.png").height,
             },
+            "livestockRanch": {
+                "url": "/assets/farming/livestock-ranch.png",
+                "w": Image.open(OUT_PUBLIC / "livestock-ranch.png").width,
+                "h": Image.open(OUT_PUBLIC / "livestock-ranch.png").height,
+            },
         },
         "items": {},
         "workshops": {},
         "crops": {},
         "trees": {},
+        "livestock": livestock_meta,
     }
 
     for sku in all_skus:
@@ -1245,7 +1354,7 @@ Original zip archives stay outside the repository and are not redistributed stan
 | **LPC Food V2** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel, thekingphoenix (`lpc-food-v2.zip`) | Grain sheaves, butter, sea salt, yeast, herbs, rhubarb | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Crops v2.1** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel (`crops-v2.1.zip`) | Multi-stage growth frames (`crops-stages.png`) for field crops | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Fruit Trees** (`lpc-fruit-trees.zip`) | Multi-stage perennial orchard tree frames (`trees-orchard.png`) | CC-BY-SA 3.0 / GPL 3.0 |
-| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops & machine icons | Perpetual commercial/personal game license (no standalone resale) |
+| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons & animated livestock sprites (`livestock-ranch.png`) | Perpetual commercial/personal game license (no standalone resale) |
 | **Shikashi's Fantasy Icons Pack v2** (`Shikashi's Fantasy Icons Pack v2.zip`) | Powders, spices, candles, yarn, wool knitwear, basket, scrolls | Personal & commercial project license |
 | **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-bluecarrot16_20201221.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, olive oil, vinegar, walnuts, cocoa beans, bait | CC0 / Public Domain (FGA/OCAL/Glitch/Bluecarrot16) |
 """
@@ -1255,7 +1364,8 @@ Original zip archives stay outside the repository and are not redistributed stan
         f"Packed OK: skus={len(generated['items'])}/{len(all_skus)}, "
         f"items16={len(frames16)}, items32={len(frames32)}, "
         f"crops={len(crop_defs_meta)} ({len(crop_frames)} frames), "
-        f"trees={len(orchard_map)} ({len(tree_frames)} frames)"
+        f"trees={len(orchard_map)} ({len(tree_frames)} frames), "
+        f"livestock={len(livestock_meta)} ({len(livestock_frames)} frames)"
     )
     pool.close()
 

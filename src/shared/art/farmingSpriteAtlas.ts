@@ -15,6 +15,10 @@ export const FARMING_TREES_ATLAS_KEY = 'olw-farming-trees-atlas';
 export const FARMING_TREES_ATLAS_PNG = '/assets/farming/trees-orchard.png';
 export const FARMING_TREES_ATLAS_JSON = '/assets/farming/trees-orchard.json';
 
+export const FARMING_LIVESTOCK_ATLAS_KEY = 'olw-farming-livestock-atlas';
+export const FARMING_LIVESTOCK_ATLAS_PNG = '/assets/farming/livestock-ranch.png';
+export const FARMING_LIVESTOCK_ATLAS_JSON = '/assets/farming/livestock-ranch.json';
+
 export type FarmingAtlasId = 'items16' | 'items32';
 
 export interface PackedItemSprite {
@@ -60,10 +64,22 @@ type RawCropEntry = {
   stages: RawStageRect[];
 };
 
+export interface LivestockAtlasSpec {
+  readonly donor: string;
+  readonly variant: string;
+  readonly frameW: number;
+  readonly frameH: number;
+  readonly swarmFrameW?: number;
+  readonly swarmFrameH?: number;
+  readonly animations: Readonly<Record<string, readonly string[]>>;
+  readonly sources: Readonly<Record<string, string>>;
+}
+
 const ITEMS_RECORD = atlasData.items as Record<string, RawItemEntry>;
 const WORKSHOPS_RECORD = atlasData.workshops as Record<string, RawItemEntry>;
 const CROPS_RECORD = atlasData.crops as Record<string, RawCropEntry>;
 const TREES_RECORD = atlasData.trees as Record<string, Record<string, RawStageRect>>;
+const LIVESTOCK_RECORD = (atlasData as { livestock?: Record<string, LivestockAtlasSpec> }).livestock ?? {};
 
 function stripQualitySuffix(sku: string): string {
   const colon = sku.indexOf(':');
@@ -163,10 +179,23 @@ export function spriteBackgroundStyle(
   };
 }
 
+export function getLivestockAtlasSpec(speciesId: string): LivestockAtlasSpec | null {
+  return LIVESTOCK_RECORD[speciesId] ?? null;
+}
+
+export function getAllLivestockAtlasSpecs(): Readonly<Record<string, LivestockAtlasSpec>> {
+  return LIVESTOCK_RECORD;
+}
+
+export function livestockAnimKey(speciesId: string, animName: string): string {
+  return `olw-livestock-${speciesId}-${animName}`;
+}
+
 export const FARMING_SPRITE_ATLAS_META = {
   itemCount: Object.keys(ITEMS_RECORD).length,
   workshopCount: Object.keys(WORKSHOPS_RECORD).length,
   cropCount: Object.keys(CROPS_RECORD).length,
   treeCount: Object.keys(TREES_RECORD).length,
+  livestockCount: Object.keys(LIVESTOCK_RECORD).length,
   atlases: atlasData.atlases,
 } as const;
