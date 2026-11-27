@@ -8,12 +8,14 @@ import type { AvatarConfig, DevIdentityInfo, WorldSnapshot } from '../../shared/
 interface OnboardingScreenProps {
   backend: WorldBackend;
   currentUser: AuthSessionUser | null;
+  isRemoteClient?: boolean;
   onEnterWorld: (snapshot: WorldSnapshot) => void;
 }
 
 export function OnboardingScreen({
   backend,
   currentUser,
+  isRemoteClient = false,
   onEnterWorld,
 }: OnboardingScreenProps) {
   const showDevTools = import.meta.env.DEV && backend.mode === 'dev-lan';
@@ -23,6 +25,7 @@ export function OnboardingScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pairMode, setPairMode] = useState<'create' | 'join'>(() =>
+    isRemoteClient ||
     currentUser?.userId === '22222222-2222-4222-8222-222222222222' ||
     currentUser?.userId === '33333333-3333-4333-8333-333333333333'
       ? 'join'
@@ -187,7 +190,7 @@ export function OnboardingScreen({
           </div>
         </div>
 
-        {showDevTools && (
+        {showDevTools && !isRemoteClient && (
           <div className="cozy-alert" data-testid="dev-lan-banner">
             <strong>Môi trường phát triển LAN (Chỉ có khi DEV):</strong> Dữ liệu đồng bộ trực
             tiếp giữa các thiết bị cùng Wi-Fi qua máy tính chủ.
@@ -227,67 +230,74 @@ export function OnboardingScreen({
                 data-testid="dev-identity-picker"
               >
                 <span style={{ fontSize: 13, fontWeight: 700 }}>
-                  Chọn danh tính kiểm thử (Laptop &amp; Điện thoại):
+                  {isRemoteClient
+                    ? 'Vào ngôi nhà của hai bạn:'
+                    : 'Chọn danh tính kiểm thử (Laptop & Điện thoại):'}
                 </span>
 
-                {devRoster.identities.map((id) => {
-                  const Icon =
-                    id.presetId === 'partner-a'
-                      ? Home
-                      : id.presetId === 'partner-b'
-                        ? UserPlus
-                        : KeyRound;
-                  const btnClass =
-                    id.presetId === 'partner-a'
-                      ? 'btn btn--primary'
-                      : id.presetId === 'partner-b'
-                        ? 'btn btn--sage'
-                        : 'btn btn--secondary';
-                  const statusText = id.inWorld
-                    ? ' • Đã trong nhà'
-                    : devRoster.memberCount >= 2
-                      ? ' • Bị từ chối (Nhà 2/2)'
-                      : '';
-                  return (
-                    <button
-                      key={id.presetId}
-                      type="button"
-                      className={btnClass}
-                      disabled={busy}
-                      data-testid={`preset-${id.presetId}`}
-                      onClick={() => void handleDevPreset(id.presetId, id.nickname)}
-                    >
-                      <Icon size={18} />
-                      {id.nickname} ({id.roleLabel}
-                      {statusText})
-                    </button>
-                  );
-                })}
+                {devRoster.identities
+                  .filter((id) => !isRemoteClient || id.presetId === 'partner-b')
+                  .map((id) => {
+                    const Icon =
+                      id.presetId === 'partner-a'
+                        ? Home
+                        : id.presetId === 'partner-b'
+                          ? UserPlus
+                          : KeyRound;
+                    const btnClass =
+                      id.presetId === 'partner-a'
+                        ? 'btn btn--primary'
+                        : id.presetId === 'partner-b'
+                          ? 'btn btn--sage'
+                          : 'btn btn--secondary';
+                    const statusText = id.inWorld
+                      ? ' • Đã trong nhà'
+                      : devRoster.memberCount >= 2
+                        ? ' • Bị từ chối (Nhà 2/2)'
+                        : '';
+                    return (
+                      <button
+                        key={id.presetId}
+                        type="button"
+                        className={btnClass}
+                        disabled={busy}
+                        data-testid={`preset-${id.presetId}`}
+                        onClick={() => void handleDevPreset(id.presetId, id.nickname)}
+                      >
+                        <Icon size={18} />
+                        {isRemoteClient
+                          ? `Vào nhà với vai ${id.nickname}${statusText}`
+                          : `${id.nickname} (${id.roleLabel}${statusText})`}
+                      </button>
+                    );
+                  })}
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                  {!devRoster.worldExists && (
-                    <button
-                      type="button"
-                      className="btn btn--secondary btn--sm"
-                      disabled={busy}
-                      data-testid="btn-dev-seed-couple"
-                      onClick={() => void handleDevSeedCouple()}
-                    >
-                      <Sparkles size={15} /> Tạo sẵn nhà 2/2 (Mây &amp; Nắng)
-                    </button>
-                  )}
-                  {devRoster.worldExists && (
-                    <button
-                      type="button"
-                      className="btn btn--secondary btn--sm"
-                      disabled={busy}
-                      data-testid="btn-dev-reset"
-                      onClick={() => void handleDevReset()}
-                    >
-                      <RotateCcw size={15} /> Đặt lại dữ liệu Dev
-                    </button>
-                  )}
-                </div>
+                {!isRemoteClient && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                    {!devRoster.worldExists && (
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        disabled={busy}
+                        data-testid="btn-dev-seed-couple"
+                        onClick={() => void handleDevSeedCouple()}
+                      >
+                        <Sparkles size={15} /> Tạo sẵn nhà 2/2 (Mây &amp; Nắng)
+                      </button>
+                    )}
+                    {devRoster.worldExists && (
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        disabled={busy}
+                        data-testid="btn-dev-reset"
+                        onClick={() => void handleDevReset()}
+                      >
+                        <RotateCcw size={15} /> Đặt lại dữ liệu Dev
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -374,26 +384,28 @@ export function OnboardingScreen({
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                className={`chip ${pairMode === 'create' ? 'chip--selected' : ''}`}
-                data-testid="tab-create-world"
-                onClick={() => setPairMode('create')}
-              >
-                <Sparkles size={15} /> Tạo ngôi nhà mới
-              </button>
-              <button
-                type="button"
-                className={`chip ${pairMode === 'join' ? 'chip--selected' : ''}`}
-                data-testid="tab-join-world"
-                onClick={() => setPairMode('join')}
-              >
-                <Copy size={15} /> Nhập mã mời ghép đôi
-              </button>
-            </div>
+            {!isRemoteClient && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className={`chip ${pairMode === 'create' ? 'chip--selected' : ''}`}
+                  data-testid="tab-create-world"
+                  onClick={() => setPairMode('create')}
+                >
+                  <Sparkles size={15} /> Tạo ngôi nhà mới
+                </button>
+                <button
+                  type="button"
+                  className={`chip ${pairMode === 'join' ? 'chip--selected' : ''}`}
+                  data-testid="tab-join-world"
+                  onClick={() => setPairMode('join')}
+                >
+                  <Copy size={15} /> Nhập mã mời ghép đôi
+                </button>
+              </div>
+            )}
 
-            {pairMode === 'create' ? (
+            {pairMode === 'create' && !isRemoteClient ? (
               <form
                 onSubmit={(e) => void handleCreateWorld(e)}
                 style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
@@ -464,7 +476,7 @@ export function OnboardingScreen({
               </form>
             )}
 
-            {showDevTools && devRoster?.worldExists && (
+            {showDevTools && !isRemoteClient && devRoster?.worldExists && (
               <button
                 type="button"
                 className="btn btn--secondary btn--sm"

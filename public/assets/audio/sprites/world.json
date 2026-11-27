@@ -1,0 +1,58 @@
+{
+  "resources": [
+    "/assets/audio/sprites/world.mp3"
+  ],
+  "spritemap": {
+    "footstep": {
+      "start": 0,
+      "end": 0.375,
+      "loop": false
+    },
+    "footstep_grass": {
+      "start": 0.495,
+      "end": 0.87,
+      "loop": false
+    },
+    "footstep_soil": {
+      "start": 0.99,
+      "end": 1.21,
+      "loop": false
+    },
+    "footstep_sand": {
+      "start": 1.33,
+      "end": 1.57,
+      "loop": false
+    },
+    "footstep_wood": {
+      "start": 1.69,
+      "end": 1.85,
+      "loop": false
+    },
+    "footstep_stone": {
+      "start": 1.97,
+      "end": 2.11,
+      "loop": false
+    },
+    "footstep_water": {
+      "start": 2.23,
+      "end": 2.47,
+      "loop": false
+    },
+    "door": {
+      "start": 2.59,
+      "end": 3.1069,
+      "loop": false
+    },
+    "interact": {
+      "start": 3.2269,
+      "end": 3.5395,
+      "loop": false
+    },
+    "rod": {
+      "start": 3.6595,
+      "end": 4.0039,
+      "loop": false
+    }
+  },
+  "durationSec": 4.1239
+}

@@ -1,3 +1,28 @@
+import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
+import type { BilliardsMatchRecordInput, BilliardsWinTally } from '../../shared/billiards/types';
+import type { NetworkDiagnosticsState } from '../../shared/netcode/diagnostics';
+import type { MinigameEventEnvelope } from '../../shared/netcode/minigameContract';
+import type { WorldDomainVersions } from '../../shared/netcode/protocol';
+import type { PetCareSessionEventPacket } from '../../shared/petLiving/petCare/sharedPetCareTypes';
+import type { DevSanitizedWorldSnapshot } from '../../shared/devConsole/devConsoleTypes';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type {
+  MailboxSnapshot,
+  OpenMailboxParams,
+  SendMailboxParams,
+} from '../../shared/mailbox/mailboxTypes';
+import type {
+  PetActionType,
+  PetCareApplyResult,
+  PetCareBowlSnapshot,
+  PetInteractionResult,
+  PetSnapshot,
+} from '../../shared/pet/petTypes';
+import type {
+  StudyControlAction,
+  StudyMode,
+  StudySnapshot,
+} from '../../shared/study/studyTypes';
 import type {
   AvatarConfig,
   BackendMode,
@@ -12,6 +37,7 @@ import type {
   PresencePayload,
   UserProfile,
   WorldInviteStatus,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
 
@@ -33,17 +59,131 @@ export type ConnectionStatus =
 export interface RealtimeHandlers {
   onPresenceChange: (presences: PresencePayload[]) => void;
   onMovement: (packet: MovementPacket) => void;
-  onWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  onWorldMutated: (
+    reason: WorldMutationReason,
+    meta?: { stateVersion?: number; domainVersions?: Partial<WorldDomainVersions> },
+  ) => void;
+  onCoupleEvent?: (packet: CoupleEventPacket) => void;
+  onPetCareSession?: (packet: PetCareSessionEventPacket) => void;
+  onDonorFishingSync?: (session: import('../../shared/donor/donorFishSessionTypes').DonorFishSessionView) => void;
+  onMinigameEvent?: (packet: MinigameEventEnvelope) => void;
+  onWelcomeResync?: (info: {
+    stateVersion: number;
+    domainVersions?: Partial<WorldDomainVersions>;
+    isReconnect: boolean;
+  }) => void;
+  onDiagnosticsChange?: (diag: NetworkDiagnosticsState) => void;
   onConnectionChange: (status: ConnectionStatus) => void;
 }
 
 export interface RealtimeHandle {
   publishMovement: (packet: MovementPacket) => void;
   updatePresence: (presence: PresencePayload) => void;
-  notifyWorldMutated: (reason: 'furniture' | 'profile' | 'member') => void;
+  notifyWorldMutated: (reason: WorldMutationReason) => void;
+  publishCoupleEvent?: (packet: CoupleEventPacket) => void;
+  publishPetCareSession?: (packet: PetCareSessionEventPacket) => void;
+  publishMinigameEvent?: (packet: MinigameEventEnvelope) => void;
+  probeLiveness?: () => Promise<boolean>;
+  getDiagnostics?: () => NetworkDiagnosticsState;
   reconnect: () => Promise<void>;
   setSimulatedOffline?: (offline: boolean) => void;
   disconnect: () => Promise<void>;
+}
+
+export interface InventoryBackend {
+  getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
+  claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
+  transferInventoryQuality(params: {
+    worldId: string;
+    fromScope: 'shared' | 'personal';
+    toScope: 'shared' | 'personal';
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    qty: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<InventorySnapshot>>;
+}
+
+export interface PetBackend {
+  getPetSnapshot(worldId: string): Promise<MutationResult<PetSnapshot | null>>;
+  adoptOrRenamePet(params: {
+    worldId: string;
+    name: string;
+    expectedVersion?: number | null;
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetSnapshot>>;
+  interactPet(params: {
+    worldId: string;
+    petId: string;
+    action: PetActionType;
+    expectedVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetInteractionResult>>;
+  getPetCareSnapshot(worldId: string): Promise<MutationResult<PetCareBowlSnapshot>>;
+  applyPetCare(params: {
+    worldId: string;
+    petId: string;
+    action: 'fill_food' | 'fill_water';
+    expectedBowlVersion: number;
+    ownerScope: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<PetCareApplyResult>>;
+  /** Mission 04C care scene — RPC `pet_consume_hand_food` (migration 20261125001200). */
+  consumeHandFood(params: {
+    worldId: string;
+    petId: string;
+    expectedVersion: number;
+    ownerScope: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ pet: PetSnapshot; sku: string; quality: string }>>;
+}
+
+export interface PetLivingBackend {
+  getLivingSnapshot(worldId: string): Promise<MutationResult<import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot>>;
+  beginLivingAction(params: {
+    worldId: string;
+    petId: string;
+    actionId: 'eat_bowl' | 'drink_water';
+    targetAffordanceId: string;
+    expectedLivingVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ instanceId: string; snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
+  submitLivingProposal(params: {
+    worldId: string;
+    instanceId: string;
+    proposal: 'movement_ready' | 'animation_finished';
+    idempotencyKey: string;
+    proof?: { standTileX: number; standTileY: number } | null;
+  }): Promise<MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
+  createFoodOffer(params: {
+    worldId: string;
+    petId: string;
+    itemSku: string;
+    quality: 'normal' | 'silver' | 'gold';
+    ttlSeconds: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ offerId: string; snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
+  respondFoodOffer(params: {
+    worldId: string;
+    offerId: string;
+    response: 'cancel';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>>;
+  evaluateFoodOffer(params: {
+    worldId: string;
+    petId: string;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      outcome?: string;
+      offerId?: string;
+      snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+    }>
+  >;
 }
 
 export interface SpikeCinemaPacket {
@@ -59,6 +199,121 @@ export interface SpikeCinemaPacket {
 export interface SpikeCinemaBus {
   subscribe: (onMessage: (pkt: SpikeCinemaPacket) => void) => () => void;
   send: (pkt: SpikeCinemaPacket) => void;
+}
+
+export interface StudyBackend {
+  getStudySnapshot(worldId: string): Promise<MutationResult<StudySnapshot>>;
+  startSession(params: {
+    worldId: string;
+    mode: StudyMode;
+    focusMinutes: number;
+    breakMinutes: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<StudySnapshot>>;
+  controlSession(params: {
+    worldId: string;
+    sessionId: string;
+    action: StudyControlAction;
+    expectedVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<StudySnapshot>>;
+}
+
+export interface MailboxBackend {
+  listMailbox(worldId: string): Promise<MutationResult<MailboxSnapshot>>;
+  sendLetterOrGift(
+    params: SendMailboxParams,
+  ): Promise<MutationResult<{ mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
+  openItem(
+    params: OpenMailboxParams,
+  ): Promise<MutationResult<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>>;
+}
+
+export interface FarmBackend {
+  getFarmSnapshot(worldId: string): Promise<MutationResult<import('../../shared/farming/farmSnapshotTypes').FarmSnapshot>>;
+  applyFarm(params: {
+    worldId: string;
+    plotIndex: number;
+    action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler';
+    seedSku?: string | null;
+    fertilizerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['fertilizerSku'];
+    sprinklerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['sprinklerSku'];
+    toolSku?: string | null;
+    useEnvironment?: boolean;
+    farmVersion?: number;
+    idempotencyKey: string;
+  }): Promise<
+    MutationResult<{
+      snapshot: import('../../shared/farming/farmSnapshotTypes').FarmSnapshot;
+      harvested?: { sku: string; qty: number; quality: string }[];
+    }>
+  >;
+  sellCrop(params: {
+    worldId: string;
+    sku: string;
+    qty: number;
+    quality?: 'normal' | 'silver' | 'gold';
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number }>>;
+  buySeed(params: {
+    worldId: string;
+    seedSku: string;
+    qty: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number }>>;
+  shipToBin(params: {
+    worldId: string;
+    lines: { sku: string; qty: number; quality?: 'normal' | 'silver' | 'gold' }[];
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ walletCoins: number; totalCoins: number }>>;
+  getDeepFarmSnapshot(
+    worldId: string,
+  ): Promise<MutationResult<import('../../shared/farming/deepFarmState').DeepFarmSnapshot>>;
+  applyDeepFarmAction(
+    params: import('../../shared/farming/deepFarmState').DeepFarmActionParams,
+  ): Promise<
+    MutationResult<{
+      snapshot: import('../../shared/farming/deepFarmState').DeepFarmSnapshot;
+      messageVi: string;
+      idempotentReplay?: boolean;
+      harvestedItems?: readonly { sku: string; qty: number; quality: string }[];
+      rewardCoins?: number;
+    }>
+  >;
+}
+
+export interface DevConsoleBackend {
+  spawnItem(params: {
+    worldId: string;
+    scope: 'shared' | 'personal';
+    itemSku: string;
+    qty: number;
+  }): Promise<MutationResult<InventorySnapshot>>;
+  setPetVitals(params: {
+    worldId: string;
+    hunger: number;
+    energy: number;
+    fun: number;
+  }): Promise<MutationResult<PetSnapshot>>;
+  advanceStudy(params: {
+    worldId: string;
+    sessionId: string;
+    deltaSeconds: number;
+  }): Promise<MutationResult<StudySnapshot>>;
+  exportSnapshot(worldId: string): Promise<MutationResult<DevSanitizedWorldSnapshot>>;
+  restoreSnapshot(
+    worldId: string,
+    snapshot: DevSanitizedWorldSnapshot,
+  ): Promise<MutationResult<{ restored: true }>>;
+}
+
+export interface BilliardsBackend {
+  getStats(
+    worldId: string,
+  ): Promise<MutationResult<{ tallies: BilliardsWinTally[]; totalMatches: number }>>;
+  recordMatch(
+    params: BilliardsMatchRecordInput,
+  ): Promise<MutationResult<{ tallies: BilliardsWinTally[]; inserted: boolean }>>;
 }
 
 export interface WorldBackend {
@@ -81,6 +336,10 @@ export interface WorldBackend {
   }>;
   seedDevCoupleWorld?(): Promise<MutationResult<WorldSnapshot>>;
   resetDevWorld?(): Promise<MutationResult<{ reset: true }>>;
+  getDevClientContext?(): Promise<{
+    isRemoteClient: boolean;
+    autoPartnerPreset: LocalPresetAccountId | null;
+  }>;
   signOut(): Promise<void>;
 
   getWorldSnapshot(): Promise<MutationResult<WorldSnapshot | null>>;
@@ -104,6 +363,15 @@ export interface WorldBackend {
     sku: string;
     tileX: number;
     tileY: number;
+    rotated?: boolean;
+    devSandbox?: boolean;
+    expectedLayoutVersion: number;
+    idempotencyKey: string;
+  }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;
+
+  rotateFurniture(params: {
+    worldId: string;
+    placementId: string;
     expectedLayoutVersion: number;
     idempotencyKey: string;
   }): Promise<MutationResult<{ layoutVersion: number; placement: FurniturePlacement }>>;
@@ -131,4 +399,13 @@ export interface WorldBackend {
   ): Promise<RealtimeHandle>;
 
   createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus;
+
+  readonly inventory?: InventoryBackend;
+  readonly farm?: FarmBackend;
+  readonly pet?: PetBackend;
+  readonly petLiving?: PetLivingBackend;
+  readonly study?: StudyBackend;
+  readonly mailbox?: MailboxBackend;
+  readonly billiards?: BilliardsBackend;
+  readonly devConsole?: DevConsoleBackend;
 }

@@ -1,0 +1,891 @@
+/*
+ * Cozy Tabletop Art Direction for the local (same-device) mini-games:
+ * Warm Walnut Timber Frame + Recessed Parchment/Felt Boards + Tactile Glossy Pieces.
+ * Mobile-first for a 430×932 viewport: single column, no horizontal scroll,
+ * no hover-only affordances, and minimum 44px touch controls outside grids.
+ */
+
+.mn-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(14px + var(--safe-top)) calc(12px + var(--safe-right))
+    calc(22px + var(--safe-bottom)) calc(12px + var(--safe-left));
+  overflow-x: hidden;
+  background: radial-gradient(circle at 50% 0%, #3d2821 0%, #271a16 70%);
+  min-height: 100dvh;
+}
+
+.mn-demo-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4b3126 0%, #39231b 100%);
+  border: 2px solid #8a5e42;
+  box-shadow: 0 4px 0 #1c100d, inset 0 1px 0 rgba(255, 232, 198, 0.16);
+  color: #fff6e8;
+}
+
+.mn-demo-title {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: 0.25px;
+  text-shadow: 0 2px 0 #23140f;
+}
+
+.mn-demo-subtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #edd8c2;
+}
+
+.mn-demo-note {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 244, 226, 0.55);
+}
+
+/* Bookmark Timber Tabs ---------------------------------------------------- */
+
+.mn-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mn-tab {
+  min-height: 44px;
+  padding: 0 6px;
+  border-radius: 10px;
+  border: 2px solid #6b4532;
+  background: linear-gradient(180deg, #523528 0%, #3e271d 100%);
+  color: #f6e6cf;
+  font-weight: 800;
+  font-size: 12.5px;
+  box-shadow: 0 3px 0 #1f120d;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 90ms ease, filter 120ms ease;
+}
+
+.mn-tab--active {
+  background: linear-gradient(180deg, #e07f64 0%, #c45d45 100%);
+  border-color: #4d2218;
+  color: #fffaf3;
+  box-shadow: 0 3px 0 #4d2218, inset 0 1px 0 rgba(255, 240, 224, 0.35);
+}
+
+.mn-tab:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #1f120d;
+}
+
+/* Framed Tabletop Tray Shell ---------------------------------------------- */
+
+.mn-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.mn-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fbf0da;
+  border: 3px solid #4c2d1f;
+  outline: 2px solid #b58252;
+  outline-offset: -6px;
+  box-shadow: 0 5px 0 #26140d, 0 14px 28px rgba(15, 8, 5, 0.45);
+}
+
+.mn-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px dashed rgba(124, 83, 55, 0.32);
+}
+
+.mn-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: #3a2117;
+}
+
+.mn-subtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #6b4737;
+}
+
+.mn-turn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #fff5dc 0%, #f5dfb2 100%);
+  border: 2px solid #c39051;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #3a2117;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+
+.mn-turn-dot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid #4c2d1f;
+  background: radial-gradient(circle at 35% 30%, #f79d88, #d15d44);
+  box-shadow: 0 0 0 2px rgba(209, 93, 68, 0.25);
+}
+
+.mn-turn[data-player='player-2'] .mn-turn-dot {
+  background: radial-gradient(circle at 35% 30%, #8bc495, #4d8058);
+  box-shadow: 0 0 0 2px rgba(77, 128, 88, 0.28);
+}
+
+.mn-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fde8e4;
+  border: 2px solid #d1685c;
+  color: #962c22;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mn-hint {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f0dfbe;
+  border: 1.5px solid #c7a272;
+  color: #543627;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mn-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #634030;
+}
+
+.mn-outcome {
+  min-width: 0;
+  font-weight: 800;
+}
+
+.mn-score {
+  flex-shrink: 0;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 2px solid #b58252;
+  background: #f3e0bd;
+  color: #3a2117;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mn-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mn-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: 2px solid #7d5238;
+  background: linear-gradient(180deg, #f5e2c1 0%, #e4c698 100%);
+  color: #3a2117;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 2px 0 #5b3a26;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.mn-btn--primary {
+  background: linear-gradient(180deg, #df7c60 0%, #c45b42 100%);
+  border-color: #4f2217;
+  color: #fffaf3;
+  box-shadow: 0 2px 0 #4f2217;
+}
+
+.mn-btn--ghost {
+  background: linear-gradient(180deg, #fdf3de 0%, #ecd6b2 100%);
+}
+
+.mn-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #5b3a26;
+}
+
+.mn-btn:disabled {
+  opacity: 0.55;
+}
+
+.mn-btn:focus-visible,
+.mn-tab:focus-visible,
+.mn-cell:focus-visible,
+.mn-card:focus-visible {
+  outline: 3px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.mn-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mn-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #7c5845;
+  text-align: center;
+}
+
+/* Inset Game Boards ------------------------------------------------------- */
+
+.mn-grid {
+  display: grid;
+  width: 100%;
+  margin-inline: auto;
+  padding: 6px;
+  border-radius: 10px;
+  touch-action: manipulation;
+}
+
+.mn-grid--caro {
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  gap: 1px;
+  background: #b98b5a;
+  border: 2px solid #6b432a;
+  box-shadow: inset 0 2px 6px rgba(58, 32, 16, 0.25);
+}
+
+.mn-grid--othello {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  background: #33573f;
+  border: 3px solid #5c3724;
+  box-shadow: inset 0 2px 8px rgba(14, 32, 20, 0.45);
+}
+
+.mn-grid--battleship {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 2px;
+  background: #4e6c7e;
+  border: 2px solid #354c5c;
+  box-shadow: inset 0 2px 6px rgba(18, 32, 42, 0.32);
+}
+
+.mn-grid--memory {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+  background: #e9d1ab;
+  border: 2px solid #966a45;
+  box-shadow: inset 0 2px 6px rgba(68, 40, 22, 0.2);
+}
+
+.mn-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border-radius: 3px;
+  border: 1px solid rgba(91, 66, 56, 0.2);
+  background: #f5dfb8;
+  touch-action: manipulation;
+}
+
+.mn-cell:disabled {
+  cursor: default;
+}
+
+/* Caro: Hinoki Wood Grid & Glossy Ceramic Stones -------------------------- */
+
+.mn-cell--caro {
+  background: #f4dfb7;
+  border-color: rgba(124, 83, 48, 0.28);
+  border-radius: 2px;
+}
+
+.mn-cell--p1 .mn-stone,
+.mn-cell--p2 .mn-stone {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 28, 20, 0.35);
+  box-shadow: 0 2px 2px rgba(42, 21, 14, 0.28), inset 0 2px 2px rgba(255, 255, 255, 0.42);
+}
+
+.mn-cell--p1 .mn-stone {
+  background: radial-gradient(circle at 32% 28%, #f8a48e, #d4654d 68%, #a6432e);
+}
+
+.mn-cell--p2 .mn-stone {
+  background: radial-gradient(circle at 32% 28%, #9cd4a7, #568c64 68%, #3b6646);
+}
+
+.mn-cell--last {
+  outline: 2px solid #e6a844;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.mn-cell--win {
+  background: #ffe8a6;
+  box-shadow: inset 0 0 0 2px #d88f28;
+}
+
+/* Othello: Cozy Emerald Baize Felt & Beveled Discs ------------------------ */
+
+.mn-cell--othello {
+  border-radius: 4px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #4b7857 0%, #416b4d 100%);
+}
+
+.mn-cell--othello.mn-cell--legal {
+  background: linear-gradient(180deg, #5d916b 0%, #4e7d5a 100%);
+}
+
+.mn-disc {
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  box-shadow: 0 2px 3px rgba(15, 28, 18, 0.48), inset 0 2px 2px rgba(255, 255, 255, 0.22);
+}
+
+.mn-disc--black {
+  background: radial-gradient(circle at 32% 28%, #634840, #33211c 75%);
+  border: 1px solid #221410;
+}
+
+.mn-disc--white {
+  background: radial-gradient(circle at 32% 28%, #ffffff, #f2e2cb 80%);
+  border: 1px solid #a88766;
+}
+
+.mn-legal-dot {
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: #f8c660;
+  box-shadow: 0 0 6px rgba(248, 198, 96, 0.75);
+}
+
+.mn-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mn-count {
+  flex: 1 1 40%;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid #c99e6e;
+  background: #f5e2c1;
+  color: #3a2117;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Memory: Woven Linen Card Backs & Polaroid Tile Faces -------------------- */
+
+.mn-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 9px;
+  border: 2px solid #7d5238;
+  background: #fdf6e8;
+  box-shadow: 0 3px 0 #5b3a26;
+  font-size: clamp(20px, 7vw, 30px);
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.mn-card--down {
+  background-color: #d97762;
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 244, 230, 0.22) 0 4px,
+      rgba(182, 74, 54, 0.22) 4px 8px
+    );
+  color: #fff6ea;
+  font-size: 18px;
+  font-weight: 800;
+  text-shadow: 0 1px 0 #7b3123;
+}
+
+.mn-card--up {
+  background: #fffdf8;
+  border-color: #a87447;
+  box-shadow: 0 2px 0 #8a5c38, inset 0 0 0 3px #f6e7d0;
+}
+
+.mn-card--matched {
+  background: #e5f2e6;
+  border-color: #4f855b;
+  box-shadow: 0 2px 0 #396242, inset 0 0 0 3px #cde5cf;
+}
+
+.mn-card:disabled {
+  cursor: default;
+}
+
+/* Battleship: Vintage Sea-Chart Harbor & Wax-Sealed Privacy Curtain ------- */
+
+.mn-bs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mn-bs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-bs-title {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #3a2117;
+}
+
+.mn-cell--water,
+.mn-cell--fire {
+  background: linear-gradient(180deg, #bddae6 0%, #9fc7d8 100%);
+  border-color: rgba(45, 76, 94, 0.28);
+}
+
+.mn-cell--ship {
+  background: linear-gradient(180deg, #b8946e 0%, #96724d 100%);
+  border-color: #5c3f26;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 218, 0.45);
+}
+
+.mn-cell--hit {
+  background: radial-gradient(circle, #f7b8b0, #e36a5c);
+  border-color: #8f2d24;
+  color: #5e1510;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mn-cell--miss {
+  background: #d8ecf2;
+  color: #486b7d;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.mn-win {
+  margin: 0;
+  padding: 12px;
+  border-radius: 9px;
+  border: 2px solid #c98f2e;
+  background: linear-gradient(180deg, #fff5cf 0%, #ffe399 100%);
+  color: #3a2117;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.mn-sunk {
+  margin: 0;
+  color: #5f3d2f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mn-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 24px 16px;
+  border-radius: 12px;
+  border: 2px solid #7d5238;
+  outline: 2px dashed #c9985a;
+  outline-offset: -8px;
+  background: radial-gradient(circle at 50% 30%, #fff6e5 0%, #ebd1ab 100%);
+  box-shadow: inset 0 2px 10px rgba(76, 45, 31, 0.14);
+}
+
+.mn-gate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.mn-gate-title {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #3a2117;
+}
+
+.mn-gate-text {
+  max-width: 260px;
+  margin: 0;
+  color: #6b4737;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mn-gate-btn {
+  width: 100%;
+  max-width: 280px;
+  min-height: 52px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* Wider screens ---------------------------------------------------------- */
+
+@media (max-width: 400px) {
+  .mn-grid--caro {
+    gap: 0;
+    padding: 4px;
+  }
+
+  .mn-cell--caro {
+    min-height: 20px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 450px) {
+  .mn-demo {
+    padding-top: 8px;
+    gap: 8px;
+  }
+
+  .mn-shell {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .mn-gate {
+    min-height: 200px;
+    padding: 12px;
+  }
+
+  .mn-grid--battleship {
+    max-width: min(72vw, 360px);
+  }
+}
+
+@media (min-width: 520px) {
+  .mn-grid--caro,
+  .mn-grid--othello,
+  .mn-grid--battleship {
+    max-width: 460px;
+  }
+
+  .mn-grid--memory {
+    max-width: 420px;
+  }
+}
+
+/* Mission 03B — Cozy table, couple strip, motion-safe polish ---------------- */
+
+.mn-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mn-header-tools {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mn-btn--compact {
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.mn-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+}
+
+.mn-couple-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mn-couple-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid #c99e6e;
+  background: #f8edd8;
+  font-size: 12px;
+  font-weight: 800;
+  color: #523628;
+}
+
+.mn-couple-pill--active {
+  border-color: #c45b42;
+  background: linear-gradient(180deg, #ffe8d6 0%, #f5cfb0 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.mn-couple-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.mn-couple-icon--cloud {
+  background: radial-gradient(circle at 35% 30%, #f8fcff, #b8d4e8 70%);
+  border: 1px solid #8ab0c8;
+}
+
+.mn-couple-icon--sun {
+  background: radial-gradient(circle at 35% 30%, #ffe8a0, #e8a040 75%);
+  border: 1px solid #c07820;
+}
+
+.mn-couple-icon--heart {
+  background: radial-gradient(circle at 35% 30%, #ffc0d8, #e07098);
+  border: 1px solid #b05078;
+}
+
+.mn-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mn-table-outer {
+  position: relative;
+  padding: 8px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #6d452f 0%, #4a2e1e 100%);
+  box-shadow: 0 4px 0 #26140d, inset 0 1px 0 rgba(255, 220, 180, 0.2);
+}
+
+.mn-table-rim {
+  position: absolute;
+  inset: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 232, 198, 0.12);
+  pointer-events: none;
+}
+
+.mn-table-surface {
+  position: relative;
+  border-radius: 8px;
+}
+
+.mn-stone--ghost {
+  opacity: 0.45;
+  transform: scale(0.85);
+}
+
+.mn-cell--hover-ghost {
+  background: #f9e4bf !important;
+}
+
+.mn-cell--pop .mn-stone,
+.mn-cell--pop .mn-disc {
+  animation: mn-pop-in 220ms ease-out;
+}
+
+@keyframes mn-pop-in {
+  from {
+    transform: scale(0.2);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.mn-card-back-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  background: radial-gradient(circle at 30% 25%, #f7c4b0, #c96b52 70%);
+  border: 2px solid #8f3d2c;
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25);
+}
+
+.mn-card--down {
+  background: transparent;
+  color: transparent;
+}
+
+.mn-card-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.mn-memory-glyph {
+  width: min(70%, 40px);
+  height: auto;
+}
+
+.mn-card-back-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.mn-memory-back-svg {
+  width: min(75%, 48px);
+  height: auto;
+}
+
+.mn-card--up {
+  animation: mn-card-flip 280ms ease-out;
+}
+
+@keyframes mn-card-flip {
+  from {
+    transform: rotateY(70deg);
+    opacity: 0.65;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+.mn-grid--sea {
+  animation: mn-sea-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes mn-sea-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.04);
+  }
+}
+
+.mn-cell--ship::after {
+  content: '';
+  width: 62%;
+  height: 42%;
+  border-radius: 3px 8px 2px 2px;
+  background: linear-gradient(180deg, #6b4a32 0%, #4a3020 100%);
+  box-shadow: 0 1px 0 rgba(255, 240, 218, 0.25);
+  opacity: 0.9;
+}
+
+.mn-shot-mark {
+  display: block;
+  width: 55%;
+  height: 55%;
+}
+
+.mn-shot-mark--hit {
+  background:
+    linear-gradient(
+      45deg,
+      transparent 42%,
+      #5e1510 42%,
+      #5e1510 58%,
+      transparent 58%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 42%,
+      #5e1510 42%,
+      #5e1510 58%,
+      transparent 58%
+    );
+}
+
+.mn-shot-mark--miss {
+  border-radius: 50%;
+  background: radial-gradient(circle, #7aa8bc 30%, #486b7d 75%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-cell--pop .mn-stone,
+  .mn-cell--pop .mn-disc,
+  .mn-card--up,
+  .mn-grid--sea {
+    animation: none !important;
+  }
+}

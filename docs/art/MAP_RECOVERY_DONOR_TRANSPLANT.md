@@ -1,0 +1,39 @@
+# Map recovery — real donor transplants @ `8e4454d`
+
+Owner directive: **ship authored donor maps**, not cozy overlays, procedural glade filler, Hollowmere scatter noise, or `Casa_player` shop bitmap.
+
+## Checkpoint
+
+| Item | Value |
+|------|--------|
+| Git | `integration/donor-reuse-preview` @ `8e4454d` |
+| Slice id | `map-recovery-v1-8e4454d` |
+| Branch | `cursor/map-recovery-real-donors-351a` |
+| Enable imports | `npm run import-donor:recovery-world` (`OLW_MAP_RECOVERY=1`) |
+
+## Zone contract
+
+| Map | Owner donor | Remove | Target |
+|-----|-------------|--------|--------|
+| **farm** | PyDew `data/map.tmx` @ `5b33bfda` | Cabacos crop window / `OLW_ContractSoil` | Native 64px Farmable layer; **184** plot IDs |
+| **forest** | Tuxemon `tt_forest_route1.tmx` @ `4e63c45b` | `pydewGladeTilemap` procedural (removed) | Native multi-tileset + portal slice |
+| **beach** | Cabacos `Cabacos_map.tmj` east coast crop | Hollowmere cozy rebuild / scatter | Native `ts_map` layers + pier interactables |
+| **shop** | `Seed_shop` / `tool_shop` / `Crop_market` / `Town_hall` `.tmj` + PNGs | `Casa_player.tmj` as shop | `shop_*.json` `olwShopRender=image` |
+
+## Runtime
+
+- `renderDonorCabacosMapLayers` skips `OLW_ContractSoil`.
+- `FarmPlotVisualController` paints contract gids only when soil layer exists; tilled/planted uses Cabacos crop art.
+- `WorldScene` uses Cabacos tilemap for shop when `olwShopRender=tiled`.
+
+## Plot ID migration
+
+**Allowed:** anchor tiles in `farmPlotContract.v1.json` may be re-aligned to Cabacos soil tiles in a follow-up import; **IDs `farm_main_*` / `farm_annex_*` stay stable** for economy + RPC.
+
+## Follow-up
+
+1. Vendor `public/maps/donor/pydew/main.tmx` + `import-donor:pydew-tmx.mjs`.
+2. Owner VQG: farm native soil, Gull Bay without scatter palms, shop seeds market interior, forest after TMX.
+3. Merge to `integration/preview-art-recovery` when green.
+
+Store copy: `/cursor/stores/bc-2e22f11f-fecd-46d0-800e-ec62bb2a932f/docs/map-recovery-donor-transplant-8e4454d.md`

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "slice": "worker-g-pydew-farmer",
+  "policy": {
+    "avatarDiagonalAlphaCompositeBanned": true
+  },
+  "entries": [
+    {
+      "id": "avatar.walk.pydew-farmer",
+      "provider": "artemn0va-pydew-valley-cc0",
+      "sha": "5b33bfda76d54866c648e7e54eff4e4e8a1eec8a",
+      "files": [
+        "pydew-characters/farmer-may-atlas.png",
+        "pydew-characters/farmer-nang-atlas.png",
+        "pydew-characters/farmer-rose-atlas.png"
+      ],
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "consumers": [
+        "donor-pydew-farmer-may",
+        "donor-pydew-farmer-nang",
+        "donor-pydew-farmer-rose"
+      ]
+    },
+    {
+      "id": "avatar.reference.cabacos-sunnyside",
+      "provider": "goncalojbsousa/Farming-Simulator-Cabacos",
+      "sha": "79e423defc12bd99327cfcc28bf7ec0085996244",
+      "files": [
+        "cabacos-characters/base_waiting_strip9.png",
+        "cabacos-characters/base_walk_strip8.png"
+      ],
+      "frameWidth": 96,
+      "frameHeight": 64,
+      "role": "reference"
+    }
+  ]
+}

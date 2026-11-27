@@ -1,4 +1,21 @@
-export type MapId = 'home' | 'garden';
+import type { CouplePostureKind } from './couple/coupleTypes';
+import type { HeldItemKind } from './interaction/interactionTypes';
+import type { Facing8 } from './movement/facing8';
+import type { LivingItemIconId } from './petLiving/petVisualTypes';
+
+export type MapId =
+  | 'home'
+  | 'garden'
+  | 'outdoor'
+  | 'village'
+  | 'farm'
+  | 'forest'
+  | 'beach'
+  | 'shop'
+  | 'shop_seed'
+  | 'shop_tool'
+  | 'shop_crop_market'
+  | 'shop_town_hall';
 
 export type Direction = 'down' | 'up' | 'left' | 'right';
 
@@ -42,6 +59,7 @@ export interface WorldInfo {
   id: string;
   name: string;
   layoutVersion: number;
+  stateVersion?: number;
   createdAt: string;
 }
 
@@ -64,6 +82,8 @@ export interface SpriteRect {
   h: number;
 }
 
+export type FurnitureCategory = 'furniture' | 'flowers' | 'garden' | 'lighting' | 'rugs';
+
 export interface FurnitureCatalogItem {
   sku: string;
   nameVi: string;
@@ -76,6 +96,11 @@ export interface FurnitureCatalogItem {
   starterQuantity: number;
   sprite: SpriteRect;
   interactTag?: 'wardrobe' | 'study_preview' | 'cinema_preview';
+  category?: FurnitureCategory;
+  devSandboxOnly?: boolean;
+  propsFrameId?: string;
+  donorTextureKey?: string;
+  previewImageUrl?: string;
 }
 
 export interface FurniturePlacement {
@@ -106,8 +131,16 @@ export interface PresencePayload {
   avatarConfig: AvatarConfig;
   tileX: number;
   tileY: number;
+  x?: number;
+  y?: number;
   facing: Direction;
   updatedAtMs: number;
+  presenceSeq?: number;
+  posture?: CouplePostureKind;
+  heldItemSku?: string | null;
+  heldItemKind?: HeldItemKind;
+  heldIconId?: LivingItemIconId | null;
+  heldPropsIconId?: string | null;
 }
 
 export interface MovementPacket {
@@ -119,9 +152,29 @@ export interface MovementPacket {
   timestampMs: number;
   x: number;
   y: number;
+  vx?: number;
+  vy?: number;
   facing: Direction;
+  /** Optional 8-way facing for diagonal walk clips (cardinal `facing` remains wire-compatible). */
+  facing8?: Facing8;
   anim: 'idle' | 'walk';
+  posture?: CouplePostureKind;
+  heldItemSku?: string | null;
+  heldItemKind?: HeldItemKind;
+  heldIconId?: LivingItemIconId | null;
+  heldPropsIconId?: string | null;
+  isSnapshotReplay?: boolean;
 }
+
+export type WorldMutationReason =
+  | 'furniture'
+  | 'profile'
+  | 'member'
+  | 'inventory'
+  | 'pet'
+  | 'study'
+  | 'mailbox'
+  | 'farm';
 
 export type MutationErrorCode =
   | 'UNAUTHENTICATED'
@@ -139,7 +192,16 @@ export type MutationErrorCode =
   | 'STOCK_EXCEEDED'
   | 'NOT_FOUND'
   | 'VERSION_CONFLICT'
+  | 'COOLDOWN_ACTIVE'
+  | 'STACK_FULL'
+  | 'ALREADY_OPENED'
+  | 'INSUFFICIENT_ITEMS'
+  | 'IDEMPOTENCY_CONFLICT'
   | 'VALIDATION_ERROR'
+  | 'SERVER_AUTHORITY_REQUIRED'
+  | 'BOWL_FULL'
+  | 'BOWL_EMPTY'
+  | 'PET_FULL'
   | 'NETWORK_ERROR';
 
 export type MutationResult<T> =

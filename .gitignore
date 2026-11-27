@@ -14,10 +14,13 @@ dist-private/
 *.pfx
 *.jks
 .dev-lan-state.json
+.dev-lan-state-*.json
 
 # Licensed third-party assets (never redistribute paid packs to git)
 public/assets/local-licensed/
 public/assets/private-unified/
+public/assets/private-audio/
+.olw-bin/
 
 # Test & coverage artifacts
 playwright-report/
@@ -52,3 +55,17 @@ Thumbs.db
 
 # Local art direction evaluation candidates (never commit or bundle into production)
 asset-candidates/
+.tmp-demo-e-minimal-pack/
+.dev-lan-state-vqg-*.json
+MANIFEST.json
+
+# Wave 1 farm donor full clones (SHAs in docs/UPSTREAM_REUSE.md; refresh via scripts/vendor-wave1-farm-donors.mjs)
+vendor/farm-rai-larn-na-upstream/
+vendor/farming-simulator-cabacos-upstream/
+vendor/pydew-valley-upstream/
+vendor/tidefall-phaser-upstream/
+vendor/fishing-frenzy-upstream/
+vendor/ai-farm-upstream/
+vendor/game-xay-nha-upstream/
+vendor/*-upstream/
+.tmp-forest-compare/

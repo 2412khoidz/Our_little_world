@@ -1,0 +1,38 @@
+{
+  "resources": [
+    "/assets/audio/sprites/farming.mp3"
+  ],
+  "spritemap": {
+    "hoe": {
+      "start": 0,
+      "end": 0.375,
+      "loop": false
+    },
+    "plant": {
+      "start": 0.495,
+      "end": 0.9981,
+      "loop": false
+    },
+    "water": {
+      "start": 1.1181,
+      "end": 1.9931,
+      "loop": false
+    },
+    "get_water": {
+      "start": 2.1131,
+      "end": 3.0692,
+      "loop": false
+    },
+    "harvest": {
+      "start": 3.1892,
+      "end": 3.6892,
+      "loop": false
+    },
+    "fail": {
+      "start": 3.8092,
+      "end": 4.2527,
+      "loop": false
+    }
+  },
+  "durationSec": 4.3727
+}

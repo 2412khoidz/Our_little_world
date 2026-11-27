@@ -1,0 +1,440 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import '../../ui/designSystem/gameUiTokens.css';
+import { gameEventBus, type InteractionFramePayload } from '../../game/eventBus';
+import {
+  isEditableInputTarget,
+  resolveContextualActions,
+} from '../../shared/interaction/interactionResolver';
+import { buildHotbarSlotsFromInventory } from '../../shared/interaction/inventoryHotbarAdapter';
+import type { ContextualResolution } from '../../shared/interaction/interactionTypes';
+import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
+import type { InventoryStackRef } from '../../shared/inventory/inventoryLayoutStore';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { PetSnapshot } from '../../shared/pet/petTypes';
+import type { MapId } from '../../shared/types';
+import { ContextualPromptBadge } from '../../ui/components/ContextualPromptBadge';
+import { GameHotbar } from '../../ui/components/GameHotbar';
+import { HeldItemChip } from '../../ui/components/HeldItemChip';
+import { executeMainGameContextAction } from './executeMainGameContextAction';
+import { validateActionAgainstLatestFrame } from './interactionActionGate';
+import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
+import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
+import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
+
+export interface MainGameInteractionLayerProps {
+  enabled: boolean;
+  currentMapId: MapId;
+  localUserId: string;
+  inventorySnapshot: InventorySnapshot | null;
+  petSnapshot: PetSnapshot | null;
+  decorateActive: boolean;
+  modalOpen: boolean;
+  showJoystick: boolean;
+  petCanFeed: boolean;
+  /** True while authoritative pet/inventory mutation is in flight (blocks duplicate J/K). */
+  interactionMutationBusy: boolean;
+  onOpenInventory: () => void;
+  onCloseTopModal: () => void;
+  onFeedPetAuthoritative: () => Promise<void>;
+  onPetPetAuthoritative: () => Promise<void>;
+  onFarmApply?: (
+    plotIndex: number,
+    action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler',
+    seedSku?: string | null,
+    opts?: {
+      fertilizerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['fertilizerSku'];
+      sprinklerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['sprinklerSku'];
+      toolSku?: string | null;
+    },
+  ) => Promise<void>;
+  onOpenFarmMarket?: (shopKind?: import('../../shared/shop/farmShopCatalog').FarmShopKind) => void;
+  onOpenFarmShipping?: () => void;
+  onOpenDonorFishing?: (spotId?: string) => void;
+  onOpenDonorStreamFishing?: () => void;
+  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
+  donorLanPlayable?: boolean;
+  farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>;
+  farmServerNowMs?: number;
+  onNotice: (message: string, isError?: boolean) => void;
+  /** Keeps hotbar + touch J above pet-care vignette. */
+  petCareOverlayActive?: boolean;
+  /** Live hotbar bindings projected from user's persistent inventory layout. */
+  hotbarBindings?: ReadonlyArray<InventoryStackRef | null>;
+}
+
+export function MainGameInteractionLayer({
+  enabled,
+  currentMapId,
+  localUserId,
+  inventorySnapshot,
+  petSnapshot,
+  decorateActive,
+  modalOpen,
+  showJoystick,
+  petCanFeed,
+  interactionMutationBusy,
+  onOpenInventory,
+  onCloseTopModal,
+  onFeedPetAuthoritative,
+  onPetPetAuthoritative,
+  onFarmApply,
+  onOpenFarmMarket,
+  onOpenFarmShipping,
+  onOpenDonorFishing,
+  onOpenDonorStreamFishing,
+  onOpenDonorWorkshop,
+  donorLanPlayable = false,
+  farmPlotByIndex,
+  farmServerNowMs,
+  onNotice,
+  petCareOverlayActive = false,
+  hotbarBindings,
+}: MainGameInteractionLayerProps) {
+  const {
+    heldItem,
+    waterFillBySku,
+    selectSlot,
+    clearHeld,
+  } = useHeldItemFromHotbar(
+    useMemo(
+      () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
+      [inventorySnapshot, localUserId, hotbarBindings],
+    ),
+  );
+  const hotbarSlots = useMemo(
+    () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
+    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku],
+  );
+
+  const [resolution, setResolution] = useState<ContextualResolution>({
+    targetId: null,
+    primary: null,
+    secondary: null,
+  });
+  const [noticeText, setNoticeText] = useState<string | null>(null);
+  const [hotbarCompact, setHotbarCompact] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem('olw:hud-hotbar-compact:v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [hotbarIdleDimmed, setHotbarIdleDimmed] = useState(false);
+  const idleTimerRef = useRef<number | null>(null);
+
+  const resetIdleTimerOnly = useCallback(() => {
+    if (idleTimerRef.current !== null) {
+      window.clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = window.setTimeout(() => {
+      setHotbarIdleDimmed(true);
+    }, 5500);
+  }, []);
+
+  const noteHotbarActivity = useCallback(() => {
+    setHotbarIdleDimmed(false);
+    resetIdleTimerOnly();
+  }, [resetIdleTimerOnly]);
+
+  const toggleHotbarCompact = useCallback(() => {
+    setHotbarCompact((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem('olw:hud-hotbar-compact:v1', next ? '1' : '0');
+      } catch {
+        // ignore storage restrictions
+      }
+      return next;
+    });
+    noteHotbarActivity();
+  }, [noteHotbarActivity]);
+
+  useEffect(() => {
+    resetIdleTimerOnly();
+    return () => {
+      if (idleTimerRef.current !== null) {
+        window.clearTimeout(idleTimerRef.current);
+      }
+    };
+  }, [resetIdleTimerOnly]);
+
+  const heldRef = useRef(heldItem);
+  const lastFrameRef = useRef<InteractionFramePayload | null>(null);
+  const mapIdRef = useRef(currentMapId);
+  const [localActionBusy, setLocalActionBusy] = useState(false);
+  const actionInFlight = useRef(false);
+  const resolutionRef = useRef(resolution);
+
+  useEffect(() => {
+    mapIdRef.current = currentMapId;
+  }, [currentMapId]);
+
+  useEffect(() => {
+    resolutionRef.current = resolution;
+  }, [resolution]);
+
+  useEffect(() => {
+    heldRef.current = heldItem;
+    gameEventBus.emit('cmd:sync-held-item', heldItem);
+  }, [heldItem]);
+
+  const petCareHud = petCareOverlayActive || isPetCareModeActive();
+  const showHud = enabled && !decorateActive && !modalOpen;
+  const touchActions = showJoystick && !petCareHud;
+
+  const livingPetSim = isLivingPetLocalSimulationEnabled();
+
+  const actionCtx = useMemo(
+    () => ({
+      mapId: currentMapId,
+      heldItem,
+      hasPet: Boolean(petSnapshot),
+      petCanFeed,
+      livingPetLocalSimulation: livingPetSim,
+      onOpenInventory,
+      onFeedPetAuthoritative,
+      onPetPetAuthoritative,
+      onFarmApply,
+      onOpenFarmMarket,
+      onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorStreamFishing,
+      onOpenDonorWorkshop,
+      donorLanPlayable,
+      onNotice: (msg: string, isError?: boolean) => {
+        if (isError) onNotice(msg, true);
+        else {
+          setNoticeText(msg);
+          window.setTimeout(() => setNoticeText((cur) => (cur === msg ? null : cur)), 2400);
+        }
+      },
+    }),
+    [
+      currentMapId,
+      heldItem,
+      petSnapshot,
+      petCanFeed,
+      livingPetSim,
+      onOpenInventory,
+      onFeedPetAuthoritative,
+      onPetPetAuthoritative,
+      onFarmApply,
+      onOpenFarmMarket,
+      onOpenFarmShipping,
+      onOpenDonorFishing,
+      onOpenDonorStreamFishing,
+      onOpenDonorWorkshop,
+      donorLanPlayable,
+      onNotice,
+    ],
+  );
+
+  const runGatedAction = useCallback(
+    async (which: 'primary' | 'secondary') => {
+      if (!showHud || interactionMutationBusy || actionInFlight.current) return;
+
+      const snap = resolutionRef.current;
+      const action = which === 'primary' ? snap.primary : snap.secondary;
+      if (!action) return;
+
+      if (
+        !validateActionAgainstLatestFrame(
+          snap,
+          lastFrameRef.current,
+          mapIdRef.current,
+          heldRef.current,
+          which,
+          farmPlotByIndex,
+          farmServerNowMs,
+        )
+      ) {
+        return;
+      }
+
+      actionInFlight.current = true;
+      setLocalActionBusy(true);
+      try {
+        if (which === 'secondary' && action.code === 'put_away_held') {
+          clearHeld();
+          return;
+        }
+        await executeMainGameContextAction(action, actionCtx);
+      } finally {
+        actionInFlight.current = false;
+        setLocalActionBusy(false);
+      }
+    },
+    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs],
+  );
+
+  const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
+  const executeSecondary = useCallback(() => void runGatedAction('secondary'), [runGatedAction]);
+
+  useEffect(() => {
+    const onFrame = (frame: InteractionFramePayload) => {
+      lastFrameRef.current = frame;
+      if (frame.mapId !== mapIdRef.current) {
+        setResolution({ targetId: null, primary: null, secondary: null });
+        return;
+      }
+      const next = resolveContextualActions({
+        playerX: frame.playerX,
+        playerY: frame.playerY,
+        facing: frame.facing,
+        heldItem: heldRef.current,
+        interactables: frame.interactables,
+        economyPlayable: frame.economyPlayable ?? donorLanPlayable,
+        farmPlotByIndex,
+        serverNowMs: farmServerNowMs,
+      });
+      setResolution((cur) =>
+        cur.targetId === next.targetId &&
+        cur.primary?.code === next.primary?.code &&
+        cur.primary?.available === next.primary?.available &&
+        cur.secondary?.code === next.secondary?.code
+          ? cur
+          : next,
+      );
+    };
+    return gameEventBus.on('evt:interaction-frame', onFrame);
+  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs]);
+
+  useEffect(() => {
+    return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
+      if (!showHud || !onFarmApply || interactionMutationBusy || actionInFlight.current) return;
+      actionInFlight.current = true;
+      setLocalActionBusy(true);
+      void Promise.resolve(onFarmApply(plotId, action, seedSku)).finally(() => {
+        actionInFlight.current = false;
+        setLocalActionBusy(false);
+      });
+    });
+  }, [showHud, onFarmApply, interactionMutationBusy]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.code === 'Escape') {
+        if (modalOpen || !isEditableInputTarget(e.target)) {
+          onCloseTopModal();
+          clearHeld();
+        }
+        return;
+      }
+      if (!showHud || isEditableInputTarget(e.target)) return;
+      if (e.code === 'KeyI') {
+        e.preventDefault();
+        onOpenInventory();
+        return;
+      }
+      if (e.code === 'KeyH') {
+        e.preventDefault();
+        toggleHotbarCompact();
+        return;
+      }
+      if (e.code === 'KeyJ') {
+        e.preventDefault();
+        void executePrimary();
+        return;
+      }
+      if (e.code === 'KeyK') {
+        e.preventDefault();
+        void executeSecondary();
+        return;
+      }
+      const num = Number(e.key);
+      if (Number.isInteger(num) && num >= 1 && num <= 8) {
+        e.preventDefault();
+        noteHotbarActivity();
+        selectSlot(num - 1);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld, toggleHotbarCompact, noteHotbarActivity]);
+
+  if (!showHud) return null;
+
+  const inputsLocked = interactionMutationBusy || localActionBusy;
+
+  return (
+    <>
+      {touchActions && (resolution.primary || resolution.secondary) && (
+        <div
+          className={`main-game-touch-actions ${petCareHud ? 'main-game-touch-actions--pet-care' : ''}`}
+          data-testid="main-game-touch-actions"
+        >
+          {resolution.primary && (
+            <button
+              type="button"
+              className="main-game-touch-btn main-game-touch-btn--primary"
+              data-testid="btn-context-primary"
+              data-touch-role="primary"
+              aria-label={resolution.primary.labelVi}
+              disabled={inputsLocked}
+              style={{ opacity: resolution.primary.available ? 1 : 0.78 }}
+              onClick={() => void executePrimary()}
+            >
+              <span className="olw-keycap">{resolution.primary.keyHint}</span>
+              <span className="main-game-touch-btn__label">{resolution.primary.labelVi}</span>
+            </button>
+          )}
+          {resolution.secondary && (
+            <button
+              type="button"
+              className="main-game-touch-btn main-game-touch-btn--secondary"
+              data-testid="btn-context-secondary"
+              data-touch-role="secondary"
+              aria-label={resolution.secondary.labelVi}
+              disabled={inputsLocked}
+              onClick={() => void executeSecondary()}
+            >
+              <span className="olw-keycap">{resolution.secondary.keyHint}</span>
+              <span className="main-game-touch-btn__label">{resolution.secondary.labelVi}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      <div
+        className={`main-game-interaction-stack ${petCareHud ? 'main-game-interaction-stack--pet-care' : ''}`}
+        data-testid="main-game-interaction-hud"
+      >
+        {!petCareHud && !touchActions ? (
+          <ContextualPromptBadge
+            resolution={resolution}
+            unavailableToast={noticeText}
+            onPrimary={() => void executePrimary()}
+            onSecondary={() => void executeSecondary()}
+          />
+        ) : !petCareHud && noticeText ? (
+          <div
+            className="olw-game-window"
+            style={{
+              padding: '5px 12px',
+              fontSize: 12.5,
+              fontWeight: 600,
+              pointerEvents: 'auto',
+            }}
+          >
+            {noticeText}
+          </div>
+        ) : null}
+        <HeldItemChip heldItem={heldItem} onClear={clearHeld} />
+        <GameHotbar
+          slots={hotbarSlots}
+          heldItem={heldItem}
+          onSelectSlot={selectSlot}
+          onOpenInventory={onOpenInventory}
+          inventoryItemCount={inventorySnapshot?.items.reduce((sum, item) => sum + item.qty, 0) ?? 0}
+          touchFriendly={petCareHud}
+          compact={hotbarCompact && !petCareHud}
+          onToggleCompact={!petCareHud ? toggleHotbarCompact : undefined}
+          idleDimmed={hotbarIdleDimmed && !petCareHud}
+          onUserActivity={noteHotbarActivity}
+        />
+      </div>
+    </>
+  );
+}

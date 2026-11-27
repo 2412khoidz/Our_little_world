@@ -1,8 +1,9 @@
-import { Trees, Home, Sparkles, UserPlus, WifiOff } from 'lucide-react';
+import { Globe, Trees, Home, Sparkles, UserPlus, WifiOff } from 'lucide-react';
 import type { ConnectionStatus } from '../../lib/backend/types';
 import { getMapDefinition } from '../../shared/maps';
 import { selectLatestPresenceByUser } from '../../shared/realtime';
 import type { BackendMode, MapId, PresencePayload, WorldMember } from '../../shared/types';
+import { AudioControlsChip } from './AudioControlsChip';
 
 interface TopStatusBarProps {
   worldName: string;
@@ -13,6 +14,9 @@ interface TopStatusBarProps {
   localUserId: string;
   presences: PresencePayload[];
   onOpenInvite: () => void;
+  isRemoteClient?: boolean;
+  onOpenRemoteShare?: () => void;
+  onToggleDiagnostics?: () => void;
 }
 
 export function TopStatusBar({
@@ -24,6 +28,9 @@ export function TopStatusBar({
   localUserId,
   presences,
   onOpenInvite,
+  isRemoteClient = false,
+  onOpenRemoteShare,
+  onToggleDiagnostics,
 }: TopStatusBarProps) {
   const partnerMember = members.find((m) => m.userId !== localUserId);
   const latestRemoteByUser = selectLatestPresenceByUser(presences, localUserId);
@@ -53,10 +60,22 @@ export function TopStatusBar({
           <span>{getMapDefinition(currentMapId).nameVi}</span>
         </span>
 
-        {import.meta.env.DEV && backendMode === 'dev-lan' && (
+        {import.meta.env.DEV && backendMode === 'dev-lan' && !isRemoteClient && (
           <span className="pill pill--preview" data-testid="badge-dev-lan">
             <Sparkles size={13} /> Dev LAN
           </span>
+        )}
+
+        {import.meta.env.DEV && backendMode === 'dev-lan' && !isRemoteClient && onOpenRemoteShare && (
+          <button
+            type="button"
+            className="pill"
+            data-testid="btn-remote-share"
+            onClick={onOpenRemoteShare}
+            style={{ background: 'rgba(217, 119, 98, 0.28)', borderColor: '#e99683', cursor: 'pointer' }}
+          >
+            <Globe size={13} /> Chơi cùng người thương
+          </button>
         )}
       </div>
 
@@ -82,13 +101,28 @@ export function TopStatusBar({
           </span>
         )}
 
-        <span
-          className={`pill ${connectionStatus === 'offline' ? 'pill--offline' : ''}`}
-          data-testid="connection-pill"
-        >
-          {connectionStatus === 'offline' ? <WifiOff size={13} /> : <span className={dotClass} />}
-          <span>{connLabel}</span>
-        </span>
+        {import.meta.env.DEV && onToggleDiagnostics ? (
+          <button
+            type="button"
+            className={`pill ${connectionStatus === 'offline' ? 'pill--offline' : ''}`}
+            data-testid="connection-pill"
+            onClick={onToggleDiagnostics}
+            title="Bật/tắt bảng chẩn đoán mạng"
+            style={{ cursor: 'pointer' }}
+          >
+            {connectionStatus === 'offline' ? <WifiOff size={13} /> : <span className={dotClass} />}
+            <span>{connLabel}</span>
+          </button>
+        ) : (
+          <span
+            className={`pill ${connectionStatus === 'offline' ? 'pill--offline' : ''}`}
+            data-testid="connection-pill"
+          >
+            {connectionStatus === 'offline' ? <WifiOff size={13} /> : <span className={dotClass} />}
+            <span>{connLabel}</span>
+          </span>
+        )}
+        <AudioControlsChip />
       </div>
     </header>
   );

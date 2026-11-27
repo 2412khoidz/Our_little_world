@@ -1,0 +1,549 @@
+/* Cozy cottage modal styling for Deep Farming panels (no Tailwind dependency). */
+
+.olw-deep-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 780px;
+  max-height: 90dvh;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 2px solid #c8a97e;
+  background: #fdf6e6;
+  color: #453121;
+  box-shadow: 0 18px 44px rgba(24, 15, 10, 0.48);
+}
+
+.olw-deep-dialog--compact {
+  max-width: 680px;
+}
+
+.olw-deep-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid #e5d2b0;
+  background: #f4e4c4;
+  padding: 12px 16px;
+}
+
+.olw-deep-header__title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.olw-deep-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #453121;
+}
+
+.olw-deep-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.olw-deep-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d4b98d;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fdf6e6;
+  color: #6d4b34;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.olw-deep-tab:hover {
+  background: #f9ebd0;
+}
+
+.olw-deep-tab--active-rose {
+  border-color: #9e4b6c;
+  background: #b35c7e;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(179, 92, 126, 0.28);
+}
+
+.olw-deep-tab--active-rose:hover {
+  background: #9f4d6d;
+}
+
+.olw-deep-tab--active-green {
+  border-color: #3f682b;
+  background: #4f7f38;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(79, 127, 56, 0.28);
+}
+
+.olw-deep-tab--active-green:hover {
+  background: #426d2e;
+}
+
+.olw-deep-tab--active-amber {
+  border-color: #844e24;
+  background: #a06332;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(160, 99, 50, 0.28);
+}
+
+.olw-deep-tab--active-amber:hover {
+  background: #8a5328;
+}
+
+.olw-deep-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.olw-deep-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid #e2c99e;
+  background: #fff9ee;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6e5437;
+}
+
+.olw-deep-pill--coins {
+  color: #946214;
+}
+
+.olw-deep-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d4b98d;
+  border-radius: 8px;
+  background: #fdf6e6;
+  color: #6d4b34;
+  cursor: pointer;
+}
+
+.olw-deep-close:hover {
+  background: #e8d5b5;
+}
+
+.olw-deep-status {
+  border-bottom: 1px solid #e5d2b0;
+  background: #fff4d8;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #704618;
+}
+
+.olw-deep-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.olw-deep-subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: #6e5437;
+}
+
+.olw-deep-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #7c5c3e;
+}
+
+.olw-deep-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e5d2b0;
+  border-radius: 12px;
+  background: #fffaf0;
+  padding: 10px 12px;
+}
+
+.olw-deep-toolbar__left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.olw-deep-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6d4b34;
+}
+
+.olw-deep-select {
+  border: 1px solid #d6bc92;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #453121;
+  padding: 5px 8px;
+  font-size: 12.5px;
+}
+
+.olw-deep-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #d8be96;
+  border-radius: 12px;
+  background: #fffdf7;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(69, 49, 33, 0.06);
+}
+
+.olw-deep-card--muted {
+  align-items: center;
+  justify-content: center;
+  background: #f9efda;
+  color: #8a6d4b;
+  font-size: 12.5px;
+  text-align: center;
+  padding: 18px 12px;
+}
+
+.olw-deep-empty {
+  border: 1.5px dashed #d2b78f;
+  border-radius: 12px;
+  background: #faf0da;
+  padding: 22px 14px;
+  text-align: center;
+  font-size: 13.5px;
+  color: #7a5b3c;
+}
+
+.olw-deep-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.olw-deep-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.olw-deep-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.olw-deep-flower-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  border: 1px solid #d8be96;
+  border-radius: 12px;
+  background: #ebd8b7;
+  padding: 8px;
+}
+
+.olw-deep-flower-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  border-radius: 8px;
+  border: 1px solid #c4a77a;
+  background: #f9f1de;
+  padding: 4px;
+  text-align: center;
+}
+
+.olw-deep-flower-cell--watered {
+  border-color: #5a9ec9;
+  background: #dceff8;
+}
+
+.olw-deep-flower-cell--empty {
+  border-style: dashed;
+  border-color: #c7ab7c;
+  background: #f4e5c8;
+}
+
+.olw-deep-album-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.olw-deep-album-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #d6b687;
+  border-radius: 8px;
+  background: #fffaf0;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.olw-deep-album-item--locked {
+  border-color: #e4d9c8;
+  background: #eee6d8;
+  opacity: 0.65;
+}
+
+.olw-deep-recipe-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.olw-deep-recipe-item {
+  border-radius: 8px;
+  background: #fbf4e4;
+  padding: 6px 8px;
+  color: #5e432b;
+}
+
+.olw-deep-recipe-item strong {
+  color: #9a3b64;
+}
+
+.olw-deep-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.olw-deep-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.olw-deep-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.olw-deep-badge--green {
+  background: #eef6e6;
+  color: #3f7527;
+}
+
+.olw-deep-badge--pink {
+  background: #fde8ee;
+  color: #b83d66;
+}
+
+.olw-deep-badge--feed {
+  border-radius: 6px;
+  background: #f4e4c4;
+  color: #5d4024;
+  padding: 3px 7px;
+}
+
+.olw-deep-req-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.olw-deep-req-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border-radius: 8px;
+  background: #fbf4e4;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.olw-deep-progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6d7bd;
+}
+
+.olw-deep-progress__fill {
+  height: 100%;
+  background: #5b9a3d;
+  transition: width 0.2s ease;
+}
+
+.olw-deep-progress__fill--amber {
+  background: #c9873b;
+}
+
+.olw-deep-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, opacity 0.14s ease;
+}
+
+.olw-deep-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.olw-deep-btn--grow {
+  flex: 1;
+}
+
+.olw-deep-btn--full {
+  width: 100%;
+}
+
+.olw-deep-btn--green {
+  background: #4f7f38;
+  color: #ffffff;
+}
+
+.olw-deep-btn--green:hover:not(:disabled) {
+  background: #416b2d;
+}
+
+.olw-deep-btn--rose {
+  background: #d96b94;
+  color: #ffffff;
+}
+
+.olw-deep-btn--rose:hover:not(:disabled) {
+  background: #c55a82;
+}
+
+.olw-deep-btn--amber {
+  background: #d98c36;
+  color: #ffffff;
+}
+
+.olw-deep-btn--amber:hover:not(:disabled) {
+  background: #c07625;
+}
+
+.olw-deep-btn--brown {
+  background: #8c6239;
+  color: #ffffff;
+}
+
+.olw-deep-btn--brown:hover:not(:disabled) {
+  background: #754f2b;
+}
+
+.olw-deep-btn--pink-outline {
+  border-color: #dfa5b8;
+  background: #fff2f6;
+  color: #b34469;
+}
+
+.olw-deep-btn--pink-outline:hover:not(:disabled) {
+  background: #fce2ea;
+}
+
+.olw-deep-btn--outline {
+  border-color: #d2b78f;
+  background: #fff9ee;
+  color: #7a5634;
+}
+
+.olw-deep-btn--outline:hover:not(:disabled) {
+  background: #f4e4c8;
+}
+
+.olw-deep-btn--xs {
+  padding: 3px 6px;
+  font-size: 10.5px;
+  border-radius: 6px;
+}
+
+.olw-deep-btn--blue {
+  background: #4a90c2;
+  color: #ffffff;
+}
+
+.olw-deep-btn--plant {
+  width: 100%;
+  height: 100%;
+  min-height: 46px;
+  background: transparent;
+  color: #8a6d4b;
+  font-size: 10.5px;
+  padding: 2px;
+}
+
+.olw-deep-btn--plant:hover:not(:disabled) {
+  background: #ead4ae;
+}
+
+@media (max-width: 720px) {
+  .olw-deep-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .olw-deep-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 599px) {
+  .olw-deep-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .olw-deep-flower-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .olw-deep-album-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

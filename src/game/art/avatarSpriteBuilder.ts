@@ -4,7 +4,6 @@ import {
   SKIN_TONE_OPTIONS,
 } from '../../shared/avatar';
 import type { AvatarConfig } from '../../shared/types';
-
 const OUTLINE = '#3d2a24';
 
 export function getAvatarTextureKey(config: AvatarConfig): string {
@@ -164,7 +163,7 @@ function drawFrame(
 export function buildAvatarSpritesheetCanvas(config: AvatarConfig): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 48; // 3 frames x 16px
-  canvas.height = 96; // 4 directions x 24px
+  canvas.height = 96; // 4 cardinals x 24px — no diagonal composite rows (gameplay uses Puny 8-dir)
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
 

@@ -3,15 +3,19 @@ import {
   DEFAULT_AVATAR_PARTNER_B,
   parseAvatarConfig,
 } from '../../shared/avatar';
+import type { BilliardsWinTally } from '../../shared/billiards/types';
+import type { DevSanitizedWorldSnapshot } from '../../shared/devConsole/devConsoleTypes';
+import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
+import type { MailboxSnapshot } from '../../shared/mailbox/mailboxTypes';
+import type { PetInteractionResult, PetSnapshot } from '../../shared/pet/petTypes';
+import type { StudySnapshot } from '../../shared/study/studyTypes';
 import type {
   AvatarConfig,
   CreatedInvite,
   DevIdentityInfo,
   FurniturePlacement,
-  MovementPacket,
   MutationErrorCode,
   MutationResult,
-  PresencePayload,
   UserProfile,
   WorldInviteStatus,
   WorldSnapshot,
@@ -25,6 +29,7 @@ import type {
   SpikeCinemaPacket,
   WorldBackend,
 } from './types';
+import { createDevLanRealtimeConnection } from './devLanRealtimeClient';
 
 const SESSION_KEY = 'olw:dev-lan:session-user:v1';
 
@@ -65,6 +70,9 @@ function normalizeSnapshot(raw: WorldSnapshot | null): WorldSnapshot | null {
 }
 
 export function createDevLanBackend(): WorldBackend {
+  if (!import.meta.env.DEV) {
+    throw new Error('Dev LAN backend is only available in development.');
+  }
   const authListeners = new Set<(user: AuthSessionUser | null) => void>();
 
   function getStoredUser(): AuthSessionUser | null {
@@ -191,6 +199,17 @@ export function createDevLanBackend(): WorldBackend {
       return apiJson<{ reset: true }>('/reset', { method: 'POST', body: '{}' });
     },
 
+    async getDevClientContext() {
+      const res = await apiJson<{
+        isRemoteClient: boolean;
+        autoPartnerPreset: LocalPresetAccountId | null;
+      }>('/client-context');
+      if (!res.ok) {
+        return { isRemoteClient: false, autoPartnerPreset: null };
+      }
+      return res.data;
+    },
+
     async signOut() {
       setStoredUser(null);
     },
@@ -257,6 +276,13 @@ export function createDevLanBackend(): WorldBackend {
       });
     },
 
+    async rotateFurniture(params) {
+      return apiJson<{ layoutVersion: number; placement: FurniturePlacement }>('/furniture/rotate', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    },
+
     async removeFurniture(params) {
       return apiJson<{ layoutVersion: number; removedId: string }>('/furniture/remove', {
         method: 'POST',
@@ -269,121 +295,11 @@ export function createDevLanBackend(): WorldBackend {
       initialPresence,
       handlers: RealtimeHandlers,
     ): Promise<RealtimeHandle> {
-      let simulatedOffline = false;
-      let currentPresence = initialPresence;
-      let source: EventSource | null = null;
-      let closedManually = false;
-
-      const postRealtime = (kind: string, payload: unknown) => {
-        if (simulatedOffline) return;
-        void fetch('/api/dev-lan/realtime', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-dev-user-id': currentPresence.userId,
-          },
-          body: JSON.stringify({
-            worldId,
-            kind,
-            sessionId: currentPresence.sessionId,
-            payload,
-          }),
-        }).catch(() => {
-          // Ignore transient network errors; SSE error handler triggers reconnect
-        });
-      };
-
-      const openStream = () => {
-        if (source) {
-          source.close();
-          source = null;
-        }
-        if (simulatedOffline || closedManually) return;
-        handlers.onConnectionChange('connecting');
-
-        const qs = new URLSearchParams({
-          worldId,
-          userId: currentPresence.userId,
-          sessionId: currentPresence.sessionId,
-          mapId: currentPresence.mapId,
-          tileX: String(currentPresence.tileX),
-          tileY: String(currentPresence.tileY),
-          facing: currentPresence.facing,
-        });
-
-        const es = new EventSource(`/api/dev-lan/events?${qs.toString()}`);
-        source = es;
-
-        es.onopen = () => {
-          handlers.onConnectionChange('connected');
-        };
-
-        es.addEventListener('presence_sync', (ev) => {
-          const list = JSON.parse((ev as MessageEvent).data) as PresencePayload[];
-          handlers.onPresenceChange(list);
-        });
-
-        es.addEventListener('movement', (ev) => {
-          const pkt = JSON.parse((ev as MessageEvent).data) as MovementPacket;
-          handlers.onMovement(pkt);
-        });
-
-        es.addEventListener('world_mutated', (ev) => {
-          const parsed = JSON.parse((ev as MessageEvent).data) as {
-            reason?: 'furniture' | 'profile' | 'member';
-          };
-          handlers.onWorldMutated(parsed.reason ?? 'furniture');
-        });
-
-        es.addEventListener('world_reset', () => {
-          handlers.onWorldMutated('member');
-        });
-
-        es.onerror = () => {
-          if (!simulatedOffline && !closedManually) {
-            handlers.onConnectionChange('reconnecting');
-          }
-        };
-      };
-
-      openStream();
-
-      return {
-        publishMovement(packet) {
-          postRealtime('movement', packet);
-        },
-        updatePresence(presence) {
-          currentPresence = presence;
-          postRealtime('presence', presence);
-        },
-        notifyWorldMutated(reason) {
-          postRealtime('world_mutated', { reason });
-        },
-        async reconnect() {
-          if (simulatedOffline) {
-            handlers.onConnectionChange('offline');
-            return;
-          }
-          handlers.onConnectionChange('reconnecting');
-          openStream();
-        },
-        setSimulatedOffline(offline: boolean) {
-          simulatedOffline = offline;
-          if (offline) {
-            source?.close();
-            source = null;
-            handlers.onConnectionChange('offline');
-          } else {
-            openStream();
-          }
-        },
-        async disconnect() {
-          closedManually = true;
-          source?.close();
-          source = null;
-          handlers.onConnectionChange('disconnected');
-        },
-      };
+      return createDevLanRealtimeConnection({
+        worldId,
+        initialPresence,
+        handlers,
+      });
     },
 
     createSpikeCinemaBus(worldId: string, userId: string): SpikeCinemaBus {
@@ -420,6 +336,226 @@ export function createDevLanBackend(): WorldBackend {
           }).catch(() => {});
         },
       };
+    },
+
+    inventory: {
+      async getInventory(worldId) {
+        return apiJson<InventorySnapshot>(`/inventory?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async claimFreeKibble(worldId, idempotencyKey) {
+        return apiJson<InventorySnapshot>('/inventory/claim-free-kibble', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, idempotencyKey }),
+        });
+      },
+      async transferInventoryQuality(params) {
+        return apiJson<InventorySnapshot>('/inventory/transfer-quality', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    pet: {
+      async getPetSnapshot(worldId) {
+        return apiJson<PetSnapshot | null>(`/pet?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async adoptOrRenamePet(params) {
+        return apiJson<PetSnapshot>('/pet/adopt-or-rename', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async interactPet(params) {
+        return apiJson<PetInteractionResult>('/pet/interact', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async getPetCareSnapshot(worldId) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareBowlSnapshot>(
+          `/pet/care?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyPetCare(params) {
+        return apiJson<import('../../shared/pet/petTypes').PetCareApplyResult>('/pet/care/apply', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async consumeHandFood(params) {
+        return apiJson<{ pet: import('../../shared/pet/petTypes').PetSnapshot; sku: string; quality: string }>(
+          '/pet/consume-hand-food',
+          { method: 'POST', body: JSON.stringify(params) },
+        );
+      },
+    },
+
+    petLiving: {
+      async getLivingSnapshot(worldId) {
+        return apiJson<import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot>(
+          `/pet/living?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async beginLivingAction(params) {
+        return apiJson<{
+          instanceId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/begin-action', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async submitLivingProposal(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/submit-proposal',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+      async createFoodOffer(params) {
+        return apiJson<{
+          offerId: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async respondFoodOffer(params) {
+        return apiJson<{ snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot }>(
+          '/pet/living/food-offer/respond',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+      async evaluateFoodOffer(params) {
+        return apiJson<{
+          outcome?: string;
+          offerId?: string;
+          snapshot: import('../../shared/petLiving/petAuthorityTypes').PetLivingAuthoritySnapshot;
+        }>('/pet/living/food-offer/evaluate', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    study: {
+      async getStudySnapshot(worldId) {
+        return apiJson<StudySnapshot>(`/study?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async startSession(params) {
+        return apiJson<StudySnapshot>('/study/start', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async controlSession(params) {
+        return apiJson<StudySnapshot>('/study/control', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    mailbox: {
+      async listMailbox(worldId) {
+        return apiJson<MailboxSnapshot>(`/mailbox?worldId=${encodeURIComponent(worldId)}`);
+      },
+      async sendLetterOrGift(params) {
+        return apiJson<{ mailbox: MailboxSnapshot; inventory: InventorySnapshot }>('/mailbox/send', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async openItem(params) {
+        return apiJson<{ openedId: string; mailbox: MailboxSnapshot; inventory: InventorySnapshot }>(
+          '/mailbox/open',
+          {
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+        );
+      },
+    },
+
+    farm: {
+      async getFarmSnapshot(worldId) {
+        return apiJson<import('../../shared/farming/farmSnapshotTypes').FarmSnapshot>(
+          `/farm?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyFarm(params) {
+        return apiJson(`/farm/apply`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async sellCrop(params) {
+        return apiJson(`/farm/sell`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async buySeed(params) {
+        return apiJson(`/farm/buy-seed`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async shipToBin(params) {
+        return apiJson(`/farm/ship`, { method: 'POST', body: JSON.stringify(params) });
+      },
+      async getDeepFarmSnapshot(worldId) {
+        return apiJson<import('../../shared/farming/deepFarmState').DeepFarmSnapshot>(
+          `/farm/deep?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async applyDeepFarmAction(params) {
+        return apiJson(`/farm/deep/apply`, { method: 'POST', body: JSON.stringify(params) });
+      },
+    },
+
+    billiards: {
+      async getStats(worldId) {
+        return apiJson<{ tallies: BilliardsWinTally[]; totalMatches: number }>(
+          `/billiards/stats?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async recordMatch(params) {
+        return apiJson<{ tallies: BilliardsWinTally[]; inserted: boolean }>('/billiards/record', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+    },
+
+    devConsole: {
+      async spawnItem(params) {
+        return apiJson<InventorySnapshot>('/dev-console/spawn-item', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async setPetVitals(params) {
+        return apiJson<PetSnapshot>('/dev-console/set-pet', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async advanceStudy(params) {
+        return apiJson<StudySnapshot>('/dev-console/advance-study', {
+          method: 'POST',
+          body: JSON.stringify(params),
+        });
+      },
+      async exportSnapshot(worldId) {
+        return apiJson<DevSanitizedWorldSnapshot>(
+          `/dev-console/snapshot-export?worldId=${encodeURIComponent(worldId)}`,
+        );
+      },
+      async restoreSnapshot(worldId, snapshot) {
+        return apiJson<{ restored: true }>('/dev-console/snapshot-restore', {
+          method: 'POST',
+          body: JSON.stringify({ worldId, snapshot }),
+        });
+      },
     },
   };
 }

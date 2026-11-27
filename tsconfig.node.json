@@ -4,7 +4,7 @@
     "target": "ES2023",
     "lib": ["ES2023", "DOM"],
     "module": "ESNext",
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "skipLibCheck": true,
 
     "moduleResolution": "bundler",
@@ -24,7 +24,10 @@
     "vitest.config.ts",
     "eslint.config.js",
     "playwright.config.ts",
+    "scripts/economy-sim.ts",
+    "scripts/economy-experiments.ts",
     "scripts/devLanServerPlugin.d.mts",
+    "scripts/olwRemoteShare.d.mts",
     "tests/server",
     "tests/e2e"
   ]

@@ -1,0 +1,89 @@
+import { TILE_SIZE } from '../maps';
+import type { MapId } from '../types';
+import type { InteractableTarget } from '../interaction/interactionTypes';
+import { FARM_WORLD_INTERACTABLES } from './farmPlotContract';
+import { getParsedTiledWorld } from './tiledMapRegistry';
+import {
+  isTiledWayfindingDuplicateId,
+  isUnopenedShopLabel,
+  TILED_INTERACTABLE_SKIP_IDS,
+} from '../interaction/economyInteractablePolicy';
+
+function tileCenterPx(tileX: number, tileY: number): { x: number; y: number } {
+  return { x: tileX * TILE_SIZE + TILE_SIZE / 2, y: tileY * TILE_SIZE + TILE_SIZE / 2 };
+}
+
+/** Presentation targets for Tiled zones (farm shipping bin, pond water, etc.). */
+export function buildTiledWorldInteractableTargets(
+  mapId: MapId,
+  economyPlayable = false,
+): InteractableTarget[] {
+  const parsed = getParsedTiledWorld(mapId);
+  if (!parsed) return [];
+
+  const fromJson: InteractableTarget[] = [];
+  for (const spawn of parsed.interactableSpawns) {
+    if (TILED_INTERACTABLE_SKIP_IDS.has(spawn.id)) continue;
+    if (isTiledWayfindingDuplicateId(spawn.id)) continue;
+    if (isUnopenedShopLabel(spawn.labelVi)) continue;
+    if (
+      !economyPlayable &&
+      (spawn.kind === 'shipping_bin' ||
+        spawn.kind === 'fishing_spot' ||
+        spawn.kind === 'workshop_building' ||
+        spawn.kind === 'shop_npc')
+    ) {
+      continue;
+    }
+    const center = tileCenterPx(spawn.tileX, spawn.tileY);
+    const economyKind =
+      spawn.kind === 'shipping_bin' ||
+      spawn.kind === 'fishing_spot' ||
+      spawn.kind === 'workshop_building' ||
+      spawn.kind === 'shop_npc';
+    const playable = economyPlayable && economyKind;
+    const labelVi =
+      spawn.id === 'farm_barn_door' && economyPlayable
+        ? 'Vào cửa hàng Bác Hai'
+        : spawn.kind === 'shipping_bin' && economyPlayable
+          ? 'Thùng gom hàng — bán qua đêm'
+          : spawn.labelVi;
+    fromJson.push({
+      id: spawn.id,
+      kind: spawn.kind,
+      labelVi,
+      x: center.x,
+      y: center.y,
+      maxRadiusPx: spawn.maxRadiusPx ?? 48,
+      donorPlayable: playable ? true : undefined,
+      fishingSpotId: spawn.fishingSpotId,
+      workshopFocus: spawn.workshopFocus,
+    });
+  }
+  if (fromJson.length > 0) return fromJson;
+
+  if (mapId === 'farm') {
+    return Object.values(FARM_WORLD_INTERACTABLES)
+      .filter((def) => {
+        if (!economyPlayable && (def.kind === 'shipping_bin' || def.id === 'farm_barn_door')) {
+          return false;
+        }
+        return true;
+      })
+      .map((def) => {
+        const center = tileCenterPx(def.tileX, def.tileY);
+        const shipping = def.kind === 'shipping_bin';
+        return {
+          id: def.id,
+          kind: def.kind,
+          labelVi: shipping && economyPlayable ? 'Thùng gom hàng — bán qua đêm' : def.labelVi,
+          x: center.x,
+          y: center.y,
+          maxRadiusPx: def.kind === 'water_source' ? 54 : 46,
+          donorPlayable: shipping ? economyPlayable : undefined,
+        };
+      });
+  }
+
+  return [];
+}

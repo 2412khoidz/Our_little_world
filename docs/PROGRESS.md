@@ -1,10 +1,121 @@
 # Progress Tracker — Our Little World
 
-*Cập nhật lần cuối: 25/11/2026*
+*Cập nhật lần cuối: 27/11/2026*
+
+## CANONICAL STABLE RELEASE (`main` / tag `v0.2.5`)
+
+- **Phê duyệt phát hành:** Chủ dự án đã playtest và phê duyệt `integration/olw-canonical-rc1` (`a800e12`), thăng hạng thành **Canonical Stable Baseline `v0.2.5`** trên nhánh **`main`**.
+- **Kiểm toán Git History & Vệ sinh trước khi push:**
+  - Xác nhận **`4cfc3b7`** (`refs/tags/backup/owner-accepted-baseline`, chứa 4 track `.mp3` riêng tư) **không nằm trong cây lịch sử** của `integration/olw-canonical-rc1` hay `main`; giữ cục bộ, không push tag/nhánh backup lên GitHub.
+  - Phát hiện **`a0c8f80`** (từng thêm `public/assets/audio/music/home_garden_theme.mp3` 3.79 MB trước khi xóa ở `4d875b4`), lịch sử cũ của `.dev-lan-state-pw-4176.json` / `.dev-lan-state-vqg-4188.json`, và file `.dev-lan-state-qa-4174.json` còn nằm trong tree `a800e12`.
+  - Đã gỡ `.dev-lan-state-qa-4174.json` khỏi Git tracking (`git rm --cached`), bổ sung `.dev-lan-state-*.json` vào `.gitignore` (giữ nguyên `.dev-lan-state.json` cục bộ của chủ dự án), và xác nhận các track trong `public/assets/audio/music/` (`title`, `farm`, `town`, `forest`, `garden`, `blue_forest`) đều là bản MIT từ `robintrepte/hollowmere` & `Blinter/harvest-horizon` theo `public/assets/audio/CREDITS.md`.
+  - Do `origin/main` chưa từng tồn tại trên GitHub và bản `main` cục bộ trước đây (`34f58c7`, đã lưu bản dự phòng `backup/pre-release-main-34f58c7`) sạch hoàn toàn (0 media/private/state blob), nhánh `main` cho bản phát hành `v0.2.5` được tạo từ commit `34f58c7` với đúng snapshot cây code sạch đã duyệt của `integration/olw-canonical-rc1` — đảm bảo lịch sử `main` push lên GitHub sạch 100%, không force-push hay viết lại nhánh remote nào.
+- **Lệnh vận hành & Chính sách nhánh tương lai:**
+  - Đồng bộ asset riêng tư cục bộ: `npm run assets:private:sync -- --from <source>` & `npm run assets:private:verify`.
+  - Khởi chạy server cặp đôi: `npm run host:couple` (hoặc `npm run dev`).
+  - Mọi nhánh feature/fix mới trong tương lai bắt buộc tách từ `main` (`v0.2.5` trở đi).
+
+## CANONICAL BASELINE RECOVERY & UNIFIED INTEGRATION (`integration/olw-canonical-rc1`)
+
+- **Baseline chuẩn đã khôi phục:** `f69106e` (`OLW-Neon` `antigravity/unified-neon-carbon`, bảo toàn toàn bộ bản đồ 16×16 6 khu vực, avatar Cozy Human V2 `384×384`, mèo cam 2D + Pet Care 3D `vuena-cat.glb`, sửa kéo/click túi đồ Nuvora, va chạm/portal và 5 bản nhạc nền riêng tư).
+- **Nhánh sao lưu an toàn (chưa xóa / không force-push):**
+  - `backup/recovery-neon-f69106e` (`f69106e`)
+  - `backup/recovery-multiplayer-27560ac` (`27560ac`)
+  - `backup/recovery-deep-farming-08be551` (`08be551`)
+  - `backup/recovery-carbon-b162a2d` (`b162a2d`)
+  - `backup/recovery-billiards-wip` (`aaf7d50` / `3eac5fe`)
+- **Chuỗi commit tích hợp trên `integration/olw-canonical-rc1` (chưa push / chưa merge):**
+  1. `79a6017` — Đồng bộ runtime private assets (`scripts/sync-private-assets.mjs`, `docs/PRIVATE_ASSETS_SETUP.md`, `tests/server/privateAssetSync.test.ts`; kiểm tra SHA-256 cho `public/assets/private-unified/` và 5 track `public/assets/private-audio/`).
+  2. `c4052c7` — Tích hợp **NET.1** WebSocket transport, reconnect watchdog & state sync (từ `187285b`).
+  3. `4e34bf7` — Tích hợp **NET.1.1** remote partner `/__share/<token>` auto-join trực tiếp thành Nắng, redeem & siết quyền host (từ `27560ac` — bản NET.1.1 này trước đó đã được chủ dự án test trên thiết bị thật **9/11 kịch bản pass, 0 fail, 2 chưa test**).
+  4. `97e6319` — Ghép **Deep Farming Checkpoints A–G** (item registry, 40 nông sản, 20 hoa, 12 cây ăn quả, 7 loài vật nuôi, 84 công thức, 8 xưởng, order board, shared authority, packed donor atlases) lên nền `16px` + sửa scale cây trồng/`!` badge/chuyển vùng orchard & chuồng nuôi ra đồng cỏ đi được + gộp `DonorWorkshopModal`.
+  5. `3a89a9e` — Tích hợp **Billiards V2** lên hạ tầng WebSocket NET.1 (`minigame_event`), giữ nguyên deterministic physics, replay, lazy-load & tạm dừng/khôi phục overworld (`cmd:set-render-suspended`), kèm bảng SQL `billiards_matches` & RPC.
+  6. `61541aa` — Sửa hồi quy `minnow` → `fish_minnow` trong `meadowbrookNatureCatch.ts` (bị `08be551` đè về `bait_free_worm`) và cập nhật 4 unit test tiền Deep Farming.
+  7. `7ad2f90` — Giới hạn cuộn `maxHeight: 90dvh` trong `DonorWorkshopModal.tsx` để nút Đóng luôn nằm trong viewport.
+  8. `ae392ed` — Bổ sung `src/features/farming/deepFarmingModals.css` và semantics `role="dialog"` cho `FlowerAlbumOrchardModal`, `LivestockPanelModal`, `OrderBoardModal` (khắc phục việc repo không dùng Tailwind CSS).
+- **Kiểm chứng tự động & trình duyệt đã chạy (Local Windows / Dev LAN Server / Chromium):**
+  - Trên `7ad2f90`: `npm run lint` (`0` errors, `1` warning pre-existing tại `ChillFishingModal.tsx:90`), `npm run typecheck`, `npm run build` (2599 modules), `node scripts/verify-prod-guard.mjs`, `npm run assets:private:verify` (**10 atlas/character files + 5 custom music tracks PASSED**), Playwright E2E `chromium-desktop` (**6/6 passed**: `billiards-multiplayer.spec.ts` 3/3, `donor-economy-two-client.spec.ts` 1/1, `multiplayer-ws-hardening.spec.ts` 2/2 gồm NET.1.1 `/__share/<token>`).
+  - Full Vitest `npm run test` trên `7ad2f90`: **188/190 test files passed (876/876 executed tests passed)**; chỉ còn **2 suite jsdom Canvas 2D có sẵn từ baseline `f69106e`** fail (`tests/unit/donorCabacosRenderDetect.test.ts` và `tests/unit/pydewFarmDonorRender.test.ts` do `phaser.esm.js` thiếu `HTMLCanvasElement.getContext('2d')` dưới jsdom).
+  - Sau sửa CSS 3 modal (`ae392ed`): `npm run lint`, `npm run typecheck`, `npm run build` (2600 modules, 36 PWA precache entries), `node scripts/verify-prod-guard.mjs`, `npm run assets:private:verify` đều **PASSED**, và kiểm tra trình duyệt trực tiếp trên `http://localhost:5176` (0 console/page errors):
+    - Xác nhận avatar Cozy Human V2 (`avatars.png` `384×384`), mèo 2D `Quýt`, Pet Care 3D (`vuena-cat.glb` HTTP 200), 6 bản đồ (`home`, `garden`, `village`, `forest`, `beach`, `farm`), cả 5 track `.mp3` tại `/assets/private-audio/music/*.mp3` HTTP 200/206, kéo/đóng túi đồ không kẹt overlay, scale cây/thú/huy hiệu nông trại cân đối, cả 4 modal Deep Farming có card ấm cúng + `role="dialog"`, Billiards V2 mở/bắn/đóng (`data-render-suspended` `1` → `0`), và Network Diagnostics (`Status: Connected`, `Transport: WS`).
+- **Phần chưa kiểm chứng thực tế trên bản gộp RC1 (chờ chủ dự án nghiệm thu):**
+  - Chơi thật 2 thiết bị trên iPhone 16 Pro Max (Safari + PWA Add to Home Screen) qua Cloudflare Quick Tunnel cho toàn bộ bản gộp RC1 (Deep Farming + Billiards V2 + chuyển mạng Wi-Fi ↔ 5G).
+  - Chạy thực tế SQL migrations & assertions (`supabase/migrations/*` + `node scripts/run-local-sql-suite.mjs` / Supabase project thật) cho 2 migration Deep Farming & Billiards V2.
+- **Cảnh báo Git History & Đồng bộ Asset Riêng Tư:**
+  - Để đồng bộ runtime trên worktree/máy dev khác: chạy `npm run assets:private:sync -- --from <đường_dẫn_source>` và kiểm tra lại bằng `npm run assets:private:verify`.
+  - **Không được push** tag cục bộ `backup/owner-accepted-baseline` (`4cfc3b7`) vì chứa 4 file `.mp3` riêng tư trong lịch sử commit đó (và commit lịch sử `a0c8f80` đã có trên `origin/antigravity/unified-neon-carbon` chứa `home_garden_theme.mp3`). Nhánh `integration/olw-canonical-rc1` chỉ chứa code sạch (toàn bộ `public/assets/private-*` nằm trong `.gitignore`).
+
+## MISSION NET.1.1 — Sửa hồi quy Remote Join qua Cloudflare Quick Tunnel (`feature/multiplayer-hardening`)
+
+- **Nguyên nhân gốc đã tái hiện trực tiếp trên `187285b`:**
+  1. Khi máy Host đã tạo sẵn ngôi nhà **1/2** (`[Mây]`), hàm `seedCoupleWorldIfNeeded()` trong `scripts/devLanServerPlugin.mjs` thoát sớm nếu `db.worlds` đã tồn tại mà chưa thêm `Nắng` (`partner-b`) -> điện thoại mở `/__share/<token>` tuy được gán phiên `Nắng` nhưng `GET /api/dev-lan/world/snapshot` trả `null`, rơi về `OnboardingScreen`.
+  2. Quy tắc `blockedRemoteRoute` của NET.1 chặn nhầm `POST /api/dev-lan/world/redeem` (**HTTP 403**: `"Thao tác quản trị này chỉ mở trên máy chủ Host."`) khiến nhập mã mời ghép đôi thất bại, và chặn nhầm `GET /api/dev-lan/identities` (**HTTP 403**) làm mất nút chọn danh tính sau khi bấm `Đổi tài khoản`.
+  3. `stopRemoteShare()` trong `scripts/olwRemoteShare.mjs` chưa đóng các upgrade socket WebSocket nên `DELETE /api/dev-lan/remote-share` có thể bị chờ timeout khi client đang kết nối WS.
+- **Khắc phục & Siết bảo mật quyền hạn từ xa:**
+  - Bổ sung `ensureRemotePartnerInPrimaryWorld()` (gọi tại `POST /remote-share` và `GET /client-context` khi `isRemoteClient === true`) để tự động ghép `Nắng` (`22222222-...`) vào ngôi nhà 1/2 hiện có (giữ nguyên toàn bộ dữ liệu nhà, đồ đạc, pet của Host) và phát `world_mutated('member')` cho Host.
+  - Gỡ `/world/redeem` và `/identities` khỏi `blockedRemoteRoute`: cho phép `Nắng` dùng `/world/redeem` nếu cần, và `GET /identities` chỉ trả về đúng `[partner-b]` khi là remote client; đồng thời **siết chặt quyền remote** trong `devLanServerPlugin.mjs` + `devLanWsHub.mjs` chỉ chấp nhận `PARTNER_B_DEV_ID` (`403` nếu giả mạo `Mây` hoặc `Outsider`) và tiếp tục chặn `403` đối với `/reset`, `/seed-couple`, `/world/create`, `/world/invite`, `/dev-console/*` và `POST`/`DELETE /remote-share`.
+  - Cập nhật `OnboardingScreen.tsx` & `App.tsx` (`isRemoteClient`) ẩn các nút Dev/Host trên client từ xa, và cập nhật `stopRemoteShare()` đóng dứt điểm `upgradeSockets`.
+- **Kiểm chứng NET.1.1 (sau chỉnh sửa code cuối):**
+  - `npm run lint` (`0` errors, `2` warnings có sẵn), `npm run typecheck`, `npm run build`, `node scripts/verify-prod-guard.mjs` (**PASSED**).
+  - Vitest 9 file hồi quy (`multiplayerHardening.test.ts` 5/5, `remoteShareTunnel.test.mjs`, `devLanServer.test.ts`, `swPrecache.test.mjs`, `moduleBoundary.test.ts`, `netcodeCore.test.ts`, `networkDiagnosticsOverlay.test.tsx`, `playerFacingCopyGate.test.ts`, `realtimePresenceSync.test.ts`): **9/9 files, 27/27 tests pass**.
+  - Playwright E2E `multiplayer-ws-hardening.spec.ts` (cổng `4179`): `chromium-desktop` (**2/2 pass**, `13.3s`) và `chromium-iphone-16-pro-max` (**2/2 pass**, `12.2s`).
+  - Kiểm thử trình duyệt sạch qua **Cloudflare Quick Tunnel thật (`lands-keep-compete-source.trycloudflare.com`)** từ nhà 1/2 do Mây tạo thủ công: mở `/__share/<token>` tự vào thẳng `home` không qua onboarding, `Connected` / `WSS` / `2/2` / `RTT 92 ms (avg 189)` / `Jitter 10 ms` / `home (On map)`, `POST /reset` trả `403`, tải lại trang (`reload`) giữ đúng phiên `Nắng` & kết nối lại `WSS` (`RTT 81 ms`).
+
+## MISSION NET.1 — Hardening Multiplayer WebSocket, Reconnect & Authoritative State Sync (`feature/multiplayer-hardening`)
+
+- **Chẩn đoán gốc rễ & Benchmark Live Cloudflare Quick Tunnel ([NET1_MULTIPLAYER_DIAGNOSIS_AND_BENCHMARK.md](reports/NET1_MULTIPLAYER_DIAGNOSIS_AND_BENCHMARK.md)):**
+  - Tái hiện thực tế bằng `scripts/spike-tunnel-transport.mjs` qua Quick Tunnel `https://hansen-sufficient-scout-hindu.trycloudflare.com`: đúng như cảnh báo tài liệu Cloudflare, **SSE (`/api/dev-lan/events`) bị edge-buffer hoàn toàn** (6 sự kiện server phát cách nhau 300ms đều chỉ tới cùng lúc khi đóng stream ở **`2133ms`**); trong khi **WSS (`/api/dev-lan/ws`)** kết nối trong **`211ms`**, `ping`/`pong` RFC 6455 thành công, **RTT trung bình `88.86ms`** (`min 82.9ms`, `p95 136.67ms`, `jitter 7.46ms`) và phục hồi sau ngắt đột ngột trong **`209ms`**.
+- **Phase B/C/D/E triển khai & Donor Reuse:**
+  - Chuyển vận chuyển realtime chính sang **WebSocket (`ws` `noServer` trong `scripts/devLanWsHub.mjs` + `src/lib/backend/devLanRealtimeClient.ts`)**, giữ SSE fallback có kiểm soát, bảo vệ WS upgrade + HTTP proxy (`scripts/olwRemoteShare.mjs`) theo phiên đăng nhập 2 người và chặn route quản trị host (`403` cho client từ xa).
+  - Bổ sung `welcome` snapshot, `presenceSeq`/`serverSeq`/`stateVersion` đơn điệu, supersede kết nối cũ (`4001`), hàng đợi có giới hạn `BoundedOutboundQueue(64)`, exponential backoff + jitter (`ReconnectBackoff`), heartbeat WS + ping/pong `2.5s`, watchdog `6.5s`, `probeLiveness()` khi chuyển mạng/unlock/resume, và bỏ phụ thuộc đồng hồ giữa các máy cho couple invite (`resolveInviteLocalExpiryMs`).
+  - Nâng cấp mượt di chuyển (`RemoteMotionInterpolator`, cadence 10 Hz + gói `idle` chốt vị trí, đồng bộ `posture` & `heldItem`), đồng bộ phiên bản trạng thái + `idempotencyKey` cho farm/donor/pet care, và thêm bảng **Multiplayer Diagnostics** DEV-only (`NetworkDiagnosticsOverlay.tsx`, `TopStatusBar.tsx`, `Ctrl+Shift+N`) ẩn hoàn toàn khỏi production build.
+- **Kiểm chứng tự động (Local / Dev LAN WS Proxy / Chromium headless, sau chỉnh sửa code cuối):**
+  - `npm run lint` (`0` errors, `2` warnings có sẵn), `npm run typecheck` (`tsc -b`, exit 0), `npm run build` (2569 modules, 26 PWA precache entries), `node scripts/verify-prod-guard.mjs` (**PASSED**, 0 dev leak).
+  - Vitest (`--exclude tests/unit/donorCabacosRenderDetect.test.ts --exclude tests/unit/pydewFarmDonorRender.test.ts`): **175 files / 837 tests passed** (gồm `multiplayerHardening.test.ts` giả lập 0/100/200/300ms RTT + jitter, Wi-Fi→5G blackhole + chống stale packet, đồng thời farm/pet & bảo mật proxy/WS; `netcodeCore.test.ts` 7/7; `networkDiagnosticsOverlay.test.tsx` 1/1; `swPrecache.test.mjs` 2/2). Ghi chú 2 file `donorCabacosRenderDetect.test.ts` và `pydewFarmDonorRender.test.ts` vẫn có lỗi load Phaser/Canvas trong jsdom có sẵn từ baseline `f69106e`.
+  - Playwright 2 client (port `4179`): `chromium-desktop` (`multiplayer-ws-hardening.spec.ts` + `farming-co-op.spec.ts`: **2/2 pass**) và `chromium-iphone-16-pro-max` (`multiplayer-ws-hardening.spec.ts`: **1/1 pass**). Lưu ý `tiled-world-two-client.spec.ts` có drift UI có sẵn (`nav-outdoor` hiện mở bảng chọn map `OutdoorWorldNavSheet`).
+- **Chưa kiểm chứng thực tế (Chờ chủ dự án test trên thiết bị thật):** Playtest 2 máy thật (PC + iPhone Safari / PWA qua `trycloudflare.com` với chuyển mạng **Wi-Fi ↔ 5G**, khóa/mở máy, background/resume và farm/pet đồng thời).
+
+## Sửa lỗi sau Playtest thực tế 2 thiết bị (PC + iPhone Safari / Cloudflare Quick Tunnel)
+
+- **Hiển thị bạn đồng hành tức thì & chống nhấp nháy SSE:** `POST /realtime` (`movement`) cập nhật trực tiếp presence trên server, thêm grace window `2.5s` + keepalive `8s` khi tunnel/iPhone chập chờn, phát lại `movement` của người kia ngay khi SSE mở (`GET /events`), tự tạo `remoteEntity` khi nhận packet di chuyển mà chưa kịp nhận `presence_sync`, bỏ so sánh lệch đồng hồ liên thiết bị, giữ `currentPresence` qua các lần reconnect và không phá kết nối khỏe khi chuyển tab ngắn.
+- **Tương tác cảm ứng mobile & HUD không chồng lấn (`430×932`):** Bật scope `.olw-game-ui[data-ui-variant='warm-pixel-cottage']` kèm fallback `:root` trong `gameUiTokens.css`; sắp xếp lại làn dọc mobile (`.quick-nav`, hotbar, `.joystick-zone`, `.main-game-touch-actions` với nhãn rõ ràng cho `[J]`/`[K]`, `.couple-emote-dock`) để không đè lên nhau; mở thẳng **Chăm sóc mèo 3D** khi đứng cạnh mèo dù đang cầm nông cụ; bổ sung chạm trực tiếp vào mèo, sofa, giường đôi, ghế vườn, bàn học, tủ đồ, hòm thư và khung ảnh để tự tìm đường đến và thực hiện thao tác.
+- **Xem người thương câu cá mượt 60 FPS:** Bỏ `saveDb()` đồng bộ trên `/donor/fishing/sync`, đẩy `donor_fishing_sync` trực tiếp qua SSE, loại bỏ `setFsm` 60Hz gây giật React trong `ChillFishingModal.tsx`, nội suy mượt `stepSpectatorFishingState(...)` bằng `requestAnimationFrame`, và hiển thị đúng avatar riêng của hai người trên cầu câu.
+- **Phòng học yên tĩnh (`Tắt` âm thanh):** Dừng sạch toàn bộ `AudioContext`/`GainNode`/`AudioBufferSourceNode` (`suspend` + `close`) trong `ambientAudio.ts` và gọi `gameAudio.setOverlayPaused(true)` khi ở trong `Phòng học yên tĩnh` hoặc đang chọn `Tắt` âm thanh nền.
+- **Kiểm chứng tự động:** `npm run typecheck`, `npm run lint` (0 errors), `npm run build`, `node scripts/verify-prod-guard.mjs`, 12 file `vitest` (`42/42` tests pass gồm 4 test mới: `realtimePresenceSync`, `mobileInteractablesAndHud`, `fishingSpectatorSmooth`, `studyAmbientAudio`), và Playwright Chromium 2 ngữ cảnh (desktop `1280×800` + mobile portrait `430×932` với ảnh kiểm tra không chồng HUD, chạm sofa/giường/mèo 3D, tắt âm phòng học, spectator câu cá SSE). **Lưu ý:** Nghiệm thu thực tế lại trên **iPhone 16 Pro Max Safari qua đường hầm HTTPS** vẫn cần chủ dự án kiểm tra lại.
+- **Ghi chú E2E legacy:** Chạy `tests/e2e/v01-our-little-home.spec.ts` và `tests/e2e/v015-living-home.spec.ts` có `5 passed / 7 failed` do drift có sẵn từ các milestone trước (7 nút bottom nav thay vì 5, UI túi Nuvora P.1 bỏ `inv-row-*`, và `world-clock-wallet` trên portrait `430×932` che nút mời trên top bar).
+
+## Phase II donor preview (parallel integration)
+
+| Field | Value |
+|-------|--------|
+| **Frozen owner compare** | `0ef19c4` @ `integration/donor-reuse-preview` (#27–#29: HUD, discoverability, farm/fish) |
+| **Render checkpoint tag** | `checkpoint/p0-cabacos-pet-7474eb0` (pre–Phase II) |
+| **Worker dispatch** | Phase II branches continue in parallel; owner gate reversed — integration merges after VQG |
+| **Playthrough** | [PHASE_II_OWNER_PLAYTHROUGH.md](PHASE_II_OWNER_PLAYTHROUGH.md) |
+| **Interactables** | store [`interactable-inventory.md`](/cursor/stores/self/docs/interactable-inventory.md) |
+| **8-dir walk clips** | `facing8` → Phaser `walk-{diagonal}` rows (procedural + atlas composite); VQG `media/vqg-phase-ii-diagonal-walk.png`; e2e `phase-ii-diagonal-walk.spec.ts` (Chromium desktop, chưa iPhone) |
+| **Cửa / thang env hooks** | Portal table + ladder pairs; 2P `COUPLE_ENV_TRANSITION`; VQG door/ladder png; e2e `phase-ii-env-transition.spec.ts` |
+| **Interactable audit P0** | Barn door → shop; home bowl J + `COUPLE_HOME_BOWL`; minigame honest stub; VQG `vqg-phase-ii-bowl-food-fill.png` / `barn-door` |
+
+`integration/playtest-all` vẫn @ `c01d291` — không đổi.
+
+## 0. V0.2 P0 — A Home Comes Alive (đồng bộ Roadmap v2)
+
+**Nguồn:** [V02_ROADMAP.md](V02_ROADMAP.md) · [V02_PRODUCT_ENGINEERING_PLAN.md](V02_PRODUCT_ENGINEERING_PLAN.md) · [V02_INTEGRATION_PLAYBOOK.md](V02_INTEGRATION_PLAYBOOK.md)
+
+| Stream | PR | Trạng thái agent | Ghi chú tích hợp |
+|--------|-----|------------------|------------------|
+| Composer 1 Farming | #14 | Dev LAN playable | Chờ Supabase RPC + plot contract C3 |
+| Composer 2 Pet | #13 | Slice 4 in progress | PetCareScene, hand-feed RPC `20261125001200`, e2e session |
+| Composer 3 World | #12 | Zone/farm art | Không sửa care scene |
+| Foundation authority | #10 | SQL open | #13 wires `pet_consume_hand_food`; merge trước prod Supabase |
+| Living overworld | #11 | DEV `?living-pet=1` | Gộp vào #12/#13 khi integrate |
+
+**Chưa owner-verified:** build tích hợp 15–20 phút (nhà → mèo → shop → farm → explore). **Không** merge `main`.
 
 ## 1. Trạng thái tổng thể
-- **Milestone hiện tại:** V0.1 Final Integration
-- **Trạng thái:** Đã hoàn tất tích hợp Demo E trong V0.1 ở profile riêng. V0.1 còn cổng quyền triển khai Internet, HTTPS/Supabase Cloud và nghiệm thu thiết bị thật.
+- **Milestone hiện tại:** V0.2 P0 (song song V0.1 gate còn thiết bị thật)
+- **Trạng thái:** Ba PR feature (#12–#14) + foundation #10/#11; tích hợp theo playbook, chưa release.
 
 ## 2. Checklist nghiệm thu Spike 0 & V0.1
 
@@ -86,3 +197,120 @@ Game chính dùng hai nền atlas và ánh xạ đủ 12 SKU. Profile private gi
 - PNG atlas public **16.454 B**, tổng cả manifest và credits **28.272 B**. Atlas riêng **47.649 B** PNG và **75.570 B** tổng. Public SW **25 mục, 2.006,19 KiB**. Private SW **25 mục, 2.006,20 KiB**, không precache atlas riêng. Build public không sao chép atlas riêng hoặc tệp thử nghiệm không hợp lệ.
 - Screenshot game chính ở desktop 1440×900 và 1280×720, mobile portrait 430×932 và landscape 844×390, cùng Tủ đồ và preview tỷ lệ pet, lưu ngoài Git tại `test-results/v01-final-art/`. Dữ liệu ảnh là fixture Dev LAN.
 - Chưa thử bản này trên iPhone Safari/PWA thật, Android thật hay Supabase Cloud. Quyền phục vụ atlas riêng qua Internet còn Pending Deployment License Verification. [Giấy phép và credits](art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public)
+
+### OLW-010-04 — Realtime Optimization
+
+Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nhật hướng theo cadence. Gửi gói chốt khi idle, đổi map hoặc kết nối lại. Một avatar đại diện cho mỗi người, chọn theo phiên Presence mới nhất. Trace cục bộ giảm từ 153 xuống 99 gói. Lint, typecheck, 35 Vitest, public build, production guard và 10 Playwright Chromium không retry pass. Số liệu Supabase Cloud và nghiệm thu Safari/PWA trên iPhone thật đang chờ. [Checkpoint kỹ thuật](research/GPT_NIGHT_CHECKPOINT.md)
+
+### OLW-010-05 — Review và checklist
+
+Đã review tĩnh SQL/RLS/RPC, Auth và private Realtime. Có checklist Supabase Test/Prod, Cloudflare Pages Free, quyền triển khai Web/PWA của artwork và xác thực URL asset. Các mục Cloud và thiết bị thật chưa thực hiện. [Review và checklist](research/GPT_NIGHT_OLW_010_05_REVIEW.md)
+
+### V0.1 Security Hardening
+
+Đã thêm migration bổ sung cho quyền EXECUTE của RPC, thứ tự khóa world/invite, trần hai thành viên, phân quyền Realtime và receipt idempotency. PostgreSQL 18.6 local vượt SQL assertions và ba kịch bản nhiều phiên. Supabase Test/Auth/PostgREST/WebSocket thật còn **Pending Verification**. [Checkpoint và hướng dẫn tích hợp](research/GPT_NIGHT_CHECKPOINT.md#v01-security-hardening--hoàn-thành-local-cloud-pending-verification)
+
+## 7. Triển khai V0.1.5 — Living Home (`neon/night-dev`)
+
+*Trạng thái tổng thể V0.1.5: **Implemented & Locally tested** (`Pending cloud/device verification` — chưa đánh dấu `Accepted` trước khi kiểm thử Supabase Cloud và iPhone Safari thật).*
+
+- **Phục hồi mỹ thuật Demo E & Camera (`03072e4`):** Tái lập 100% tỷ lệ pixel 1:1 (`world-props.png`, `props-manifest.json`), anim ngồi trên `avatars.png`, sprite mèo `cat-orange` CC BY 4.0, camera tự bám theo người chơi trên bản đồ lớn hơn viewport và thu vừa khít khi trang trí.
+- **`OLW-015-01` Kho đồ tối thiểu K5 (`b5c6faa`):** `supabase/migrations/20261125000100_v015_inventory_and_catalog.sql`, 6 vật phẩm catalog 0₫, phân tách `shared` và `user:<uuid>`, nhận hạt mèo miễn phí hằng ngày.
+- **`OLW-015-03/04` Bé mèo cam sống động (`3d8a630`):** `20261125000200_v015_pet_mvp.sql`, catch-up ngoại tuyến nhân từ (`FLOOR=30`, trần 48 giờ), đua lệnh cho ăn nguyên tử & hồi chiêu server, `PetEntity.ts` + `PetPanel.tsx` + âm thanh `petAudio.ts` chạm để phát.
+- **`OLW-015-05/06` Phòng học yên tĩnh & Pomodoro (`eb5d202`):** `THIRD_PARTY_NOTICES.md` ghi công MIT (`cocoworking`), `20261125000300_v015_study_pomodoro.sql`, đồng hồ chuẩn server (`PomodoroPanel.tsx`), âm thanh nền mặc định tắt (`ambientAudio.ts`), ngồi vào ghế trái/phải và mèo nằm nghỉ chế độ yên lặng.
+- **`OLW-015-07` Tương tác cặp đôi & Khung ảnh (`d40b2e1`):** `CoupleActionBar.tsx` (5 biểu tượng cảm xúc + mời ôm 15 giây có chấp nhận/từ chối), ngồi sofa/ghế vườn 2 slot không chồng lên nhau, nằm giường đôi kèm lớp chăn pixel pastel, `PhotoFrameModal.tsx`.
+- **`OLW-015-02` Hộp thư & Quà bất ngờ (`3e7ed72`):** `20261125000400_v015_mailbox_and_gifts.sql`, giấu nội dung quà bí mật ở tầng server tới khi người nhận tự mở, rollback sạch khi ngăn đồ nhận đã đầy (`STACK_FULL`), `MailboxModal.tsx` plain-text chống XSS và badge thông báo trên hòm thư đỏ ngoài vườn.
+- **`OLW-015-08` Dev Console K6 (`400e054`) & Prototype V0.3 (`5db098b`):** Tách RPC dev vào `supabase/dev-migrations/20261125900100_dev_console_rpcs.sql` (`dev_admins` + `worlds.is_test = true`), `DevConsoleDrawer.tsx` (`Ctrl+Shift+D`), `V03PrototypesModal.tsx` chỉ nạp qua `import.meta.env.DEV` và được kiểm tra loại bỏ 100% khỏi bản production bởi `scripts/verify-prod-guard.mjs`.
+- **Kiểm chứng cục bộ mới nhất (cổng `4176`, Dev LAN + Chromium):** `npm run lint` (0 lỗi), `npm run typecheck` (`tsc -b`, 0 lỗi), `npm test` (**23 files / 68 tests pass**), `npm run build` + `verify-prod-guard.mjs` (**Pass**, 0 dev leaks), `npm run build:private` (**Pass**), `npx playwright test` (**13 passed, 1 skipped**). [Checkpoint nhánh đêm](research/NEON_NIGHT_CHECKPOINT.md)
+
+## 8. Pre-Integration Quality & Living Pet Override (`neon/night-dev`)
+
+*Trạng thái: **Implemented & Locally tested** (Sandbox & E2E cục bộ; chờ chủ dự án duyệt trực quan biến thể mèo, UI và quy mô bản đồ trước khi chạy Integration Master).*
+
+- **M1 P0 Foundation (`afd75bb`):** Khôi phục typecheck thật (`tsc -b`), sửa lỗi đăng ký đủ frame lưới trong `src/game/art/worldAtlas.ts`, bổ sung migration `20261125000500` thu hồi quyền `EXECUTE` helper `SECURITY DEFINER` và khóa `worlds FOR UPDATE` trong `_inventory_adjust_item` (`supabase/tests/v015_inventory_security.sql` chờ chạy trên PostgreSQL thật).
+- **M2 Living Cat Visual (`1605435`):** 3 biến thể mèo thủ công `24×24px` (`ginger-tabby` Quýt, `cream-puff` Mochi, `calico-patch` Bông) + 4 phụ kiện + 27 animation tracks + `PetAnimationController.ts` (`wake_yawn_stretch`), sandbox `/?pet-art=1`.
+- **M3 Physical Interaction (`411efb2`):** Hệ thống phím & ngữ cảnh `[J]`/`[K]`/`1–8` (`interactionResolver.ts`), `HeldItemRenderer.ts`, catalog thức ăn an toàn (`petFoodCatalog.ts`), bảo toàn 1:1 `Inventory → Bowl → Consumed`, hành trình nhận nuôi mèo hoang (`petPhysicalCare.ts`) và `PetEntity.ts` render nguyên bản 1:1.
+- **M4 Living Pet Intelligence & Pet Lab (`e4eb0aa`):** Adapter tiền tích hợp (`petPrimitivesAdapter.ts`), cấu hình 7 tính cách / 8 nhu cầu không tử vong / 9 cảm xúc / 14 affordance (`petIntelligenceConfig.ts`), mô phỏng 18 kịch bản (`petLabSimulation.ts`), sandbox `/?pet-lab=1`.
+- **M5 Game UI & Shared Life (`1f5b8d4`):** Hệ thống Cozy Indie Game UI với 2 biến thể **Warm Pixel Cottage** & **Illustrated Storybook**, thanh hotbar, hộp thoại chân dung, Cuốn Sổ Chung 5 tab (`OurLittleNotebook.tsx`), contract & Dev LAN stubs V0.3, sandbox `/?ui-sandbox=1`.
+- **M6 World Expansion & Showcase (`0a8ec8c`):** Bản đồ `64×64` & `96×96` gồm 10 địa điểm có chiều sâu (`worldExpansionMap.ts`, `WorldExpansionScene.ts`), `/?world-sandbox=1` và bản trải nghiệm tổng hợp `/?experience-demo=1` với Touch D-pad di động.
+- **Tài liệu & Bằng chứng trực quan (`test-results/grand-showcase/`):** Đã tạo đủ 16 screenshot Desktop/Mobile/Small/Landscape + 2 animated GIF (`pet-locomotion-and-wake.gif`, `pet-physical-feeding-and-play.gif`) và bộ báo cáo bàn giao Phase 14 ([Living Pet](pet/LIVING_PET_QUALITY_REPORT.md), [Game UI](ui/GAME_UI_DESIGN_SYSTEM.md), [Physical Interaction](gameplay/PHYSICAL_INTERACTION_SPEC.md), [World Expansion](world/WORLD_EXPANSION_DESIGN.md), [Quality Audit](research/QUALITY_AUDIT.md)).
+
+## 9. Grand Integration
+
+Đã hợp nhất GPT, Neon và DeepSeek trên nhánh riêng, bảo toàn Demo E, Realtime và các bản Grand sandbox. PostgreSQL local đạt fresh/upgrade theo từng tệp SQL, gồm bản vá debit kho và receipt hộp thư. Vitest 453/453 và Playwright Chromium 15 pass, 1 skip có chủ đích. Xung đột version migration chờ lịch sử database đích. Supabase Cloud, thiết bị thật và mở rộng gameplay sau quality gate còn chờ. [Integration checkpoint](research/INTEGRATION_CHECKPOINT.md)
+
+## 10. Mission 02 — SQL foundation đang review
+
+Đã đối chiếu lịch sử theo xác nhận chủ dự án và gỡ version migration trùng. Catalog/quality, RPC bát ăn nước và các vector integer có bản chuẩn bị trong nhánh mission. PostgreSQL fixture fresh/upgrade và các regression local pass. Parity giá/bão hòa, quality gift, authority không gian, gameplay có thưởng và Supabase Test còn chờ. [Checkpoint và API](research/MISSION_02_CHECKPOINT.md)
+
+## 11. Mission 02.5 — nhánh tích hợp thử
+
+Đã review snapshot PR #4 `700d1af` và thử tích hợp riêng: 474 Vitest, Playwright 19 pass / 1 skip, PostgreSQL fixture fresh/upgrade và public/private guards pass. Đã thêm bản sửa thử cho identity/quality hotbar, concurrent input và Escape. Luồng `pet_interact('feed')` cũ vẫn vượt qua gate physical care; catalog, quality gift/transfer và server authority chưa hoàn tất. Chưa đủ điều kiện merge hoặc deploy; Supabase thật và iPhone thật chưa được kiểm. [Bàn giao Mission 04](research/MISSION_04_TECHNICAL_HANDOVER.md)
+
+## 12. Mission 04B-2 — server-authoritative living pet
+
+Đã thêm migrations 04B-2 + hardening `20261125140000` + correctness `20261125150000`: offer expiry commit (pending/accepted/deferred), reservation consume on `fill_food`, server-clock movement (`authoritative_tile_*`, bỏ proof làm căn cứ), `pet_nav_anchors` + nav contract 04D. **Local:** lint/typecheck, Vitest 526, SQL fresh+upgrade, build/PWA. **Chưa:** Cloud apply, iPhone, dynamic furniture grid trong SQL. [Bàn giao 04B-2](handover/MISSION_04B2_PET_AUTHORITY.md)
+
+## 13. Mission 05 — Farming vertical slice (checkpoint)
+
+- **Branch:** `cursor/mission-05-farming-slice-d77e` — vòng lặp Dev LAN trong game chính: cuốc → gieo → tưới → thu hoạch → bán/mua hạt (`docs/handover/MISSION_05_FARMING_PLAYABLE.md`).
+- **Đã kiểm (local DoD):** Vitest **534** pass (`farmPlotContract` + 184 plots), lint/typecheck/build; Playwright `farming-co-op.spec.ts` — 2 client + API versioned apply, annex ô `120`, `INVALID_PLOT` (log: `/opt/cursor/artifacts/farming-co-op-e2e-184.log`).
+- **Lưới:** `farmPlotContract` **v1.0.1** (#12 vendored), **184** ô (`farm_main`+`farm_annex`), Dev LAN + Supabase `_farm_plot_on_contract_soil`; SQL `farming_authority.sql` chưa chạy trên Postgres thật.
+- **Kiểm chứng:** Supabase migration apply trên remote; duplicate-harvest 2 client; icon hotbar farming (Composer 2).
+- **PR #10:** readiness + Composer 2 authority trong `docs/handover/PR10_INTEGRATION_COMPOSER2.md` (pet branch riêng).
+
+## 14. Mission M — Deep Living Pet Experience V2 (`antigravity/carbon-living-pet-v2`)
+
+- **Phạm vi & Kiến trúc:** Nâng cấp từ PR #79 (`26b185d`) lên hệ thống **3D Three.js Living Pet Care V2** (`src/donors/nintendogs-cat-v2/` + `src/game/pet/care/`):
+  - **Giải phẫu & shader lông mèo 3D (`CatModel`, `CatRig`, `CatActor`, `CatBreeds`, `CatPatterns`):** Surface Nets + GLSL shell-fur (`uFluff`, `uComb`, `uDirt`), đồng tử dọc mèo + double-blink/squint (`j4lpan/pet-shop` MIT), 8 râu 3D hai má, tai tam giác dựng/cụp airplane ears, đuôi dài 5 đốt (`idle`, `wag_slow`, `wag_fast`, `puff`, `tuck`), hộp sọ/bàn chân cho 3 giống OLW (`ginger-tabby`, `cream-puff`, `calico-patch`).
+  - **Không gian sống & đồ chơi (`CatRoom`, `CatProps`, `ToyWorld`, `CatWandSim`):** Phòng khách cặp đôi có nắng vàng, bụi sáng bay, thảm dệt, sofa đôi, nệm ngủ, trụ cào móng, khay bát ăn/bát nước gốm có hiệu ứng vơi/sóng nước, lược 3D, bóng chuông, cuộn len, hộp giấy và cần câu mèo dây Verlet 6 đốt.
+  - **Tự chủ hành vi & Ranh giới (`CatBrain`, `CatPlayController`, `PetCareThreeStage`):** Nối 1:1 `PetSnapshot`, `Pet8Needs`, `PetPersonalityTraits`, `derive9Emotion`, `scoreAffordanceAction`, `MemoryState`. Quýt tự đi dạo, đánh hơi, ngồi chớp mắt chậm, cuộn bánh mì, ngủ trưa, vươn vai ngáp, liếm chân rửa mặt, vồ đồ chơi, chui hộp giấy, tự chạy tới bát ăn/uống nước, và cụp tai né bước (`RefuseAct`) khi bị chạm quá đà/mệt.
+  - **2P Co-Care & Persistence:** Mở rộng `SharedPetCareSession` (`water`, `toy`, `pose`, `coatFluff`) trên Dev-LAN SSE + Supabase Realtime broadcast (`pet_care_session`), nối ngược trạng thái chăm sóc về `WorldScene` / `PetLivingMainGameDriver`, giữ nguyên 1 điểm phát `evt:pet-care-request-consume` chống trừ kho trùng.
+- **Đã kiểm (local Chromium WebGL2 + Dev-LAN, sau lần sửa code cuối):**
+  - `npm run lint` (**0 errors**, 2 warnings có sẵn), `npm run typecheck` (`tsc -b`, exit **0**), `npm run build` + VitePWA (`dist/sw.js`, 25 precache entries, **704ms**).
+  - `npm run test`: **152 files / 752 tests pass** (gồm `tests/unit/petCareV2CatBrain.test.ts`).
+  - Playwright Chromium Desktop (`PLAYWRIGHT_PORT=4183`): **6/6 pass** trên 5 specs (`pet-care-closeup.spec.ts`, `pet-care-isolated-atlas.spec.ts`, `pet-care-session-acceptance.spec.ts`, `pet-care-shared-session.spec.ts`, `pet-care-living-v2.spec.ts` gồm test 2-client `preset-partner-a` + `preset-partner-b`, single consume & exit/re-enter persistence). *(Ghi chú: spec có sẵn `pet-care-hotbar.spec.ts` không thuộc scope V2 trước đó fail ở `.locator('svg')` trong `hotbar-slot-1`.)*
+  - Video nghiệm thu liên tục H.264 `1280×720`: **385.44 giây (06:25)** + đối chiếu donor tại [PET_CARE_V2_COMPARISON.md](phase-ii/PET_CARE_V2_COMPARISON.md).
+- **Chưa kiểm trên thiết bị/hạ tầng thật (`Pending Device & Cloud Verification`):** Chưa test hiệu năng WebGL2 & cảm ứng thật trên **iPhone 16 Pro Max Safari / PWA Add to Home Screen**, và chưa test đồng bộ 2 mạng qua **Supabase Cloud** thật.
+
+## 15. Mission M.1 — Model Vuena CC0, Animation tương tác, Âm thanh CC0 & Tối ưu hiệu năng (`antigravity/carbon-living-pet-v2`)
+
+- **Model 3D chuyên nghiệp (CC0):** Thay thế mặc định model procedural Surface Nets + 9-layer shell fur bằng **`Vuena — Cute Pets & Wildlife FREE Sample`** (`public/assets/pet-care-v2/models/vuena-cat.glb`, **CC0**, 19 xương, **13 animations**: `idle`, `idle_alt`, `walk`, `run`, `jump`, `eat`, `sit`, `sleep`, `attack`, `call`, `hit`, `death`, `assist`, kèm `cat_LOD0` 7.188 tris & `cat_LOD1` 2.452 tris) qua `CatGltfActor` & `CatAnimationAdapter`. Vẫn giữ model procedural cũ để so sánh DEV qua `?cat-model=procedural`.
+- **Animation & Tương tác vật lý:** Bổ sung `pawSwipe` nhấc & vờn chân trước đồng bộ đúng frame chạm đồ chơi (`progress >= 0.54`) với `ToyWorld.batImpulse`, bổ sung pha ôm cuộn len & đạp chân sau (`hugKick`), và sửa `BoxPeekAct` tiếp cận ngoài hộp + nhảy qua thành hộp `jumpTo` vào tâm hộp (`interiorFloorY`) có gắn obstacle `'box'` để tránh xuyên mesh.
+- **Âm thanh thật CC0 (`PetCareAudioEngine`):** Vendor và transcode 15 file MP3 từ OpenGameArt CC0 (`Kerzoven`, `IgnasD`, `cogitollc`, `rubberduck`) tại `public/assets/pet-care-v2/audio/` (meo, gừ loop, nhai hạt, uống nước, bước chân, bóng nảy, chuông, hộp giấy, vút cần câu/đồ chơi, chải lông) với cooldown chống lặp, nút Mute + thanh Âm lượng, và gesture-unlock tương thích Safari/iOS PWA.
+- **Hiệu năng & Preset đồ họa:** Ngủ vòng lặp 2D Phaser (`game.loop.sleep()` / `wake()` trong `PetCareRuntime.ts`) và bỏ render `PetCarePortraitRig`/`PetCareRoomBackdrop` ẩn khi mở Pet Care 3D; thêm 3 preset **`Thấp` / `Vừa` / `Cao`** (`DPR <= 1.0/1.5/2.0`, shadow tắt/`512`/`1024`, `LOD1`/`LOD0`, hạt bụi `0`/`14`/`32`) và xử lý giải phóng tài nguyên WebGL/GLTF khi thoát.
+- **Kiểm chứng cục bộ (Chromium Desktop, không chạy benchmark dài theo giới hạn quota):**
+  - `npm run lint` (0 lỗi), `npm run typecheck` (`tsc -b`, exit 0), targeted Vitest (`petCareV2CatBrain.test.ts` + `petCareM1Adapter.test.ts`: **8/8 pass**), `npm run build` + `tests/server/swPrecache.test.mjs` (**2/2 pass**).
+  - Playwright `tests/e2e/pet-care-living-v2.spec.ts` (`--project=chromium-desktop`, cổng `4183`): **2/2 pass** (đo nhanh cùng môi trường headless SwiftShader cho thấy frame time giảm từ **202.5ms** xuống **87.0ms**, `renderTriangles` 31.576 ở LOD0 `Cao`, chuyển `Thấp` ↔ `Cao` đổi `LOD1` ↔ `LOD0`, mute/volume & 2P sync hoạt động).
+- **Chưa kiểm chứng thật:** Cần chủ dự án playtest trực tiếp trên Windows GPU, **iPhone 16 Pro Max Safari / PWA Add to Home Screen** (kiểm chứng độ mượt và audio iOS thật) và cân bằng âm lượng nghe thực tế.
+
+## 16. Final World Stabilization, Real Cat Vocalizations, Remote Tunnel Share & P0 Natural Couple Animations (`antigravity/unified-neon-carbon`)
+
+*Cập nhật lần cuối: 26/11/2026*
+
+- **Lịch sử & Tag khôi phục:** Giữ tag `backup/owner-accepted-baseline` tại `4cfc3b7` và giữ lịch sử sạch từ `9646e5c` (có lưu ý commit `a0c8f80` trước đó về regression locomotion mèo đã được khắc phục trong pipeline hợp nhất).
+- **Địa hình độ cao kiểu Pokémon & Tài nguyên âm nhạc (`tileElevation.ts`, `zonePropColliders.ts`, `gameAudioManager.ts`):**
+  - Áp dụng tầng dữ liệu `Elevation` & `ElevationTransitions` trên 4 bản đồ Tiled (`village`, `farm`, `beach`, `forest`): chặn ô độ cao `0` (nước, vách đá, bờ cầu gỗ), chỉ cho phép đổi độ cao `+/-1` qua cầu thang/đường dốc chỉ định, chặn cắt góc chéo qua vách và chặn vật cản `farm_beehive` (`40,26`); kiểm tra BFS hợp lệ 100% portal & NPC trên cả 4 bản đồ (`village`, `farm`, `beach`, `forest`).
+  - Chuẩn hóa **Extended World** & **Safe Living Cat** làm mặc định chính thức tại `/` (DEV vẫn giữ opt-out `?extended-world=0` / `?living-pet=0`); không để rò rỉ DEV UI/flag trong bản build production.
+  - Cấu hình nhạc nền theo vùng (`home_garden`, `farm`, `town`, `forest`, `beach`) với nhạc riêng gitignored tại `public/assets/private-audio/music/` (fallback MIT công khai tại `public/assets/audio/music/`), kèm cơ chế độc quyền `setPetCareMusicActive` cho BGM `pet_care` khi chăm mèo 3D.
+- **Hotfix Tiếng mèo thật (`import-real-cat-vocalizations.mjs`, `catVocalizationScheduler.ts`, `petCareAudio.ts`):**
+  - Loại bỏ hoàn toàn âm meo tổng hợp formant/oscillator; nhập **8 file tiếng mèo/mèo con ghi âm thật** khác nhau (MD5 duy nhất) từ **Freesound CC0** (`#448084` Breviceps, `#476918` Luke100000, `#813119` & `#813113` qubodup) và **Mixkit** (`#92`, `#86`, `#96`) vào `public/assets/pet-care-v2/audio/` và đóng gói sprite `public/assets/audio/sprites/pet.{mp3,json}`.
+  - Nâng cấp `PetCareAudioEngine` & `gameAudioManager`: giữ nguyên purr/ăn/uống/đồ chơi, chỉ xoay vòng 8 file thật không lặp liên tiếp, giới hạn cao độ tự nhiên `0.97–1.03`, gọi `ctx.resume()` trước khi phát nếu `AudioContext` đang `suspended` (khắc phục Safari/iOS drop tiếng đầu), và ducking BGM nhẹ khi mèo kêu.
+- **Zero-Config Cross-Network Share (`scripts/olwRemoteShare.mjs`, `olwTunnelBinary.mjs`, `RemoteShareModal.tsx`):**
+  - Bổ sung lệnh `npm run host:couple` và bảng **Chia sẻ qua mạng ngoài (Dev)** tự khởi chạy Cloudflare Quick Tunnel (`cloudflared`, nhị phân tải về `.olw-bin/` gitignored) + proxy reverse có cookie HMAC `HttpOnly`, route `/__share/<token>` tự chuyển hướng sang `/?remote-partner=1` tự ghép Partner B (`Nắng`), passthrough SSE `no-cache`, và khóa cứng HTTP `403` cho yêu cầu từ xa gắn header `x-olw-remote-share: 1`.
+  - Bổ sung `CoupleInviteToast` luôn hiển thị ngay cả khi `CoupleEmoteDock` đang thu gọn ở góc màn hình.
+- **P0 Natural Couple Animations (`coupleHandKinematics.ts`, `coupleStateMachine.ts`, `couplePairLocomotion.ts`, `couplePairedPoseTextures.ts`, `coupleAnimationRenderer.ts`, `WorldScene.ts`):**
+  - Khóa phạm vi chỉ bật P0 (`hug`: `approach -> embrace -> hold -> release`, và `hold_hands`: `reach -> connect -> idle / walk -> release`); giữ nguyên `COUPLE_P1_ENABLED = false` chờ chủ dự án duyệt hình ảnh P0.
+  - Áp dụng 2-bone FABRIK (`jordgubben/promenad`, [COUPLE_ANIMATION_DONORS.md](COUPLE_ANIMATION_DONORS.md)), compositing giữ nguyên 100% `AvatarConfig` (`hairStyle`, `hairColor`, `skinTone`, `outfitColor`, kính/nơ), bỏ thay thế bằng emoji nổi, vẽ tay hai lớp chiều sâu đúng giải phẫu chibi (`row 23.5` vai, `row 25.8` nắm tay) và formation đi bộ ngang/chéo cạnh nhau tránh vật cản + chặn kéo xuyên tường.
+- **Kết quả kiểm chứng cục bộ mới nhất (Windows Chromium headless + Dev LAN SSE, sau chỉnh sửa code cuối):**
+  - `npm run typecheck` (`tsc -b`): **Pass** (exit `0`).
+  - `npm run lint`: **Pass** (`0` errors; 3 warnings có sẵn ở `App.tsx` và `ChillFishingModal.tsx`).
+  - `npm run build`: **Pass** (`vite build` 2563 modules + VitePWA 26 entries).
+  - `node scripts/verify-prod-guard.mjs`: **Pass** (`scanned 3 JS bundle(s) in dist/assets/, zero dev leaks and public assets/precache verified`).
+  - `remoteShareTunnel.test.mjs` (**Pass 3/3**) + kiểm thử kết nối HTTPS công khai thật (`olwRemoteShare`: sửa lỗi `cloudflared` 429 chuyển tự động sang `localhost.run` `*.app.lhr.life`, mở bind `0.0.0.0` cho Wi-Fi LAN, nhận diện cookie `Secure` trên HTTPS; đã xác minh live round-trip `200`/`401`/`302`/cookie `Secure HttpOnly` qua tên miền HTTPS thật `trycloudflare.com` & fallback `*.app.lhr.life`).
+  - Targeted Vitest trước đó (7 suites / 26 tests) & Full `npm run test` (**817/817 tests pass** across **168/170** files; 2 file-level pre-existing suite load errors ở `donorCabacosRenderDetect.test.ts` và `pydewFarmDonorRender.test.ts`).
+  - Kiểm thử Playwright 2 browser context độc lập qua Dev LAN (`Mây` trên `/` & `Nắng` tự vào qua `/?remote-partner=1`): **Pass** — xác minh 403 guard trên `/api/dev-lan/remote-share`, `/` mở mặc định Extended World (`village`) & Pet Care 3D (`meow_happy`), toast mời ôm hiển thị khi dock thu gọn, và xác minh trực quan 3 ảnh P0 (`couple-hug-embrace.png`, `couple-hold-hands-idle.png`, `couple-hold-hands-walk.png` với `coupleHandGap = 0.6px` giữa lúc đang đi cùng nhau và thoát về `none` bình thường).
+- **Chưa kiểm chứng / Chờ chủ dự án nghiệm thu:**
+  - Chờ chủ dự án **nghiệm thu trực quan** P0 couple animations trước khi mở P1 (`kiss`, `lean_shoulder`, `dance`, `give_flower`).
+  - Chờ chủ dự án **nghiệm thu âm thanh thực tế** 8 tiếng mèo ghi âm thật trên loa máy tính & iPhone.
+  - Chưa test thực tế trên **iPhone 16 Pro Max Safari / PWA Add to Home Screen** qua 4G khác mạng với đối phương, và chưa test **Supabase Cloud** thật.

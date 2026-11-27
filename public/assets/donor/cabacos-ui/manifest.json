@@ -1,0 +1,21 @@
+{
+  "upstreamSha": "79e423defc12bd99327cfcc28bf7ec0085996244",
+  "files": [
+    {
+      "upstream": "public/assets/inventory/hotbar_selector.png",
+      "publicPath": "/assets/donor/cabacos-ui/hotbar_selector.png"
+    },
+    {
+      "upstream": "public/assets/inventory/inventorySlot.png",
+      "publicPath": "/assets/donor/cabacos-ui/inventorySlot.png"
+    },
+    {
+      "upstream": "public/assets/inventory/InventoryRect.png",
+      "publicPath": "/assets/donor/cabacos-ui/InventoryRect.png"
+    },
+    {
+      "upstream": "public/assets/ui/hud/coin.png",
+      "publicPath": "/assets/donor/cabacos-ui/coin.png"
+    }
+  ]
+}

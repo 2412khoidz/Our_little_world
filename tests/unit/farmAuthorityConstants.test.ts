@@ -1,0 +1,11 @@
+import { describe, expect, it } from 'vitest';
+import { FARM_STATE_CONTRACT_VERSION, FARM_STATE_PLOT_BINDING } from '../../src/shared/farming/farmAuthorityConstants';
+import { FARM_PLOT_CONTRACT_VERSION } from '../../src/shared/world/farmPlotContract';
+
+describe('farmAuthorityConstants', () => {
+  it('binds simulation to farm plot contract version', () => {
+    expect(FARM_STATE_CONTRACT_VERSION).toBe('1.0.2');
+    expect(FARM_PLOT_CONTRACT_VERSION).toBe(FARM_STATE_CONTRACT_VERSION);
+    expect(FARM_STATE_PLOT_BINDING).toBe('farm_main:0-119,farm_annex:0-63');
+  });
+});

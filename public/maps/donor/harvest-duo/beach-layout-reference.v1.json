@@ -1,0 +1,31 @@
+{
+  "schema": "olw-donor-beach-layout-ref",
+  "version": 1,
+  "source": "harvest-duo build_beach()",
+  "grid": { "w": 42, "h": 30 },
+  "pier": {
+    "spineGx": [20, 21],
+    "spineGyRange": [17, 27],
+    "platformGy": 27,
+    "platformGxRange": [19, 22]
+  },
+  "pierFootProps": [
+    { "kind": "lifebuoy", "gx": 19, "gy": 17 },
+    { "kind": "surfboard", "gx": 22, "gy": 17 }
+  ],
+  "fishing": {
+    "castable": "tideline",
+    "olwFishingSpotId": "gull_bay",
+    "olwInteractableId": "beach_pier_fishing"
+  },
+  "olwHollowmereGullBayPierOps": [
+    ["pier", 22, 18, 2, 13],
+    ["pier", 19, 29, 8, 2]
+  ],
+  "olwLifebuoyWaypoint": {
+    "interactableId": "beach_lifebuoy_post",
+    "tileX": 33,
+    "tileY": 17,
+    "note": "Bench prompt beside Gull Bay pier — Harvest Duo lifebuoy foot placement"
+  }
+}

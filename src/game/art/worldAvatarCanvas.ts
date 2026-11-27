@@ -3,6 +3,7 @@ import type { AvatarConfig, Direction } from '../../shared/types';
 import { AVATAR_ATLAS_URL, USE_PRIVATE_ART } from './atlasProfile';
 import { buildRampLookup, drawFrameAccessories, RIG_RAMPS, selectRigForHairStyle } from './avatarPalette';
 import rig from './avatarRig.json';
+import { AVATAR_ATLAS_ROW_COUNT, AVATAR_ATLAS_ROW_SIT } from './avatarAtlasLayout';
 import { renderAvatarPreviewCanvas } from './avatarSpriteBuilder';
 
 export const AVATAR_FRAME_WIDTH = rig.frameWidth;
@@ -10,7 +11,7 @@ export const AVATAR_FRAME_HEIGHT = rig.frameHeight;
 export const AVATAR_FRAME_COUNT = rig.frameCount;
 export const AVATAR_DIRECTIONS: readonly Direction[] = ['right', 'up', 'left', 'down'];
 const stripWidth = AVATAR_FRAME_WIDTH * AVATAR_FRAME_COUNT * AVATAR_DIRECTIONS.length;
-const rigHeight = AVATAR_FRAME_HEIGHT * 2;
+const rigHeight = AVATAR_FRAME_HEIGHT * AVATAR_ATLAS_ROW_COUNT;
 
 export function buildWorldAvatarCanvas(
   source: CanvasImageSource,
@@ -46,10 +47,14 @@ export function buildWorldAvatarCanvas(
     const rgb = (pixels[offset]! << 16) | (pixels[offset + 1]! << 8) | pixels[offset + 2]!;
     const hex = packedColors.get(rgb);
     if (!hex) continue;
-    const y = Math.floor(offset / (stripWidth * 4)) % AVATAR_FRAME_HEIGHT;
-    const replacement = y <= 19
+    const sheetY = Math.floor(offset / (stripWidth * 4));
+    const rowKind = Math.floor(sheetY / AVATAR_FRAME_HEIGHT);
+    const y = sheetY % AVATAR_FRAME_HEIGHT;
+    const headLimit = rowKind === AVATAR_ATLAS_ROW_SIT ? 21 : 19;
+    const hairTipLimit = rowKind === AVATAR_ATLAS_ROW_SIT ? 26 : 25;
+    const replacement = y <= headLimit
       ? hairMap.get(hex) ?? skinMap.get(hex) ?? outfitMap.get(hex)
-      : outfitMap.get(hex) ?? skinMap.get(hex) ?? (y <= 25 ? hairMap.get(hex) : undefined);
+      : outfitMap.get(hex) ?? skinMap.get(hex) ?? (y <= hairTipLimit ? hairMap.get(hex) : undefined);
     if (replacement) {
       pixels[offset] = replacement.r;
       pixels[offset + 1] = replacement.g;
@@ -59,11 +64,17 @@ export function buildWorldAvatarCanvas(
   context.putImageData(image, 0, 0);
 
   for (const [index, direction] of AVATAR_DIRECTIONS.entries()) {
-    for (let animation = 0; animation < 2; animation += 1) {
+    for (let animation = 0; animation < AVATAR_ATLAS_ROW_COUNT; animation += 1) {
+      const yOffset = animation === AVATAR_ATLAS_ROW_SIT ? 1 : 0;
       for (let frame = 0; frame < AVATAR_FRAME_COUNT; frame += 1) {
         drawFrameAccessories(
-          context, (index * AVATAR_FRAME_COUNT + frame) * AVATAR_FRAME_WIDTH,
-          animation * AVATAR_FRAME_HEIGHT, direction, rigId, config,
+          context,
+          (index * AVATAR_FRAME_COUNT + frame) * AVATAR_FRAME_WIDTH,
+          animation * AVATAR_FRAME_HEIGHT + yOffset,
+          direction,
+          rigId,
+          config,
+          animation,
         );
       }
     }
@@ -88,6 +99,9 @@ export function drawWardrobePreview(
   source: HTMLImageElement | null,
   config: AvatarConfig,
   scale: number,
+  rowKind = 0,
+  direction: Direction = 'down',
+  frameIndex = 0,
 ): void {
   const sheet = source && buildWorldAvatarCanvas(source, config);
   if (!sheet) {
@@ -95,11 +109,17 @@ export function drawWardrobePreview(
     return;
   }
   target.width = AVATAR_FRAME_WIDTH * scale;
-  const previewHeight = 24;
+  const previewHeight = 25;
   target.height = previewHeight * scale;
   const context = target.getContext('2d');
   if (!context) return;
   context.imageSmoothingEnabled = false;
-  const down = AVATAR_DIRECTIONS.indexOf('down') * AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH;
-  context.drawImage(sheet, down, AVATAR_FRAME_HEIGHT - previewHeight, AVATAR_FRAME_WIDTH, previewHeight, 0, 0, target.width, target.height);
+  context.clearRect(0, 0, target.width, target.height);
+  const dirOffset = AVATAR_DIRECTIONS.indexOf(direction) * AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH;
+  const safeFrame = Math.abs(frameIndex) % AVATAR_FRAME_COUNT;
+  const sx = dirOffset + safeFrame * AVATAR_FRAME_WIDTH;
+  const safeRow = Math.max(0, Math.min(AVATAR_ATLAS_ROW_COUNT - 1, rowKind));
+  const sy = safeRow * AVATAR_FRAME_HEIGHT + (AVATAR_FRAME_HEIGHT - previewHeight);
+  context.drawImage(sheet, sx, sy, AVATAR_FRAME_WIDTH, previewHeight, 0, 0, target.width, target.height);
+  target.dataset.avatarRig = selectRigForHairStyle(config.hairStyle);
 }

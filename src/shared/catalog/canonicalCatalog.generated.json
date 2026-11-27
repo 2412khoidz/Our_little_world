@@ -1,0 +1,6856 @@
+{
+  "fingerprint": "472b86c0",
+  "totalItems": 267,
+  "items": [
+    {
+      "sku": "pet_kibble_basic",
+      "nameVi": "Hạt mèo cơ bản",
+      "descriptionVi": "Phần hạt ấm bụng miễn phí hằng ngày cho bé mèo cam.",
+      "purpose": "pet_food",
+      "stackLimit": 10,
+      "tradeable": false,
+      "category": "pet_food",
+      "iconId": "pet_kibble_basic",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "feed_pet"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "gift_flower_bouquet",
+      "nameVi": "Bó hoa nhỏ dịu dàng",
+      "descriptionVi": "Món quà nhỏ giữ trong ngăn riêng để tạo bất ngờ cho người thương.",
+      "purpose": "gift",
+      "stackLimit": 5,
+      "tradeable": false,
+      "category": "gift",
+      "iconId": "gift_flower_bouquet",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "gift_partner",
+        "keepsake"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "gift_strawberry_cake",
+      "nameVi": "Bánh dâu ngọt ngào",
+      "descriptionVi": "Miếng bánh dâu xinh xắn có thể gửi kèm thư tay.",
+      "purpose": "gift",
+      "stackLimit": 5,
+      "tradeable": false,
+      "category": "gift",
+      "iconId": "gift_strawberry_cake",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "gift_plush_cat",
+      "nameVi": "Thú bông mèo cam nhỏ",
+      "descriptionVi": "Gối ôm nho nhỏ mang hơi ấm căn nhà chung.",
+      "purpose": "gift",
+      "stackLimit": 3,
+      "tradeable": false,
+      "category": "gift",
+      "iconId": "gift_plush_cat",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "gift_partner",
+        "keepsake"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "gift_star_jar",
+      "nameVi": "Hũ sao giấy kỷ niệm",
+      "descriptionVi": "Những ngôi sao giấy gấp tay lưu giữ lời chúc.",
+      "purpose": "keepsake",
+      "stackLimit": 5,
+      "tradeable": false,
+      "category": "keepsake",
+      "iconId": "gift_star_jar",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "keepsake",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "letter_stationery_pink",
+      "nameVi": "Giấy viết thư hoa anh đào",
+      "descriptionVi": "Bộ giấy thư màu phấn hồng cho những lời nhắn ấm áp.",
+      "purpose": "stationery",
+      "stackLimit": 10,
+      "tradeable": false,
+      "category": "stationery",
+      "iconId": "letter_stationery_pink",
+      "sellPrice": 0,
+      "buyPrice": null,
+      "sources": [
+        "starter"
+      ],
+      "uses": [
+        "stationery",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-starter"
+    },
+    {
+      "sku": "seed_wheat",
+      "nameVi": "Hạt giống lúa mì",
+      "descriptionVi": "Hạt giống lúa mì dễ trồng, nảy mầm nhanh quanh mùa.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_wheat",
+      "sellPrice": 2,
+      "buyPrice": 4,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_carrot",
+      "nameVi": "Hạt giống cà rốt",
+      "descriptionVi": "Hạt giống cà rốt ngọt giòn cho mùa Xuân.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_carrot",
+      "sellPrice": 4,
+      "buyPrice": 8,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_tomato",
+      "nameVi": "Hạt giống cà chua",
+      "descriptionVi": "Hạt giống cà chua mọng nước, cho thu hoạch nhiều lần trong mùa Hè.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_tomato",
+      "sellPrice": 7,
+      "buyPrice": 14,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+greens@3f32fd8"
+    },
+    {
+      "sku": "seed_strawberry",
+      "nameVi": "Hạt giống dâu tây",
+      "descriptionVi": "Hạt giống dâu tây Xuân thơm ngọt, tái sinh nhiều đợt.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_strawberry",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+greens@3f32fd8"
+    },
+    {
+      "sku": "seed_sunflower",
+      "nameVi": "Hạt giống hướng dương",
+      "descriptionVi": "Hạt giống hướng dương vàng rực mùa Hè.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_sunflower",
+      "sellPrice": 8,
+      "buyPrice": 16,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_rose_pink",
+      "nameVi": "Hạt giống hồng phấn",
+      "descriptionVi": "Hạt giống hồng phấn trồng trang trí và lai hoa hiếm.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_rose_pink",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_flower"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020"
+    },
+    {
+      "sku": "seed_cabbage",
+      "nameVi": "Hạt giống bắp cải",
+      "descriptionVi": "Hạt giống bắp cải xanh mướt mùa Xuân.",
+      "purpose": "seed",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_cabbage",
+      "sellPrice": 13,
+      "buyPrice": 26,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020+greens@3f32fd8"
+    },
+    {
+      "sku": "wild_herb",
+      "nameVi": "Thảo mộc dại",
+      "descriptionVi": "Thảo mộc hái ngoài bờ rào, dùng nấu ăn và pha chế.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "forage",
+      "iconId": "wild_herb",
+      "sellPrice": 5,
+      "buyPrice": null,
+      "sources": [
+        "foraging"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020"
+    },
+    {
+      "sku": "wood_branch",
+      "nameVi": "Cành gỗ",
+      "descriptionVi": "Cành gỗ nhặt quanh nông trại, dùng đóng đồ và ủ phân.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "material",
+      "iconId": "wood_branch",
+      "sellPrice": 6,
+      "buyPrice": null,
+      "sources": [
+        "foraging"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v020"
+    },
+    {
+      "sku": "bait_free_worm",
+      "nameVi": "Mồi giun miễn phí",
+      "descriptionVi": "Mồi giun miễn phí luôn sẵn trong hộp cần câu.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": false,
+      "category": "bait",
+      "iconId": "bait_free_worm",
+      "sellPrice": 0,
+      "buyPrice": 0,
+      "sources": [
+        "starter",
+        "shop"
+      ],
+      "uses": [
+        "fishing"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v022"
+    },
+    {
+      "sku": "bait_shrimp",
+      "nameVi": "Mồi tép",
+      "descriptionVi": "Mồi tép tươi tăng tỉ lệ cá hiếm cắn câu.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "bait",
+      "iconId": "bait_shrimp",
+      "sellPrice": 2,
+      "buyPrice": 6,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "fishing",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v022"
+    },
+    {
+      "sku": "carp_pond",
+      "nameVi": "Cá chép ao",
+      "descriptionVi": "Cá chép ao quen thuộc, chế biến món ăn ấm bụng.",
+      "purpose": "fish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "fish",
+      "iconId": "carp_pond",
+      "sellPrice": 14,
+      "buyPrice": null,
+      "sources": [
+        "fishing"
+      ],
+      "uses": [
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v022"
+    },
+    {
+      "sku": "koi_pastel",
+      "nameVi": "Cá koi pastel",
+      "descriptionVi": "Cá koi pastel quý hiếm dưới mặt hồ phẳng lặng.",
+      "purpose": "fish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "fish",
+      "iconId": "koi_pastel",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "fishing"
+      ],
+      "uses": [
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v022"
+    },
+    {
+      "sku": "lotus_trout",
+      "nameVi": "Cá hồi sen",
+      "descriptionVi": "Cá hồi sen thịt chắc ngọt dùng làm món thượng hạng.",
+      "purpose": "fish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "fish",
+      "iconId": "lotus_trout",
+      "sellPrice": 36,
+      "buyPrice": null,
+      "sources": [
+        "fishing"
+      ],
+      "uses": [
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v022"
+    },
+    {
+      "sku": "wheat",
+      "nameVi": "Lúa mì",
+      "descriptionVi": "Bó lúa mì vàng óng xay bột và làm thức ăn chăn nuôi.",
+      "purpose": "crop",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "wheat",
+      "sellPrice": 8,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+greens@3f32fd8"
+    },
+    {
+      "sku": "carrot",
+      "nameVi": "Cà rốt",
+      "descriptionVi": "Củ cà rốt cam tươi nấu súp và làm thức ăn cho thỏ.",
+      "purpose": "crop",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "carrot",
+      "sellPrice": 15,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "tomato",
+      "nameVi": "Cà chua",
+      "descriptionVi": "Cà chua chín mọng chế biến sốt và salad mùa Hè.",
+      "purpose": "crop",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "tomato",
+      "sellPrice": 13,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+greens@3f32fd8"
+    },
+    {
+      "sku": "strawberry",
+      "nameVi": "Dâu tây",
+      "descriptionVi": "Dâu tây chín đỏ làm mứt, bánh tart và quà tặng.",
+      "purpose": "fruit",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "strawberry",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+greens@3f32fd8"
+    },
+    {
+      "sku": "sunflower",
+      "nameVi": "Hướng dương",
+      "descriptionVi": "Hoa hướng dương ép dầu hoặc cắm thành bó rực rỡ.",
+      "purpose": "flower",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "sunflower",
+      "sellPrice": 25,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "craft_bouquet",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "rose_pink",
+      "nameVi": "Hồng phấn",
+      "descriptionVi": "Hoa hồng phấn nở dịu nhẹ, lai được hoa anh đào hiếm.",
+      "purpose": "flower",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "rose_pink",
+      "sellPrice": 30,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed",
+        "farming"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_sakura",
+      "nameVi": "Hồng anh đào",
+      "descriptionVi": "Đóa hồng sakura lai quý hiếm từ vườn hoa chung.",
+      "purpose": "flower",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_sakura",
+      "sellPrice": 48,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+webfarmville@c420bc2"
+    },
+    {
+      "sku": "cabbage",
+      "nameVi": "Bắp cải",
+      "descriptionVi": "Bắp cải cuộn lá giòn ngọt, ủ dưa hoặc nấu súp.",
+      "purpose": "crop",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "cabbage",
+      "sellPrice": 40,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+greens@3f32fd8"
+    },
+    {
+      "sku": "peach",
+      "nameVi": "Đào",
+      "descriptionVi": "Trái đào chín hồng thu hoạch định kỳ từ cây đào vườn cây ăn quả.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "peach",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v021+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sugar_pack",
+      "nameVi": "Gói đường",
+      "descriptionVi": "Gói đường tinh luyện làm trà, mứt và bánh ngọt.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "sugar_pack",
+      "sellPrice": 3,
+      "buyPrice": 6,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "spice",
+      "nameVi": "Gia vị",
+      "descriptionVi": "Lọ gia vị thơm nồng cho món bánh và súp nóng hổi.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "spice",
+      "sellPrice": 5,
+      "buyPrice": 10,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "ribbon",
+      "nameVi": "Ruy băng",
+      "descriptionVi": "Dải ruy băng lụa gói bó hoa và hộp quà thủ công.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "ribbon",
+      "sellPrice": 3,
+      "buyPrice": 6,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "flour",
+      "nameVi": "Bột mì",
+      "descriptionVi": "Bột mì xay mịn tại cối xay gió cho hầu hết món bánh.",
+      "purpose": "ingredient",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "artisan",
+      "iconId": "flour",
+      "sellPrice": 17,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "carrot_soup",
+      "nameVi": "Súp cà rốt",
+      "descriptionVi": "Chén súp cà rốt kem mịn thơm thảo mộc.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "carrot_soup",
+      "sellPrice": 42,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "herb_carp",
+      "nameVi": "Cá chép thảo mộc",
+      "descriptionVi": "Cá chép om thảo mộc đậm đà hương đồng nội.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "herb_carp",
+      "sellPrice": 32,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "peach_tea",
+      "nameVi": "Trà đào",
+      "descriptionVi": "Ly trà đào ủ mát dịu ngọt cho buổi chiều cùng nhau.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "peach_tea",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "strawberry_tart",
+      "nameVi": "Bánh tart dâu",
+      "descriptionVi": "Bánh tart dâu giòn rụm rắc chút gia vị ấm.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "strawberry_tart",
+      "sellPrice": 78,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "koinori_platter",
+      "nameVi": "Đĩa koi nori",
+      "descriptionVi": "Đĩa cá koi hấp rau củ theo phong cách bếp nhà.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "koinori_platter",
+      "sellPrice": 102,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "sakura_bouquet",
+      "nameVi": "Bó hoa anh đào",
+      "descriptionVi": "Bó hoa anh đào phối hồng phấn và hướng dương buộc ruy băng.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bouquet",
+      "iconId": "sakura_bouquet",
+      "sellPrice": 100,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v030+webfarmville@c420bc2"
+    },
+    {
+      "sku": "wood_chair",
+      "nameVi": "Ghế gỗ",
+      "descriptionVi": "Chiếc ghế gỗ nhỏ đóng tay vững chắc cho hiên nhà.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "craft",
+      "iconId": "wood_chair",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "seed_lettuce",
+      "nameVi": "Hạt giống xà lách giòn",
+      "descriptionVi": "Gói hạt giống xà lách giòn theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_lettuce",
+      "sellPrice": 6,
+      "buyPrice": 12,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "lettuce",
+      "nameVi": "Xà lách giòn",
+      "descriptionVi": "Xà lách lá non mùa Xuân, dùng trộn salad hoặc cho thỏ ăn.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "lettuce",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_spinach",
+      "nameVi": "Hạt giống cải bó xôi",
+      "descriptionVi": "Gói hạt giống cải bó xôi theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_spinach",
+      "sellPrice": 8,
+      "buyPrice": 16,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "spinach",
+      "nameVi": "Cải bó xôi",
+      "descriptionVi": "Rau chân vịt trồng tốt cả Xuân và Thu.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "spinach",
+      "sellPrice": 14,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_kale",
+      "nameVi": "Hạt giống cải xoăn",
+      "descriptionVi": "Gói hạt giống cải xoăn theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_kale",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "kale",
+      "nameVi": "Cải xoăn",
+      "descriptionVi": "Lá cải xoăn chịu lạnh tốt qua Xuân, Thu và Đông.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "kale",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_parsnip",
+      "nameVi": "Hạt giống củ cải vàng",
+      "descriptionVi": "Gói hạt giống củ cải vàng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_parsnip",
+      "sellPrice": 5,
+      "buyPrice": 10,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "parsnip",
+      "nameVi": "Củ cải vàng",
+      "descriptionVi": "Loại củ mùa Xuân cổ điển thơm bùi khi hầm súp.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "parsnip",
+      "sellPrice": 17,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_potato",
+      "nameVi": "Hạt giống khoai tây",
+      "descriptionVi": "Gói hạt giống khoai tây theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_potato",
+      "sellPrice": 9,
+      "buyPrice": 18,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "potato",
+      "nameVi": "Khoai tây",
+      "descriptionVi": "Khoai tây nhiều củ, làm bánh mì khoai tây hoặc nghiền tinh bột.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "potato",
+      "sellPrice": 15,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_cauliflower",
+      "nameVi": "Hạt giống súp lơ trắng",
+      "descriptionVi": "Gói hạt giống súp lơ trắng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_cauliflower",
+      "sellPrice": 14,
+      "buyPrice": 28,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "cauliflower",
+      "nameVi": "Súp lơ trắng",
+      "descriptionVi": "Bông cải trắng lớn nặng tay, giá trị cao dịp đầu Xuân.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "cauliflower",
+      "sellPrice": 42,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_snap_pea",
+      "nameVi": "Hạt giống đậu hà lan",
+      "descriptionVi": "Gói hạt giống đậu hà lan theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_snap_pea",
+      "sellPrice": 9,
+      "buyPrice": 18,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "snap_pea",
+      "nameVi": "Đậu Hà Lan",
+      "descriptionVi": "Giàn đậu giòn ngọt cho thu hoạch lại liên tục.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "snap_pea",
+      "sellPrice": 14,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_radish",
+      "nameVi": "Hạt giống củ cải đỏ",
+      "descriptionVi": "Gói hạt giống củ cải đỏ theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_radish",
+      "sellPrice": 5,
+      "buyPrice": 10,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "radish",
+      "nameVi": "Củ cải đỏ",
+      "descriptionVi": "Củ cải đỏ tươi mát, muối chua giòn rụm.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "radish",
+      "sellPrice": 16,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_scallion",
+      "nameVi": "Hạt giống hành lá",
+      "descriptionVi": "Gói hạt giống hành lá theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_scallion",
+      "sellPrice": 4,
+      "buyPrice": 8,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "scallion",
+      "nameVi": "Hành lá",
+      "descriptionVi": "Hành xanh lên mầm rất nhanh, nêm hầu hết món mặn.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "scallion",
+      "sellPrice": 12,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_rhubarb",
+      "nameVi": "Hạt giống đại hoàng",
+      "descriptionVi": "Gói hạt giống đại hoàng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_rhubarb",
+      "sellPrice": 18,
+      "buyPrice": 36,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "rhubarb",
+      "nameVi": "Đại hoàng",
+      "descriptionVi": "Cuống chua thanh chuyên dùng làm bánh nướng mùa Xuân.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "rhubarb",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_corn",
+      "nameVi": "Hạt giống bắp ngô",
+      "descriptionVi": "Gói hạt giống bắp ngô theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_corn",
+      "sellPrice": 16,
+      "buyPrice": 32,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "corn",
+      "nameVi": "Bắp ngô",
+      "descriptionVi": "Cây ngô mọc xuyên suốt Hè sang Thu, xay bột bắp và làm cám.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "corn",
+      "sellPrice": 20,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_blueberry",
+      "nameVi": "Hạt giống việt quất",
+      "descriptionVi": "Gói hạt giống việt quất theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_blueberry",
+      "sellPrice": 17,
+      "buyPrice": 34,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "blueberry",
+      "nameVi": "Việt quất",
+      "descriptionVi": "Bụi việt quất trĩu quả xanh biếc, làm mứt và bánh muffin.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "blueberry",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_melon",
+      "nameVi": "Hạt giống dưa lưới",
+      "descriptionVi": "Gói hạt giống dưa lưới theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_melon",
+      "sellPrice": 18,
+      "buyPrice": 36,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "melon",
+      "nameVi": "Dưa lưới",
+      "descriptionVi": "Trái dưa ngọt mát căng mọng giữa trưa Hè.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "melon",
+      "sellPrice": 56,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_hot_pepper",
+      "nameVi": "Hạt giống ớt đỏ cay",
+      "descriptionVi": "Gói hạt giống ớt đỏ cay theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_hot_pepper",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "hot_pepper",
+      "nameVi": "Ớt đỏ cay",
+      "descriptionVi": "Ớt đỏ cay nồng, ngâm dấm hoặc nghiền bột ớt paprika.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "hot_pepper",
+      "sellPrice": 16,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_bell_pepper",
+      "nameVi": "Hạt giống ớt chuông ngọt",
+      "descriptionVi": "Gói hạt giống ớt chuông ngọt theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_bell_pepper",
+      "sellPrice": 12,
+      "buyPrice": 24,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "bell_pepper",
+      "nameVi": "Ớt chuông ngọt",
+      "descriptionVi": "Ớt chuông giòn ngọt dùng xào nấu và làm bếp gia đình.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "bell_pepper",
+      "sellPrice": 20,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_cucumber",
+      "nameVi": "Hạt giống dưa leo",
+      "descriptionVi": "Gói hạt giống dưa leo theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_cucumber",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "cucumber",
+      "nameVi": "Dưa leo",
+      "descriptionVi": "Dưa leo mát lành tái thu hoạch đều đặn.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "cucumber",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_zucchini",
+      "nameVi": "Hạt giống bí ngòi",
+      "descriptionVi": "Gói hạt giống bí ngòi theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_zucchini",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "zucchini",
+      "nameVi": "Bí ngòi",
+      "descriptionVi": "Bí ngòi xanh đậm nấu súp rau củ rất hợp vị.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "zucchini",
+      "sellPrice": 22,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_broccoli",
+      "nameVi": "Hạt giống bông cải xanh",
+      "descriptionVi": "Gói hạt giống bông cải xanh theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_broccoli",
+      "sellPrice": 13,
+      "buyPrice": 26,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "broccoli",
+      "nameVi": "Bông cải xanh",
+      "descriptionVi": "Bông cải xanh giàu dinh dưỡng cho bữa cơm chung.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "broccoli",
+      "sellPrice": 38,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_basil",
+      "nameVi": "Hạt giống húng quế",
+      "descriptionVi": "Gói hạt giống húng quế theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_basil",
+      "sellPrice": 7,
+      "buyPrice": 14,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "basil",
+      "nameVi": "Húng quế",
+      "descriptionVi": "Rau thơm húng quế nấu bơ thảo mộc và món Ý.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "basil",
+      "sellPrice": 16,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "seed_starfruit",
+      "nameVi": "Hạt giống khế sao vàng",
+      "descriptionVi": "Gói hạt giống khế sao vàng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_starfruit",
+      "sellPrice": 48,
+      "buyPrice": 96,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "starfruit",
+      "nameVi": "Khế sao vàng",
+      "descriptionVi": "Loại quả ngôi sao quý hiếm chín rực dưới nắng Hè.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "starfruit",
+      "sellPrice": 140,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_pumpkin",
+      "nameVi": "Hạt giống bí ngô",
+      "descriptionVi": "Gói hạt giống bí ngô theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_pumpkin",
+      "sellPrice": 20,
+      "buyPrice": 40,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "pumpkin",
+      "nameVi": "Bí ngô",
+      "descriptionVi": "Bí ngô tròn căng mùa Thu làm bánh bí ngô và súp kem.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "pumpkin",
+      "sellPrice": 62,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_cranberry",
+      "nameVi": "Hạt giống nam việt quất",
+      "descriptionVi": "Gói hạt giống nam việt quất theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_cranberry",
+      "sellPrice": 21,
+      "buyPrice": 42,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "cranberry",
+      "nameVi": "Nam việt quất",
+      "descriptionVi": "Quả đỏ chua nhẹ nấu sốt nam việt quất cho đại tiệc.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "cranberry",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_eggplant",
+      "nameVi": "Hạt giống cà tím",
+      "descriptionVi": "Gói hạt giống cà tím theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_eggplant",
+      "sellPrice": 7,
+      "buyPrice": 14,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "eggplant",
+      "nameVi": "Cà tím",
+      "descriptionVi": "Cà tím bóng mượt mùa Thu cho thu hoạch nhiều lần.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "eggplant",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_yam",
+      "nameVi": "Hạt giống khoai mỡ",
+      "descriptionVi": "Gói hạt giống khoai mỡ theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_yam",
+      "sellPrice": 14,
+      "buyPrice": 28,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "yam",
+      "nameVi": "Khoai mỡ",
+      "descriptionVi": "Khoai mỡ bùi dẻo nướng mật ong thơm lừng.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "yam",
+      "sellPrice": 42,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_grape",
+      "nameVi": "Hạt giống nho tím",
+      "descriptionVi": "Gói hạt giống nho tím theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_grape",
+      "sellPrice": 16,
+      "buyPrice": 32,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "grape",
+      "nameVi": "Nho tím",
+      "descriptionVi": "Chùm nho tím mọng, phơi làm nho khô hoặc làm mứt.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "grape",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_bok_choy",
+      "nameVi": "Hạt giống cải thìa",
+      "descriptionVi": "Gói hạt giống cải thìa theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_bok_choy",
+      "sellPrice": 8,
+      "buyPrice": 16,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "bok_choy",
+      "nameVi": "Cải thìa",
+      "descriptionVi": "Cải thìa lớn nhanh cuối Thu dùng cho cơm hộp cá koi.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "bok_choy",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_beet",
+      "nameVi": "Hạt giống củ dền đường",
+      "descriptionVi": "Gói hạt giống củ dền đường theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_beet",
+      "sellPrice": 9,
+      "buyPrice": 18,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "beet",
+      "nameVi": "Củ dền đường",
+      "descriptionVi": "Củ dền đỏ thẫm ép đường củ dền tinh khiết tại cối xay.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "beet",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_artichoke",
+      "nameVi": "Hạt giống atiso xanh",
+      "descriptionVi": "Gói hạt giống atiso xanh theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_artichoke",
+      "sellPrice": 12,
+      "buyPrice": 24,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "artichoke",
+      "nameVi": "Atiso xanh",
+      "descriptionVi": "Nụ atiso non hầm thảo mộc mùa Thu.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "artichoke",
+      "sellPrice": 36,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_oats",
+      "nameVi": "Hạt giống yến mạch",
+      "descriptionVi": "Gói hạt giống yến mạch theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_oats",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "oats",
+      "nameVi": "Yến mạch",
+      "descriptionVi": "Yến mạch mùa Thu xay bột và trộn thức ăn bò cừu.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "oats",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_snowpea",
+      "nameVi": "Hạt giống đậu tuyết",
+      "descriptionVi": "Gói hạt giống đậu tuyết theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_snowpea",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "snowpea",
+      "nameVi": "Đậu tuyết",
+      "descriptionVi": "Đậu tuyết chịu sương giá lớn đều trong mùa Đông.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "snowpea",
+      "sellPrice": 20,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_winter_squash",
+      "nameVi": "Hạt giống bí mùa đông",
+      "descriptionVi": "Gói hạt giống bí mùa đông theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_winter_squash",
+      "sellPrice": 19,
+      "buyPrice": 38,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "winter_squash",
+      "nameVi": "Bí mùa Đông",
+      "descriptionVi": "Bí vỏ dày giữ hương ngọt qua những ngày tuyết rơi.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "winter_squash",
+      "sellPrice": 56,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_frostberry",
+      "nameVi": "Hạt giống dâu sương giá",
+      "descriptionVi": "Gói hạt giống dâu sương giá theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_frostberry",
+      "sellPrice": 20,
+      "buyPrice": 40,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "frostberry",
+      "nameVi": "Dâu sương giá",
+      "descriptionVi": "Quả mọng xanh băng chỉ chín rộ giữa mùa Đông.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "frostberry",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_green_bean",
+      "nameVi": "Hạt giống đậu que xanh",
+      "descriptionVi": "Gói hạt giống đậu que xanh theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_green_bean",
+      "sellPrice": 12,
+      "buyPrice": 24,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "green_bean",
+      "nameVi": "Đậu que xanh",
+      "descriptionVi": "Giàn đậu leo cho nhiều trái qua nhiều đợt.",
+      "purpose": "crop",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "green_bean",
+      "sellPrice": 18,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_ancient_green",
+      "nameVi": "Hạt giống mầm cổ đại",
+      "descriptionVi": "Gói hạt giống mầm cổ đại theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "seed",
+      "iconId": "seed_ancient_green",
+      "sellPrice": 60,
+      "buyPrice": 120,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "ancient_green",
+      "nameVi": "Mầm cổ đại",
+      "descriptionVi": "Giống cây huyền thoại thích nghi bốn mùa và nhà kính.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "crop",
+      "iconId": "ancient_green",
+      "sellPrice": 135,
+      "buyPrice": null,
+      "sources": [
+        "farming"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "seed_maker"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "sapling_peach",
+      "nameVi": "Cây giống đào",
+      "descriptionVi": "Cây con trồng vào vườn ăn quả, thu hoạch đào định kỳ mỗi mùa Hè hoặc nhà kính.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_peach",
+      "sellPrice": 40,
+      "buyPrice": 120,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sapling_apple",
+      "nameVi": "Cây giống táo",
+      "descriptionVi": "Cây giống lâu năm cho quả táo đỏ định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_apple",
+      "sellPrice": 36,
+      "buyPrice": 110,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "apple",
+      "nameVi": "Táo đỏ",
+      "descriptionVi": "Táo giòn ngọt thu từ vườn cây mùa Thu, làm bánh táo rất ngon.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "apple",
+      "sellPrice": 22,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sapling_cherry",
+      "nameVi": "Cây giống anh đào",
+      "descriptionVi": "Cây giống lâu năm cho quả anh đào đỏ định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_cherry",
+      "sellPrice": 43,
+      "buyPrice": 130,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "cherry",
+      "nameVi": "Anh đào đỏ",
+      "descriptionVi": "Chùm anh đào đỏ mọng nở hoa mùa Xuân.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "cherry",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sapling_orange",
+      "nameVi": "Cây giống cam",
+      "descriptionVi": "Cây giống lâu năm cho quả cam vàng định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_orange",
+      "sellPrice": 46,
+      "buyPrice": 140,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "orange",
+      "nameVi": "Cam vàng",
+      "descriptionVi": "Cam mọng nước tươi mát chín rộ mùa Hè.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "orange",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sapling_lemon",
+      "nameVi": "Cây giống chanh",
+      "descriptionVi": "Cây giống lâu năm cho quả chanh vàng định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_lemon",
+      "sellPrice": 45,
+      "buyPrice": 135,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "lemon",
+      "nameVi": "Chanh vàng",
+      "descriptionVi": "Chanh thơm làm bánh chanh và mứt vỏ chanh.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "lemon",
+      "sellPrice": 25,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "sapling_plum",
+      "nameVi": "Cây giống mận",
+      "descriptionVi": "Cây giống lâu năm cho quả mận tím định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_plum",
+      "sellPrice": 41,
+      "buyPrice": 125,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "plum",
+      "nameVi": "Mận tím",
+      "descriptionVi": "Trái mận chín mọng ngọt dịu nấu mứt mận.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "plum",
+      "sellPrice": 23,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "sapling_pear",
+      "nameVi": "Cây giống lê",
+      "descriptionVi": "Cây giống lâu năm cho quả lê mật định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_pear",
+      "sellPrice": 48,
+      "buyPrice": 145,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "pear",
+      "nameVi": "Lê mật",
+      "descriptionVi": "Lê vàng thơm ngọt thu hoạch từ cành cao.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "pear",
+      "sellPrice": 27,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sapling_pomegranate",
+      "nameVi": "Cây giống lựu",
+      "descriptionVi": "Cây giống lâu năm cho quả lựu đỏ định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_pomegranate",
+      "sellPrice": 53,
+      "buyPrice": 160,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "pomegranate",
+      "nameVi": "Lựu đỏ",
+      "descriptionVi": "Hạt lựu đỏ au mùa Thu đậm hương.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "pomegranate",
+      "sellPrice": 30,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "sapling_fig",
+      "nameVi": "Cây giống sung ngọt",
+      "descriptionVi": "Cây giống lâu năm cho quả sung ngọt định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_fig",
+      "sellPrice": 55,
+      "buyPrice": 165,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "fig",
+      "nameVi": "Sung ngọt",
+      "descriptionVi": "Trái sung mật làm mứt sung và bánh tart.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "fig",
+      "sellPrice": 31,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sapling_walnut",
+      "nameVi": "Cây giống óc chó",
+      "descriptionVi": "Cây giống lâu năm cho quả óc chó định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_walnut",
+      "sellPrice": 51,
+      "buyPrice": 155,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "walnut",
+      "nameVi": "Óc chó",
+      "descriptionVi": "Hạt óc chó béo bùi làm bánh quy óc chó giòn.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "walnut",
+      "sellPrice": 29,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sapling_olive",
+      "nameVi": "Cây giống ô liu",
+      "descriptionVi": "Cây giống lâu năm cho quả ô liu xanh định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_olive",
+      "sellPrice": 50,
+      "buyPrice": 150,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "olive",
+      "nameVi": "Ô liu xanh",
+      "descriptionVi": "Trái ô liu ép dầu ô liu thượng hạng tại cối xay.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "olive",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sapling_cocoa",
+      "nameVi": "Cây giống ca cao",
+      "descriptionVi": "Cây giống lâu năm cho quả hạt ca cao định kỳ.",
+      "purpose": "tree_sapling",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "tree_sapling",
+      "iconId": "sapling_cocoa",
+      "sellPrice": 60,
+      "buyPrice": 180,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "plant_orchard",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cocoa_bean",
+      "nameVi": "Hạt ca cao",
+      "descriptionVi": "Hạt ca cao quý xay bột ca cao pha sô-cô-la nóng.",
+      "purpose": "fruit",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fruit",
+      "iconId": "cocoa_bean",
+      "sellPrice": 34,
+      "buyPrice": null,
+      "sources": [
+        "orchard"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_tulip_red",
+      "nameVi": "Hạt giống tulip đỏ",
+      "descriptionVi": "Gói hạt giống tulip đỏ theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_tulip_red",
+      "sellPrice": 9,
+      "buyPrice": 18,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_red",
+      "nameVi": "Tulip đỏ",
+      "descriptionVi": "Tulip đỏ rực trồng cạnh tulip vàng để lai tulip cam.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "tulip_red",
+      "sellPrice": 22,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_tulip_yellow",
+      "nameVi": "Hạt giống tulip vàng",
+      "descriptionVi": "Gói hạt giống tulip vàng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_tulip_yellow",
+      "sellPrice": 9,
+      "buyPrice": 18,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_yellow",
+      "nameVi": "Tulip vàng",
+      "descriptionVi": "Tulip vàng nắng trồng cạnh tulip đỏ tạo giống lai.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "tulip_yellow",
+      "sellPrice": 22,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_tulip_pink",
+      "nameVi": "Hạt giống tulip hồng",
+      "descriptionVi": "Gói hạt giống tulip hồng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_tulip_pink",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_pink",
+      "nameVi": "Tulip hồng",
+      "descriptionVi": "Tulip hồng dịu trồng cạnh tulip tím tạo giống trắng tuyết.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "tulip_pink",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_tulip_purple",
+      "nameVi": "Hạt giống tulip tím",
+      "descriptionVi": "Gói hạt giống tulip tím theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_tulip_purple",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_purple",
+      "nameVi": "Tulip tím",
+      "descriptionVi": "Tulip tím mộng mơ dùng trong di truyền học hoa.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "tulip_purple",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_rose_red",
+      "nameVi": "Hạt giống hồng đỏ",
+      "descriptionVi": "Gói hạt giống hồng đỏ theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_rose_red",
+      "sellPrice": 12,
+      "buyPrice": 24,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_red",
+      "nameVi": "Hồng đỏ",
+      "descriptionVi": "Hoa hồng nhung đỏ rực biểu tượng yêu thương.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "rose_red",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_rose_white",
+      "nameVi": "Hạt giống hồng trắng",
+      "descriptionVi": "Gói hạt giống hồng trắng theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_rose_white",
+      "sellPrice": 12,
+      "buyPrice": 24,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_white",
+      "nameVi": "Hồng trắng",
+      "descriptionVi": "Hoa hồng trắng tinh khôi lai cùng hồng phấn thành hồng vàng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "rose_white",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "seed_lavender",
+      "nameVi": "Hạt giống oải hương",
+      "descriptionVi": "Gói hạt giống oải hương theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_lavender",
+      "sellPrice": 11,
+      "buyPrice": 22,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "lavender",
+      "nameVi": "Oải hương",
+      "descriptionVi": "Nhánh hoa oải hương thơm ngát làm nến và xà phòng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "lavender",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "seed_blue_jazz",
+      "nameVi": "Hạt giống cúc thanh lam",
+      "descriptionVi": "Gói hạt giống cúc thanh lam theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_blue_jazz",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "blue_jazz",
+      "nameVi": "Cúc thanh lam",
+      "descriptionVi": "Đóa hoa xanh lam dịu mắt nở rộ mỗi độ Xuân về.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "blue_jazz",
+      "sellPrice": 25,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "seed_fairy_rose",
+      "nameVi": "Hạt giống hồng tiên",
+      "descriptionVi": "Gói hạt giống hồng tiên theo mùa.",
+      "purpose": "seed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower_seed",
+      "iconId": "seed_fairy_rose",
+      "sellPrice": 15,
+      "buyPrice": 30,
+      "sources": [
+        "shop",
+        "seed_maker"
+      ],
+      "uses": [
+        "plant_flower",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "fairy_rose",
+      "nameVi": "Hồng tiên",
+      "descriptionVi": "Đóa hoa ngọt hương nhất mùa Thu quyến rũ bầy ong mật.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "flower",
+      "iconId": "fairy_rose",
+      "sellPrice": 38,
+      "buyPrice": null,
+      "sources": [
+        "farming",
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "tulip_orange",
+      "nameVi": "Tulip cam",
+      "descriptionVi": "Tulip lai màu cam rực rỡ từ tulip đỏ và tulip vàng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "tulip_orange",
+      "sellPrice": 42,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_white",
+      "nameVi": "Tulip trắng tuyết",
+      "descriptionVi": "Tulip tuyết trắng lai từ tulip hồng và tulip tím.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "tulip_white",
+      "sellPrice": 44,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_black",
+      "nameVi": "Tulip huyền đêm",
+      "descriptionVi": "Tulip đen bí ẩn cực hiếm lai từ tulip tím và trắng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "tulip_black",
+      "sellPrice": 68,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_rainbow",
+      "nameVi": "Tulip cầu vồng",
+      "descriptionVi": "Tulip đa sắc quý giá bậc nhất vườn hoa.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "tulip_rainbow",
+      "sellPrice": 95,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_yellow",
+      "nameVi": "Hồng vàng nắng",
+      "descriptionVi": "Hoa hồng vàng lai từ hồng trắng và hồng phấn.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_yellow",
+      "sellPrice": 46,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_orange",
+      "nameVi": "Hồng cam hoàng hôn",
+      "descriptionVi": "Hoa hồng cam ấm lai từ hồng đỏ và hồng vàng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_orange",
+      "sellPrice": 54,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_lavender",
+      "nameVi": "Hồng oải hương",
+      "descriptionVi": "Hoa hồng tím pastel lai từ hồng đỏ và hồng trắng.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_lavender",
+      "sellPrice": 58,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_blue",
+      "nameVi": "Hồng xanh lam",
+      "descriptionVi": "Hoa hồng xanh huyền thoại rất khó lai tạo.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_blue",
+      "sellPrice": 88,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "rose_gold",
+      "nameVi": "Hồng vàng kim",
+      "descriptionVi": "Báu vật cuối cùng của bộ sưu tập hoa hồng lai.",
+      "purpose": "flower",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "hybrid_flower",
+      "iconId": "rose_gold",
+      "sellPrice": 120,
+      "buyPrice": null,
+      "sources": [
+        "flower_breed"
+      ],
+      "uses": [
+        "craft_bouquet",
+        "workshop_recipe",
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "wild_clover",
+      "nameVi": "Cỏ ba lá tươi",
+      "descriptionVi": "Cỏ non mọc quanh đồng cỏ, nguyên liệu nghiền thức ăn cho gia súc và ủ phân.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "forage",
+      "iconId": "wild_clover",
+      "sellPrice": 4,
+      "buyPrice": null,
+      "sources": [
+        "foraging"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "feed_livestock",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "egg",
+      "nameVi": "Trứng gà tươi",
+      "descriptionVi": "Trứng gà mái thu nhặt mỗi sáng trong chuồng gà.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "egg",
+      "sellPrice": 16,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "golden_egg",
+      "nameVi": "Trứng vàng quý",
+      "descriptionVi": "Quả trứng lấp lánh từ cô gà được chăm sóc hạnh phúc.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "golden_egg",
+      "sellPrice": 42,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "duck_egg",
+      "nameVi": "Trứng vịt",
+      "descriptionVi": "Trứng vịt béo ngậy rất hợp nướng bánh thơm.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "duck_egg",
+      "sellPrice": 22,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "duck_feather",
+      "nameVi": "Lông vịt óng mượt",
+      "descriptionVi": "Cọng lông vũ mềm mại đan gối ôm ấm áp.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "duck_feather",
+      "sellPrice": 38,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "milk",
+      "nameVi": "Sữa bò tươi",
+      "descriptionVi": "Bình sữa bò tươi nguyên chất ép bơ và phô mai.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "milk",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "cream_top",
+      "nameVi": "Váng sữa thượng hạng",
+      "descriptionVi": "Phần kem sữa béo mịn đánh kem tươi và kem lạnh.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "cream_top",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "goat_milk",
+      "nameVi": "Sữa dê béo",
+      "descriptionVi": "Sữa dê thơm nhẹ chế biến phô mai dê thủ công.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "goat_milk",
+      "sellPrice": 34,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "aged_curd",
+      "nameVi": "Sữa đông đặc sản",
+      "descriptionVi": "Khối sữa đông ủ lâu ngày quý hiếm trong xưởng sữa.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "aged_curd",
+      "sellPrice": 60,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "wool",
+      "nameVi": "Lông cừu mịn",
+      "descriptionVi": "Cuộn lông cừu xốp mềm xe sợi tại khung cửi.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "wool",
+      "sellPrice": 32,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "fine_fleece",
+      "nameVi": "Lông cừu tơ",
+      "descriptionVi": "Sợi lông cừu thượng phẩm dệt khăn và chăn ấm.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "fine_fleece",
+      "sellPrice": 58,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "angora_wool",
+      "nameVi": "Lông thỏ Angora",
+      "descriptionVi": "Sợi lông thỏ trắng muốt nhẹ tựa mây.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "angora_wool",
+      "sellPrice": 36,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "silky_tuft",
+      "nameVi": "Bông lụa Angora",
+      "descriptionVi": "Nhúm lông thỏ quý siêu mịn đan găng tay.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "silky_tuft",
+      "sellPrice": 64,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "honey",
+      "nameVi": "Mật ong hoa rừng",
+      "descriptionVi": "Hũ mật ong vàng sánh ngọt ngào từ nhà ong.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "honey",
+      "sellPrice": 36,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "beeswax",
+      "nameVi": "Sáp ong thơm",
+      "descriptionVi": "Khối sáp ong nguyên chất đổ nến thơm thủ công.",
+      "purpose": "animal_product",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "animal_product",
+      "iconId": "beeswax",
+      "sellPrice": 44,
+      "buyPrice": null,
+      "sources": [
+        "livestock"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "feed_chicken",
+      "nameVi": "Cám gà vịt",
+      "descriptionVi": "Thức ăn tổng hợp cho gà và vịt ăn hằng ngày.",
+      "purpose": "livestock_feed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "livestock_feed",
+      "iconId": "feed_chicken",
+      "sellPrice": 6,
+      "buyPrice": 16,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "feed_livestock",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "feed_livestock",
+      "nameVi": "Cỏ trộn bò dê cừu",
+      "descriptionVi": "Khẩu phần cỏ dinh dưỡng cho bò, dê và cừu.",
+      "purpose": "livestock_feed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "livestock_feed",
+      "iconId": "feed_livestock",
+      "sellPrice": 8,
+      "buyPrice": 22,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "feed_livestock",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "feed_rabbit",
+      "nameVi": "Rau củ cho thỏ",
+      "descriptionVi": "Hỗn hợp cà rốt và rau xanh tươi ngon cho thỏ Angora.",
+      "purpose": "livestock_feed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "livestock_feed",
+      "iconId": "feed_rabbit",
+      "sellPrice": 7,
+      "buyPrice": 20,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "feed_livestock",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "feed_deluxe",
+      "nameVi": "Thức ăn thượng hạng",
+      "descriptionVi": "Khẩu phần đặc biệt tăng hạnh phúc và tỉ lệ sản phẩm vàng.",
+      "purpose": "livestock_feed",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "livestock_feed",
+      "iconId": "feed_deluxe",
+      "sellPrice": 18,
+      "buyPrice": 46,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "feed_livestock",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "fert_compost",
+      "nameVi": "Phân hữu cơ",
+      "descriptionVi": "Bón vào ô đất giúp tăng cơ hội thu hoạch nông sản hạng Bạc và Vàng.",
+      "purpose": "fertilizer",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fertilizer",
+      "iconId": "fert_compost",
+      "sellPrice": 8,
+      "buyPrice": 24,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "fertilize",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "fert_speed",
+      "nameVi": "Phân kích thích lớn nhanh",
+      "descriptionVi": "Tăng tốc sinh trưởng cây trồng thêm 30% trong suốt vụ.",
+      "purpose": "fertilizer",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fertilizer",
+      "iconId": "fert_speed",
+      "sellPrice": 14,
+      "buyPrice": 36,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "fertilize",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "fert_quality",
+      "nameVi": "Phân bón thượng hạng",
+      "descriptionVi": "Cải tạo đất chuyên sâu tăng mạnh tỉ lệ thu hoạch hạng Vàng.",
+      "purpose": "fertilizer",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fertilizer",
+      "iconId": "fert_quality",
+      "sellPrice": 20,
+      "buyPrice": 52,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "fertilize",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "fert_deluxe",
+      "nameVi": "Phân hỗn hợp toàn năng",
+      "descriptionVi": "Vừa thúc lớn nhanh vừa tăng chất lượng và giữ ẩm lâu hơn.",
+      "purpose": "fertilizer",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "fertilizer",
+      "iconId": "fert_deluxe",
+      "sellPrice": 36,
+      "buyPrice": 90,
+      "sources": [
+        "workshop",
+        "shop"
+      ],
+      "uses": [
+        "fertilize",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "sprinkler_basic",
+      "nameVi": "Vòi phun cơ bản",
+      "descriptionVi": "Tự động tưới 4 ô vuông kề cạnh mỗi buổi sáng.",
+      "purpose": "sprinkler",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "sprinkler",
+      "iconId": "sprinkler_basic",
+      "sellPrice": 70,
+      "buyPrice": 160,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "irrigate",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "sprinkler_quality",
+      "nameVi": "Vòi phun 3×3",
+      "descriptionVi": "Tự động tưới toàn bộ vùng 3×3 quanh điểm đặt.",
+      "purpose": "sprinkler",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "sprinkler",
+      "iconId": "sprinkler_quality",
+      "sellPrice": 150,
+      "buyPrice": 360,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "irrigate",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "sprinkler_iridium",
+      "nameVi": "Vòi phun cao cấp 5×5",
+      "descriptionVi": "Hệ thống tưới tự động phủ rộng 5×5 cho trang trại lớn.",
+      "purpose": "sprinkler",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "sprinkler",
+      "iconId": "sprinkler_iridium",
+      "sellPrice": 320,
+      "buyPrice": 780,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "irrigate",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8+hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "tool_can_copper",
+      "nameVi": "Bình tưới đồng (2 ô)",
+      "descriptionVi": "Nâng cấp bình tưới đồng tưới cùng lúc 2 ô trước mặt.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_can_copper",
+      "sellPrice": 120,
+      "buyPrice": 320,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "tool_can_iron",
+      "nameVi": "Bình tưới thép (2×2)",
+      "descriptionVi": "Bình tưới thép tưới trọn cụm 2×2 chỉ trong một nhịp.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_can_iron",
+      "sellPrice": 260,
+      "buyPrice": 680,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+greens@3f32fd8"
+    },
+    {
+      "sku": "tool_can_gold",
+      "nameVi": "Bình tưới vàng (3×3)",
+      "descriptionVi": "Bình tưới vàng lớn phủ nước đều 3×3 ô đất.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_can_gold",
+      "sellPrice": 520,
+      "buyPrice": 1400,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "tool_hoe_copper",
+      "nameVi": "Cuốc đồng (2 ô)",
+      "descriptionVi": "Cuốc đất đồng khai khẩn nhanh hơn hai ô mỗi lần.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_hoe_copper",
+      "sellPrice": 110,
+      "buyPrice": 300,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "tool_hoe_iron",
+      "nameVi": "Cuốc thép (2×2)",
+      "descriptionVi": "Cuốc thép làm luống gọn gàng vùng 2×2.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_hoe_iron",
+      "sellPrice": 240,
+      "buyPrice": 640,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "tool_hoe_gold",
+      "nameVi": "Cuốc vàng (3×3)",
+      "descriptionVi": "Cuốc vàng mở luống 3×3 trong tích tắc.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_hoe_gold",
+      "sellPrice": 500,
+      "buyPrice": 1320,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "tool_sickle_wide",
+      "nameVi": "Liềm rộng (2×2)",
+      "descriptionVi": "Liềm thu hoạch nhanh vùng 2×2 nông sản chín.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_sickle_wide",
+      "sellPrice": 280,
+      "buyPrice": 720,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "tool_sickle_grand",
+      "nameVi": "Đại liềm vàng (3×3)",
+      "descriptionVi": "Thu hoạch đồng loạt 3×3 không bỏ sót bông hoa hay trái chín.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_sickle_grand",
+      "sellPrice": 580,
+      "buyPrice": 1500,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "tool_seed_spreader",
+      "nameVi": "Khay gieo hạt (2×2)",
+      "descriptionVi": "Gieo hạt đều cả 4 ô cùng loại chỉ trong một chạm.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_seed_spreader",
+      "sellPrice": 310,
+      "buyPrice": 820,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "tool_basket_orchard",
+      "nameVi": "Giỏ hái cây ăn quả",
+      "descriptionVi": "Giỏ mây đan giúp rung cây và thu quả rơi gọn nhẹ.",
+      "purpose": "tool",
+      "stackLimit": 1,
+      "tradeable": true,
+      "category": "tool",
+      "iconId": "tool_basket_orchard",
+      "sellPrice": 180,
+      "buyPrice": 480,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "tool_upgrade"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sea_salt",
+      "nameVi": "Muối biển tinh",
+      "descriptionVi": "Muối trắng hạt mịn để muối dưa và ướp gia vị.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "sea_salt",
+      "sellPrice": 4,
+      "buyPrice": 8,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "yeast",
+      "nameVi": "Men nở làm bánh",
+      "descriptionVi": "Men ủ bột giúp bánh mì và bánh sừng bò nở xốp.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "yeast",
+      "sellPrice": 5,
+      "buyPrice": 10,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "vinegar",
+      "nameVi": "Giấm gạo lên men",
+      "descriptionVi": "Giấm thơm dùng muối chua rau củ tại xưởng đồ hộp.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "vinegar",
+      "sellPrice": 6,
+      "buyPrice": 12,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "vanilla_bean",
+      "nameVi": "Trái vani thơm",
+      "descriptionVi": "Hương vani ngọt dịu làm kem lạnh và bánh ngọt.",
+      "purpose": "ingredient",
+      "stackLimit": 999,
+      "tradeable": true,
+      "category": "pantry",
+      "iconId": "vanilla_bean",
+      "sellPrice": 10,
+      "buyPrice": 20,
+      "sources": [
+        "shop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "cornmeal",
+      "nameVi": "Bột bắp",
+      "descriptionVi": "Bột bắp xay vàng mịn nướng bánh ngô giòn.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "cornmeal",
+      "sellPrice": 28,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "oat_flour",
+      "nameVi": "Bột yến mạch",
+      "descriptionVi": "Bột yến mạch dinh dưỡng nướng bánh quy mật ong.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "oat_flour",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "potato_starch",
+      "nameVi": "Tinh bột khoai tây",
+      "descriptionVi": "Tinh bột làm sánh súp và bánh mì mềm.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "potato_starch",
+      "sellPrice": 24,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "beet_sugar",
+      "nameVi": "Đường củ dền",
+      "descriptionVi": "Đường tự nhiên kết tinh từ củ dền đỏ mùa Thu.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "beet_sugar",
+      "sellPrice": 38,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "paprika_powder",
+      "nameVi": "Bột ớt paprika",
+      "descriptionVi": "Gia vị ớt đỏ xay mịn màu sắc rực rỡ.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "paprika_powder",
+      "sellPrice": 26,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "cook_recipe",
+        "workshop_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "olive_oil",
+      "nameVi": "Dầu ô liu",
+      "descriptionVi": "Dầu ô liu ép lạnh vàng sánh thơm dịu.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "olive_oil",
+      "sellPrice": 44,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "sunflower_oil",
+      "nameVi": "Dầu hướng dương",
+      "descriptionVi": "Dầu thực vật thanh nhẹ chiên rán các món bếp.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "sunflower_oil",
+      "sellPrice": 38,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cocoa_powder",
+      "nameVi": "Bột ca cao",
+      "descriptionVi": "Bột ca cao rang xay đậm đà hương sô-cô-la.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "mill",
+      "iconId": "cocoa_powder",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "butter",
+      "nameVi": "Bơ tươi",
+      "descriptionVi": "Thanh bơ vàng thơm ngậy đánh từ sữa bò tươi.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "butter",
+      "sellPrice": 44,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "cheese",
+      "nameVi": "Phô mai vàng",
+      "descriptionVi": "Bánh phô mai ủ vừa chín mềm béo.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "cheese",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "goat_cheese",
+      "nameVi": "Phô mai dê",
+      "descriptionVi": "Phô mai dê trắng ngần vị thơm đặc trưng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "goat_cheese",
+      "sellPrice": 60,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "yogurt",
+      "nameVi": "Sữa chua trái cây",
+      "descriptionVi": "Sữa chua lên men dịu mát ăn kèm việt quất.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "yogurt",
+      "sellPrice": 64,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "whipped_cream",
+      "nameVi": "Kem tươi đánh bông",
+      "descriptionVi": "Kem tươi bông mịn phủ lên các loại bánh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "whipped_cream",
+      "sellPrice": 74,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "herb_butter",
+      "nameVi": "Bơ thảo mộc",
+      "descriptionVi": "Bơ ướp húng quế tươi dùng ăn với bánh mì nóng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "herb_butter",
+      "sellPrice": 78,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "honey_ice_cream",
+      "nameVi": "Kem vani mật ong",
+      "descriptionVi": "Kem lạnh vani rưới mật ong ngọt thanh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "honey_ice_cream",
+      "sellPrice": 125,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "chocolate_truffle",
+      "nameVi": "Kẹo nấm sô-cô-la",
+      "descriptionVi": "Viên sô-cô-la mềm tan chảy ngọt ngào làm quà tặng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dairy",
+      "iconId": "chocolate_truffle",
+      "sellPrice": 178,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "bread",
+      "nameVi": "Bánh mì ổ",
+      "descriptionVi": "Ổ bánh mì vàng giòn mới ra lò buổi sáng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "bread",
+      "sellPrice": 36,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "cook_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "potato_bread",
+      "nameVi": "Bánh mì khoai tây",
+      "descriptionVi": "Bánh mì mềm xốp với khoai tây nghiền thơm béo.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "potato_bread",
+      "sellPrice": 64,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cornbread",
+      "nameVi": "Bánh bắp nướng",
+      "descriptionVi": "Bánh nướng bột ngô và trứng gà nóng hổi.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "cornbread",
+      "sellPrice": 86,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "apple_pie",
+      "nameVi": "Bánh táo nướng",
+      "descriptionVi": "Bánh táo giòn rụm thơm bơ đường quen thuộc.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "apple_pie",
+      "sellPrice": 112,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "pumpkin_pie",
+      "nameVi": "Bánh bí ngô",
+      "descriptionVi": "Bánh bí ngô thơm quế gia vị cho mùa Thu.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "pumpkin_pie",
+      "sellPrice": 132,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+greens@3f32fd8"
+    },
+    {
+      "sku": "cherry_pie",
+      "nameVi": "Bánh anh đào",
+      "descriptionVi": "Bánh nhân anh đào chua ngọt sóng sánh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "cherry_pie",
+      "sellPrice": 116,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "peach_cobbler",
+      "nameVi": "Bánh đào nướng giòn",
+      "descriptionVi": "Đào chín nướng dưới lớp vỏ bơ vàng ươm.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "peach_cobbler",
+      "sellPrice": 116,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "blueberry_muffin",
+      "nameVi": "Bánh muffin việt quất",
+      "descriptionVi": "Bánh muffin nở mềm điểm xuyết việt quất tươi.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "blueberry_muffin",
+      "sellPrice": 96,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2+harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "lemon_cake",
+      "nameVi": "Bánh bông lan chanh",
+      "descriptionVi": "Cốt bánh mềm thanh vị chanh vàng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "lemon_cake",
+      "sellPrice": 118,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "croissant",
+      "nameVi": "Bánh sừng bò bơ",
+      "descriptionVi": "Lớp vỏ nghìn lớp thơm phức bơ tươi.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "croissant",
+      "sellPrice": 82,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "walnut_cookie",
+      "nameVi": "Bánh quy óc chó",
+      "descriptionVi": "Bánh quy nướng giòn rắc nhân hạt óc chó.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "walnut_cookie",
+      "sellPrice": 118,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "chocolate_cake",
+      "nameVi": "Bánh kem sô-cô-la",
+      "descriptionVi": "Bánh kem ba tầng đậm đà ca cao dành tặng người thương.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "chocolate_cake",
+      "sellPrice": 195,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "strawberry_jam",
+      "nameVi": "Mứt dâu tây",
+      "descriptionVi": "Hũ mứt dâu sệt ngọt phết bánh mì buổi sáng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "strawberry_jam",
+      "sellPrice": 54,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "blueberry_jam",
+      "nameVi": "Mứt việt quất",
+      "descriptionVi": "Mứt tím đậm dịu ngọt đóng lọ thủy tinh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "blueberry_jam",
+      "sellPrice": 56,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "plum_jam",
+      "nameVi": "Mứt mận tím",
+      "descriptionVi": "Mứt mận dẻo quánh vị chua ngọt hài hòa.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "plum_jam",
+      "sellPrice": 64,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "fig_jam",
+      "nameVi": "Mứt sung mật",
+      "descriptionVi": "Mứt sung ăn cùng phô mai dê cực kỳ hợp rơ.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "fig_jam",
+      "sellPrice": 82,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "peach_preserves",
+      "nameVi": "Đào ngâm đường phèn",
+      "descriptionVi": "Lọ đào ngâm vàng ươm mát lạnh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "peach_preserves",
+      "sellPrice": 56,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "rose_petal_jelly",
+      "nameVi": "Thạch cánh hoa hồng",
+      "descriptionVi": "Hũ thạch hoa hồng trong vắt thơm ngát hương hoa.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "rose_petal_jelly",
+      "sellPrice": 78,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "pickled_radish",
+      "nameVi": "Củ cải muối giòn",
+      "descriptionVi": "Củ cải đỏ ngâm giấm gạo chua ngọt giòn tan.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "pickled_radish",
+      "sellPrice": 52,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "pickled_cabbage",
+      "nameVi": "Bắp cải muối chua",
+      "descriptionVi": "Hũ dưa bắp cải lên men giữ được lâu dài.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "pickled_cabbage",
+      "sellPrice": 98,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "pickled_pepper",
+      "nameVi": "Ớt ngâm giấm",
+      "descriptionVi": "Ớt cay ngâm giấm ăn kèm món nướng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "pickled_pepper",
+      "sellPrice": 54,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "dried_tomato",
+      "nameVi": "Cà chua sấy dầu",
+      "descriptionVi": "Cà chua phơi nắng ngâm dầu ô liu đậm đà.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "dried_tomato",
+      "sellPrice": 86,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "grape_raisin",
+      "nameVi": "Nho khô dẻo",
+      "descriptionVi": "Chùm nho sấy dẻo giữ vị ngọt tự nhiên.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "grape_raisin",
+      "sellPrice": 66,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "lemon_marmalade",
+      "nameVi": "Mứt chanh mật ong",
+      "descriptionVi": "Mứt chanh vàng pha mật ong rất dịu cổ họng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "lemon_marmalade",
+      "sellPrice": 108,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "wool_yarn",
+      "nameVi": "Cuộn len cừu",
+      "descriptionVi": "Len cừu se sợi đều tăm tắp trên guồng quay.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "wool_yarn",
+      "sellPrice": 44,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a+webfarmville@c420bc2"
+    },
+    {
+      "sku": "angora_yarn",
+      "nameVi": "Cuộn len thỏ Angora",
+      "descriptionVi": "Sợi len trắng bông nhẹ giữ ấm mùa Đông.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "angora_yarn",
+      "sellPrice": 48,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "wool_cloth",
+      "nameVi": "Cuộn vải nỉ len",
+      "descriptionVi": "Tấm vải dệt dày dặn từ hai cuộn len cừu.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "wool_cloth",
+      "sellPrice": 104,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "workshop_recipe",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "knit_scarf",
+      "nameVi": "Khăn choàng len",
+      "descriptionVi": "Chiếc khăn quàng cổ đan tay ấm áp gửi tặng người thương.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "knit_scarf",
+      "sellPrice": 122,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cozy_sweater",
+      "nameVi": "Áo len đôi ấm",
+      "descriptionVi": "Áo len mềm mại dệt từ len tơ hảo hạng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "cozy_sweater",
+      "sellPrice": 195,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "wool_blanket",
+      "nameVi": "Chăn len ghép mảng",
+      "descriptionVi": "Tấm chăn dệt lớn phủ ấm cả mùa Đông.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "wool_blanket",
+      "sellPrice": 240,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "rabbit_mittens",
+      "nameVi": "Găng tay lông thỏ",
+      "descriptionVi": "Đôi bao tay mềm mịn thêu hoa nhỏ xinh.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "rabbit_mittens",
+      "sellPrice": 140,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "feather_pillow",
+      "nameVi": "Gối lông vũ êm ái",
+      "descriptionVi": "Chiếc gối êm ru nhồi lông vịt trong vỏ vải nỉ.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "loom",
+      "iconId": "feather_pillow",
+      "sellPrice": 198,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "tulip_bouquet",
+      "nameVi": "Bó hoa tulip ba màu",
+      "descriptionVi": "Bó tulip đỏ vàng hồng rực rỡ buộc dây ruy băng.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "tulip_bouquet",
+      "sellPrice": 92,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "sunset_bouquet",
+      "nameVi": "Bó hoa hoàng hôn",
+      "descriptionVi": "Sắc cam rực rỡ từ tulip cam, hồng cam và hướng dương.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "sunset_bouquet",
+      "sellPrice": 155,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "starlight_bouquet",
+      "nameVi": "Bó hoa ánh sao",
+      "descriptionVi": "Sắc xanh lam và tím pastel dịu êm như bầu trời đêm.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "starlight_bouquet",
+      "sellPrice": 205,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "royal_gold_bouquet",
+      "nameVi": "Bó hoa vàng hoàng gia",
+      "descriptionVi": "Tuyệt tác từ hồng vàng kim, tulip cầu vồng và hồng tiên.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "royal_gold_bouquet",
+      "sellPrice": 300,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "bridal_rose_bouquet",
+      "nameVi": "Bó hoa hồng chung đôi",
+      "descriptionVi": "Bó hồng trắng, hồng phấn và hồng sakura trao gửi yêu thương.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "bridal_rose_bouquet",
+      "sellPrice": 132,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "honey_candle",
+      "nameVi": "Nến sáp mật ong",
+      "descriptionVi": "Cây nến sáp ong tỏa ánh sáng vàng ấm áp căn phòng.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "honey_candle",
+      "sellPrice": 98,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "lavender_candle",
+      "nameVi": "Nến thơm oải hương",
+      "descriptionVi": "Nến sáp ong ướp tinh dầu oải hương giúp thư giãn.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "lavender_candle",
+      "sellPrice": 88,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "rose_soap",
+      "nameVi": "Xà phòng cánh hồng",
+      "descriptionVi": "Bánh xà phòng thảo mộc ướp dầu ô liu và hồng đỏ.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "rose_soap",
+      "sellPrice": 88,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "flower_crown",
+      "nameVi": "Vòng hoa đội đầu",
+      "descriptionVi": "Vòng hoa tết tay từ tulip và oải hương tươi.",
+      "purpose": "bouquet",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "florist",
+      "iconId": "flower_crown",
+      "sellPrice": 96,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "gift_partner",
+        "sell_bin",
+        "order_board"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "veggie_soup",
+      "nameVi": "Súp rau củ đồng quê",
+      "descriptionVi": "Nồi súp nóng khoai tây, tỏi tây và cải xoăn thơm lừng.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "veggie_soup",
+      "sellPrice": 82,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "roasted_fish",
+      "nameVi": "Cá nướng bơ thảo mộc",
+      "descriptionVi": "Cá chép ao áp chảo cùng củ cải vàng và bơ thảo mộc.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "roasted_fish",
+      "sellPrice": 132,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "lotus_broth",
+      "nameVi": "Lẩu cá hồi sen",
+      "descriptionVi": "Cá hồi sen hầm cải thìa, nấm thảo mộc nước thanh ngọt.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "lotus_broth",
+      "sellPrice": 84,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "olw-v030"
+    },
+    {
+      "sku": "koi_bentou",
+      "nameVi": "Hộp cơm cá koi ngũ sắc",
+      "descriptionVi": "Cơm cá koi đầy đủ ớt chuông, đậu que và trứng gà.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "koi_bentou",
+      "sellPrice": 86,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "greens@3f32fd8"
+    },
+    {
+      "sku": "pumpkin_soup",
+      "nameVi": "Súp bí ngô kem tươi",
+      "descriptionVi": "Súp bí ngô sánh mịn chan váng sữa béo ngậy.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "pumpkin_soup",
+      "sellPrice": 165,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "glazed_yam",
+      "nameVi": "Khoai mỡ nướng mật ong",
+      "descriptionVi": "Khoai mỡ thấm mật ong vàng ươm thơm bơ.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "glazed_yam",
+      "sellPrice": 148,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "hollowmere@a7a8e5a"
+    },
+    {
+      "sku": "cheese_omelette",
+      "nameVi": "Trứng cuộn phô mai",
+      "descriptionVi": "Món ăn sáng nhanh từ trứng gà, phô mai và hành lá.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "cheese_omelette",
+      "sellPrice": 98,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "honey_pancakes",
+      "nameVi": "Bánh kếp mật ong",
+      "descriptionVi": "Chồng bánh kếp vàng rưới mật ong và bơ tươi.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "honey_pancakes",
+      "sellPrice": 120,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "hot_cocoa",
+      "nameVi": "Ca cao nóng kem béo",
+      "descriptionVi": "Tách ca cao ấm cho những ngày tuyết rơi trắng trời.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "hot_cocoa",
+      "sellPrice": 126,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cozy_feast",
+      "nameVi": "Mâm cơm ấm cúng hai người",
+      "descriptionVi": "Bữa tiệc đặc biệt gồm bánh mì, súp bí ngô và sốt nam việt quất.",
+      "purpose": "dish",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "dish",
+      "iconId": "cozy_feast",
+      "sellPrice": 280,
+      "buyPrice": null,
+      "sources": [
+        "cooking"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    },
+    {
+      "sku": "cranberry_sauce",
+      "nameVi": "Sốt nam việt quất",
+      "descriptionVi": "Sốt đỏ chua ngọt nấu đường cho các món mặn mùa Lễ.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "preserves",
+      "iconId": "cranberry_sauce",
+      "sellPrice": 68,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "webfarmville@c420bc2"
+    },
+    {
+      "sku": "fig_tart",
+      "nameVi": "Bánh tart sung phô mai dê",
+      "descriptionVi": "Món bánh mặn ngọt tinh tế từ sung tươi và phô mai dê.",
+      "purpose": "artisan",
+      "stackLimit": 99,
+      "tradeable": true,
+      "category": "bakery",
+      "iconId": "fig_tart",
+      "sellPrice": 140,
+      "buyPrice": null,
+      "sources": [
+        "workshop"
+      ],
+      "uses": [
+        "sell_bin",
+        "order_board",
+        "gift_partner"
+      ],
+      "qualityTiers": [
+        "normal",
+        "silver",
+        "gold"
+      ],
+      "donorSource": "harvest-hollow@9b23e1a"
+    }
+  ]
+}

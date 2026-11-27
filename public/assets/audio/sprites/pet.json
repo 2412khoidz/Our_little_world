@@ -1,0 +1,78 @@
+{
+  "resources": [
+    "/assets/audio/sprites/pet.mp3"
+  ],
+  "spritemap": {
+    "meow_soft": {
+      "start": 0,
+      "end": 0.5971,
+      "loop": false
+    },
+    "meow_happy": {
+      "start": 0.7171,
+      "end": 2.7985,
+      "loop": false
+    },
+    "meow_food": {
+      "start": 2.9185,
+      "end": 3.5703,
+      "loop": false
+    },
+    "meow_short": {
+      "start": 3.6903,
+      "end": 4.1446,
+      "loop": false
+    },
+    "meow_chirp": {
+      "start": 4.2646,
+      "end": 4.7281,
+      "loop": false
+    },
+    "meow_kitten_cute": {
+      "start": 4.8481,
+      "end": 5.4476,
+      "loop": false
+    },
+    "meow_kitten_double": {
+      "start": 5.5676,
+      "end": 7.6607,
+      "loop": false
+    },
+    "meow_attention": {
+      "start": 7.7807,
+      "end": 10.9249,
+      "loop": false
+    },
+    "eat_crunch": {
+      "start": 11.0449,
+      "end": 11.4949,
+      "loop": false
+    },
+    "drink_lap": {
+      "start": 11.6149,
+      "end": 12.0059,
+      "loop": false
+    },
+    "ball_bounce": {
+      "start": 12.1259,
+      "end": 12.3759,
+      "loop": false
+    },
+    "bell_jingle": {
+      "start": 12.4959,
+      "end": 13.0459,
+      "loop": false
+    },
+    "brush_fur": {
+      "start": 13.1659,
+      "end": 13.5659,
+      "loop": false
+    },
+    "toy_swish": {
+      "start": 13.6859,
+      "end": 14.0359,
+      "loop": false
+    }
+  },
+  "durationSec": 14.1559
+}

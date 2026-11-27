@@ -49,6 +49,9 @@ export function createUnconfiguredBackend(): WorldBackend {
     async moveFurniture() {
       return unconfiguredError();
     },
+    async rotateFurniture() {
+      return unconfiguredError();
+    },
     async removeFurniture() {
       return unconfiguredError();
     },
@@ -57,6 +60,7 @@ export function createUnconfiguredBackend(): WorldBackend {
         publishMovement() {},
         updatePresence() {},
         notifyWorldMutated() {},
+        publishMinigameEvent() {},
         async reconnect() {},
         async disconnect() {},
       };
@@ -66,6 +70,37 @@ export function createUnconfiguredBackend(): WorldBackend {
         subscribe: () => () => {},
         send: () => {},
       };
+    },
+    farm: {
+      async getFarmSnapshot() {
+        return unconfiguredError();
+      },
+      async applyFarm() {
+        return unconfiguredError();
+      },
+      async sellCrop() {
+        return unconfiguredError();
+      },
+      async buySeed() {
+        return unconfiguredError();
+      },
+      async shipToBin() {
+        return unconfiguredError();
+      },
+      async getDeepFarmSnapshot() {
+        return unconfiguredError();
+      },
+      async applyDeepFarmAction() {
+        return unconfiguredError();
+      },
+    },
+    billiards: {
+      async getStats() {
+        return unconfiguredError();
+      },
+      async recordMatch() {
+        return unconfiguredError();
+      },
     },
   };
 }

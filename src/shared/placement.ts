@@ -1,6 +1,7 @@
 import { getCatalogItem } from './catalog';
 import { getMapDefinition } from './maps';
 import type { FurniturePlacement, MapId, MutationErrorCode } from './types';
+import { getStaticZonePropBlockedTiles } from './world/zonePropColliders';
 
 export interface TileCoord {
   tileX: number;
@@ -52,6 +53,11 @@ export interface ValidatePlacementInput {
   tileY: number;
   placements: readonly FurniturePlacement[];
   ignorePlacementId?: string;
+  /** When set, overrides catalog footprint (decorate rotate / persisted layout). */
+  footprintWidth?: number;
+  footprintHeight?: number;
+  /** DEV-only decoration sandbox toggle; ignored in production backends. */
+  devSandboxUnlimitedStock?: boolean;
 }
 
 export type ValidatePlacementResult =
@@ -76,6 +82,14 @@ export function validatePlacement(input: ValidatePlacementInput): ValidatePlacem
     };
   }
 
+  if (catalogItem.devSandboxOnly && input.devSandboxUnlimitedStock !== true) {
+    return {
+      ok: false,
+      code: 'FORBIDDEN',
+      message: `${catalogItem.nameVi} hiện chỉ mở ở chế độ thử nghiệm.`,
+    };
+  }
+
   if (!catalogItem.allowedMaps.includes(input.mapId)) {
     return {
       ok: false,
@@ -84,22 +98,21 @@ export function validatePlacement(input: ValidatePlacementInput): ValidatePlacem
     };
   }
 
-  const placedCount = countPlacedBySku(input.placements, input.sku, input.ignorePlacementId);
-  if (placedCount >= catalogItem.starterQuantity) {
-    return {
-      ok: false,
-      code: 'STOCK_EXCEEDED',
-      message: `Bạn đã đặt hết ${catalogItem.starterQuantity} món ${catalogItem.nameVi}.`,
-    };
+  if (input.devSandboxUnlimitedStock !== true) {
+    const placedCount = countPlacedBySku(input.placements, input.sku, input.ignorePlacementId);
+    if (placedCount >= catalogItem.starterQuantity) {
+      return {
+        ok: false,
+        code: 'STOCK_EXCEEDED',
+        message: `Bạn đã đặt hết ${catalogItem.starterQuantity} món ${catalogItem.nameVi}.`,
+      };
+    }
   }
 
   const mapDef = getMapDefinition(input.mapId);
-  const footprint = getFootprintTiles(
-    input.tileX,
-    input.tileY,
-    catalogItem.widthTiles,
-    catalogItem.heightTiles,
-  );
+  const widthTiles = input.footprintWidth ?? catalogItem.widthTiles;
+  const heightTiles = input.footprintHeight ?? catalogItem.heightTiles;
+  const footprint = getFootprintTiles(input.tileX, input.tileY, widthTiles, heightTiles);
 
   for (const tile of footprint) {
     if (
@@ -174,6 +187,10 @@ export function buildMovementCollisionGrid(
         blocked.add(`${x},${y}`);
       }
     }
+  }
+
+  for (const key of getStaticZonePropBlockedTiles(mapId)) {
+    blocked.add(key);
   }
 
   for (const placement of placements) {

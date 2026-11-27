@@ -2,54 +2,79 @@
 
 **Our Little World** là một cozy game 2D pixel art kết hợp không gian số riêng tư dành cho một cặp đôi yêu xa — được thiết kế ưu tiên **iPhone Safari / PWA** và **Windows Chrome / Edge**.
 
-Hiện tại dự án ở **V0.1 Final Integration**. Master Research & Design đã đóng; Game V0.1 đã tích hợp Demo E ở profile riêng; profile public dùng atlas CC0 đã xác minh cho nhóm asset còn chờ quyền deploy. Xem [chỉ mục tài liệu](docs/README.md) và [tiến độ V0.1](docs/PROGRESS.md).
+Hiện tại phiên bản **Canonical Stable Baseline (`v0.2.5` trên nhánh `main`)** đã hợp nhất đầy đủ trải nghiệm chơi cùng nhau từ `integration/olw-canonical-rc1` sau playtest phê duyệt của chủ dự án. Xem [chỉ mục tài liệu](docs/README.md) và [tiến độ dự án](docs/PROGRESS.md).
 
 ---
 
-## Tính năng hiện có (Spike 0 + V0.1)
+## Tính năng trong Canonical Baseline (`v0.2.5`)
 
-- **Hai tài khoản & Một thế giới riêng tư (Pairing Invite 1 lần):** Tạo căn nhà chung, sinh mã mời sử dụng một lần, giới hạn cứng tối đa 2 thành viên (`worlds` + `world_members` + RLS + RPC atomic). Người thứ 3 bị từ chối ở tầng dữ liệu.
-- **Căn nhà & Khu vườn Pixel Art (16x16):** Hai bản đồ Tiled JSON (`home` và `garden`) nối qua cửa ra vào, camera pixel-perfect (`pixelArt: true`, `roundPixels: true`).
-- **Di chuyển & Hiện diện Realtime:** Hai avatar nhìn thấy nhau trong cùng phòng, biết đối phương đang ở phòng nào hoặc ngoại tuyến; tự động ngắt gửi khi đứng yên (~10 Hz khi di chuyển) và ẩn avatar nếu khác phòng.
-- **Tùy chỉnh ngoại hình (Tủ đồ):** Đổi biệt danh, màu da, kiểu/màu tóc, trang phục và phụ kiện; vẽ thành spritesheet pixel art ngay trên client và đồng bộ tới đối phương.
-- **Trang trí nội thất & Lưu trạng thái:** 12 món đồ khởi đầu với footprint theo lưới 16x16, chia lớp `floor` (thảm đặt dưới bàn) và `object`, ngăn chặn đặt đè hoặc bịt cửa, xử lý xung đột đồng thời atomic + optimistic rollback.
-- **Mobile-first & PWA:** Bố cục `100dvh` hỗ trợ safe-area iPhone, điều khiển bằng chạm để đi (tap-to-move với tìm đường tránh vật cản), cần điều khiển ảo tùy chọn, bàn phím WASD/mũi tên trên PC, Service Worker + Web App Manifest + hướng dẫn cài Add to Home Screen trên Safari.
-- **Phòng thí nghiệm Spike 0 cô lập (`Spike 0 Lab`):** Đo FPS/DPR/visibility/WebGL và thử nghiệm đồng bộ video Play/Pause/Seek + tính clock offset & drift trên `<video playsInline>` bằng file MP4 hợp lệ mà chưa gắn vào game.
+- **Thế giới riêng tư cho 2 người (`Mây` & `Nắng`) + NET.1.1 Multiplayer:**
+  - Vận chuyển realtime **WebSocket** (`ws`) qua **Dev LAN Relay** + **Cloudflare Quick Tunnel** (`npm run host:couple`), hỗ trợ **Remote Partner Auto-Join** qua link `/__share/<token>` vào thẳng thế giới chung với vai `Nắng`, heartbeat ping/pong, reconnect backoff/watchdog, điều phối chuyển động mượt (`RemoteMotionInterpolator`) và khóa quyền host trên client từ xa (`HTTP 403`).
+  - Hỗ trợ ghép đôi Supabase (`worlds` + `world_members` + RLS + RPC atomic tối đa 2 thành viên) khi cấu hình `.env`.
+- **Thế giới Pixel Art `16×16` (6 khu vực):** Bản đồ Tiled JSON liên thông `home`, `garden`, `village`, `forest`, `beach`, `farm` với camera pixel-perfect (`pixelArt: true`, `roundPixels: true`), NPCs & chu kỳ ngày/đêm, cùng nhạc nền riêng theo khu vực.
+- **Avatar Cozy Human V2 & Thú cưng (2D + 3D Pet Care V2):** Tùy chỉnh ngoại hình đồng bộ realtime; mèo 2D `Quýt` đi dạo quanh nhà/vườn + phòng chăm sóc mèo 3D tương tác (`vuena-cat.glb`, hiệu ứng vuốt ve, cho ăn, chơi đồ chơi, preset đồ họa và âm thanh mèo CC0).
+- **Deep Farming (Checkpoints A–G) & Kinh tế chung:** Hệ thống nông trại chiều sâu với **40 loại nông sản**, **20 loài hoa** (nhân giống hoa), **12 cây ăn quả** (orchard), **7 loài vật nuôi** (chuồng & chăm sóc), **84 công thức** & **8 xưởng chế biến** (`DonorWorkshopModal`), bảng đơn hàng (`OrderBoardModal`), thời tiết/mùa vụ và lưu trạng thái đồng bộ.
+- **Billiards V2 Realtime:** Bàn bi-a 8-ball chơi 2 người đồng bộ qua WebSocket NET.1 (`minigame_event`), deterministic physics, replay và tạm dừng/khôi phục overworld mượt mà.
+- **Mobile-first & PWA:** Bố cục `100dvh` hỗ trợ safe-area iPhone, điều khiển chạm để đi / joystick ảo / bàn phím WASD, trang trí nội thất theo lớp `floor`/`object`, Service Worker + Web App Manifest + hướng dẫn cài Add to Home Screen trên Safari, và `Spike 0 Lab` cô lập.
 
 ---
 
-## Cài đặt & Chạy Local
+## Cài đặt, Asset Riêng Tư & Lệnh Chạy
 
 ### Yêu cầu môi trường
 - **Node.js:** `>= 22.12` (đã xác minh trên Node `v24.18.0` và `npm 11.16.0`)
+- **Python 3 + Pillow:** Chỉ cần nếu muốn tái tạo hoặc đóng gói lại private atlas local (`npm run assets:atlas:private`).
 - **FFmpeg:** Tùy chọn, chỉ cần nếu muốn tạo lại video mẫu cho Spike 0 (`npm run spike:video`).
 
-### Các bước chạy nhanh (Local Preview Mode — không cần cấu hình Supabase)
+### 1. Cài thư viện & đồng bộ Private Runtime Assets (Local-only)
+
+Bộ asset nghệ thuật và 5 track nhạc nền riêng tư không nằm trong Git public (`public/assets/private-unified/` và `public/assets/private-audio/` được `.gitignore` chặn). Xem chi tiết tại [docs/PRIVATE_ASSETS_SETUP.md](docs/PRIVATE_ASSETS_SETUP.md).
 
 ```bash
 # 1. Cài đặt thư viện
 npm install
 
-# 2. (Tùy chọn) Tạo lại starter pixel art & video mẫu Spike 0
-npm run assets:generate
-npm run spike:video
+# 2. Đồng bộ 15 file private runtime assets từ worktree đã duyệt (không copy .env hay file save)
+npm run assets:private:sync -- --from ../OLW-Neon
 
-# 3. Chạy dev server (mở cho cả mạng LAN để thử bằng iPhone cùng Wi-Fi)
+# 3. Kiểm tra toàn vẹn SHA-256, PNG atlas và kích thước manifest trước khi chạy
+npm run assets:private:verify
+```
+
+### 2. Chạy Host chơi cùng nhau (`npm run host:couple` / `npm run dev`)
+
+```bash
+# Khởi chạy server dev cho Host (Windows) + hỗ trợ Cloudflare Quick Tunnel cho Nắng
+npm run host:couple
+# Hoặc tương đương:
 npm run dev
 ```
 
-Mở trình duyệt trên laptop tại `http://localhost:5173` và trên điện thoại (Redmi K70E / iPhone cùng Wi-Fi) tại `http://<IP-máy-Windows>:5173`.
-Khi chạy ở môi trường development (`npm run dev`) và chưa cấu hình `.env` Supabase, ứng dụng tự bật **Dev LAN Multiplayer Relay** (`/api/dev-lan/*`, đồng bộ HTTP + SSE giữa nhiều thiết bị vật lý qua Wi-Fi):
-- Trên laptop chọn **Mây (Chủ nhà)**, tạo nhà (hoặc bấm **Tạo sẵn nhà 2/2**) và lấy mã mời.
-- Trên điện thoại chọn **Nắng (Người thương)** để nhập mã mời (hoặc vào thẳng nếu đã tạo sẵn nhà 2/2) và di chuyển realtime cùng lúc.
-- Thử đóng vai **Khách lạ** trên một thiết bị/tab thứ ba để kiểm chứng hệ thống từ chối người thứ 3.
-- Bộ chọn danh tính dev chỉ tồn tại khi `import.meta.env.DEV === true` và bị loại hoàn toàn khỏi bản build production (`npm run build`).
+- Mở `http://localhost:5173` trên máy Host (**Mây**), tạo hoặc tiếp tục thế giới và bật bảng **Chia sẻ qua mạng ngoài** để lấy link `https://*.trycloudflare.com/__share/<token>` gửi cho **Nắng** trên iPhone Safari / thiết bị cùng Wi-Fi (`http://<IP-máy-Windows>:5173`).
+- File save cục bộ (`.dev-lan-state.json`) và thông số dev switcher chỉ tồn tại khi `import.meta.env.DEV === true`, bị loại hoàn toàn khỏi production build (`npm run build`).
+- Để chạy build/preview profile private trên máy cục bộ (yêu cầu đã chạy `npm run assets:atlas:private` khi có pack nguồn): `npm run build:private` và `npm run preview:private`.
 
-### Chạy game chính với artwork Demo E
+---
 
-Nếu các pack Demo E sẵn có dưới `asset-candidates/extracted/`, chạy `npm run assets:atlas:private` (Python + Pillow) rồi khởi động lại `npm run dev`. Truy cập đường dẫn game chính như thường. `npm run build:private` và `npm run preview:private` dùng để xem bản private offline/local trên máy phát triển.
+## Chính sách nhánh (Branching Policy)
 
-Bản `npm run build` dùng profile public, ghi vào `dist/`. Quyền phục vụ các asset private qua Internet còn chờ xác minh. [Quy trình asset và cổng triển khai](docs/art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public) · [Credits public](public/assets/unified/CREDITS.md)
+- **`main`** (gắn tag phát hành, hiện tại **`v0.2.5`**) là **nhánh Canonical Stable duy nhất** của dự án.
+- **Bắt buộc:** Mọi nhánh tính năng mới (`feat/*`), sửa lỗi (`fix/*`) hoặc dọn dẹp (`chore/*`) đều phải tạo mới từ commit mới nhất trên `main`:
+  ```bash
+  git checkout main && git pull --ff-only origin main
+  git checkout -b feat/ten-tinh-nang-moi
+  ```
+- Tuyệt đối không tạo nhánh mới từ các nhánh thử nghiệm/feature cũ hoặc worktree chưa chạy `npm run assets:private:verify`.
+- Không commit/push `.dev-lan-state*.json`, `.env`, thông tin bí mật, hay thư mục `public/assets/private-*` / `public/assets/local-licensed/`.
+
+---
+
+## Giới hạn đã biết (Known Limitations)
+
+- **Vitest jsdom vs Canvas 2D:** 2 file unit test rendering donor cũ từ baseline (`tests/unit/donorCabacosRenderDetect.test.ts` và `tests/unit/pydewFarmDonorRender.test.ts`) dùng Canvas 2D pixel detection của Phaser trong môi trường `jsdom` mặc định nên không khả dụng trên `jsdom`; luồng render thực tế được kiểm chứng bằng Playwright Chromium (`npm run test:e2e`) và kiểm tra trình duyệt.
+- **Kiểm thử đa thiết bị thực tế trên RC1 hợp nhất:** Bản `NET.1.1` đã qua real-device test (`9/11` kịch bản pass, `0` fail), tuy nhiên tổ hợp đầy đủ sau khi gộp **Deep Farming + Billiards V2 + Vuena Cat** vẫn cần xác nhận thêm trên iPhone Safari thật (PWA Add to Home Screen) qua Cloudflare Quick Tunnel khi có thời gian playtest cặp đôi.
+- **Supabase SQL & Cloud Production:** Bộ migration mới cho Deep Farming & Billiards (`supabase/migrations/*`) cần được chạy và xác nhận trên Supabase project thật trước khi chuyển hoàn toàn sang cloud mode.
+- **Private Assets khi deploy Internet:** Bản `npm run build` (`dist/`) dùng profile public CC0/MIT đã xác minh bản quyền; các pack private vẫn chỉ chạy trên host local cá nhân cho đến khi xác minh quyền phân phối công khai. [Quy trình asset](docs/art/ASSET_PIPELINE.md#4-tạo-bản-phát-triển-riêng-và-bản-public) · [Credits public](public/assets/unified/CREDITS.md) · [Audio Credits](public/assets/audio/CREDITS.md)
 
 ### Kết nối Supabase thật (tùy chọn cho dev/test đa mạng)
 

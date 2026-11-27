@@ -1,0 +1,37 @@
+import type { NuvoraGridCell } from '../../../shared/donor/nuvora/nuvoraPresentationBridge';
+import { CatalogSkuIcon } from '../../../ui/components/CatalogSkuIcon';
+
+interface NuvoraInventoryGridProps {
+  cells: readonly NuvoraGridCell[];
+  plateLabel?: string;
+}
+
+export function NuvoraInventoryGrid({ cells, plateLabel = 'TÚI CHUNG' }: NuvoraInventoryGridProps) {
+  return (
+    <div className="nuvora-tray" data-testid="nuvora-inventory-grid">
+      <div className="nuvora-g9">
+        {cells.map((cell, idx) => (
+          <div
+            key={idx}
+            className="nuvora-sl"
+            data-testid={cell.sku ? `nuvora-cell-${cell.sku}` : `nuvora-cell-empty-${idx}`}
+            title={cell.labelVi || undefined}
+            aria-hidden={!cell.sku}
+          >
+            {cell.sku ? (
+              <>
+                <span className="nuvora-sl__icon">
+                  <CatalogSkuIcon sku={cell.sku} size={28} />
+                </span>
+                {cell.qty > 1 ? <b className="nuvora-sl__qty">{cell.qty}</b> : null}
+              </>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="nuvora-plate" style={{ marginTop: 10 }}>
+        {plateLabel}
+      </div>
+    </div>
+  );
+}

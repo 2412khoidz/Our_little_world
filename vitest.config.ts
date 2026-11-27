@@ -10,6 +10,7 @@ export default defineConfig({
       'tests/unit/**/*.test.ts',
       'tests/unit/**/*.test.tsx',
       'tests/server/**/*.test.ts',
+      'tests/server/**/*.test.mjs',
     ],
     setupFiles: ['./tests/unit/setup.ts'],
   },

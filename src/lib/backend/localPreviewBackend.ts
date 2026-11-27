@@ -5,6 +5,8 @@ import {
 } from '../../shared/avatar';
 import { buildDefaultStarterPlacements, getCatalogItem } from '../../shared/catalog';
 import { validatePlacement } from '../../shared/placement';
+import type { BilliardsMatchRecordInput, BilliardsWinTally } from '../../shared/billiards/types';
+import type { MinigameEventEnvelope } from '../../shared/netcode/minigameContract';
 import type {
   AvatarConfig,
   FurniturePlacement,
@@ -13,8 +15,30 @@ import type {
   UserProfile,
   WorldInfo,
   WorldMember,
+  WorldMutationReason,
   WorldSnapshot,
 } from '../../shared/types';
+import {
+  applyDeepFarmMutation,
+  createEmptyDeepFarmState,
+  ensureFreshOrderBoard,
+  projectDeepFarmSnapshot,
+  type DeepFarmState,
+} from '../../shared/farming/deepFarmState';
+import { applyFarmShippingBinSale, type FarmShippingMeta } from '../../shared/farming/farmShipping';
+import {
+  FARM_STARTER_BAIT_QTY,
+  FARM_STARTER_COINS,
+  FARM_STARTER_SEED_QTY,
+  FARM_STARTER_TOOLS,
+  applyFarmAction,
+  buildFarmSnapshot,
+  buySeed,
+  emptyFarm,
+  sellCropLine,
+} from '../../shared/farming/serverApply';
+import type { Farm } from '../../shared/farming/types';
+import type { InventoryEntry } from '../../shared/inventory/inventoryTypes';
 import type {
   AuthSessionUser,
   LocalPresetAccountId,
@@ -43,6 +67,18 @@ interface StoredIdempotencyRecord {
   result: unknown;
 }
 
+interface StoredBilliardsMatch {
+  matchId: string;
+  worldId: string;
+  rule: '8ball' | '9ball';
+  rackSeed: number;
+  winnerUserId: string;
+  loserUserId: string | null;
+  reason: string;
+  durationSeconds: number;
+  createdAt: string;
+}
+
 interface LocalPreviewDb {
   profiles: Record<string, UserProfile>;
   worlds: Record<string, WorldInfo>;
@@ -50,6 +86,12 @@ interface LocalPreviewDb {
   invites: StoredInvite[];
   placements: Record<string, FurniturePlacement[]>;
   idempotency: Record<string, StoredIdempotencyRecord>;
+  billiardsMatches?: Record<string, StoredBilliardsMatch[]>;
+  farms?: Record<string, { seed: number; version: number; farm: Farm }>;
+  deepFarms?: Record<string, DeepFarmState>;
+  wallets?: Record<string, { coins: number }>;
+  inventories?: Record<string, InventoryEntry[]>;
+  shippingBin?: Record<string, FarmShippingMeta>;
 }
 
 const PRESET_ACCOUNTS: Record<LocalPresetAccountId, AuthSessionUser & { defaultAvatar: AvatarConfig }> = {
@@ -172,7 +214,8 @@ type LocalWireMessage =
   | { kind: 'presence'; worldId: string; presence: PresencePayload }
   | { kind: 'presence_leave'; worldId: string; sessionId: string }
   | { kind: 'movement'; worldId: string; packet: MovementPacket }
-  | { kind: 'world_mutated'; worldId: string; reason: 'furniture' | 'profile' | 'member' };
+  | { kind: 'world_mutated'; worldId: string; reason: WorldMutationReason }
+  | { kind: 'minigame_event'; worldId: string; sessionId: string; packet: MinigameEventEnvelope };
 
 function findUserWorldId(db: LocalPreviewDb, userId: string): string | null {
   for (const [worldId, members] of Object.entries(db.memberships)) {
@@ -236,7 +279,7 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
 
   function notifyWorldMutatedBroadcast(
     worldId: string,
-    reason: 'furniture' | 'profile' | 'member',
+    reason: WorldMutationReason,
   ): void {
     if (typeof BroadcastChannel !== 'undefined') {
       const bc = new BroadcastChannel(REALTIME_CHANNEL_NAME);
@@ -548,18 +591,25 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
       }
 
       const placements = db.placements[params.worldId] ?? [];
+      const catalogItem = getCatalogItem(params.sku)!;
+      const footprint = params.rotated
+        ? { widthTiles: catalogItem.heightTiles, heightTiles: catalogItem.widthTiles }
+        : { widthTiles: catalogItem.widthTiles, heightTiles: catalogItem.heightTiles };
+
       const validation = validatePlacement({
         mapId: params.mapId,
         sku: params.sku,
         tileX: params.tileX,
         tileY: params.tileY,
         placements,
+        footprintWidth: footprint.widthTiles,
+        footprintHeight: footprint.heightTiles,
+        devSandboxUnlimitedStock: Boolean(import.meta.env.DEV && params.devSandbox),
       });
       if (!validation.ok) {
         return { ok: false, code: validation.code, message: validation.message };
       }
 
-      const catalogItem = getCatalogItem(params.sku)!;
       const newPlacement: FurniturePlacement = {
         id: generateId('furn'),
         worldId: params.worldId,
@@ -568,8 +618,8 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         layerSlot: catalogItem.layerSlot,
         tileX: params.tileX,
         tileY: params.tileY,
-        widthTiles: catalogItem.widthTiles,
-        heightTiles: catalogItem.heightTiles,
+        widthTiles: footprint.widthTiles,
+        heightTiles: footprint.heightTiles,
         updatedBy: user.userId,
         updatedAt: new Date().toISOString(),
       };
@@ -630,6 +680,8 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         tileY: params.tileY,
         placements,
         ignorePlacementId: target.id,
+        footprintWidth: target.widthTiles,
+        footprintHeight: target.heightTiles,
       });
       if (!validation.ok) {
         return { ok: false, code: validation.code, message: validation.message };
@@ -639,6 +691,80 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         ...target,
         tileX: params.tileX,
         tileY: params.tileY,
+        updatedBy: user.userId,
+        updatedAt: new Date().toISOString(),
+      };
+      db.placements[params.worldId] = placements.map((p) => (p.id === target.id ? updated : p));
+      world.layoutVersion += 1;
+      const result = { layoutVersion: world.layoutVersion, placement: updated };
+      db.idempotency[idemKey] = { worldId: params.worldId, key: params.idempotencyKey, result };
+      writeDb(db);
+
+      notifyWorldMutatedBroadcast(params.worldId, 'furniture');
+      return { ok: true, data: result };
+    },
+
+    async rotateFurniture(params) {
+      const user = getStoredUser();
+      if (!user) {
+        return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+      }
+      const db = readDb();
+      const members = db.memberships[params.worldId] ?? [];
+      if (!members.some((m) => m.userId === user.userId)) {
+        return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+      }
+
+      const world = db.worlds[params.worldId];
+      if (!world) {
+        return { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy ngôi nhà.' };
+      }
+
+      const idemKey = `${params.worldId}:${params.idempotencyKey}`;
+      const existingIdem = db.idempotency[idemKey];
+      if (existingIdem) {
+        return {
+          ok: true,
+          data: existingIdem.result as { layoutVersion: number; placement: FurniturePlacement },
+        };
+      }
+
+      if (world.layoutVersion !== params.expectedLayoutVersion) {
+        return {
+          ok: false,
+          code: 'VERSION_CONFLICT',
+          message: 'Bố cục nhà vừa được người kia cập nhật. Đang đồng bộ lại...',
+        };
+      }
+
+      const placements = db.placements[params.worldId] ?? [];
+      const target = placements.find((p) => p.id === params.placementId);
+      if (!target) {
+        return { ok: false, code: 'NOT_FOUND', message: 'Món đồ này không còn ở trên sàn.' };
+      }
+
+      if (target.widthTiles === target.heightTiles) {
+        return { ok: false, code: 'VALIDATION_ERROR', message: 'Món vuông này không cần xoay.' };
+      }
+
+      const validation = validatePlacement({
+        mapId: target.mapId,
+        sku: target.sku,
+        tileX: target.tileX,
+        tileY: target.tileY,
+        placements,
+        ignorePlacementId: target.id,
+        footprintWidth: target.heightTiles,
+        footprintHeight: target.widthTiles,
+      });
+      if (!validation.ok) {
+        return { ok: false, code: validation.code, message: validation.message };
+      }
+
+      const updated: FurniturePlacement = {
+        ...target,
+        widthTiles: target.heightTiles,
+        heightTiles: target.widthTiles,
         updatedBy: user.userId,
         updatedAt: new Date().toISOString(),
       };
@@ -738,6 +864,10 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
           }
         } else if (msg.kind === 'world_mutated') {
           handlers.onWorldMutated(msg.reason);
+        } else if (msg.kind === 'minigame_event') {
+          if (msg.sessionId !== currentPresence.sessionId) {
+            handlers.onMinigameEvent?.(msg.packet);
+          }
         }
       });
 
@@ -791,6 +921,15 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         notifyWorldMutated(reason) {
           if (simulatedOffline) return;
           channel.post({ kind: 'world_mutated', worldId, reason } satisfies LocalWireMessage);
+        },
+        publishMinigameEvent(packet) {
+          if (simulatedOffline) return;
+          channel.post({
+            kind: 'minigame_event',
+            worldId,
+            sessionId: currentPresence.sessionId,
+            packet,
+          } satisfies LocalWireMessage);
         },
         async reconnect() {
           if (simulatedOffline) {
@@ -863,6 +1002,299 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
           }
         },
       };
+    },
+
+    farm: {
+      async getFarmSnapshot(worldId) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        db.farms ??= {};
+        db.wallets ??= {};
+        db.inventories ??= {};
+        const nowMs = Date.now();
+        if (!db.farms[worldId]) {
+          const seed = Math.floor(Math.random() * 0xffff_ffff);
+          db.farms[worldId] = { seed, version: 1, farm: emptyFarm(seed) };
+          db.wallets[worldId] = { coins: FARM_STARTER_COINS };
+          db.inventories[worldId] = [
+            ...FARM_STARTER_TOOLS.map((sku) => ({
+              worldId,
+              ownerScope: 'shared' as const,
+              itemSku: sku,
+              qty: 1,
+              quality: 'normal' as const,
+              updatedAt: new Date(nowMs).toISOString(),
+            })),
+            {
+              worldId,
+              ownerScope: 'shared' as const,
+              itemSku: 'seed_wheat',
+              qty: FARM_STARTER_SEED_QTY,
+              quality: 'normal' as const,
+              updatedAt: new Date(nowMs).toISOString(),
+            },
+            {
+              worldId,
+              ownerScope: 'shared' as const,
+              itemSku: 'bait_free_worm',
+              qty: FARM_STARTER_BAIT_QTY,
+              quality: 'normal' as const,
+              updatedAt: new Date(nowMs).toISOString(),
+            },
+          ];
+          writeDb(db);
+        }
+        const row = db.farms[worldId]!;
+        const coins = db.wallets[worldId]?.coins ?? 0;
+        return { ok: true, data: buildFarmSnapshot(worldId, row.version, row.farm, coins, nowMs) };
+      },
+      async applyFarm(params) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[params.worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        db.farms ??= {};
+        db.wallets ??= {};
+        db.inventories ??= {};
+        const nowMs = Date.now();
+        const seed = Math.floor(Math.random() * 0xffff_ffff);
+        const row = (db.farms[params.worldId] ??= { seed, version: 1, farm: emptyFarm(seed) });
+        if (params.farmVersion !== undefined && params.farmVersion !== row.version) {
+          return { ok: false, code: 'VERSION_CONFLICT', message: 'Nông trại vừa đổi (đồng bộ lại).' };
+        }
+        const items = db.inventories[params.worldId] ?? [];
+        const coins = db.wallets[params.worldId]?.coins ?? FARM_STARTER_COINS;
+        const applied = applyFarmAction({
+          worldId: params.worldId,
+          farm: row.farm,
+          farmVersion: row.version,
+          walletCoins: coins,
+          inventoryItems: items,
+          nowMs,
+          params,
+        });
+        if (!applied.ok) return { ok: false, code: applied.code as never, message: applied.messageVi };
+        row.farm = applied.farm;
+        row.version += 1;
+        db.inventories[params.worldId] = applied.inventory;
+        db.wallets[params.worldId] = { coins: applied.walletCoins };
+        writeDb(db);
+        notifyWorldMutatedBroadcast(params.worldId, 'farm');
+        return {
+          ok: true,
+          data: {
+            snapshot: buildFarmSnapshot(params.worldId, row.version, row.farm, applied.walletCoins, nowMs),
+            harvested: applied.harvested,
+          },
+        };
+      },
+      async sellCrop(params) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[params.worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const items = db.inventories?.[params.worldId] ?? [];
+        const coins = db.wallets?.[params.worldId]?.coins ?? 0;
+        const sold = sellCropLine(coins, items, params.sku, params.qty, params.quality ?? 'normal');
+        if (!sold.ok) return { ok: false, code: sold.code as never, message: sold.messageVi };
+        db.inventories ??= {};
+        db.wallets ??= {};
+        db.inventories[params.worldId] = sold.items;
+        db.wallets[params.worldId] = { coins: sold.walletCoins };
+        writeDb(db);
+        notifyWorldMutatedBroadcast(params.worldId, 'farm');
+        return { ok: true, data: { walletCoins: sold.walletCoins } };
+      },
+      async buySeed(params) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[params.worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const nowMs = Date.now();
+        const items = db.inventories?.[params.worldId] ?? [];
+        const coins = db.wallets?.[params.worldId]?.coins ?? FARM_STARTER_COINS;
+        const bought = buySeed(params.worldId, coins, items, params.seedSku, params.qty, nowMs);
+        if (!bought.ok) return { ok: false, code: bought.code as never, message: bought.messageVi };
+        db.inventories ??= {};
+        db.wallets ??= {};
+        db.inventories[params.worldId] = bought.items;
+        db.wallets[params.worldId] = { coins: bought.walletCoins };
+        writeDb(db);
+        notifyWorldMutatedBroadcast(params.worldId, 'inventory');
+        return { ok: true, data: { walletCoins: bought.walletCoins } };
+      },
+      async shipToBin(params) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[params.worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const nowMs = Date.now();
+        db.shippingBin ??= {};
+        const meta = db.shippingBin[params.worldId] ?? {
+          soldByGroup: {},
+          dayIndex: Math.floor((nowMs + 25_200_000) / 86_400_000),
+        };
+        const items = db.inventories?.[params.worldId] ?? [];
+        const coins = db.wallets?.[params.worldId]?.coins ?? 0;
+        const shipped = applyFarmShippingBinSale(coins, items, meta, {
+          lines: params.lines.map((l) => ({ sku: l.sku, qty: l.qty, quality: l.quality ?? 'normal' })),
+          nowMs,
+          idempotencyKey: params.idempotencyKey,
+          actorId: user.userId,
+        });
+        if (!shipped.ok) return { ok: false, code: shipped.code as never, message: shipped.messageVi };
+        db.inventories ??= {};
+        db.wallets ??= {};
+        db.inventories[params.worldId] = shipped.items;
+        db.wallets[params.worldId] = { coins: shipped.walletCoins };
+        db.shippingBin[params.worldId] = shipped.meta;
+        writeDb(db);
+        notifyWorldMutatedBroadcast(params.worldId, 'farm');
+        return { ok: true, data: { walletCoins: shipped.walletCoins, totalCoins: shipped.totalCoins } };
+      },
+      async getDeepFarmSnapshot(worldId) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const nowMs = Date.now();
+        db.deepFarms ??= {};
+        db.wallets ??= {};
+        const seed = db.farms?.[worldId]?.seed ?? 42;
+        let row = db.deepFarms[worldId];
+        if (!row) {
+          row = createEmptyDeepFarmState(seed, nowMs);
+          db.deepFarms[worldId] = row;
+          writeDb(db);
+        } else {
+          const board = ensureFreshOrderBoard(row, nowMs);
+          if (board !== row.orderBoard) {
+            row = { ...row, orderBoard: board };
+            db.deepFarms[worldId] = row;
+            writeDb(db);
+          }
+        }
+        const coins = db.wallets[worldId]?.coins ?? FARM_STARTER_COINS;
+        return { ok: true, data: projectDeepFarmSnapshot(worldId, row, coins, nowMs) };
+      },
+      async applyDeepFarmAction(params) {
+        const user = getStoredUser();
+        if (!user) return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        const db = readDb();
+        if (!(db.memberships[params.worldId] ?? []).some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const nowMs = Date.now();
+        db.deepFarms ??= {};
+        db.wallets ??= {};
+        db.inventories ??= {};
+        const seed = db.farms?.[params.worldId]?.seed ?? 42;
+        const row = (db.deepFarms[params.worldId] ??= createEmptyDeepFarmState(seed, nowMs));
+        const items = db.inventories[params.worldId] ?? [];
+        const coins = db.wallets[params.worldId]?.coins ?? FARM_STARTER_COINS;
+        const applied = applyDeepFarmMutation({
+          worldId: params.worldId,
+          actorId: user.userId,
+          state: row,
+          inventoryItems: items,
+          walletCoins: coins,
+          nowMs,
+          params,
+        });
+        if (!applied.ok) return { ok: false, code: applied.code as never, message: applied.messageVi };
+        db.deepFarms[params.worldId] = applied.state;
+        db.inventories[params.worldId] = applied.inventory;
+        db.wallets[params.worldId] = { coins: applied.walletCoins };
+        writeDb(db);
+        notifyWorldMutatedBroadcast(params.worldId, 'farm');
+        return {
+          ok: true,
+          data: {
+            snapshot: projectDeepFarmSnapshot(params.worldId, applied.state, applied.walletCoins, nowMs),
+            messageVi: applied.messageVi,
+            ...(applied.idempotentReplay ? { idempotentReplay: true } : {}),
+            ...(applied.harvestedItems ? { harvestedItems: applied.harvestedItems } : {}),
+            ...(applied.rewardCoins !== undefined ? { rewardCoins: applied.rewardCoins } : {}),
+          },
+        };
+      },
+    },
+
+    billiards: {
+      async getStats(worldId) {
+        const user = getStoredUser();
+        if (!user) {
+          return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        }
+        const db = readDb();
+        const members = db.memberships[worldId] ?? [];
+        if (!members.some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        const list = db.billiardsMatches?.[worldId] ?? [];
+        const counts = new Map<string, number>();
+        for (const m of list) {
+          counts.set(m.winnerUserId, (counts.get(m.winnerUserId) ?? 0) + 1);
+        }
+        const tallies: BilliardsWinTally[] = Array.from(counts.entries()).map(([userId, wins]) => ({
+          userId,
+          wins,
+        }));
+        return { ok: true, data: { tallies, totalMatches: list.length } };
+      },
+      async recordMatch(params: BilliardsMatchRecordInput) {
+        const user = getStoredUser();
+        if (!user) {
+          return { ok: false, code: 'UNAUTHENTICATED', message: 'Bạn chưa đăng nhập.' };
+        }
+        const db = readDb();
+        const members = db.memberships[params.worldId] ?? [];
+        if (!members.some((m) => m.userId === user.userId)) {
+          return { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' };
+        }
+        db.billiardsMatches ??= {};
+        const list = (db.billiardsMatches[params.worldId] ??= []);
+        const exists = list.some((m) => m.matchId === params.matchId);
+        let inserted = false;
+        if (!exists) {
+          list.push({
+            matchId: params.matchId,
+            worldId: params.worldId,
+            rule: params.rule,
+            rackSeed: params.rackSeed,
+            winnerUserId: params.winnerUserId,
+            loserUserId: params.loserUserId,
+            reason: params.reason,
+            durationSeconds: params.durationSeconds,
+            createdAt: new Date().toISOString(),
+          });
+          inserted = true;
+          writeDb(db);
+        }
+        const counts = new Map<string, number>();
+        for (const m of list) {
+          counts.set(m.winnerUserId, (counts.get(m.winnerUserId) ?? 0) + 1);
+        }
+        const tallies: BilliardsWinTally[] = Array.from(counts.entries()).map(([userId, wins]) => ({
+          userId,
+          wins,
+        }));
+        return { ok: true, data: { tallies, inserted } };
+      },
     },
   };
 }

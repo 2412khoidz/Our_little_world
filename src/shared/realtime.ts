@@ -1,21 +1,47 @@
 import { z } from 'zod';
-import { getMapDefinition, TILE_SIZE } from './maps';
+import { FACING8_VALUES } from './movement/facing8';
+import { getMapDefinition, MAP_IDS, TILE_SIZE } from './maps';
+import { LIVING_ITEM_ICONS } from './petLiving/petVisualTypes';
 import type { MapId, MovementPacket, PresencePayload } from './types';
 
-export const MOVEMENT_SEND_INTERVAL_MS = 100; // ~10 Hz when moving
+export const MOVEMENT_SEND_INTERVAL_MS = 125;
+export const MOVEMENT_POSITION_DELTA_PX = 2;
 export const REMOTE_STALE_TIMEOUT_MS = 5000;
 
 export const movementPacketSchema = z.object({
   worldId: z.string().min(1).max(128),
   userId: z.string().min(1).max(128),
   sessionId: z.string().min(1).max(128),
-  mapId: z.enum(['home', 'garden']),
+  mapId: z.enum(MAP_IDS),
   seq: z.number().int().nonnegative(),
   timestampMs: z.number().finite().nonnegative(),
   x: z.number().finite().min(0).max(10000),
   y: z.number().finite().min(0).max(10000),
+  vx: z.number().finite().min(-1000).max(1000).optional(),
+  vy: z.number().finite().min(-1000).max(1000).optional(),
   facing: z.enum(['down', 'up', 'left', 'right']),
+  facing8: z.enum(FACING8_VALUES).optional(),
   anim: z.enum(['idle', 'walk']),
+  posture: z
+    .enum([
+      'none',
+      'sit_study',
+      'sit_sofa',
+      'sit_bench',
+      'lie_bed',
+      'hold_hands',
+      'hug',
+      'kiss',
+      'lean_shoulder',
+      'dance',
+      'give_flower',
+    ])
+    .optional(),
+  heldItemSku: z.string().max(128).nullable().optional(),
+  heldItemKind: z.enum(['none', 'food', 'water_pitcher', 'toy', 'gift', 'tool']).optional(),
+  heldIconId: z.enum(LIVING_ITEM_ICONS).nullable().optional(),
+  heldPropsIconId: z.string().max(128).nullable().optional(),
+  isSnapshotReplay: z.boolean().optional(),
 });
 
 export function isPositionWithinMapBounds(mapId: MapId, x: number, y: number): boolean {
@@ -25,39 +51,43 @@ export function isPositionWithinMapBounds(mapId: MapId, x: number, y: number): b
   return x >= 0 && y >= 0 && x <= maxW && y <= maxH;
 }
 
+type MovementPosition = Pick<MovementPacket, 'x' | 'y' | 'facing'>;
+
 export class MovementTxThrottle {
   private lastSentAtMs = -Infinity;
-  private lastSentAnim: 'idle' | 'walk' | null = null;
   private lastSentMapId: MapId | null = null;
+  private lastSentPosition: MovementPosition | undefined;
+  private wasWalking = false;
   private seq = 0;
 
   constructor(private readonly intervalMs: number = MOVEMENT_SEND_INTERVAL_MS) {}
 
-  shouldEmit(nowMs: number, anim: 'idle' | 'walk', mapId: MapId): boolean {
-    if (mapId !== this.lastSentMapId) {
-      this.lastSentAtMs = nowMs;
-      this.lastSentAnim = anim;
-      this.lastSentMapId = mapId;
-      return true;
-    }
+  shouldEmit(
+    nowMs: number,
+    anim: MovementPacket['anim'],
+    mapId: MapId,
+    position: MovementPosition,
+    forceIdle = false,
+  ): boolean {
+    const stopped = anim === 'idle' && this.wasWalking;
+    this.wasWalking = anim === 'walk';
+    const urgent = mapId !== this.lastSentMapId || stopped || (anim === 'idle' && forceIdle);
+    if (!urgent) {
+      if (anim === 'idle' || nowMs - this.lastSentAtMs < this.intervalMs) return false;
 
-    // Emit final idle frame once when stopping, then stop idle spam
-    if (anim === 'idle') {
-      if (this.lastSentAnim === 'walk') {
-        this.lastSentAtMs = nowMs;
-        this.lastSentAnim = 'idle';
-        return true;
+      const last = this.lastSentPosition;
+      if (
+        last && position.facing === last.facing &&
+        Math.hypot(position.x - last.x, position.y - last.y) < MOVEMENT_POSITION_DELTA_PX
+      ) {
+        return false;
       }
-      return false;
     }
 
-    if (nowMs - this.lastSentAtMs >= this.intervalMs) {
-      this.lastSentAtMs = nowMs;
-      this.lastSentAnim = anim;
-      return true;
-    }
-
-    return false;
+    this.lastSentAtMs = nowMs;
+    this.lastSentMapId = mapId;
+    this.lastSentPosition = position;
+    return true;
   }
 
   nextSeq(): number {
@@ -67,8 +97,9 @@ export class MovementTxThrottle {
 
   reset(): void {
     this.lastSentAtMs = -Infinity;
-    this.lastSentAnim = null;
     this.lastSentMapId = null;
+    this.lastSentPosition = undefined;
+    this.wasWalking = false;
   }
 }
 
@@ -92,12 +123,20 @@ export class RemoteAvatarFilter {
     if (!isPositionWithinMapBounds(pkt.mapId, pkt.x, pkt.y)) return null;
 
     const previous = this.peers.get(pkt.sessionId);
-    if (previous && pkt.seq <= previous.packet.seq) {
-      return null; // Drop out-of-order / duplicate packets
+    if (previous) {
+      if (pkt.isSnapshotReplay) {
+        if (pkt.seq < previous.packet.seq) return null;
+      } else if (pkt.seq <= previous.packet.seq) {
+        return null; // Drop out-of-order / duplicate packets
+      }
     }
 
     this.peers.set(pkt.sessionId, { packet: pkt, receivedAtMs: nowMs });
     return pkt;
+  }
+
+  getLatestPacket(sessionId: string): MovementPacket | undefined {
+    return this.peers.get(sessionId)?.packet;
   }
 
   isStale(sessionId: string, nowMs: number): boolean {
@@ -110,7 +149,15 @@ export class RemoteAvatarFilter {
     this.peers.delete(sessionId);
   }
 
+  resetSession(sessionId: string): void {
+    this.peers.delete(sessionId);
+  }
+
   clear(): void {
+    this.peers.clear();
+  }
+
+  resetAll(): void {
     this.peers.clear();
   }
 }
@@ -145,7 +192,18 @@ export function selectLatestPresenceByUser(
   for (const p of presences) {
     if (excludeUserId && p.userId === excludeUserId) continue;
     const prev = byUser.get(p.userId);
-    if (!prev || p.updatedAtMs >= prev.updatedAtMs) {
+    if (!prev) {
+      byUser.set(p.userId, p);
+      continue;
+    }
+    const curSeq = typeof p.presenceSeq === 'number' && Number.isFinite(p.presenceSeq) ? p.presenceSeq : null;
+    const prevSeq =
+      typeof prev.presenceSeq === 'number' && Number.isFinite(prev.presenceSeq) ? prev.presenceSeq : null;
+    if (curSeq !== null && prevSeq !== null) {
+      if (curSeq >= prevSeq) byUser.set(p.userId, p);
+    } else if (curSeq !== null) {
+      byUser.set(p.userId, p);
+    } else if (prevSeq === null && p.updatedAtMs >= prev.updatedAtMs) {
       byUser.set(p.userId, p);
     }
   }

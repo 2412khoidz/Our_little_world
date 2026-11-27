@@ -1,0 +1,364 @@
+{
+  "upstreamSha": "6a77169d198757413ccd92d310bf655d2f177506",
+  "rarityWeights": {
+    "common": 50,
+    "uncommon": 28,
+    "rare": 14,
+    "epic": 5,
+    "legendary": 3
+  },
+  "fish": [
+    {
+      "id": "bass",
+      "name": "Bass",
+      "rarity": "common",
+      "biome": "lake",
+      "size": "medium",
+      "difficulty": 0.3
+    },
+    {
+      "id": "blobfish",
+      "name": "Blobfish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.5
+    },
+    {
+      "id": "butterfly_fish",
+      "name": "Butterfly Fish",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.2
+    },
+    {
+      "id": "catfish",
+      "name": "Catfish",
+      "rarity": "common",
+      "biome": "river",
+      "size": "big",
+      "difficulty": 0.4
+    },
+    {
+      "id": "char",
+      "name": "Char",
+      "rarity": "uncommon",
+      "biome": "lake",
+      "size": "medium",
+      "difficulty": 0.35
+    },
+    {
+      "id": "cherry_salmon",
+      "name": "Cherry Salmon",
+      "rarity": "uncommon",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.4
+    },
+    {
+      "id": "clown_fish",
+      "name": "Clown Fish",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.15
+    },
+    {
+      "id": "cod",
+      "name": "Cod",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.45
+    },
+    {
+      "id": "coho_salmon",
+      "name": "Coho Salmon",
+      "rarity": "uncommon",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.45
+    },
+    {
+      "id": "cow_fish",
+      "name": "Cow Fish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.5
+    },
+    {
+      "id": "giant_tevally",
+      "name": "Giant Trevally",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.7
+    },
+    {
+      "id": "golden_trout",
+      "name": "Golden Trout",
+      "rarity": "legendary",
+      "biome": "lake",
+      "size": "medium",
+      "difficulty": 0.8
+    },
+    {
+      "id": "guppy",
+      "name": "Guppy",
+      "rarity": "common",
+      "biome": "river",
+      "size": "small",
+      "difficulty": 0.1
+    },
+    {
+      "id": "halibut",
+      "name": "Halibut",
+      "rarity": "uncommon",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.6
+    },
+    {
+      "id": "herring",
+      "name": "Herring",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.15
+    },
+    {
+      "id": "lion_fish",
+      "name": "Lion Fish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.65
+    },
+    {
+      "id": "loach",
+      "name": "Loach",
+      "rarity": "common",
+      "biome": "river",
+      "size": "small",
+      "difficulty": 0.2
+    },
+    {
+      "id": "mackerel",
+      "name": "Mackerel",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.3
+    },
+    {
+      "id": "mahi_mahi",
+      "name": "Mahi Mahi",
+      "rarity": "epic",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.72
+    },
+    {
+      "id": "manta_ray",
+      "name": "Manta Ray",
+      "rarity": "legendary",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.85
+    },
+    {
+      "id": "napolean_fish",
+      "name": "Napoleon Fish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.6
+    },
+    {
+      "id": "neon_tetras",
+      "name": "Neon Tetra",
+      "rarity": "common",
+      "biome": "river",
+      "size": "small",
+      "difficulty": 0.1
+    },
+    {
+      "id": "oarfish",
+      "name": "Oarfish",
+      "rarity": "legendary",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.9
+    },
+    {
+      "id": "ocean_sunfish",
+      "name": "Ocean Sunfish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.55
+    },
+    {
+      "id": "parrot_fish",
+      "name": "Parrot Fish",
+      "rarity": "uncommon",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.4
+    },
+    {
+      "id": "pike",
+      "name": "Pike",
+      "rarity": "epic",
+      "biome": "lake",
+      "size": "big",
+      "difficulty": 0.76
+    },
+    {
+      "id": "pink_salmon",
+      "name": "Pink Salmon",
+      "rarity": "common",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.3
+    },
+    {
+      "id": "pirana",
+      "name": "Piranha",
+      "rarity": "uncommon",
+      "biome": "river",
+      "size": "small",
+      "difficulty": 0.5
+    },
+    {
+      "id": "plaice",
+      "name": "Plaice",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.25
+    },
+    {
+      "id": "pompano",
+      "name": "Pompano",
+      "rarity": "uncommon",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.4
+    },
+    {
+      "id": "puffer_fish",
+      "name": "Puffer Fish",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.6
+    },
+    {
+      "id": "rainbow_fish",
+      "name": "Rainbow Fish",
+      "rarity": "uncommon",
+      "biome": "lake",
+      "size": "small",
+      "difficulty": 0.3
+    },
+    {
+      "id": "sea_horse",
+      "name": "Sea Horse",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.55
+    },
+    {
+      "id": "shark_greatwhite",
+      "name": "Great White Shark",
+      "rarity": "legendary",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.95
+    },
+    {
+      "id": "shark_hammerhead",
+      "name": "Hammerhead Shark",
+      "rarity": "legendary",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.85
+    },
+    {
+      "id": "shark_saw",
+      "name": "Sawshark",
+      "rarity": "rare",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.7
+    },
+    {
+      "id": "shark_whale",
+      "name": "Whale Shark",
+      "rarity": "legendary",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.8
+    },
+    {
+      "id": "silver_eel",
+      "name": "Silver Eel",
+      "rarity": "uncommon",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.45
+    },
+    {
+      "id": "sockeye_salmon",
+      "name": "Sockeye Salmon",
+      "rarity": "uncommon",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.45
+    },
+    {
+      "id": "squid",
+      "name": "Squid",
+      "rarity": "uncommon",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.4
+    },
+    {
+      "id": "sucker_fish",
+      "name": "Sucker Fish",
+      "rarity": "common",
+      "biome": "river",
+      "size": "medium",
+      "difficulty": 0.25
+    },
+    {
+      "id": "surgeon_fish",
+      "name": "Surgeon Fish",
+      "rarity": "uncommon",
+      "biome": "sea",
+      "size": "medium",
+      "difficulty": 0.4
+    },
+    {
+      "id": "swordfish",
+      "name": "Swordfish",
+      "rarity": "epic",
+      "biome": "sea",
+      "size": "big",
+      "difficulty": 0.78
+    },
+    {
+      "id": "whiting_fish",
+      "name": "Whiting",
+      "rarity": "common",
+      "biome": "sea",
+      "size": "small",
+      "difficulty": 0.2
+    }
+  ]
+}

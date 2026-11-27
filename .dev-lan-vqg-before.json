@@ -1,0 +1,273 @@
+{
+  "profiles": {
+    "11111111-1111-4111-8111-111111111111": {
+      "userId": "11111111-1111-4111-8111-111111111111",
+      "nickname": "Mây",
+      "avatarConfig": {
+        "skinTone": "warm",
+        "hairStyle": "short",
+        "hairColor": "espresso",
+        "outfitStyle": "sweater",
+        "outfitColor": "sage",
+        "accessory": "glasses"
+      },
+      "updatedAt": "2026-11-25T10:59:38.009Z"
+    },
+    "22222222-2222-4222-8222-222222222222": {
+      "userId": "22222222-2222-4222-8222-222222222222",
+      "nickname": "Nắng",
+      "avatarConfig": {
+        "skinTone": "fair",
+        "hairStyle": "long",
+        "hairColor": "chestnut",
+        "outfitStyle": "cardigan",
+        "outfitColor": "rose",
+        "accessory": "ribbon"
+      },
+      "updatedAt": "2026-11-25T10:59:38.009Z"
+    },
+    "33333333-3333-4333-8333-333333333333": {
+      "userId": "33333333-3333-4333-8333-333333333333",
+      "nickname": "Khách lạ",
+      "avatarConfig": {
+        "skinTone": "tan",
+        "hairStyle": "bob",
+        "hairColor": "honey",
+        "outfitStyle": "overall",
+        "outfitColor": "sky",
+        "accessory": "none"
+      },
+      "updatedAt": "2026-11-25T10:59:38.009Z"
+    }
+  },
+  "worlds": {
+    "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca": {
+      "id": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+      "name": "Nhà của Mây & Nắng",
+      "layoutVersion": 1,
+      "createdAt": "2026-11-25T10:59:38.358Z"
+    }
+  },
+  "memberships": {
+    "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca": [
+      {
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "role": "owner",
+        "joinedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "userId": "22222222-2222-4222-8222-222222222222",
+        "role": "partner",
+        "joinedAt": "2026-11-25T10:59:38.358Z"
+      }
+    ]
+  },
+  "invites": [],
+  "placements": {
+    "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca": [
+      {
+        "id": "starter-1-bed_cozy",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "bed_cozy",
+        "layerSlot": "object",
+        "tileX": 1,
+        "tileY": 3,
+        "widthTiles": 2,
+        "heightTiles": 2,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-2-wardrobe_oak",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "wardrobe_oak",
+        "layerSlot": "object",
+        "tileX": 3,
+        "tileY": 3,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-3-lamp_floor",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "lamp_floor",
+        "layerSlot": "object",
+        "tileX": 4,
+        "tileY": 3,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-4-bookshelf_warm",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "bookshelf_warm",
+        "layerSlot": "object",
+        "tileX": 10,
+        "tileY": 3,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-5-desk_study",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "desk_study",
+        "layerSlot": "object",
+        "tileX": 12,
+        "tileY": 3,
+        "widthTiles": 2,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-6-plant_monstera",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "plant_monstera",
+        "layerSlot": "object",
+        "tileX": 14,
+        "tileY": 3,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-7-rug_peach",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "rug_peach",
+        "layerSlot": "floor",
+        "tileX": 5,
+        "tileY": 6,
+        "widthTiles": 2,
+        "heightTiles": 2,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-8-sofa_cream",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "sofa_cream",
+        "layerSlot": "object",
+        "tileX": 5,
+        "tileY": 5,
+        "widthTiles": 2,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-9-table_wood",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "home",
+        "sku": "table_wood",
+        "layerSlot": "object",
+        "tileX": 10,
+        "tileY": 6,
+        "widthTiles": 2,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-10-bench_garden",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "garden",
+        "sku": "bench_garden",
+        "layerSlot": "object",
+        "tileX": 4,
+        "tileY": 6,
+        "widthTiles": 2,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-11-lantern_garden",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "garden",
+        "sku": "lantern_garden",
+        "layerSlot": "object",
+        "tileX": 7,
+        "tileY": 5,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      },
+      {
+        "id": "starter-12-flowerpot_sakura",
+        "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+        "mapId": "garden",
+        "sku": "flowerpot_sakura",
+        "layerSlot": "object",
+        "tileX": 11,
+        "tileY": 4,
+        "widthTiles": 1,
+        "heightTiles": 1,
+        "updatedBy": "11111111-1111-4111-8111-111111111111",
+        "updatedAt": "2026-11-25T10:59:38.358Z"
+      }
+    ]
+  },
+  "idempotency": {},
+  "v015": {
+    "inventory": {
+      "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca": [
+        {
+          "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+          "ownerScope": "shared",
+          "itemSku": "fish_salmon_bite",
+          "quality": "silver",
+          "qty": 2,
+          "updatedAt": "2026-11-25T10:59:38.358Z"
+        },
+        {
+          "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+          "ownerScope": "shared",
+          "itemSku": "toy_yarn",
+          "quality": "normal",
+          "qty": 1,
+          "updatedAt": "2026-11-25T10:59:38.358Z"
+        },
+        {
+          "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+          "ownerScope": "shared",
+          "itemSku": "toy_cardboard_box",
+          "quality": "normal",
+          "qty": 1,
+          "updatedAt": "2026-11-25T10:59:38.358Z"
+        },
+        {
+          "worldId": "world-4b66aa1c-ff15-4e46-89fb-3fa546a052ca",
+          "ownerScope": "shared",
+          "itemSku": "water_pitcher",
+          "quality": "normal",
+          "qty": 1,
+          "updatedAt": "2026-11-25T10:59:38.358Z"
+        }
+      ]
+    },
+    "kibbleClaims": {},
+    "pets": {},
+    "petEvents": {},
+    "studySessions": {},
+    "letters": {},
+    "idem": {},
+    "petBowls": {},
+    "petLiving": {}
+  }
+}

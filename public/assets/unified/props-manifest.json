@@ -1,0 +1,1160 @@
+{
+  "version": 1,
+  "texture": {
+    "file": "world-props.png",
+    "width": 640,
+    "height": 448
+  },
+  "entries": [
+    {
+      "id": "env.meadow_tile",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "env.meadow_flora",
+      "rect": {
+        "x": 18,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.fireplace_brick",
+      "rect": {
+        "x": 36,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.tv_cinema_unit",
+      "rect": {
+        "x": 86,
+        "y": 0,
+        "w": 32,
+        "h": 24
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.kitchen_fridge",
+      "rect": {
+        "x": 120,
+        "y": 0,
+        "w": 16,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.kitchen_counter_fruit",
+      "rect": {
+        "x": 138,
+        "y": 0,
+        "w": 32,
+        "h": 24
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.dining_chair_right",
+      "rect": {
+        "x": 172,
+        "y": 0,
+        "w": 16,
+        "h": 20
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.dining_chair_left",
+      "rect": {
+        "x": 190,
+        "y": 0,
+        "w": 16,
+        "h": 20
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.bookshelf_wide",
+      "rect": {
+        "x": 208,
+        "y": 0,
+        "w": 48,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.study_chair",
+      "rect": {
+        "x": 258,
+        "y": 0,
+        "w": 16,
+        "h": 20
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.rug_coral",
+      "rect": {
+        "x": 276,
+        "y": 0,
+        "w": 24,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.5
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.pet_bowl_food",
+      "rect": {
+        "x": 302,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.pet_bowl_water",
+      "rect": {
+        "x": 320,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.photo_frame",
+      "rect": {
+        "x": 338,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.oak_tree",
+      "rect": {
+        "x": 356,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.apple_tree",
+      "rect": {
+        "x": 390,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.peach_tree",
+      "rect": {
+        "x": 424,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.sakura_bush",
+      "rect": {
+        "x": 458,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.sakura_petals",
+      "rect": {
+        "x": 476,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.planter_box",
+      "rect": {
+        "x": 494,
+        "y": 0,
+        "w": 32,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.mailbox_red",
+      "rect": {
+        "x": 528,
+        "y": 0,
+        "w": 16,
+        "h": 32
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.picnic_blanket",
+      "rect": {
+        "x": 546,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.5
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.picnic_basket",
+      "rect": {
+        "x": 596,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.picnic_tart",
+      "rect": {
+        "x": 614,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.picnic_teacup",
+      "rect": {
+        "x": 0,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.bridge_wood",
+      "rect": {
+        "x": 18,
+        "y": 50,
+        "w": 16,
+        "h": 48
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.5
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.water_lotus",
+      "rect": {
+        "x": 36,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.5
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.water_lily",
+      "rect": {
+        "x": 54,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.5
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.water_reed_a",
+      "rect": {
+        "x": 72,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.water_reed_b",
+      "rect": {
+        "x": 90,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.fence_3w",
+      "rect": {
+        "x": 108,
+        "y": 50,
+        "w": 48,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.fence_1w",
+      "rect": {
+        "x": 158,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.beehive",
+      "rect": {
+        "x": 176,
+        "y": 50,
+        "w": 24,
+        "h": 24
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.sunflower",
+      "rect": {
+        "x": 202,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.tomato",
+      "rect": {
+        "x": 220,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.corn",
+      "rect": {
+        "x": 238,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.radish",
+      "rect": {
+        "x": 256,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.beetroot",
+      "rect": {
+        "x": 274,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.cabbage",
+      "rect": {
+        "x": 292,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.side_cottage",
+      "rect": {
+        "x": 310,
+        "y": 50,
+        "w": 60,
+        "h": 44
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_n",
+      "rect": {
+        "x": 372,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_s",
+      "rect": {
+        "x": 390,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_w",
+      "rect": {
+        "x": 408,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_e",
+      "rect": {
+        "x": 426,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_nw",
+      "rect": {
+        "x": 444,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_ne",
+      "rect": {
+        "x": 462,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_sw",
+      "rect": {
+        "x": 480,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "prop.shore_se",
+      "rect": {
+        "x": 498,
+        "y": 50,
+        "w": 16,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      }
+    },
+    {
+      "id": "sheet.fire",
+      "rect": {
+        "x": 516,
+        "y": 50,
+        "w": 64,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 1
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 4
+    },
+    {
+      "id": "sheet.water",
+      "rect": {
+        "x": 0,
+        "y": 100,
+        "w": 64,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0,
+        "oy": 0
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 4
+    },
+    {
+      "id": "sheet.duck",
+      "rect": {
+        "x": 66,
+        "y": 100,
+        "w": 64,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.8
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 4
+    },
+    {
+      "id": "sheet.frog",
+      "rect": {
+        "x": 132,
+        "y": 100,
+        "w": 48,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.8
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 3
+    },
+    {
+      "id": "sheet.chicken",
+      "rect": {
+        "x": 182,
+        "y": 100,
+        "w": 64,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.85
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 4
+    },
+    {
+      "id": "sheet.sheep",
+      "rect": {
+        "x": 248,
+        "y": 100,
+        "w": 64,
+        "h": 16
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.85
+      },
+      "source": {
+        "pack": "Our Little World Procedural",
+        "version": "v0.1",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "credit": "Our Little World"
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 4
+    },
+    {
+      "id": "sheet.cat_orange",
+      "rect": {
+        "x": 0,
+        "y": 192,
+        "w": 192,
+        "h": 256
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.85
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 128,
+      "source": {
+        "pack": "Free Pets Pack",
+        "version": "16px top-down, SHA-256 pinned",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "credit": "Frakassets",
+        "sourceUrl": "https://frakassets.itch.io/free-pets-pack",
+        "file": "cat-orange/cat-orange_16px_top-down_outline_lit.png",
+        "sha256": "c28714ba063e0eb7672708e6b71f9ab26d549d627e0a8c1da67a0055c619c1e0"
+      }
+    },
+    {
+      "id": "sheet.cat_orange_shadow",
+      "rect": {
+        "x": 192,
+        "y": 192,
+        "w": 192,
+        "h": 256
+      },
+      "anchor": {
+        "ox": 0.5,
+        "oy": 0.85
+      },
+      "frameWidth": 16,
+      "frameHeight": 16,
+      "frameCount": 128,
+      "source": {
+        "pack": "Free Pets Pack",
+        "version": "16px top-down, SHA-256 pinned",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "credit": "Frakassets",
+        "sourceUrl": "https://frakassets.itch.io/free-pets-pack",
+        "file": "cat-orange/cat-orange_16px_top-down_shadow.png",
+        "sha256": "ebb0ab053e7e8865ca5333cc1452e7c3dc6a3300c49f80f528749938fb3f5b66"
+      }
+    }
+  ]
+}

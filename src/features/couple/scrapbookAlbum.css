@@ -1,0 +1,119 @@
+.scrapbook-modal .modal-panel {
+  max-width: min(96vw, 520px);
+  padding-bottom: 14px;
+  background-color: #dec096;
+  border: 12px solid #6b4125;
+  border-image: url('/assets/ui/hybrid/panel_wood.png') 12 fill / 12px / 0 stretch;
+  color: #3d2417;
+}
+
+.scrapbook-book-host {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 12px;
+  touch-action: pan-y;
+}
+
+.scrapbook-page {
+  background: linear-gradient(145deg, #f7ead0 0%, #edd9b8 100%);
+  border: 1px solid #c9a36a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+  padding: 12px 14px;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.scrapbook-polaroid {
+  background: #fffdf8;
+  padding: 10px 10px 22px;
+  box-shadow:
+    2px 3px 0 rgba(45, 29, 34, 0.12),
+    0 8px 18px rgba(45, 29, 34, 0.08);
+  transform: rotate(-1.5deg);
+  max-width: 92%;
+  margin: 4px auto 8px;
+}
+
+.scrapbook-polaroid__shot {
+  aspect-ratio: 4 / 3;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #e8dfd0;
+}
+
+.scrapbook-polaroid__shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scrapbook-polaroid__meta {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.scrapbook-polaroid__title {
+  font-weight: 800;
+  font-size: 13px;
+  color: #392228;
+}
+
+.scrapbook-polaroid__caption {
+  font-size: 11.5px;
+  color: #5b3f45;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.scrapbook-polaroid__date {
+  font-size: 10px;
+  color: #8a6a5a;
+  margin-top: 4px;
+}
+
+.scrapbook-sticker {
+  position: absolute;
+  font-size: 22px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+  user-select: none;
+}
+
+.scrapbook-sticker--partner {
+  opacity: 0.92;
+  outline: 2px dashed rgba(217, 119, 98, 0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.scrapbook-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.scrapbook-toolbar .btn--sticker {
+  min-width: 38px;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.scrapbook-partner-pill {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: rgba(217, 119, 98, 0.14);
+  color: #6b3f36;
+  border: 1px solid rgba(217, 119, 98, 0.35);
+  text-align: center;
+}

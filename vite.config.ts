@@ -8,15 +8,19 @@ import { devLanServerPlugin } from './scripts/devLanServerPlugin.mjs';
 import productionPublicFiles from './scripts/production-public-files.json' with { type: 'json' };
 
 const privateArtDir = 'assets/private-unified';
-const privateArtFiles = ['world.png', 'avatars.png', 'manifest.json', 'CREDITS.md']
+const privateArtFiles = ['world.png', 'world-props.png', 'avatars.png', 'manifest.json', 'props-manifest.json', 'CREDITS.md']
   .map((file) => privateArtDir + '/' + file);
+const privateAudioDir = 'assets/private-audio/music';
+const privateAudioFiles = ['home_garden_theme.mp3', 'farm.mp3', 'blue_forest.mp3', 'beach.mp3', 'pet_care.mp3']
+  .map((file) => privateAudioDir + '/' + file);
 
-function approvedPublicAssets(privateBuild: boolean): Plugin {
+function approvedPublicAssets(privateBuild: boolean, existingPrivateAudio: readonly string[]): Plugin {
+  const extraFiles = privateBuild ? [...privateArtFiles, ...existingPrivateAudio] : [];
   return {
     name: 'olw-approved-public-assets',
     apply: 'build',
     generateBundle() {
-      for (const fileName of privateBuild ? [...productionPublicFiles, ...privateArtFiles] : productionPublicFiles) {
+      for (const fileName of [...productionPublicFiles, ...extraFiles]) {
         this.emitFile({
           type: 'asset',
           fileName,
@@ -29,28 +33,43 @@ function approvedPublicAssets(privateBuild: boolean): Plugin {
 
 export default defineConfig(({ command, mode }) => {
   const privateBuild = mode === 'private-art';
+  const forcePrivateArt =
+    process.env.VITE_OLW_PRIVATE_ART === '1' || process.env.VITE_OLW_PRIVATE_ART === 'true';
+  const forceExtendedWorld =
+    process.env.VITE_OLW_EXTENDED_WORLD === '1' || process.env.VITE_OLW_EXTENDED_WORLD === 'true';
+  const forceDonorEconomy =
+    process.env.VITE_OLW_DONOR_ECONOMY === '1' || process.env.VITE_OLW_DONOR_ECONOMY === 'true';
   const localAtlasReady = privateArtFiles.every((file) => existsSync(resolve('public', file)));
-  if (privateBuild && !localAtlasReady) {
-    throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước.');
+  const existingPrivateAudio = privateAudioFiles.filter((file) => existsSync(resolve('public', file)));
+  const privateAudioActive = (privateBuild || command === 'serve') && existingPrivateAudio.length > 0;
+  const privatePreviewActive = privateBuild || forcePrivateArt || (command === 'serve' && localAtlasReady);
+  if ((privateBuild || forcePrivateArt) && !localAtlasReady) {
+    throw new Error('Thiếu atlas riêng. Chạy npm run assets:atlas:private trước hoặc copy owner handoff zip.');
   }
 
   return {
   define: {
-    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(privateBuild || (command === 'serve' && localAtlasReady)),
+    'import.meta.env.VITE_OLW_PRIVATE_ART': JSON.stringify(privatePreviewActive),
+    'import.meta.env.VITE_OLW_PRIVATE_AUDIO': JSON.stringify(privateAudioActive),
+    'import.meta.env.VITE_OLW_EXTENDED_WORLD': JSON.stringify(
+      forceExtendedWorld || privatePreviewActive || true,
+    ),
+    'import.meta.env.VITE_OLW_DONOR_ECONOMY': JSON.stringify(
+      forceDonorEconomy || privatePreviewActive,
+    ),
   },
   build: { copyPublicDir: false },
   plugins: [
     react(),
-    approvedPublicAssets(privateBuild),
-    devLanServerPlugin(),
+    approvedPublicAssets(privateBuild, existingPrivateAudio),
+    devLanServerPlugin({
+      stateFilePath: process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+    }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: [
-        'icons/favicon-32x32.png',
-        'icons/apple-touch-icon-180x180.png',
-        'assets/manifest.json',
-        'assets/unified/CREDITS.md',
-      ],
+      // Chỉ thêm file không nằm trong workbox.globPatterns (json/png/svg/webmanifest).
+      // Trùng includeAssets + glob gây duplicate URL/revision → add-to-cache-list-conflicting-entries.
+      includeAssets: ['assets/unified/CREDITS.md'],
       manifest: {
         name: 'Our Little World',
         short_name: 'Little World',
@@ -77,8 +96,17 @@ export default defineConfig(({ command, mode }) => {
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,png,json,svg,webmanifest}'],
-        globIgnores: ['spike/**', 'assets/private-unified/**'],
+        globIgnores: [
+          'spike/**',
+          'assets/private-unified/**',
+          'assets/private-audio/**',
+          // manifest.webmanifest + PWA icons được inject riêng; glob trùng gây conflicting-entries
+          'manifest.webmanifest',
+          'icons/pwa-192x192.png',
+          'icons/pwa-512x512.png',
+        ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/spike\//, /^\/api\//],
         runtimeCaching: [],
@@ -92,6 +120,7 @@ export default defineConfig(({ command, mode }) => {
   server: {
     port: 5173,
     host: true,
+    allowedHosts: ['.trycloudflare.com', '.lhr.life', 'localhost', '127.0.0.1'],
   },
   preview: {
     port: 4173,

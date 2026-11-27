@@ -1,0 +1,22 @@
+{
+  "id": "tuxemon-dryadsgrove",
+  "donorMap": "dryadsgrove.tmx",
+  "spawnDefault": { "tileX": 10, "tileY": 10 },
+  "portals": {
+    "village": {
+      "villageEdgeTile": { "tileX": 84, "tileY": 20 },
+      "forestSpawnTile": { "tileX": 2, "tileY": 7 },
+      "labelVi": "Vào rừng Dryad's Grove"
+    },
+    "returnToVillage": {
+      "forestEdgeTile": { "tileX": 0, "tileY": 7 },
+      "villageSpawnTile": { "tileX": 84, "tileY": 20 },
+      "labelVi": "Về làng Cabacos"
+    },
+    "beach": {
+      "forestEdgeTile": { "tileX": 38, "tileY": 10 },
+      "beachSpawnTile": { "tileX": 2, "tileY": 22 },
+      "labelVi": "Ra Gull Bay (bãi biển)"
+    }
+  }
+}

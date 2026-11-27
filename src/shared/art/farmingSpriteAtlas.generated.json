@@ -1,0 +1,4575 @@
+{
+  "version": 1,
+  "atlases": {
+    "items16": {
+      "url": "/assets/farming/items-16.png",
+      "w": 256,
+      "h": 224,
+      "cellSize": 16
+    },
+    "items32": {
+      "url": "/assets/farming/items-32.png",
+      "w": 512,
+      "h": 128,
+      "cellSize": 32
+    },
+    "cropsStages": {
+      "url": "/assets/farming/crops-stages.png",
+      "w": 508,
+      "h": 386
+    },
+    "treesOrchard": {
+      "url": "/assets/farming/trees-orchard.png",
+      "w": 1011,
+      "h": 472
+    }
+  },
+  "items": {
+    "pet_kibble_basic": {
+      "atlas": "items32",
+      "x": 0,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "gift_flower_bouquet": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "gift_strawberry_cake": {
+      "atlas": "items32",
+      "x": 64,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells (CC0)"
+    },
+    "gift_plush_cat": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16 (CC BY 4.0)"
+    },
+    "gift_star_jar": {
+      "atlas": "items32",
+      "x": 32,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "letter_stationery_pink": {
+      "atlas": "items32",
+      "x": 352,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "seed_wheat": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_carrot": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_tomato": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_strawberry": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_sunflower": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_rose_pink": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "seed_cabbage": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "wild_herb": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "wood_branch": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "bait_free_worm": {
+      "atlas": "items32",
+      "x": 32,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "bait_shrimp": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "carp_pond": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "koi_pastel": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "lotus_trout": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "wheat": {
+      "atlas": "items32",
+      "x": 416,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "carrot": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "tomato": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "strawberry": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "sunflower": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_pink": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_sakura": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "cabbage": {
+      "atlas": "items32",
+      "x": 192,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "food-ocal"
+    },
+    "peach": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sugar_pack": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "spice": {
+      "atlas": "items32",
+      "x": 256,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "ribbon": {
+      "atlas": "items32",
+      "x": 160,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "flour": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "carrot_soup": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "herb_carp": {
+      "atlas": "items32",
+      "x": 128,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "peach_tea": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "strawberry_tart": {
+      "atlas": "items32",
+      "x": 288,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "koinori_platter": {
+      "atlas": "items32",
+      "x": 288,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "sakura_bouquet": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "wood_chair": {
+      "atlas": "items32",
+      "x": 448,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "seed_lettuce": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "lettuce": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_spinach": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "spinach": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "seed_kale": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "kale": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_parsnip": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "parsnip": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_potato": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "potato": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "seed_cauliflower": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cauliflower": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_snap_pea": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "snap_pea": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_radish": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "radish": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_scallion": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "scallion": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_rhubarb": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "rhubarb": {
+      "atlas": "items32",
+      "x": 128,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "seed_corn": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "corn": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "seed_blueberry": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "blueberry": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_melon": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "melon": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_hot_pepper": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "hot_pepper": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "seed_bell_pepper": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "bell_pepper": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_cucumber": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cucumber": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_zucchini": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "zucchini": {
+      "atlas": "items32",
+      "x": 352,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "food-ocal"
+    },
+    "seed_broccoli": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "broccoli": {
+      "atlas": "items32",
+      "x": 160,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "food-ocal"
+    },
+    "seed_basil": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "basil": {
+      "atlas": "items32",
+      "x": 64,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "seed_starfruit": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "starfruit": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_pumpkin": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "pumpkin": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "seed_cranberry": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cranberry": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_eggplant": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "eggplant": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "seed_yam": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "yam": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_grape": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "grape": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_bok_choy": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "bok_choy": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_beet": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "beet": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "seed_artichoke": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "artichoke": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_oats": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "oats": {
+      "atlas": "items32",
+      "x": 448,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "seed_snowpea": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "snowpea": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "seed_winter_squash": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "winter_squash": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_frostberry": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "frostberry": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_green_bean": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "green_bean": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "seed_ancient_green": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "ancient_green": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_peach": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_apple": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "apple": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_cherry": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cherry": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_orange": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "orange": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_lemon": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "lemon": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_plum": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "plum": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_pear": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "pear": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_pomegranate": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "pomegranate": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_fig": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fig": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sapling_walnut": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "walnut": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "sapling_olive": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "olive": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "sapling_cocoa": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cocoa_bean": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_tulip_red": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "tulip_red": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_tulip_yellow": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "tulip_yellow": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_tulip_pink": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "tulip_pink": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_tulip_purple": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "tulip_purple": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_rose_red": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "rose_red": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_rose_white": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 144,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "rose_white": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_lavender": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "lavender": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_blue_jazz": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 112,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "blue_jazz": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "seed_fairy_rose": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 128,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife+donor_emblem"
+    },
+    "fairy_rose": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "tulip_orange": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "tulip_white": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "tulip_black": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "tulip_rainbow": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_yellow": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_orange": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_lavender": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_blue": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "rose_gold": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "wild_clover": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "egg": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "golden_egg": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "duck_egg": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "duck_feather": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "milk": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cream_top": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "goat_milk": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "aged_curd": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "wool": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fine_fleece": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "angora_wool": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "silky_tuft": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "honey": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "beeswax": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "feed_chicken": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "feed_livestock": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "feed_rabbit": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "feed_deluxe": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fert_compost": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fert_speed": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fert_quality": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fert_deluxe": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sprinkler_basic": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 160,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sprinkler_quality": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sprinkler_iridium": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_can_copper": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_can_iron": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_can_gold": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_hoe_copper": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_hoe_iron": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_hoe_gold": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_sickle_wide": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_sickle_grand": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_seed_spreader": {
+      "atlas": "items16",
+      "x": 32,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tool_basket_orchard": {
+      "atlas": "items32",
+      "x": 320,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "sea_salt": {
+      "atlas": "items32",
+      "x": 224,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "yeast": {
+      "atlas": "items32",
+      "x": 288,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "vinegar": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "vanilla_bean": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "cornmeal": {
+      "atlas": "items32",
+      "x": 416,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "oat_flour": {
+      "atlas": "items32",
+      "x": 416,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "potato_starch": {
+      "atlas": "items32",
+      "x": 64,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "beet_sugar": {
+      "atlas": "items32",
+      "x": 96,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "paprika_powder": {
+      "atlas": "items32",
+      "x": 480,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "olive_oil": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "sunflower_oil": {
+      "atlas": "items16",
+      "x": 128,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cocoa_powder": {
+      "atlas": "items32",
+      "x": 352,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "butter": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cheese": {
+      "atlas": "items32",
+      "x": 224,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "food-ocal"
+    },
+    "goat_cheese": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "yogurt": {
+      "atlas": "items32",
+      "x": 320,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "food-glitch"
+    },
+    "whipped_cream": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "herb_butter": {
+      "atlas": "items32",
+      "x": 96,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "lpc-food-v2"
+    },
+    "honey_ice_cream": {
+      "atlas": "items32",
+      "x": 192,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "chocolate_truffle": {
+      "atlas": "items32",
+      "x": 320,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "bread": {
+      "atlas": "items32",
+      "x": 128,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "potato_bread": {
+      "atlas": "items32",
+      "x": 32,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "cornbread": {
+      "atlas": "items32",
+      "x": 384,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "apple_pie": {
+      "atlas": "items32",
+      "x": 0,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "pumpkin_pie": {
+      "atlas": "items16",
+      "x": 176,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "cherry_pie": {
+      "atlas": "items16",
+      "x": 96,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "peach_cobbler": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "blueberry_muffin": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "lemon_cake": {
+      "atlas": "items32",
+      "x": 320,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "croissant": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "walnut_cookie": {
+      "atlas": "items32",
+      "x": 352,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "chocolate_cake": {
+      "atlas": "items32",
+      "x": 288,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "strawberry_jam": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "blueberry_jam": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "plum_jam": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "fig_jam": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "peach_preserves": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "rose_petal_jelly": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "pickled_radish": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "pickled_cabbage": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "pickled_pepper": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "dried_tomato": {
+      "atlas": "items16",
+      "x": 224,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "grape_raisin": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "lemon_marmalade": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "wool_yarn": {
+      "atlas": "items32",
+      "x": 0,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "angora_yarn": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "wool_cloth": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "knit_scarf": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "cozy_sweater": {
+      "atlas": "items32",
+      "x": 480,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "wool_blanket": {
+      "atlas": "items32",
+      "x": 480,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "rabbit_mittens": {
+      "atlas": "items32",
+      "x": 96,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "feather_pillow": {
+      "atlas": "items16",
+      "x": 64,
+      "y": 32,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "tulip_bouquet": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 192,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "sunset_bouquet": {
+      "atlas": "items16",
+      "x": 144,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "starlight_bouquet": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 176,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "royal_gold_bouquet": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "bridal_rose_bouquet": {
+      "atlas": "items16",
+      "x": 240,
+      "y": 0,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "honey_candle": {
+      "atlas": "items32",
+      "x": 160,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "shikashi_v2"
+    },
+    "lavender_candle": {
+      "atlas": "items16",
+      "x": 48,
+      "y": 64,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "rose_soap": {
+      "atlas": "items16",
+      "x": 112,
+      "y": 96,
+      "w": 16,
+      "h": 16,
+      "donor": "FarmRanchLife"
+    },
+    "flower_crown": {
+      "atlas": "items16",
+      "x": 16,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "veggie_soup": {
+      "atlas": "items16",
+      "x": 0,
+      "y": 208,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "roasted_fish": {
+      "atlas": "items32",
+      "x": 192,
+      "y": 64,
+      "w": 32,
+      "h": 32,
+      "donor": "food-ocal"
+    },
+    "lotus_broth": {
+      "atlas": "items32",
+      "x": 384,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "koi_bentou": {
+      "atlas": "items32",
+      "x": 256,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "pumpkin_soup": {
+      "atlas": "items16",
+      "x": 192,
+      "y": 80,
+      "w": 16,
+      "h": 16,
+      "donor": "food16"
+    },
+    "glazed_yam": {
+      "atlas": "items16",
+      "x": 80,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "cheese_omelette": {
+      "atlas": "items32",
+      "x": 256,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "honey_pancakes": {
+      "atlas": "items32",
+      "x": 224,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "hot_cocoa": {
+      "atlas": "items16",
+      "x": 208,
+      "y": 48,
+      "w": 16,
+      "h": 16,
+      "donor": "free_pixel_food_16"
+    },
+    "cozy_feast": {
+      "atlas": "items32",
+      "x": 448,
+      "y": 0,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    },
+    "cranberry_sauce": {
+      "atlas": "items16",
+      "x": 160,
+      "y": 16,
+      "w": 16,
+      "h": 16,
+      "donor": "yoshinos_bright_16"
+    },
+    "fig_tart": {
+      "atlas": "items32",
+      "x": 0,
+      "y": 32,
+      "w": 32,
+      "h": 32,
+      "donor": "ghostpixxells"
+    }
+  },
+  "workshops": {
+    "mill": {
+      "atlas": "items32",
+      "x": 224,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "dairy": {
+      "atlas": "items32",
+      "x": 64,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "bakery": {
+      "atlas": "items32",
+      "x": 32,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "preserves": {
+      "atlas": "items32",
+      "x": 256,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "feed_mill": {
+      "atlas": "items32",
+      "x": 96,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "loom": {
+      "atlas": "items32",
+      "x": 192,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "florist": {
+      "atlas": "items32",
+      "x": 128,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    },
+    "kitchen": {
+      "atlas": "items32",
+      "x": 160,
+      "y": 96,
+      "w": 32,
+      "h": 32,
+      "donor": "FarmRanchLife"
+    }
+  },
+  "crops": {
+    "bok_choy": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "bok_choy_s0"
+        },
+        {
+          "x": 18,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "bok_choy_s1"
+        },
+        {
+          "x": 36,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "bok_choy_s2"
+        },
+        {
+          "x": 54,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "bok_choy_s3"
+        }
+      ]
+    },
+    "winter_squash": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 72,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "winter_squash_s0"
+        },
+        {
+          "x": 90,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "winter_squash_s1"
+        },
+        {
+          "x": 108,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "winter_squash_s2"
+        },
+        {
+          "x": 126,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "winter_squash_s3"
+        }
+      ]
+    },
+    "cranberry": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 144,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "cranberry_s0"
+        },
+        {
+          "x": 162,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "cranberry_s1"
+        },
+        {
+          "x": 180,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "cranberry_s2"
+        },
+        {
+          "x": 198,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "cranberry_s3"
+        }
+      ]
+    },
+    "grape": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 216,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "grape_s0"
+        },
+        {
+          "x": 234,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "grape_s1"
+        },
+        {
+          "x": 252,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "grape_s2"
+        },
+        {
+          "x": 270,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "grape_s3"
+        }
+      ]
+    },
+    "yam": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 288,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "yam_s0"
+        },
+        {
+          "x": 306,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "yam_s1"
+        },
+        {
+          "x": 324,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "yam_s2"
+        },
+        {
+          "x": 342,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "yam_s3"
+        }
+      ]
+    },
+    "artichoke": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 360,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "artichoke_s0"
+        },
+        {
+          "x": 378,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "artichoke_s1"
+        },
+        {
+          "x": 396,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "artichoke_s2"
+        },
+        {
+          "x": 414,
+          "y": 0,
+          "w": 16,
+          "h": 32,
+          "key": "artichoke_s3"
+        }
+      ]
+    },
+    "starfruit": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 432,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "starfruit_s0"
+        },
+        {
+          "x": 450,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "starfruit_s1"
+        },
+        {
+          "x": 468,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "starfruit_s2"
+        },
+        {
+          "x": 486,
+          "y": 0,
+          "w": 16,
+          "h": 16,
+          "key": "starfruit_s3"
+        }
+      ]
+    },
+    "cauliflower": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 0,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "cauliflower_s0"
+        },
+        {
+          "x": 18,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "cauliflower_s1"
+        },
+        {
+          "x": 36,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "cauliflower_s2"
+        },
+        {
+          "x": 54,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "cauliflower_s3"
+        }
+      ]
+    },
+    "kale": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 72,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "kale_s0"
+        },
+        {
+          "x": 90,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "kale_s1"
+        },
+        {
+          "x": 108,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "kale_s2"
+        },
+        {
+          "x": 126,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "kale_s3"
+        }
+      ]
+    },
+    "lettuce": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 144,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "lettuce_s0"
+        },
+        {
+          "x": 162,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "lettuce_s1"
+        },
+        {
+          "x": 180,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "lettuce_s2"
+        },
+        {
+          "x": 198,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "lettuce_s3"
+        }
+      ]
+    },
+    "parsnip": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 216,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "parsnip_s0"
+        },
+        {
+          "x": 234,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "parsnip_s1"
+        },
+        {
+          "x": 252,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "parsnip_s2"
+        },
+        {
+          "x": 270,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "parsnip_s3"
+        }
+      ]
+    },
+    "snap_pea": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 288,
+          "y": 34,
+          "w": 16,
+          "h": 32,
+          "key": "snap_pea_s0"
+        },
+        {
+          "x": 306,
+          "y": 34,
+          "w": 16,
+          "h": 32,
+          "key": "snap_pea_s1"
+        },
+        {
+          "x": 324,
+          "y": 34,
+          "w": 16,
+          "h": 32,
+          "key": "snap_pea_s2"
+        },
+        {
+          "x": 342,
+          "y": 34,
+          "w": 16,
+          "h": 32,
+          "key": "snap_pea_s3"
+        }
+      ]
+    },
+    "radish": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 360,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "radish_s0"
+        },
+        {
+          "x": 378,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "radish_s1"
+        },
+        {
+          "x": 396,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "radish_s2"
+        },
+        {
+          "x": 414,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "radish_s3"
+        }
+      ]
+    },
+    "bell_pepper": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 432,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "bell_pepper_s0"
+        },
+        {
+          "x": 450,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "bell_pepper_s1"
+        },
+        {
+          "x": 468,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "bell_pepper_s2"
+        },
+        {
+          "x": 486,
+          "y": 34,
+          "w": 16,
+          "h": 16,
+          "key": "bell_pepper_s3"
+        }
+      ]
+    },
+    "melon": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 0,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "melon_s0"
+        },
+        {
+          "x": 18,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "melon_s1"
+        },
+        {
+          "x": 36,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "melon_s2"
+        },
+        {
+          "x": 54,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "melon_s3"
+        }
+      ]
+    },
+    "cucumber": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 72,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "cucumber_s0"
+        },
+        {
+          "x": 90,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "cucumber_s1"
+        },
+        {
+          "x": 108,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "cucumber_s2"
+        },
+        {
+          "x": 126,
+          "y": 68,
+          "w": 16,
+          "h": 16,
+          "key": "cucumber_s3"
+        }
+      ]
+    },
+    "green_bean": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 144,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "green_bean_s0"
+        },
+        {
+          "x": 162,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "green_bean_s1"
+        },
+        {
+          "x": 180,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "green_bean_s2"
+        },
+        {
+          "x": 198,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "green_bean_s3"
+        }
+      ]
+    },
+    "ancient_green": {
+      "donor": "FarmRanchLife",
+      "stages": [
+        {
+          "x": 216,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "ancient_green_s0"
+        },
+        {
+          "x": 234,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "ancient_green_s1"
+        },
+        {
+          "x": 252,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "ancient_green_s2"
+        },
+        {
+          "x": 270,
+          "y": 68,
+          "w": 16,
+          "h": 32,
+          "key": "ancient_green_s3"
+        }
+      ]
+    },
+    "wheat": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 288,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "wheat_s0"
+        },
+        {
+          "x": 322,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "wheat_s1"
+        },
+        {
+          "x": 356,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "wheat_s2"
+        },
+        {
+          "x": 390,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "wheat_s3"
+        }
+      ]
+    },
+    "oats": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 424,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "oats_s0"
+        },
+        {
+          "x": 458,
+          "y": 68,
+          "w": 32,
+          "h": 36,
+          "key": "oats_s1"
+        },
+        {
+          "x": 0,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "oats_s2"
+        },
+        {
+          "x": 34,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "oats_s3"
+        }
+      ]
+    },
+    "scallion": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 68,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "scallion_s0"
+        },
+        {
+          "x": 102,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "scallion_s1"
+        },
+        {
+          "x": 136,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "scallion_s2"
+        },
+        {
+          "x": 170,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "scallion_s3"
+        }
+      ]
+    },
+    "carrot": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 204,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "carrot_s0"
+        },
+        {
+          "x": 238,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "carrot_s1"
+        },
+        {
+          "x": 272,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "carrot_s2"
+        },
+        {
+          "x": 306,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "carrot_s3"
+        }
+      ]
+    },
+    "beet": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 340,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "beet_s0"
+        },
+        {
+          "x": 374,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "beet_s1"
+        },
+        {
+          "x": 408,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "beet_s2"
+        },
+        {
+          "x": 442,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "beet_s3"
+        }
+      ]
+    },
+    "potato": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 476,
+          "y": 106,
+          "w": 32,
+          "h": 36,
+          "key": "potato_s0"
+        },
+        {
+          "x": 0,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "potato_s1"
+        },
+        {
+          "x": 34,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "potato_s2"
+        },
+        {
+          "x": 68,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "potato_s3"
+        }
+      ]
+    },
+    "tomato": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 102,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "tomato_s0"
+        },
+        {
+          "x": 136,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "tomato_s1"
+        },
+        {
+          "x": 170,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "tomato_s2"
+        },
+        {
+          "x": 204,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "tomato_s3"
+        }
+      ]
+    },
+    "hot_pepper": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 238,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "hot_pepper_s0"
+        },
+        {
+          "x": 272,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "hot_pepper_s1"
+        },
+        {
+          "x": 306,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "hot_pepper_s2"
+        },
+        {
+          "x": 340,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "hot_pepper_s3"
+        }
+      ]
+    },
+    "corn": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 374,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "corn_s0"
+        },
+        {
+          "x": 408,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "corn_s1"
+        },
+        {
+          "x": 442,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "corn_s2"
+        },
+        {
+          "x": 476,
+          "y": 144,
+          "w": 32,
+          "h": 36,
+          "key": "corn_s3"
+        }
+      ]
+    },
+    "sunflower": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 0,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "sunflower_s0"
+        },
+        {
+          "x": 34,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "sunflower_s1"
+        },
+        {
+          "x": 68,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "sunflower_s2"
+        },
+        {
+          "x": 102,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "sunflower_s3"
+        }
+      ]
+    },
+    "pumpkin": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 136,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "pumpkin_s0"
+        },
+        {
+          "x": 170,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "pumpkin_s1"
+        },
+        {
+          "x": 204,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "pumpkin_s2"
+        },
+        {
+          "x": 238,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "pumpkin_s3"
+        }
+      ]
+    },
+    "zucchini": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 272,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "zucchini_s0"
+        },
+        {
+          "x": 306,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "zucchini_s1"
+        },
+        {
+          "x": 340,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "zucchini_s2"
+        },
+        {
+          "x": 374,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "zucchini_s3"
+        }
+      ]
+    },
+    "strawberry": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 408,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "strawberry_s0"
+        },
+        {
+          "x": 442,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "strawberry_s1"
+        },
+        {
+          "x": 476,
+          "y": 182,
+          "w": 32,
+          "h": 36,
+          "key": "strawberry_s2"
+        },
+        {
+          "x": 0,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "strawberry_s3"
+        }
+      ]
+    },
+    "rhubarb": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 34,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "rhubarb_s0"
+        },
+        {
+          "x": 68,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "rhubarb_s1"
+        },
+        {
+          "x": 102,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "rhubarb_s2"
+        },
+        {
+          "x": 136,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "rhubarb_s3"
+        }
+      ]
+    },
+    "cabbage": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 170,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "cabbage_s0"
+        },
+        {
+          "x": 204,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "cabbage_s1"
+        },
+        {
+          "x": 238,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "cabbage_s2"
+        },
+        {
+          "x": 272,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "cabbage_s3"
+        }
+      ]
+    },
+    "spinach": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 306,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "spinach_s0"
+        },
+        {
+          "x": 340,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "spinach_s1"
+        },
+        {
+          "x": 374,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "spinach_s2"
+        },
+        {
+          "x": 408,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "spinach_s3"
+        }
+      ]
+    },
+    "blueberry": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 442,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "blueberry_s0"
+        },
+        {
+          "x": 476,
+          "y": 220,
+          "w": 32,
+          "h": 36,
+          "key": "blueberry_s1"
+        },
+        {
+          "x": 0,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "blueberry_s2"
+        },
+        {
+          "x": 34,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "blueberry_s3"
+        }
+      ]
+    },
+    "frostberry": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 68,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "frostberry_s0"
+        },
+        {
+          "x": 102,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "frostberry_s1"
+        },
+        {
+          "x": 136,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "frostberry_s2"
+        },
+        {
+          "x": 170,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "frostberry_s3"
+        }
+      ]
+    },
+    "broccoli": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 204,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "broccoli_s0"
+        },
+        {
+          "x": 238,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "broccoli_s1"
+        },
+        {
+          "x": 272,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "broccoli_s2"
+        },
+        {
+          "x": 306,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "broccoli_s3"
+        }
+      ]
+    },
+    "basil": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 340,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "basil_s0"
+        },
+        {
+          "x": 374,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "basil_s1"
+        },
+        {
+          "x": 408,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "basil_s2"
+        },
+        {
+          "x": 442,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "basil_s3"
+        }
+      ]
+    },
+    "eggplant": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 476,
+          "y": 258,
+          "w": 32,
+          "h": 36,
+          "key": "eggplant_s0"
+        },
+        {
+          "x": 0,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "eggplant_s1"
+        },
+        {
+          "x": 34,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "eggplant_s2"
+        },
+        {
+          "x": 68,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "eggplant_s3"
+        }
+      ]
+    },
+    "snowpea": {
+      "donor": "lpc-crops-v2.1",
+      "stages": [
+        {
+          "x": 102,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "snowpea_s0"
+        },
+        {
+          "x": 136,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "snowpea_s1"
+        },
+        {
+          "x": 170,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "snowpea_s2"
+        },
+        {
+          "x": 204,
+          "y": 296,
+          "w": 32,
+          "h": 36,
+          "key": "snowpea_s3"
+        }
+      ]
+    },
+    "rose_pink": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 238,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_pink_s0"
+        },
+        {
+          "x": 256,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_pink_s1"
+        },
+        {
+          "x": 274,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_pink_s2"
+        },
+        {
+          "x": 292,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_pink_s3"
+        }
+      ]
+    },
+    "rose_red": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 310,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_red_s0"
+        },
+        {
+          "x": 328,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_red_s1"
+        },
+        {
+          "x": 346,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_red_s2"
+        },
+        {
+          "x": 364,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_red_s3"
+        }
+      ]
+    },
+    "rose_white": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 382,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_white_s0"
+        },
+        {
+          "x": 400,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_white_s1"
+        },
+        {
+          "x": 418,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_white_s2"
+        },
+        {
+          "x": 436,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_white_s3"
+        }
+      ]
+    },
+    "rose_yellow": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 454,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_yellow_s0"
+        },
+        {
+          "x": 472,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_yellow_s1"
+        },
+        {
+          "x": 490,
+          "y": 296,
+          "w": 16,
+          "h": 16,
+          "key": "rose_yellow_s2"
+        },
+        {
+          "x": 0,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_yellow_s3"
+        }
+      ]
+    },
+    "rose_orange": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 18,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_orange_s0"
+        },
+        {
+          "x": 36,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_orange_s1"
+        },
+        {
+          "x": 54,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_orange_s2"
+        },
+        {
+          "x": 72,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_orange_s3"
+        }
+      ]
+    },
+    "rose_lavender": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 90,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_lavender_s0"
+        },
+        {
+          "x": 108,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_lavender_s1"
+        },
+        {
+          "x": 126,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_lavender_s2"
+        },
+        {
+          "x": 144,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_lavender_s3"
+        }
+      ]
+    },
+    "rose_blue": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 162,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_blue_s0"
+        },
+        {
+          "x": 180,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_blue_s1"
+        },
+        {
+          "x": 198,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_blue_s2"
+        },
+        {
+          "x": 216,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_blue_s3"
+        }
+      ]
+    },
+    "rose_gold": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 234,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_gold_s0"
+        },
+        {
+          "x": 252,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_gold_s1"
+        },
+        {
+          "x": 270,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_gold_s2"
+        },
+        {
+          "x": 288,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_gold_s3"
+        }
+      ]
+    },
+    "rose_sakura": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 306,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_sakura_s0"
+        },
+        {
+          "x": 324,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_sakura_s1"
+        },
+        {
+          "x": 342,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_sakura_s2"
+        },
+        {
+          "x": 360,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "rose_sakura_s3"
+        }
+      ]
+    },
+    "tulip_red": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 378,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_red_s0"
+        },
+        {
+          "x": 396,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_red_s1"
+        },
+        {
+          "x": 414,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_red_s2"
+        },
+        {
+          "x": 432,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_red_s3"
+        }
+      ]
+    },
+    "tulip_yellow": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 450,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_yellow_s0"
+        },
+        {
+          "x": 468,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_yellow_s1"
+        },
+        {
+          "x": 486,
+          "y": 334,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_yellow_s2"
+        },
+        {
+          "x": 0,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_yellow_s3"
+        }
+      ]
+    },
+    "tulip_pink": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 18,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_pink_s0"
+        },
+        {
+          "x": 36,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_pink_s1"
+        },
+        {
+          "x": 54,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_pink_s2"
+        },
+        {
+          "x": 72,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_pink_s3"
+        }
+      ]
+    },
+    "tulip_purple": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 90,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_purple_s0"
+        },
+        {
+          "x": 108,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_purple_s1"
+        },
+        {
+          "x": 126,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_purple_s2"
+        },
+        {
+          "x": 144,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_purple_s3"
+        }
+      ]
+    },
+    "tulip_orange": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 162,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_orange_s0"
+        },
+        {
+          "x": 180,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_orange_s1"
+        },
+        {
+          "x": 198,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_orange_s2"
+        },
+        {
+          "x": 216,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_orange_s3"
+        }
+      ]
+    },
+    "tulip_white": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 234,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_white_s0"
+        },
+        {
+          "x": 252,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_white_s1"
+        },
+        {
+          "x": 270,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_white_s2"
+        },
+        {
+          "x": 288,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_white_s3"
+        }
+      ]
+    },
+    "tulip_black": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 306,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_black_s0"
+        },
+        {
+          "x": 324,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_black_s1"
+        },
+        {
+          "x": 342,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_black_s2"
+        },
+        {
+          "x": 360,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_black_s3"
+        }
+      ]
+    },
+    "tulip_rainbow": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 378,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_rainbow_s0"
+        },
+        {
+          "x": 396,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_rainbow_s1"
+        },
+        {
+          "x": 414,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_rainbow_s2"
+        },
+        {
+          "x": 432,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "tulip_rainbow_s3"
+        }
+      ]
+    },
+    "lavender": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 450,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "lavender_s0"
+        },
+        {
+          "x": 468,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "lavender_s1"
+        },
+        {
+          "x": 486,
+          "y": 352,
+          "w": 16,
+          "h": 16,
+          "key": "lavender_s2"
+        },
+        {
+          "x": 0,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "lavender_s3"
+        }
+      ]
+    },
+    "blue_jazz": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 18,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "blue_jazz_s0"
+        },
+        {
+          "x": 36,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "blue_jazz_s1"
+        },
+        {
+          "x": 54,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "blue_jazz_s2"
+        },
+        {
+          "x": 72,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "blue_jazz_s3"
+        }
+      ]
+    },
+    "fairy_rose": {
+      "donor": "FarmRanchLife+yoshinos",
+      "stages": [
+        {
+          "x": 90,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "fairy_rose_s0"
+        },
+        {
+          "x": 108,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "fairy_rose_s1"
+        },
+        {
+          "x": 126,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "fairy_rose_s2"
+        },
+        {
+          "x": 144,
+          "y": 370,
+          "w": 16,
+          "h": 16,
+          "key": "fairy_rose_s3"
+        }
+      ]
+    }
+  },
+  "trees": {
+    "apple": {
+      "sapling": {
+        "x": 0,
+        "y": 0,
+        "w": 39,
+        "h": 60,
+        "key": "apple_sapling"
+      },
+      "young": {
+        "x": 41,
+        "y": 0,
+        "w": 71,
+        "h": 101,
+        "key": "apple_young"
+      },
+      "mature": {
+        "x": 114,
+        "y": 0,
+        "w": 83,
+        "h": 122,
+        "key": "apple_mature"
+      },
+      "fruiting": {
+        "x": 199,
+        "y": 0,
+        "w": 83,
+        "h": 122,
+        "key": "apple_fruiting"
+      }
+    },
+    "peach": {
+      "sapling": {
+        "x": 284,
+        "y": 0,
+        "w": 39,
+        "h": 50,
+        "key": "peach_sapling"
+      },
+      "young": {
+        "x": 325,
+        "y": 0,
+        "w": 59,
+        "h": 62,
+        "key": "peach_young"
+      },
+      "mature": {
+        "x": 386,
+        "y": 0,
+        "w": 77,
+        "h": 97,
+        "key": "peach_mature"
+      },
+      "fruiting": {
+        "x": 465,
+        "y": 0,
+        "w": 77,
+        "h": 97,
+        "key": "peach_fruiting"
+      }
+    },
+    "cherry": {
+      "sapling": {
+        "x": 544,
+        "y": 0,
+        "w": 46,
+        "h": 56,
+        "key": "cherry_sapling"
+      },
+      "young": {
+        "x": 592,
+        "y": 0,
+        "w": 59,
+        "h": 84,
+        "key": "cherry_young"
+      },
+      "mature": {
+        "x": 653,
+        "y": 0,
+        "w": 59,
+        "h": 92,
+        "key": "cherry_mature"
+      },
+      "fruiting": {
+        "x": 714,
+        "y": 0,
+        "w": 59,
+        "h": 92,
+        "key": "cherry_fruiting"
+      }
+    },
+    "orange": {
+      "sapling": {
+        "x": 775,
+        "y": 0,
+        "w": 34,
+        "h": 45,
+        "key": "orange_sapling"
+      },
+      "young": {
+        "x": 811,
+        "y": 0,
+        "w": 70,
+        "h": 77,
+        "key": "orange_young"
+      },
+      "mature": {
+        "x": 883,
+        "y": 0,
+        "w": 79,
+        "h": 107,
+        "key": "orange_mature"
+      },
+      "fruiting": {
+        "x": 0,
+        "y": 124,
+        "w": 79,
+        "h": 107,
+        "key": "orange_fruiting"
+      }
+    },
+    "lemon": {
+      "sapling": {
+        "x": 81,
+        "y": 124,
+        "w": 34,
+        "h": 45,
+        "key": "lemon_sapling"
+      },
+      "young": {
+        "x": 117,
+        "y": 124,
+        "w": 70,
+        "h": 77,
+        "key": "lemon_young"
+      },
+      "mature": {
+        "x": 189,
+        "y": 124,
+        "w": 79,
+        "h": 107,
+        "key": "lemon_mature"
+      },
+      "fruiting": {
+        "x": 270,
+        "y": 124,
+        "w": 79,
+        "h": 107,
+        "key": "lemon_fruiting"
+      }
+    },
+    "olive": {
+      "sapling": {
+        "x": 351,
+        "y": 124,
+        "w": 34,
+        "h": 45,
+        "key": "olive_sapling"
+      },
+      "young": {
+        "x": 387,
+        "y": 124,
+        "w": 70,
+        "h": 77,
+        "key": "olive_young"
+      },
+      "mature": {
+        "x": 459,
+        "y": 124,
+        "w": 79,
+        "h": 107,
+        "key": "olive_mature"
+      },
+      "fruiting": {
+        "x": 540,
+        "y": 124,
+        "w": 79,
+        "h": 107,
+        "key": "olive_fruiting"
+      }
+    },
+    "pear": {
+      "sapling": {
+        "x": 621,
+        "y": 124,
+        "w": 34,
+        "h": 71,
+        "key": "pear_sapling"
+      },
+      "young": {
+        "x": 657,
+        "y": 124,
+        "w": 56,
+        "h": 104,
+        "key": "pear_young"
+      },
+      "mature": {
+        "x": 715,
+        "y": 124,
+        "w": 66,
+        "h": 109,
+        "key": "pear_mature"
+      },
+      "fruiting": {
+        "x": 783,
+        "y": 124,
+        "w": 66,
+        "h": 109,
+        "key": "pear_fruiting"
+      }
+    },
+    "fig": {
+      "sapling": {
+        "x": 851,
+        "y": 124,
+        "w": 34,
+        "h": 71,
+        "key": "fig_sapling"
+      },
+      "young": {
+        "x": 887,
+        "y": 124,
+        "w": 56,
+        "h": 104,
+        "key": "fig_young"
+      },
+      "mature": {
+        "x": 945,
+        "y": 124,
+        "w": 66,
+        "h": 109,
+        "key": "fig_mature"
+      },
+      "fruiting": {
+        "x": 0,
+        "y": 235,
+        "w": 66,
+        "h": 109,
+        "key": "fig_fruiting"
+      }
+    },
+    "plum": {
+      "sapling": {
+        "x": 68,
+        "y": 235,
+        "w": 45,
+        "h": 68,
+        "key": "plum_sapling"
+      },
+      "young": {
+        "x": 115,
+        "y": 235,
+        "w": 65,
+        "h": 92,
+        "key": "plum_young"
+      },
+      "mature": {
+        "x": 182,
+        "y": 235,
+        "w": 65,
+        "h": 100,
+        "key": "plum_mature"
+      },
+      "fruiting": {
+        "x": 249,
+        "y": 235,
+        "w": 65,
+        "h": 100,
+        "key": "plum_fruiting"
+      }
+    },
+    "pomegranate": {
+      "sapling": {
+        "x": 316,
+        "y": 235,
+        "w": 39,
+        "h": 60,
+        "key": "pomegranate_sapling"
+      },
+      "young": {
+        "x": 357,
+        "y": 235,
+        "w": 71,
+        "h": 101,
+        "key": "pomegranate_young"
+      },
+      "mature": {
+        "x": 430,
+        "y": 235,
+        "w": 83,
+        "h": 122,
+        "key": "pomegranate_mature"
+      },
+      "fruiting": {
+        "x": 515,
+        "y": 235,
+        "w": 83,
+        "h": 122,
+        "key": "pomegranate_fruiting"
+      }
+    },
+    "walnut": {
+      "sapling": {
+        "x": 600,
+        "y": 235,
+        "w": 41,
+        "h": 53,
+        "key": "walnut_sapling"
+      },
+      "young": {
+        "x": 643,
+        "y": 235,
+        "w": 85,
+        "h": 93,
+        "key": "walnut_young"
+      },
+      "mature": {
+        "x": 730,
+        "y": 235,
+        "w": 87,
+        "h": 97,
+        "key": "walnut_mature"
+      },
+      "fruiting": {
+        "x": 819,
+        "y": 235,
+        "w": 88,
+        "h": 97,
+        "key": "walnut_fruiting"
+      }
+    },
+    "cocoa": {
+      "sapling": {
+        "x": 909,
+        "y": 235,
+        "w": 55,
+        "h": 57,
+        "key": "cocoa_sapling"
+      },
+      "young": {
+        "x": 0,
+        "y": 359,
+        "w": 80,
+        "h": 92,
+        "key": "cocoa_young"
+      },
+      "mature": {
+        "x": 82,
+        "y": 359,
+        "w": 92,
+        "h": 113,
+        "key": "cocoa_mature"
+      },
+      "fruiting": {
+        "x": 176,
+        "y": 359,
+        "w": 92,
+        "h": 113,
+        "key": "cocoa_fruiting"
+      }
+    }
+  }
+}

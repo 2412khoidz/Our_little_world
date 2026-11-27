@@ -1,6 +1,13 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ensureV015Db, grantPetCareStarterPack, handleV015Route } from './devLanV015Handlers.mjs';
+import { createSharedPetCareSession, mergeSharedPetCareSession } from './devLanPetCareSession.mjs';
+import { handleBilliardsRoute } from './devLanBilliardsHandlers.mjs';
+import { createDevLanWsHub } from './devLanWsHub.mjs';
+import { getRemoteShareStatus, startRemoteShare, stopRemoteShare } from './olwRemoteShare.mjs';
+
+const PARTNER_B_DEV_ID = '22222222-2222-4222-8222-222222222222';
 
 const DEV_IDENTITIES = [
   {
@@ -63,6 +70,20 @@ const FURNITURE_CATALOG = new Map([
   ['bench_garden', { nameVi: 'Ghế gỗ sân vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 2, h: 1, stock: 2 }],
   ['lantern_garden', { nameVi: 'Đèn lồng đá vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 3 }],
   ['flowerpot_sakura', { nameVi: 'Chậu hoa anh đào', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 3 }],
+  ['sakura_bush_decor', { nameVi: 'Bụi hoa anh đào', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['sakura_petals_decor', { nameVi: 'Thảm cánh hoa đào', allowedMaps: ['garden'], layerSlot: 'floor', w: 1, h: 1, stock: 20, devSandboxOnly: true }],
+  ['planter_box_decor', { nameVi: 'Bồn hoa gỗ vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['sunflower_cluster_decor', { nameVi: 'Khóm hoa hướng dương', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 10, devSandboxOnly: true }],
+  ['picnic_blanket_decor', { nameVi: 'Thảm dã ngoại caro', allowedMaps: ['garden'], layerSlot: 'floor', w: 2, h: 2, stock: 4, devSandboxOnly: true }],
+  ['picnic_basket_decor', { nameVi: 'Giỏ dã ngoại mây', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
+  ['beehive_garden', { nameVi: 'Tổ ong mật vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
+  ['fence_wood_post', { nameVi: 'Cọc rào gỗ vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 20, devSandboxOnly: true }],
+  ['mailbox_garden', { nameVi: 'Hộp thư đỏ cổ điển', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 2, devSandboxOnly: true }],
+  ['wishing_well_garden', { nameVi: 'Giếng ước sân vườn', allowedMaps: ['garden'], layerSlot: 'object', w: 2, h: 2, stock: 2, devSandboxOnly: true }],
+  ['hay_bale_decor', { nameVi: 'Cuộn rơm ấm áp', allowedMaps: ['garden'], layerSlot: 'object', w: 1, h: 1, stock: 6, devSandboxOnly: true }],
+  ['rug_coral_decor', { nameVi: 'Thảm san hô dệt tay', allowedMaps: ['home'], layerSlot: 'floor', w: 2, h: 2, stock: 4, devSandboxOnly: true }],
+  ['bookshelf_wide_decor', { nameVi: 'Tủ sách gỗ lớn', allowedMaps: ['home'], layerSlot: 'object', w: 2, h: 1, stock: 3, devSandboxOnly: true }],
+  ['photo_frame_decor', { nameVi: 'Khung ảnh kỷ niệm', allowedMaps: ['home'], layerSlot: 'object', w: 1, h: 1, stock: 4, devSandboxOnly: true }],
 ]);
 
 const DEFAULT_STARTER_SPECS = [
@@ -144,7 +165,17 @@ function buildStarterPlacements(worldId, ownerId, nowIso) {
   });
 }
 
-function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignorePlacementId }) {
+function validatePlacementOnServer({
+  mapId,
+  sku,
+  tileX,
+  tileY,
+  placements,
+  ignorePlacementId,
+  footprintW,
+  footprintH,
+  devSandbox = false,
+}) {
   if (!Number.isInteger(tileX) || !Number.isInteger(tileY)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Vị trí đặt đồ chưa hợp lệ.' };
   }
@@ -152,20 +183,25 @@ function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignor
   if (!item) {
     return { ok: false, code: 'NOT_FOUND', message: 'Món nội thất không có trong danh sách.' };
   }
+  if (item.devSandboxOnly && !devSandbox) {
+    return { ok: false, code: 'FORBIDDEN', message: `${item.nameVi} hiện chỉ mở ở chế độ thử nghiệm.` };
+  }
   if (!item.allowedMaps.includes(mapId)) {
     return { ok: false, code: 'WRONG_MAP', message: `${item.nameVi} không đặt được ở khu vực này.` };
   }
 
-  let count = 0;
-  for (const p of placements) {
-    if (p.sku === sku && p.id !== ignorePlacementId) count += 1;
-  }
-  if (count >= item.stock) {
-    return {
-      ok: false,
-      code: 'STOCK_EXCEEDED',
-      message: `Bạn đã dùng hết ${item.stock} món ${item.nameVi}.`,
-    };
+  if (!devSandbox) {
+    let count = 0;
+    for (const p of placements) {
+      if (p.sku === sku && p.id !== ignorePlacementId) count += 1;
+    }
+    if (count >= item.stock) {
+      return {
+        ok: false,
+        code: 'STOCK_EXCEEDED',
+        message: `Bạn đã dùng hết ${item.stock} món ${item.nameVi}.`,
+      };
+    }
   }
 
   const occupied = new Set();
@@ -178,8 +214,11 @@ function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignor
     }
   }
 
-  for (let dy = 0; dy < item.h; dy += 1) {
-    for (let dx = 0; dx < item.w; dx += 1) {
+  const w = footprintW ?? item.w;
+  const h = footprintH ?? item.h;
+
+  for (let dy = 0; dy < h; dy += 1) {
+    for (let dx = 0; dx < w; dx += 1) {
       const tx = tileX + dx;
       const ty = tileY + dy;
       if (isMapOutOfBounds(mapId, tx, ty)) {
@@ -197,7 +236,7 @@ function validatePlacementOnServer({ mapId, sku, tileX, tileY, placements, ignor
     }
   }
 
-  return { ok: true, item };
+  return { ok: true, item, w, h };
 }
 
 function createInitialDb() {
@@ -211,14 +250,20 @@ function createInitialDb() {
       updatedAt: nowIso,
     };
   }
-  return {
+  const dbObj = {
     profiles,
     worlds: {},
     memberships: {},
     invites: [],
     placements: {},
     idempotency: {},
+    petCareSessions: {},
+    billiardsMatches: {},
+    worldStateVersions: {},
+    domainVersions: {},
   };
+  ensureV015Db(dbObj);
+  return dbObj;
 }
 
 function sendJson(res, status, payload) {
@@ -240,6 +285,10 @@ async function readJsonBody(req) {
 
 export function createDevLanHandler({
   stateFilePath = path.join(process.cwd(), '.dev-lan-state.json'),
+  getTryHandleFarmDevLan = () => null,
+  getTryHandleDonorDevLan = () => null,
+  getServerPort = () => 5173,
+  wsOptions = {},
 } = {}) {
   let db = createInitialDb();
   try {
@@ -249,13 +298,23 @@ export function createDevLanHandler({
   } catch {
     db = createInitialDb();
   }
+  db.petCareSessions ??= {};
+  db.billiardsMatches ??= {};
+  db.worldStateVersions ??= {};
+  db.domainVersions ??= {};
+
+  function ensurePetCareSession(worldId) {
+    const petId = db.v015?.pets?.[worldId]?.id ?? `pet-${worldId}`;
+    const existing = db.petCareSessions[worldId];
+    if (existing) return existing;
+    const session = createSharedPetCareSession(worldId, petId);
+    db.petCareSessions[worldId] = session;
+    return session;
+  }
 
   function saveDb() {
     fs.writeFileSync(stateFilePath, JSON.stringify(db, null, 2), 'utf8');
   }
-
-  // Active SSE sessions keyed by sessionId -> { worldId, userId, sessionId, res, presence }
-  const sseClients = new Map();
 
   function getWorldForUser(userId) {
     for (const [worldId, members] of Object.entries(db.memberships)) {
@@ -268,67 +327,182 @@ export function createDevLanHandler({
     return (db.memberships[worldId] ?? []).some((m) => m.userId === userId);
   }
 
+  function getProfile(userId) {
+    const profile = db.profiles[userId];
+    const fallbackId = DEV_IDENTITIES.find((d) => d.userId === userId);
+    return {
+      nickname: profile?.nickname ?? fallbackId?.defaultNickname ?? 'Thành viên',
+      avatarConfig: profile?.avatarConfig ?? fallbackId?.defaultAvatar ?? DEV_IDENTITIES[0].defaultAvatar,
+    };
+  }
+
+  function ensureWorldVersionState(worldId) {
+    db.worldStateVersions ??= {};
+    db.domainVersions ??= {};
+    if (typeof db.worldStateVersions[worldId] !== 'number') {
+      db.worldStateVersions[worldId] = 1;
+    }
+    if (!db.domainVersions[worldId]) {
+      const world = db.worlds[worldId];
+      const v015 = db.v015 ?? {};
+      db.domainVersions[worldId] = {
+        layoutVersion: world?.layoutVersion ?? 1,
+        farmVersion: v015.farms?.[worldId]?.version ?? 1,
+        petVersion: v015.pets?.[worldId]?.version ?? 1,
+        bowlVersion: v015.petBowls?.[worldId]?.version ?? 1,
+        inventoryVersion: 1,
+        studyVersion: 1,
+        mailboxVersion: 1,
+        petCareRevision: db.petCareSessions?.[worldId]?.revision ?? 0,
+      };
+    }
+    return {
+      stateVersion: db.worldStateVersions[worldId],
+      domainVersions: { ...db.domainVersions[worldId] },
+    };
+  }
+
+  function bumpWorldStateVersion(worldId, domain) {
+    const cur = ensureWorldVersionState(worldId);
+    db.worldStateVersions[worldId] = cur.stateVersion + 1;
+    const dv = db.domainVersions[worldId];
+    if (domain === 'furniture') dv.layoutVersion = db.worlds[worldId]?.layoutVersion ?? dv.layoutVersion + 1;
+    else if (domain === 'farm') dv.farmVersion = db.v015?.farms?.[worldId]?.version ?? dv.farmVersion + 1;
+    else if (domain === 'pet') dv.petVersion = db.v015?.pets?.[worldId]?.version ?? dv.petVersion + 1;
+    else if (domain === 'bowl') dv.bowlVersion = db.v015?.petBowls?.[worldId]?.version ?? dv.bowlVersion + 1;
+    else if (domain === 'inventory') dv.inventoryVersion += 1;
+    else if (domain === 'study') dv.studyVersion += 1;
+    else if (domain === 'mailbox') dv.mailboxVersion += 1;
+    else if (domain === 'pet_care') dv.petCareRevision = db.petCareSessions?.[worldId]?.revision ?? dv.petCareRevision + 1;
+    return {
+      stateVersion: db.worldStateVersions[worldId],
+      domainVersions: { ...dv },
+    };
+  }
+
+  const wsHub = createDevLanWsHub({
+    isWorldMember,
+    getProfile,
+    getWorldStateMeta: ensureWorldVersionState,
+    ...wsOptions,
+  });
+
   function buildSnapshot(worldId) {
     const world = db.worlds[worldId];
     const rawMembers = db.memberships[worldId];
     if (!world || !rawMembers) return null;
+    const meta = ensureWorldVersionState(worldId);
     const members = rawMembers.map((m) => {
-      const profile = db.profiles[m.userId];
-      const fallbackId = DEV_IDENTITIES.find((d) => d.userId === m.userId);
+      const profile = getProfile(m.userId);
       return {
         userId: m.userId,
         role: m.role,
-        nickname: profile?.nickname ?? fallbackId?.defaultNickname ?? 'Thành viên',
-        avatarConfig: profile?.avatarConfig ?? fallbackId?.defaultAvatar ?? DEV_IDENTITIES[0].defaultAvatar,
+        nickname: profile.nickname,
+        avatarConfig: profile.avatarConfig,
         joinedAt: m.joinedAt,
       };
     });
     return {
-      world,
+      world: {
+        ...world,
+        stateVersion: meta.stateVersion,
+      },
       members,
       placements: [...(db.placements[worldId] ?? [])],
     };
   }
 
-  function sendSse(res, event, data) {
-    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  }
-
-  function broadcastPresenceSync(worldId) {
-    const list = [];
-    for (const client of sseClients.values()) {
-      if (client.worldId === worldId && client.presence) {
-        list.push(client.presence);
-      }
-    }
-    for (const client of sseClients.values()) {
-      if (client.worldId === worldId) {
-        sendSse(client.res, 'presence_sync', list);
-      }
-    }
-  }
-
   function broadcastEvent(worldId, event, data, excludeSessionId = null) {
-    for (const client of sseClients.values()) {
-      if (client.worldId === worldId && client.sessionId !== excludeSessionId) {
-        sendSse(client.res, event, data);
-      }
-    }
+    wsHub.broadcastEvent(worldId, event, data, excludeSessionId);
   }
 
-  const keepaliveTimer = setInterval(() => {
-    for (const client of sseClients.values()) {
-      client.res.write(': keepalive\n\n');
-    }
-  }, 15000);
-  keepaliveTimer.unref?.();
+  function broadcastWorldMutated(worldId, reason, domain = reason) {
+    const meta = bumpWorldStateVersion(worldId, domain);
+    wsHub.broadcastEvent(worldId, 'world_mutated', {
+      reason,
+      stateVersion: meta.stateVersion,
+      domainVersions: meta.domainVersions,
+    });
+    return meta;
+  }
 
   function closeAll() {
-    clearInterval(keepaliveTimer);
-    for (const client of sseClients.values()) {
-      client.res.end();
+    wsHub.closeAll();
+    void stopRemoteShare();
+  }
+
+  function seedCoupleWorldIfNeeded() {
+    const existingId = Object.keys(db.worlds)[0];
+    if (existingId) return existingId;
+    const nowIso = new Date().toISOString();
+    const worldId = `world-${crypto.randomUUID()}`;
+    const may = DEV_IDENTITIES[0];
+    const haAnh = DEV_IDENTITIES[1];
+    db.worlds[worldId] = {
+      id: worldId,
+      name: 'Nhà của Mây & Nắng',
+      layoutVersion: 1,
+      createdAt: nowIso,
+    };
+    db.memberships[worldId] = [
+      { userId: may.userId, role: 'owner', joinedAt: nowIso },
+      { userId: haAnh.userId, role: 'partner', joinedAt: nowIso },
+    ];
+    db.placements[worldId] = buildStarterPlacements(worldId, may.userId, nowIso);
+    const v015 = ensureV015Db(db);
+    grantPetCareStarterPack(v015, worldId, nowIso);
+    ensurePetCareSession(worldId);
+    saveDb();
+    return worldId;
+  }
+
+  /**
+   * Ensures the remote partner (Nắng / partner-b) can immediately enter an existing 1/2 world
+   * when opening a remote-share link, without overwriting any existing host world or data.
+   */
+  function ensureRemotePartnerInPrimaryWorld() {
+    const existingId = Object.keys(db.worlds)[0];
+    if (!existingId) {
+      return seedCoupleWorldIfNeeded();
     }
-    sseClients.clear();
+    const members = db.memberships[existingId] ?? [];
+    if (members.some((m) => m.userId === PARTNER_B_DEV_ID)) {
+      return existingId;
+    }
+    if (members.length >= 2) {
+      return existingId;
+    }
+    const existingPartnerWorld = getWorldForUser(PARTNER_B_DEV_ID);
+    if (existingPartnerWorld) {
+      return existingPartnerWorld;
+    }
+
+    const nowIso = new Date().toISOString();
+    const partnerB = DEV_IDENTITIES[1];
+    if (!db.profiles[PARTNER_B_DEV_ID]) {
+      db.profiles[PARTNER_B_DEV_ID] = {
+        userId: PARTNER_B_DEV_ID,
+        nickname: partnerB.defaultNickname,
+        avatarConfig: partnerB.defaultAvatar,
+        updatedAt: nowIso,
+      };
+    }
+    members.push({ userId: PARTNER_B_DEV_ID, role: 'partner', joinedAt: nowIso });
+    db.memberships[existingId] = members;
+    for (const inv of db.invites) {
+      if (inv.worldId === existingId && inv.redeemedAt === null) {
+        inv.redeemedBy = PARTNER_B_DEV_ID;
+        inv.redeemedAt = nowIso;
+      }
+    }
+    const v015 = ensureV015Db(db);
+    if (!v015.pets?.[existingId]) {
+      grantPetCareStarterPack(v015, existingId, nowIso);
+    }
+    ensurePetCareSession(existingId);
+    saveDb();
+    broadcastWorldMutated(existingId, 'member', 'member');
+    return existingId;
   }
 
   async function middleware(req, res, next) {
@@ -340,15 +514,88 @@ export function createDevLanHandler({
 
     const route = reqUrl.pathname.slice('/api/dev-lan'.length);
     const userId = String(req.headers['x-dev-user-id'] ?? '').trim();
+    const isRemoteClient = req.headers['x-olw-remote-share'] === '1';
+
+    if (isRemoteClient) {
+      if (userId && userId !== PARTNER_B_DEV_ID) {
+        sendJson(res, 403, {
+          ok: false,
+          code: 'FORBIDDEN',
+          message: 'Phiên chia sẻ từ xa chỉ cấp quyền cho người thương (Nắng).',
+        });
+        return;
+      }
+      const blockedRemoteRoute =
+        route === '/reset' ||
+        route === '/seed-couple' ||
+        route.startsWith('/dev-console') ||
+        route === '/world/create' ||
+        route === '/world/invite';
+      if (blockedRemoteRoute) {
+        sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Thao tác quản trị này chỉ mở trên máy chủ Host.' });
+        return;
+      }
+    }
 
     try {
-      // GET /identities — live dev roster & world status
+      if (req.method === 'GET' && route === '/client-context') {
+        if (isRemoteClient) {
+          ensureRemotePartnerInPrimaryWorld();
+        }
+        sendJson(res, 200, {
+          ok: true,
+          data: {
+            isRemoteClient,
+            autoPartnerPreset: isRemoteClient ? 'partner-b' : null,
+          },
+        });
+        return;
+      }
+
+      if (route === '/remote-share') {
+        if (req.method === 'GET') {
+          sendJson(res, 200, {
+            ok: true,
+            data: { ...getRemoteShareStatus(), isRemoteClient },
+          });
+          return;
+        }
+        if (isRemoteClient) {
+          sendJson(res, 403, {
+            ok: false,
+            code: 'FORBIDDEN',
+            message: 'Chỉ máy chủ (Host) mới điều khiển chia sẻ liên mạng.',
+          });
+          return;
+        }
+        if (req.method === 'POST') {
+          ensureRemotePartnerInPrimaryWorld();
+          const shareBody = await readJsonBody(req);
+          const targetPort = getServerPort() || req.socket?.localPort || 5173;
+          const info = await startRemoteShare({
+            targetPort,
+            refresh: Boolean(shareBody?.refresh),
+          });
+          sendJson(res, 200, { ok: true, data: { ...info, isRemoteClient: false } });
+          return;
+        }
+        if (req.method === 'DELETE') {
+          await stopRemoteShare();
+          sendJson(res, 200, { ok: true, data: { ...getRemoteShareStatus(), isRemoteClient: false } });
+          return;
+        }
+      }
+      // GET /identities — live dev roster & world status (remote clients only see partner-b)
       if (req.method === 'GET' && route === '/identities') {
         const worlds = Object.values(db.worlds);
         const primaryWorld = worlds[0] ?? null;
         const members = primaryWorld ? (db.memberships[primaryWorld.id] ?? []) : [];
 
-        const identities = DEV_IDENTITIES.map((d) => {
+        const visibleIdentities = isRemoteClient
+          ? DEV_IDENTITIES.filter((d) => d.userId === PARTNER_B_DEV_ID)
+          : DEV_IDENTITIES;
+
+        const identities = visibleIdentities.map((d) => {
           const userWorldId = getWorldForUser(d.userId);
           const membership = userWorldId
             ? (db.memberships[userWorldId] ?? []).find((m) => m.userId === d.userId)
@@ -382,46 +629,69 @@ export function createDevLanHandler({
         const affectedWorlds = Object.keys(db.worlds);
         db = createInitialDb();
         saveDb();
-        for (const wid of affectedWorlds) {
-          broadcastEvent(wid, 'world_reset', { reset: true });
-        }
+        wsHub.resetAllRooms(affectedWorlds);
         sendJson(res, 200, { ok: true, data: { reset: true } });
         return;
       }
 
       // POST /seed-couple — dev-only quick-start 2/2 house (Mây + Nắng)
       if (req.method === 'POST' && route === '/seed-couple') {
-        const existingId = Object.keys(db.worlds)[0];
-        if (existingId) {
-          sendJson(res, 200, { ok: true, data: buildSnapshot(existingId) });
-          return;
-        }
-        const nowIso = new Date().toISOString();
-        const worldId = `world-${crypto.randomUUID()}`;
-        const may = DEV_IDENTITIES[0];
-        const haAnh = DEV_IDENTITIES[1];
-        db.worlds[worldId] = {
-          id: worldId,
-          name: 'Nhà của Mây & Nắng',
-          layoutVersion: 1,
-          createdAt: nowIso,
-        };
-        db.memberships[worldId] = [
-          { userId: may.userId, role: 'owner', joinedAt: nowIso },
-          { userId: haAnh.userId, role: 'partner', joinedAt: nowIso },
-        ];
-        db.placements[worldId] = buildStarterPlacements(worldId, may.userId, nowIso);
-        saveDb();
+        const worldId = seedCoupleWorldIfNeeded();
         sendJson(res, 200, { ok: true, data: buildSnapshot(worldId) });
         return;
       }
 
-      // GET /events — Server-Sent Events realtime stream
+      if (req.method === 'GET' && route === '/pet-care/session') {
+        const worldId = reqUrl.searchParams.get('worldId') ?? '';
+        if (!worldId || !isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn chưa là thành viên của ngôi nhà này.' });
+          return;
+        }
+        const session = ensurePetCareSession(worldId);
+        sendJson(res, 200, { ok: true, data: session });
+        return;
+      }
+
+      if (req.method === 'POST' && route === '/pet-care/session/patch') {
+        const patchBody = await readJsonBody(req);
+        const { worldId, patch, idempotencyKey } = patchBody;
+        if (!worldId || !patch || !isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Không thể cập nhật phiên chăm mèo.' });
+          return;
+        }
+        if (patch.actorUserId !== userId) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Không khớp người chơi.' });
+          return;
+        }
+        const idemKey = idempotencyKey ? `${worldId}:petcare:${String(idempotencyKey)}` : '';
+        if (idemKey && db.idempotency[idemKey]) {
+          sendJson(res, 200, { ok: true, data: db.idempotency[idemKey] });
+          return;
+        }
+        const prev = ensurePetCareSession(worldId);
+        const next = mergeSharedPetCareSession(prev, { ...patch, atMs: patch.atMs ?? Date.now() });
+        db.petCareSessions[worldId] = next;
+        bumpWorldStateVersion(worldId, 'pet_care');
+        if (idemKey) db.idempotency[idemKey] = next;
+        saveDb();
+        const payload = { type: 'PET_CARE_SESSION', worldId, session: next };
+        broadcastEvent(worldId, 'pet_care_session', payload, null);
+        sendJson(res, 200, { ok: true, data: next });
+        return;
+      }
+
+      // GET /events — Server-Sent Events realtime fallback stream
       if (req.method === 'GET' && route === '/events') {
         const qWorldId = reqUrl.searchParams.get('worldId') ?? '';
         const qUserId = reqUrl.searchParams.get('userId') ?? '';
         const qSessionId = reqUrl.searchParams.get('sessionId') ?? '';
-        if (!qWorldId || !qUserId || !qSessionId || !isWorldMember(qWorldId, qUserId)) {
+        if (
+          !qWorldId ||
+          !qUserId ||
+          !qSessionId ||
+          (isRemoteClient && qUserId !== PARTNER_B_DEV_ID) ||
+          !isWorldMember(qWorldId, qUserId)
+        ) {
           sendJson(res, 403, {
             ok: false,
             code: 'FORBIDDEN',
@@ -429,46 +699,11 @@ export function createDevLanHandler({
           });
           return;
         }
-
-        const profile = db.profiles[qUserId];
-        const fallbackId = DEV_IDENTITIES.find((d) => d.userId === qUserId);
-        const initialPresence = {
-          userId: qUserId,
-          sessionId: qSessionId,
-          mapId: reqUrl.searchParams.get('mapId') === 'garden' ? 'garden' : 'home',
-          nickname: profile?.nickname ?? fallbackId?.defaultNickname ?? 'Bạn',
-          avatarConfig: profile?.avatarConfig ?? fallbackId?.defaultAvatar ?? DEV_IDENTITIES[0].defaultAvatar,
-          tileX: Number(reqUrl.searchParams.get('tileX') ?? 8) || 8,
-          tileY: Number(reqUrl.searchParams.get('tileY') ?? 9) || 9,
-          facing: ['up', 'down', 'left', 'right'].includes(reqUrl.searchParams.get('facing') || '')
-            ? reqUrl.searchParams.get('facing')
-            : 'down',
-          updatedAtMs: Date.now(),
-        };
-
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-        res.setHeader('Cache-Control', 'no-cache, no-transform');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Accel-Buffering', 'no');
-        res.flushHeaders?.();
-
-        sseClients.set(qSessionId, {
+        wsHub.handleSseStream(req, res, {
           worldId: qWorldId,
           userId: qUserId,
           sessionId: qSessionId,
-          res,
-          presence: initialPresence,
-        });
-
-        broadcastPresenceSync(qWorldId);
-
-        req.on('close', () => {
-          const existing = sseClients.get(qSessionId);
-          if (existing) {
-            sseClients.delete(qSessionId);
-            broadcastPresenceSync(qWorldId);
-          }
+          reqUrl,
         });
         return;
       }
@@ -645,8 +880,9 @@ export function createDevLanHandler({
         db.memberships[invite.worldId] = members;
         invite.redeemedBy = userId;
         invite.redeemedAt = nowIso;
+        bumpWorldStateVersion(invite.worldId, 'member');
         saveDb();
-        broadcastEvent(invite.worldId, 'world_mutated', { reason: 'member' });
+        broadcastWorldMutated(invite.worldId, 'member', 'member');
         sendJson(res, 200, { ok: true, data: buildSnapshot(invite.worldId) });
         return;
       }
@@ -670,28 +906,18 @@ export function createDevLanHandler({
           updatedAt: new Date().toISOString(),
         };
         db.profiles[userId] = profile;
-        saveDb();
         const worldId = getWorldForUser(userId);
         if (worldId) {
-          for (const client of sseClients.values()) {
-            if (client.worldId === worldId && client.userId === userId && client.presence) {
-              client.presence = {
-                ...client.presence,
-                nickname: profile.nickname,
-                avatarConfig: profile.avatarConfig,
-                updatedAtMs: Date.now(),
-              };
-            }
-          }
-          broadcastPresenceSync(worldId);
-          broadcastEvent(worldId, 'world_mutated', { reason: 'profile' });
+          wsHub.refreshUserProfile(worldId, userId);
+          broadcastWorldMutated(worldId, 'profile', 'profile');
         }
+        saveDb();
         sendJson(res, 200, { ok: true, data: profile });
         return;
       }
 
       if (req.method === 'POST' && route === '/furniture/place') {
-        const { worldId, mapId, sku, tileX, tileY, expectedLayoutVersion, idempotencyKey } = body;
+        const { worldId, mapId, sku, tileX, tileY, rotated, devSandbox, expectedLayoutVersion, idempotencyKey } = body;
         if (!isWorldMember(worldId, userId)) {
           sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
           return;
@@ -715,7 +941,19 @@ export function createDevLanHandler({
           return;
         }
         const placements = db.placements[worldId] ?? [];
-        const check = validatePlacementOnServer({ mapId, sku, tileX, tileY, placements });
+        const item = FURNITURE_CATALOG.get(sku);
+        const footprintW = rotated && item ? item.h : undefined;
+        const footprintH = rotated && item ? item.w : undefined;
+        const check = validatePlacementOnServer({
+          mapId,
+          sku,
+          tileX,
+          tileY,
+          placements,
+          footprintW,
+          footprintH,
+          devSandbox: devSandbox === true,
+        });
         if (!check.ok) {
           sendJson(res, 400, { ok: false, code: check.code, message: check.message });
           return;
@@ -728,8 +966,8 @@ export function createDevLanHandler({
           layerSlot: check.item.layerSlot,
           tileX,
           tileY,
-          widthTiles: check.item.w,
-          heightTiles: check.item.h,
+          widthTiles: check.w,
+          heightTiles: check.h,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
         };
@@ -737,8 +975,8 @@ export function createDevLanHandler({
         world.layoutVersion += 1;
         const result = { layoutVersion: world.layoutVersion, placement: newPlacement };
         db.idempotency[idemKey] = result;
+        broadcastWorldMutated(worldId, 'furniture', 'furniture');
         saveDb();
-        broadcastEvent(worldId, 'world_mutated', { reason: 'furniture' });
         sendJson(res, 200, { ok: true, data: result });
         return;
       }
@@ -780,6 +1018,8 @@ export function createDevLanHandler({
           tileY,
           placements,
           ignorePlacementId: target.id,
+          footprintW: target.widthTiles,
+          footprintH: target.heightTiles,
         });
         if (!check.ok) {
           sendJson(res, 400, { ok: false, code: check.code, message: check.message });
@@ -796,8 +1036,77 @@ export function createDevLanHandler({
         world.layoutVersion += 1;
         const result = { layoutVersion: world.layoutVersion, placement: updated };
         db.idempotency[idemKey] = result;
+        broadcastWorldMutated(worldId, 'furniture', 'furniture');
         saveDb();
-        broadcastEvent(worldId, 'world_mutated', { reason: 'furniture' });
+        sendJson(res, 200, { ok: true, data: result });
+        return;
+      }
+
+      if (req.method === 'POST' && route === '/furniture/rotate') {
+        const { worldId, placementId, expectedLayoutVersion, idempotencyKey } = body;
+        if (!isWorldMember(worldId, userId)) {
+          sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+          return;
+        }
+        const world = db.worlds[worldId];
+        if (!world) {
+          sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy ngôi nhà.' });
+          return;
+        }
+        const idemKey = `${worldId}:${idempotencyKey}`;
+        if (db.idempotency[idemKey]) {
+          sendJson(res, 200, { ok: true, data: db.idempotency[idemKey] });
+          return;
+        }
+        if (world.layoutVersion !== expectedLayoutVersion) {
+          sendJson(res, 409, {
+            ok: false,
+            code: 'VERSION_CONFLICT',
+            message: 'Người kia vừa sắp xếp lại đồ đạc, nhà đã được cập nhật mới nhất.',
+          });
+          return;
+        }
+        const placements = db.placements[worldId] ?? [];
+        const target = placements.find((p) => p.id === placementId);
+        if (!target) {
+          sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Món đồ này không còn ở trên sàn.' });
+          return;
+        }
+        if (target.widthTiles === target.heightTiles) {
+          sendJson(res, 400, {
+            ok: false,
+            code: 'VALIDATION_ERROR',
+            message: 'Món vuông này không cần xoay.',
+          });
+          return;
+        }
+        const check = validatePlacementOnServer({
+          mapId: target.mapId,
+          sku: target.sku,
+          tileX: target.tileX,
+          tileY: target.tileY,
+          placements,
+          ignorePlacementId: target.id,
+          footprintW: target.heightTiles,
+          footprintH: target.widthTiles,
+        });
+        if (!check.ok) {
+          sendJson(res, 400, { ok: false, code: check.code, message: check.message });
+          return;
+        }
+        const updated = {
+          ...target,
+          widthTiles: target.heightTiles,
+          heightTiles: target.widthTiles,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        };
+        db.placements[worldId] = placements.map((p) => (p.id === target.id ? updated : p));
+        world.layoutVersion += 1;
+        const result = { layoutVersion: world.layoutVersion, placement: updated };
+        db.idempotency[idemKey] = result;
+        broadcastWorldMutated(worldId, 'furniture', 'furniture');
+        saveDb();
         sendJson(res, 200, { ok: true, data: result });
         return;
       }
@@ -835,8 +1144,8 @@ export function createDevLanHandler({
         world.layoutVersion += 1;
         const result = { layoutVersion: world.layoutVersion, removedId: placementId };
         db.idempotency[idemKey] = result;
+        broadcastWorldMutated(worldId, 'furniture', 'furniture');
         saveDb();
-        broadcastEvent(worldId, 'world_mutated', { reason: 'furniture' });
         sendJson(res, 200, { ok: true, data: result });
         return;
       }
@@ -847,22 +1156,42 @@ export function createDevLanHandler({
           sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
           return;
         }
-        if (kind === 'presence' && sessionId && payload) {
-          const client = sseClients.get(sessionId);
-          if (client && client.userId === userId) {
-            client.presence = { ...payload, userId, sessionId, updatedAtMs: Date.now() };
-            broadcastPresenceSync(worldId);
-          }
-        } else if (kind === 'movement' && payload) {
-          broadcastEvent(worldId, 'movement', payload, sessionId || null);
-        } else if (kind === 'world_mutated') {
-          broadcastEvent(worldId, 'world_mutated', payload ?? { reason: 'furniture' }, sessionId || null);
-        } else if (kind === 'spike_cinema' && payload) {
-          broadcastEvent(worldId, 'spike_cinema', payload, sessionId || null);
-        }
+        wsHub.handleHttpRealtime(worldId, userId, sessionId, kind, payload);
         sendJson(res, 200, { ok: true });
         return;
       }
+
+      const handledBilliards = handleBilliardsRoute({
+        req,
+        res,
+        route,
+        reqUrl,
+        body,
+        userId,
+        db,
+        isWorldMember,
+        sendJson,
+        saveDb,
+      });
+      if (handledBilliards) return;
+
+      const handledV015 = await handleV015Route({
+        req,
+        res,
+        route,
+        reqUrl,
+        body,
+        userId,
+        db,
+        isWorldMember,
+        sendJson,
+        saveDb,
+        broadcastEvent,
+        bumpWorldStateVersion,
+        tryHandleFarmDevLan: getTryHandleFarmDevLan(),
+        tryHandleDonorDevLan: getTryHandleDonorDevLan(),
+      });
+      if (handledV015) return;
 
       sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy đường dẫn dev.' });
     } catch (err) {
@@ -874,6 +1203,9 @@ export function createDevLanHandler({
     }
   }
 
+  middleware.handleUpgrade = wsHub.handleUpgrade;
+  middleware.getWorldStateMeta = ensureWorldVersionState;
+  middleware.getRoomDebugStats = wsHub.getRoomDebugStats;
   middleware.closeAll = closeAll;
   return middleware;
 }
@@ -923,15 +1255,44 @@ function createAssetCandidatesMiddleware() {
   };
 }
 
-export function devLanServerPlugin() {
+export function devLanServerPlugin(options = {}) {
   return {
     name: 'olw-dev-lan-server',
     apply: 'serve',
     configureServer(server) {
-      const handler = createDevLanHandler();
+      let tryHandleFarmDevLan = null;
+      let tryHandleDonorDevLan = null;
+      server
+        .ssrLoadModule('/src/server/devLanFarmRoute.ts')
+        .then((mod) => {
+          tryHandleFarmDevLan = mod.tryHandleFarmDevLan;
+        })
+        .catch((err) => {
+          console.warn('[dev-lan] farm routes unavailable:', err?.message ?? err);
+        });
+      server
+        .ssrLoadModule('/src/server/devLanDonorRoute.ts')
+        .then((mod) => {
+          tryHandleDonorDevLan = mod.tryHandleDonorDevLan;
+        })
+        .catch((err) => {
+          console.warn('[dev-lan] donor routes unavailable:', err?.message ?? err);
+        });
+      const handler = createDevLanHandler({
+        stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+        getTryHandleFarmDevLan: () => tryHandleFarmDevLan,
+        getTryHandleDonorDevLan: () => tryHandleDonorDevLan,
+        getServerPort: () => {
+          const addr = server.httpServer?.address?.();
+          return (addr && typeof addr === 'object' ? addr.port : 0) || server.config.server.port || 5173;
+        },
+      });
       const assetCandidates = createAssetCandidatesMiddleware();
       server.middlewares.use(assetCandidates);
       server.middlewares.use(handler);
+      server.httpServer?.on('upgrade', (req, socket, head) => {
+        handler.handleUpgrade(req, socket, head);
+      });
       server.httpServer?.once('close', () => {
         handler.closeAll();
       });
