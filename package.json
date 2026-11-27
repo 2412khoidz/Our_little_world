@@ -25,6 +25,7 @@
     "assets:private:verify": "node scripts/sync-private-assets.mjs --verify",
     "assets:private:manifest": "node scripts/sync-private-assets.mjs --write-manifest",
     "assets:private:sync": "node scripts/sync-private-assets.mjs --sync",
+    "worktree:new": "node scripts/init-feature-worktree.mjs",
     "build:private": "tsc -b && vite build --mode private-art --outDir dist-private",
     "verify:private": "node scripts/verify-private-build.mjs",
     "assets:check-demo-e": "node scripts/check-demo-e-sources.mjs",

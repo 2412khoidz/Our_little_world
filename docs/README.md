@@ -3,7 +3,10 @@
 Toàn bộ tài liệu kiến trúc, nghiên cứu, thiết kế và kế hoạch triển khai của **Our Little World** được phân loại gọn dưới đây (tránh đọc thừa hoặc lặp lại nội dung).
 
 ## 1. Quy tắc Cốt lõi & Định hướng (Bắt buộc cho Mọi Agent)
-- [AGENTS.md](../AGENTS.md) — Luật dự án, ràng buộc `0₫`, phạm vi milestone hiện tại, ranh giới code và Definition of Done.
+- [AGENTS.md](../AGENTS.md) — Luật dự án, ràng buộc `0₫`, **Startup Gate**, worktree policy, ranh giới code và Definition of Done.
+- [CANONICAL_BASELINE.md](CANONICAL_BASELINE.md) — Nguồn chân lý baseline (`main` / `v0.2.5`), kiểm kê workspace, quy trình worktree & tích hợp.
+- [REGRESSION_CHECKLIST.md](REGRESSION_CHECKLIST.md) — Danh sách kiểm tra chống hồi quy bắt buộc theo hệ thống con.
+- **Handovers hệ thống con (`docs/handovers/`):** [Multiplayer](handovers/MULTIPLAYER.md) · [Farming](handovers/FARMING.md) · [Billiards](handovers/BILLIARDS.md) · [Art & Animation](handovers/ART_AND_ANIMATION.md) · [Living Pet](handovers/LIVING_PET.md)
 - [README.md](../README.md) — Hướng dẫn cài đặt, chạy Local/Dev LAN giữa Windows & điện thoại, kiểm thử.
 - [CHANGELOG.md](../CHANGELOG.md) — Lịch sử thay đổi phiên bản & milestone nghiên cứu.
 - [docs/PRODUCT_SPEC.md](PRODUCT_SPEC.md) — Tầm nhìn sản phẩm, chân dung người dùng & nguyên tắc bất biến.

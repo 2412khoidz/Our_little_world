@@ -29,17 +29,31 @@ Người dùng thứ hai không am hiểu công nghệ; toàn bộ trải nghi�
 - **Cô lập Dev Impersonation:** Mọi công cụ chọn nhanh danh tính, reset thế giới dev và Spike 0 diagnostics chỉ được tồn tại khi `import.meta.env.DEV === true`, tuyệt đối không xuất hiện trong bản production.
 
 ## 3. Quy tắc phạm vi & Canonical Baseline (Scope & Branching Policy)
-- **Canonical Stable Baseline hiện tại:** `v0.2.5` trên nhánh `main` (được thăng hạng từ `integration/olw-canonical-rc1` sau khi chủ dự án playtest và phê duyệt). Baseline hợp nhất gồm: nền tảng 16px OLW-Neon, asset riêng tư local (`public/assets/private-unified/`, `public/assets/private-audio/`), Multiplayer NET.1.1 (WebSocket, xác thực phiên từ xa, reconnect watchdog, điều phối Nắng), Deep Farming Checkpoints A–G, Billiards V2, và mèo 3D Vuena + pet-care V2 từ OLW-Carbon.
-- **Chính sách nhánh bắt buộc (Future Branching Policy):** Mọi nhánh tính năng hoặc sửa lỗi mới (`feat/*`, `fix/*`, `chore/*`) **BẮT BUỘC** phải tách ra từ commit canonical stable mới nhất đã được phê duyệt trên `main`. Tuyệt đối không tạo nhánh mới từ các nhánh thử nghiệm/feature cũ hoặc worktree chưa đồng bộ baseline.
+- **Canonical Stable Baseline hiện tại:** Nhánh **`main`** (release tag **`v0.2.5`** tại `b43712e`, hợp nhất từ `integration/olw-canonical-rc1` sau khi chủ dự án playtest và phê duyệt). Baseline hợp nhất gồm: nền tảng 16px OLW-Neon, asset riêng tư local (`public/assets/private-unified/`, `public/assets/private-audio/`), Multiplayer NET.1.1 (WebSocket, xác thực phiên từ xa, reconnect watchdog, điều phối Nắng), Deep Farming Checkpoints A–G, Billiards V2, và mèo 3D Vuena + pet-care V2 từ OLW-Carbon.
+- **Primary Playable Workspace:** `C:\Users\admin\Downloads\Our_little_world` (chỉ chạy bản playtest chính & Integration/Release trên nhánh `main` hoặc release candidate sạch).
+- **Chính sách nhánh bắt buộc (Future Branching Policy):** Mọi nhánh tính năng hoặc sửa lỗi mới (`feat/*`, `fix/*`, `chore/*`) **BẮT BUỘC** phải khởi tạo qua worktree mới từ commit mới nhất trên `origin/main` bằng `npm run worktree:new -- --name <slug>`. Tuyệt đối không tạo nhánh mới từ các nhánh thử nghiệm/feature cũ hoặc worktree chưa đồng bộ baseline.
 - Các mốc chưa mở trong baseline này (học, hộp thư nâng cao, nhật ký đầy đủ và Cinema V0.4) vẫn mở theo quyết định chủ dự án. Xem [lộ trình](docs/MASTER_ROADMAP.md) và [quyết định đã chốt](docs/DECISIONS.md#quyết-định-đã-chốt).
-- Đồ vật xem trước trên bản đồ chưa kích hoạt chức năng đầy đủ chỉ hiển thị thông báo trung thực — không tạo nút giả.
-- Mọi tính năng mới chưa hoàn chỉnh không được đưa vào menu điều hướng chính.
+- Đồ vật xem trước trên bản đồ chưa kích hoạt chức năng đầy đủ chỉ hiển thị thông báo trung thực — không tạo nút giả; tính năng chưa hoàn chỉnh không đưa vào menu điều hướng chính.
+- **Tài liệu nguồn chân lý & bàn giao hệ thống con:** [CANONICAL_BASELINE.md](docs/CANONICAL_BASELINE.md) · [REGRESSION_CHECKLIST.md](docs/REGRESSION_CHECKLIST.md) · `docs/handovers/{MULTIPLAYER,FARMING,BILLIARDS,ART_AND_ANIMATION,LIVING_PET}.md`.
+
+### 3.1 Cổng Khởi động Bắt buộc (Mandatory Startup Gate)
+Trước khi sửa bất kỳ file nào, mọi coding agent **PHẢI** chạy kiểm tra và dừng ngay nếu không khớp:
+1. Kiểm tra root repo, nhánh hiện tại, `HEAD`, trạng thái working tree và `origin/main`:
+   ```bash
+   git rev-parse --show-toplevel && git branch --show-current && git rev-parse HEAD && git status --short
+   git fetch origin main && git rev-parse origin/main
+   git merge-base --is-ancestor origin/main HEAD && echo "ANCESTRY_OK"
+   ```
+2. Kiểm tra asset riêng tư local: `npm run assets:private:verify` (nếu thiếu và cần đồng bộ từ primary workspace sạch: `npm run assets:private:sync -- --from C:\Users\admin\Downloads\Our_little_world`).
+3. **DỪNG NGAY** nếu đang đứng nhầm workspace, nhánh cũ/detached không chứa `origin/main`, hoặc thiếu asset riêng tư. Cấm tiếp tục code trên các worktree/nhánh thử nghiệm cũ (`OLW-Neon`, `OLW-Multiplayer`, `OLW-Carbon`, `feat/deep-farming-transplant`, v.v.).
+
+### 3.2 Chính sách Worktree & Tích hợp (Worktree & Integration Policy)
+- **Feature Agent:** Chỉ làm việc trong worktree riêng tạo bởi `npm run worktree:new -- --name <slug>`; **KHÔNG** push trực tiếp vào `main`, **KHÔNG** merge nhánh chéo, **KHÔNG** ghi đè tùy tiện các file nền dùng chung (`src/app/App.tsx`, `src/game/scenes/WorldScene.ts`, `scripts/devLanServerPlugin.mjs`, maps/atlases) ngoài phạm vi task, và phải rebase/reconcile theo `origin/main` trước khi bàn giao (kèm SHA commit, danh sách file sửa, focused tests & hướng dẫn playtest).
+- **Integration & Release Agent:** Là vai trò duy nhất được quyền hợp nhất vào `main` tại `C:\Users\admin\Downloads\Our_little_world`, kiểm toán lịch sử Git sạch (không `.dev-lan-state*.json`, `.env`, `private-*`), chạy regression gate và gắn tag release.
 - **Thiết lập & Lệnh chạy chuẩn:**
-  - Đồng bộ tài nguyên riêng tư local giữa các worktree (không sao chép `.env` hay file save): `npm run assets:private:sync -- --from <source-worktree>` rồi kiểm tra bằng `npm run assets:private:verify`.
-  - Chạy host chơi cùng nhau qua LAN / Cloudflare Quick Tunnel: `npm run host:couple` (hoặc `npm run dev`).
-- **Giới hạn đã biết:**
-  - Chạy `npm run test` trên môi trường `jsdom` mặc định bỏ qua Canvas 2D pixel context ở 2 test rendering donor cũ (`donorCabacosRenderDetect.test.ts` và `pydewFarmDonorRender.test.ts`); luồng thật được kiểm bằng Chromium Playwright.
-  - Cloud sync Supabase thật, Migration SQL thật và vòng playtest thực tế trên iPhone Safari + Cloudflare Quick Tunnel đầy đủ sau hợp nhất cần xác nhận bổ sung theo thiết bị thật.
+  - Đồng bộ tài nguyên riêng tư local (không sao chép `.env` hay file save): `npm run assets:private:sync -- --from <source-worktree>` && `npm run assets:private:verify`.
+  - Khởi chạy Host chơi cùng nhau: `npm run host:couple` (hoặc `npm run dev`).
+- **Giới hạn đã biết:** `npm run test` trên `jsdom` fail ở 2 suite Canvas 2D donor cũ (`donorCabacosRenderDetect.test.ts`, `pydewFarmDonorRender.test.ts`); luồng thật kiểm bằng Chromium Playwright. Cloud Supabase thật, Migration SQL thật và vòng playtest iPhone Safari + Cloudflare Quick Tunnel đầy đủ sau hợp nhất cần xác nhận bổ sung trên thiết bị thật.
 
 ## 4. Kiến trúc & Biên giới module
 - `src/shared/` — Domain types, schemas, placement/collision logic, map definitions, realtime throttling/interpolation, cinema sync math. **Thuần TypeScript, không phụ thuộc DOM, React hay Phaser.**
