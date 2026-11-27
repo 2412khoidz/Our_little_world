@@ -1,0 +1,5247 @@
+{
+  "version": 1,
+  "generatedFromCommit": "e5de4ac",
+  "sourceDirectory": "C:\\Users\\admin\\Downloads\\items&farm",
+  "summary": {
+    "packCount": 28,
+    "totalUsablePngSpritesAndFrames": 10840,
+    "totalSvgVectorsInScalablePacks": 383,
+    "globalUniquePngSpritesAfterPixelDedup": 8079,
+    "uniqueSourceSpritesUsedInRuntime": 424,
+    "overallUniqueUtilizationPct": 5.25,
+    "canonicalSkusTotal": 267,
+    "canonicalUniquePixelIcons": 260,
+    "duplicateRuntimeIconGroups": 7,
+    "flaggedMismatchCount": 32
+  },
+  "canonicalSkuInventory": [
+    {
+      "kind": "canonical_sku",
+      "sku": "pet_kibble_basic",
+      "nameVi": "Hạt mèo cơ bản",
+      "semanticCategory": "pet_food",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(14, 15)",
+      "frameCoords": [
+        0,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:pet_kibble_basic",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/05_Buildings_Machines/Ranch_Props/pet_bowl_empty_food_water_3f.png [frame 1] or Free16 bowl (CRITICAL: shik(14,15) is a plucked raw chicken!)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "gift_flower_bouquet",
+      "nameVi": "Bó hoa nhỏ dịu dàng",
+      "semanticCategory": "gift",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"pink_rose\")",
+      "frameCoords": [
+        48,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:gift_flower_bouquet",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with yoshinos / custom 3-flower bundle -> Composite 3-bloom bouquet with paper wrap (Duplicate pixel hash with rose_pink)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "gift_strawberry_cake",
+      "nameVi": "Bánh dâu ngọt ngào",
+      "semanticCategory": "gift",
+      "sourcePack": "ghostpixxells (CC0)",
+      "sourceFile": "ghost(\"90_strawberrycake\")",
+      "frameCoords": [
+        64,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:gift_strawberry_cake",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "gift_plush_cat",
+      "nameVi": "Thú bông mèo cam nhỏ",
+      "semanticCategory": "gift",
+      "sourcePack": "free_pixel_food_16 (CC BY 4.0)",
+      "sourceFile": "f16(\"onigiri_3\")",
+      "frameCoords": [
+        64,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:gift_plush_cat",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife+FreePets -> Custom crop from world-props / cat-orange or Yoshino ribbon gift (Replace onigiri_3 with actual cat/gift sprite)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "gift_star_jar",
+      "nameVi": "Hũ sao giấy kỷ niệm",
+      "semanticCategory": "keepsake",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(9, 7)",
+      "frameCoords": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:gift_star_jar",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Yoshino / Shikashi -> Star jar / bottle with star instead of RPG mana flask + (CRITICAL: shik(9,7) is a yellow RPG flask with '+'!)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "letter_stationery_pink",
+      "nameVi": "Giấy viết thư hoa anh đào",
+      "semanticCategory": "stationery",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(13, 9)",
+      "frameCoords": [
+        352,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:letter_stationery_pink",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_wheat",
+      "nameVi": "Hạt giống lúa mì",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(wheat)",
+      "frameCoords": [
+        112,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_wheat",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_carrot",
+      "nameVi": "Hạt giống cà rốt",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(carrot)",
+      "frameCoords": [
+        48,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_carrot",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_tomato",
+      "nameVi": "Hạt giống cà chua",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(tomato)",
+      "frameCoords": [
+        32,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_tomato",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_strawberry",
+      "nameVi": "Hạt giống dâu tây",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(strawberry)",
+      "frameCoords": [
+        0,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_strawberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_sunflower",
+      "nameVi": "Hạt giống hướng dương",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(sunflower)",
+      "frameCoords": [
+        16,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_sunflower",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_rose_pink",
+      "nameVi": "Hạt giống hồng phấn",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(rose_pink)",
+      "frameCoords": [
+        128,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_rose_pink",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_cabbage",
+      "nameVi": "Hạt giống bắp cải",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(cabbage)",
+      "frameCoords": [
+        32,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_cabbage",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wild_herb",
+      "nameVi": "Thảo mộc dại",
+      "semanticCategory": "forage",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/kale.png\")",
+      "frameCoords": [
+        80,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:wild_herb",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with lpc-food-v2.zip -> Distinct herb sprig vs kale.png (Duplicate pixel hash with kale)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wood_branch",
+      "nameVi": "Cành gỗ",
+      "semanticCategory": "material",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"materials/hardwood_log.png\")",
+      "frameCoords": [
+        112,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:wood_branch",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife / Yoshino -> Small twig/branch vs hardwood_log (Currently hardwood_log.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bait_free_worm",
+      "nameVi": "Mồi giun miễn phí",
+      "semanticCategory": "bait",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(16, 2)",
+      "frameCoords": [
+        32,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:bait_free_worm",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bait_shrimp",
+      "nameVi": "Mồi tép",
+      "semanticCategory": "bait",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"shrimp\")",
+      "frameCoords": [
+        96,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:bait_shrimp",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "carp_pond",
+      "nameVi": "Cá chép ao",
+      "semanticCategory": "fish",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fish/carp.png\")",
+      "frameCoords": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:carp_pond",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "koi_pastel",
+      "nameVi": "Cá koi pastel",
+      "semanticCategory": "fish",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fish/sunset_koi.png\")",
+      "frameCoords": [
+        16,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:koi_pastel",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lotus_trout",
+      "nameVi": "Cá hồi sen",
+      "semanticCategory": "fish",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fish/arctic_char.png\")",
+      "frameCoords": [
+        112,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lotus_trout",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wheat",
+      "nameVi": "Lúa mì",
+      "semanticCategory": "crop",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_fv(10, 22)",
+      "frameCoords": [
+        416,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:wheat",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "carrot",
+      "nameVi": "Cà rốt",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_carrot\")",
+      "frameCoords": [
+        32,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:carrot",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tomato",
+      "nameVi": "Cà chua",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_tomato\")",
+      "frameCoords": [
+        160,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tomato",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "strawberry",
+      "nameVi": "Dâu tây",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"fruit_strawberry\")",
+      "frameCoords": [
+        64,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:strawberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sunflower",
+      "nameVi": "Hướng dương",
+      "semanticCategory": "crop",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"sunflower\")",
+      "frameCoords": [
+        112,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sunflower",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_pink",
+      "nameVi": "Hồng phấn",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"pink_rose\")",
+      "frameCoords": [
+        64,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_pink",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_sakura",
+      "nameVi": "Hồng anh đào",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"yoshinos_flower\")",
+      "frameCoords": [
+        96,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_sakura",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cabbage",
+      "nameVi": "Bắp cải",
+      "semanticCategory": "crop",
+      "sourcePack": "food-ocal",
+      "sourceFile": "ocal(\"vegetable/cabbage\")",
+      "frameCoords": [
+        192,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cabbage",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "peach",
+      "nameVi": "Đào",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/peach.png\")",
+      "frameCoords": [
+        224,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:peach",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sugar_pack",
+      "nameVi": "Gói đường",
+      "semanticCategory": "pantry",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_care/sugar_cube.png\")",
+      "frameCoords": [
+        96,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sugar_pack",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with food-glitch / FRL -> Dedicated sugar bag vs feed_deluxe treat cube (Duplicate pixel hash with feed_deluxe (sugar_cube.png))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "spice",
+      "nameVi": "Gia vị",
+      "semanticCategory": "pantry",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 4)",
+      "frameCoords": [
+        256,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:spice",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with lpc-food-v2.zip / food-glitch.zip -> Distinct spice blend / black_pepper vs paprika (Duplicate pixel hash with paprika_powder shik(20,4))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "ribbon",
+      "nameVi": "Ruy băng",
+      "semanticCategory": "pantry",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(19, 4)",
+      "frameCoords": [
+        160,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:ribbon",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Yoshino / Shikashi -> Find real ribbon sprite or custom 16x16 rose bow (CRITICAL: shik(19,4) is a red RPG health potion!)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "flour",
+      "nameVi": "Bột mì",
+      "semanticCategory": "artisan",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/rice_flour.png\")",
+      "frameCoords": [
+        0,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:flour",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "carrot_soup",
+      "nameVi": "Súp cà rốt",
+      "semanticCategory": "dish",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"soup_beet\")",
+      "frameCoords": [
+        48,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:carrot_soup",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "herb_carp",
+      "nameVi": "Cá chép thảo mộc",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"89_salmon_dish\")",
+      "frameCoords": [
+        128,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:herb_carp",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "peach_tea",
+      "nameVi": "Trà đào",
+      "semanticCategory": "dish",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"coffee_tea\")",
+      "frameCoords": [
+        16,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:peach_tea",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "strawberry_tart",
+      "nameVi": "Bánh tart dâu",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"91_strawberrycake_dish\")",
+      "frameCoords": [
+        288,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:strawberry_tart",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "koinori_platter",
+      "nameVi": "Đĩa koi nori",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"98_sushi_dish\")",
+      "frameCoords": [
+        288,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:koinori_platter",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sakura_bouquet",
+      "nameVi": "Bó hoa anh đào",
+      "semanticCategory": "bouquet",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"pink_poppy\")",
+      "frameCoords": [
+        176,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sakura_bouquet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wood_chair",
+      "nameVi": "Ghế gỗ",
+      "semanticCategory": "craft",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"materials/wood_planks.png\")",
+      "frameCoords": [
+        448,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:wood_chair",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Custom/Props -> Extract chair slice from Cozy/Demo E world-props.png instead of wood_planks (Replace wood_planks stack)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_lettuce",
+      "nameVi": "Hạt giống xà lách giòn",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(lettuce)",
+      "frameCoords": [
+        0,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_lettuce",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lettuce",
+      "nameVi": "Xà lách giòn",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/lettuce.png\")",
+      "frameCoords": [
+        96,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lettuce",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_spinach",
+      "nameVi": "Hạt giống cải bó xôi",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(spinach)",
+      "frameCoords": [
+        224,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_spinach",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "spinach",
+      "nameVi": "Cải bó xôi",
+      "semanticCategory": "crop",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"spinach\")",
+      "frameCoords": [
+        224,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:spinach",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_kale",
+      "nameVi": "Hạt giống cải xoăn",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(kale)",
+      "frameCoords": [
+        224,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_kale",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "kale",
+      "nameVi": "Cải xoăn",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/kale.png\")",
+      "frameCoords": [
+        240,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:kale",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_parsnip",
+      "nameVi": "Hạt giống củ cải vàng",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(parsnip)",
+      "frameCoords": [
+        48,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_parsnip",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "parsnip",
+      "nameVi": "Củ cải vàng",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/parsnip.png\")",
+      "frameCoords": [
+        208,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:parsnip",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_potato",
+      "nameVi": "Hạt giống khoai tây",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(potato)",
+      "frameCoords": [
+        64,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_potato",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "potato",
+      "nameVi": "Khoai tây",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_potato\")",
+      "frameCoords": [
+        144,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:potato",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_cauliflower",
+      "nameVi": "Hạt giống súp lơ trắng",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(cauliflower)",
+      "frameCoords": [
+        64,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_cauliflower",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cauliflower",
+      "nameVi": "Súp lơ trắng",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/cauliflower.png\")",
+      "frameCoords": [
+        64,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cauliflower",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_snap_pea",
+      "nameVi": "Hạt giống đậu hà lan",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(snap_pea)",
+      "frameCoords": [
+        192,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_snap_pea",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "snap_pea",
+      "nameVi": "Đậu Hà Lan",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/peas.png\")",
+      "frameCoords": [
+        192,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:snap_pea",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_radish",
+      "nameVi": "Hạt giống củ cải đỏ",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(radish)",
+      "frameCoords": [
+        96,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_radish",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "radish",
+      "nameVi": "Củ cải đỏ",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/radish.png\")",
+      "frameCoords": [
+        208,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:radish",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_scallion",
+      "nameVi": "Hạt giống hành lá",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(scallion)",
+      "frameCoords": [
+        176,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_scallion",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "scallion",
+      "nameVi": "Hành lá",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/leek.png\")",
+      "frameCoords": [
+        128,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:scallion",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_rhubarb",
+      "nameVi": "Hạt giống đại hoàng",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(rhubarb)",
+      "frameCoords": [
+        112,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_rhubarb",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rhubarb",
+      "nameVi": "Đại hoàng",
+      "semanticCategory": "crop",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_fv(15, 29)",
+      "frameCoords": [
+        128,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:rhubarb",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_corn",
+      "nameVi": "Hạt giống bắp ngô",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(corn)",
+      "frameCoords": [
+        80,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_corn",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "corn",
+      "nameVi": "Bắp ngô",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_corn\")",
+      "frameCoords": [
+        128,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:corn",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_blueberry",
+      "nameVi": "Hạt giống việt quất",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(blueberry)",
+      "frameCoords": [
+        240,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_blueberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "blueberry",
+      "nameVi": "Việt quất",
+      "semanticCategory": "crop",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"blueberry\")",
+      "frameCoords": [
+        176,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:blueberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_melon",
+      "nameVi": "Hạt giống dưa lưới",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(melon)",
+      "frameCoords": [
+        16,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_melon",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "melon",
+      "nameVi": "Dưa lưới",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/cantaloupe.png\")",
+      "frameCoords": [
+        128,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:melon",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_hot_pepper",
+      "nameVi": "Hạt giống ớt đỏ cay",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(hot_pepper)",
+      "frameCoords": [
+        208,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_hot_pepper",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "hot_pepper",
+      "nameVi": "Ớt đỏ cay",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_jalapeno\")",
+      "frameCoords": [
+        224,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:hot_pepper",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_bell_pepper",
+      "nameVi": "Hạt giống ớt chuông ngọt",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(bell_pepper)",
+      "frameCoords": [
+        208,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_bell_pepper",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bell_pepper",
+      "nameVi": "Ớt chuông ngọt",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/bell_pepper.png\")",
+      "frameCoords": [
+        144,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:bell_pepper",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_cucumber",
+      "nameVi": "Hạt giống dưa leo",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(cucumber)",
+      "frameCoords": [
+        112,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_cucumber",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cucumber",
+      "nameVi": "Dưa leo",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/cucumber.png\")",
+      "frameCoords": [
+        208,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cucumber",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_zucchini",
+      "nameVi": "Hạt giống bí ngòi",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(zucchini)",
+      "frameCoords": [
+        160,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_zucchini",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "zucchini",
+      "nameVi": "Bí ngòi",
+      "semanticCategory": "crop",
+      "sourcePack": "food-ocal",
+      "sourceFile": "ocal(\"vegetable/zucchini\")",
+      "frameCoords": [
+        352,
+        96,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:zucchini",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_broccoli",
+      "nameVi": "Hạt giống bông cải xanh",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(broccoli)",
+      "frameCoords": [
+        16,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_broccoli",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "broccoli",
+      "nameVi": "Bông cải xanh",
+      "semanticCategory": "crop",
+      "sourcePack": "food-ocal",
+      "sourceFile": "ocal(\"vegetable/broccoli\")",
+      "frameCoords": [
+        160,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:broccoli",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_basil",
+      "nameVi": "Hạt giống húng quế",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(basil)",
+      "frameCoords": [
+        176,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_basil",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "basil",
+      "nameVi": "Húng quế",
+      "semanticCategory": "crop",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_fv(5, 25)",
+      "frameCoords": [
+        64,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:basil",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_starfruit",
+      "nameVi": "Hạt giống khế sao vàng",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(starfruit)",
+      "frameCoords": [
+        240,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_starfruit",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "starfruit",
+      "nameVi": "Khế sao vàng",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/starfruit.png\")",
+      "frameCoords": [
+        32,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:starfruit",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_pumpkin",
+      "nameVi": "Hạt giống bí ngô",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(pumpkin)",
+      "frameCoords": [
+        80,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_pumpkin",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pumpkin",
+      "nameVi": "Bí ngô",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_pumpkin\")",
+      "frameCoords": [
+        160,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pumpkin",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_cranberry",
+      "nameVi": "Hạt giống nam việt quất",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(cranberry)",
+      "frameCoords": [
+        96,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_cranberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cranberry",
+      "nameVi": "Nam việt quất",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/cranberry.png\")",
+      "frameCoords": [
+        144,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cranberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_eggplant",
+      "nameVi": "Hạt giống cà tím",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(eggplant)",
+      "frameCoords": [
+        128,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_eggplant",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "eggplant",
+      "nameVi": "Cà tím",
+      "semanticCategory": "crop",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"vegetable_eggplant\")",
+      "frameCoords": [
+        32,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:eggplant",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_yam",
+      "nameVi": "Hạt giống khoai mỡ",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(yam)",
+      "frameCoords": [
+        144,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_yam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "yam",
+      "nameVi": "Khoai mỡ",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/sweet_potato.png\")",
+      "frameCoords": [
+        160,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:yam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_grape",
+      "nameVi": "Hạt giống nho tím",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(grape)",
+      "frameCoords": [
+        176,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_grape",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "grape",
+      "nameVi": "Nho tím",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/grape.png\")",
+      "frameCoords": [
+        144,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:grape",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_bok_choy",
+      "nameVi": "Hạt giống cải thìa",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(bok_choy)",
+      "frameCoords": [
+        0,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_bok_choy",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bok_choy",
+      "nameVi": "Cải thìa",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/bok_choy.png\")",
+      "frameCoords": [
+        224,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:bok_choy",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_beet",
+      "nameVi": "Hạt giống củ dền đường",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(beet)",
+      "frameCoords": [
+        192,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_beet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "beet",
+      "nameVi": "Củ dền đường",
+      "semanticCategory": "crop",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"beet\")",
+      "frameCoords": [
+        128,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:beet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_artichoke",
+      "nameVi": "Hạt giống atiso xanh",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(artichoke)",
+      "frameCoords": [
+        160,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_artichoke",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "artichoke",
+      "nameVi": "Atiso xanh",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/artichoke.png\")",
+      "frameCoords": [
+        80,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:artichoke",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_oats",
+      "nameVi": "Hạt giống yến mạch",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(oats)",
+      "frameCoords": [
+        32,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_oats",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "oats",
+      "nameVi": "Yến mạch",
+      "semanticCategory": "crop",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_fv(10, 24)",
+      "frameCoords": [
+        448,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:oats",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_snowpea",
+      "nameVi": "Hạt giống đậu tuyết",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(snowpea)",
+      "frameCoords": [
+        208,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_snowpea",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "snowpea",
+      "nameVi": "Đậu tuyết",
+      "semanticCategory": "crop",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"pea_pod\")",
+      "frameCoords": [
+        208,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:snowpea",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_winter_squash",
+      "nameVi": "Hạt giống bí mùa đông",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(winter_squash)",
+      "frameCoords": [
+        128,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_winter_squash",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "winter_squash",
+      "nameVi": "Bí mùa Đông",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/butternut.png\")",
+      "frameCoords": [
+        96,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:winter_squash",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_frostberry",
+      "nameVi": "Hạt giống dâu sương giá",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(frostberry)",
+      "frameCoords": [
+        160,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_frostberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "frostberry",
+      "nameVi": "Dâu sương giá",
+      "semanticCategory": "crop",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"blackberry\")",
+      "frameCoords": [
+        32,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:frostberry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_green_bean",
+      "nameVi": "Hạt giống đậu que xanh",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(green_bean)",
+      "frameCoords": [
+        192,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_green_bean",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "green_bean",
+      "nameVi": "Đậu que xanh",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"crops/green_bean.png\")",
+      "frameCoords": [
+        176,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:green_bean",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_ancient_green",
+      "nameVi": "Hạt giống mầm cổ đại",
+      "semanticCategory": "seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(ancient_green)",
+      "frameCoords": [
+        144,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_ancient_green",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "ancient_green",
+      "nameVi": "Mầm cổ đại",
+      "semanticCategory": "crop",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/farm_crystal.png\")",
+      "frameCoords": [
+        16,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:ancient_green",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/02_Crops/greenhouse/starfruit or FRL amaranth crop leaf (Currently FRL farm_crystal.png (gemstone))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_peach",
+      "nameVi": "Cây giống đào",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/peach_sapling.png\")",
+      "frameCoords": [
+        48,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_peach",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_apple",
+      "nameVi": "Cây giống táo",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/apple_sapling.png\")",
+      "frameCoords": [
+        192,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_apple",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "apple",
+      "nameVi": "Táo đỏ",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/apple.png\")",
+      "frameCoords": [
+        64,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:apple",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_cherry",
+      "nameVi": "Cây giống anh đào",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/cherry_sapling.png\")",
+      "frameCoords": [
+        208,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_cherry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cherry",
+      "nameVi": "Anh đào đỏ",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/cherry.png\")",
+      "frameCoords": [
+        80,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cherry",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_orange",
+      "nameVi": "Cây giống cam",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/orange_sapling.png\")",
+      "frameCoords": [
+        32,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_orange",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "orange",
+      "nameVi": "Cam vàng",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/orange.png\")",
+      "frameCoords": [
+        192,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:orange",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_lemon",
+      "nameVi": "Cây giống chanh",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/lemon_sapling.png\")",
+      "frameCoords": [
+        0,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_lemon",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lemon",
+      "nameVi": "Chanh vàng",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/lemon.png\")",
+      "frameCoords": [
+        64,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lemon",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_plum",
+      "nameVi": "Cây giống mận",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/plum_sapling.png\")",
+      "frameCoords": [
+        80,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_plum",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "plum",
+      "nameVi": "Mận tím",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/plum.png\")",
+      "frameCoords": [
+        96,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:plum",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_pear",
+      "nameVi": "Cây giống lê",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/pear_sapling.png\")",
+      "frameCoords": [
+        64,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_pear",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pear",
+      "nameVi": "Lê mật",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/pear.png\")",
+      "frameCoords": [
+        32,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pear",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_pomegranate",
+      "nameVi": "Cây giống lựu",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/pomegranate_sapling.png\")",
+      "frameCoords": [
+        96,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_pomegranate",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pomegranate",
+      "nameVi": "Lựu đỏ",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/pomegranate.png\")",
+      "frameCoords": [
+        128,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pomegranate",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_fig",
+      "nameVi": "Cây giống sung ngọt",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"saplings/fig_sapling.png\")",
+      "frameCoords": [
+        240,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_fig",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fig",
+      "nameVi": "Sung ngọt",
+      "semanticCategory": "fruit",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fruit/fig.png\")",
+      "frameCoords": [
+        208,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fig",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_walnut",
+      "nameVi": "Cây giống óc chó",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "recolor_sapling_fruit_dot(frl(\"saplings/peach_sapling.png\"), (166, 116, 73))",
+      "frameCoords": [
+        112,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_walnut",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "walnut",
+      "nameVi": "Óc chó",
+      "semanticCategory": "fruit",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"acorn\")",
+      "frameCoords": [
+        32,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:walnut",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Yoshino / lpc-food-v2 -> Cracked walnut shell vs acorn (Currently yoshino acorn.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_olive",
+      "nameVi": "Cây giống ô liu",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "recolor_sapling_fruit_dot(frl(\"saplings/pear_sapling.png\"), (134, 158, 61))",
+      "frameCoords": [
+        16,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_olive",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "olive",
+      "nameVi": "Ô liu xanh",
+      "semanticCategory": "fruit",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"olives_green\")",
+      "frameCoords": [
+        160,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:olive",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sapling_cocoa",
+      "nameVi": "Cây giống ca cao",
+      "semanticCategory": "tree_sapling",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "recolor_sapling_fruit_dot(frl(\"saplings/plum_sapling.png\"), (110, 60, 36))",
+      "frameCoords": [
+        224,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sapling_cocoa",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cocoa_bean",
+      "nameVi": "Hạt ca cao",
+      "semanticCategory": "fruit",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"coconut\")",
+      "frameCoords": [
+        112,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cocoa_bean",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with food-bluecarrot16 / FRL -> Coffee/cocoa bean sprite (24x24/misc/coffee_beans_01.png) vs whole coconut (Currently yoshino coconut.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_tulip_red",
+      "nameVi": "Hạt giống tulip đỏ",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(tulip_red)",
+      "frameCoords": [
+        80,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_tulip_red",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_red",
+      "nameVi": "Tulip đỏ",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (224, 60, 74))",
+      "frameCoords": [
+        192,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_red",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_tulip_yellow",
+      "nameVi": "Hạt giống tulip vàng",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(tulip_yellow)",
+      "frameCoords": [
+        96,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_tulip_yellow",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_yellow",
+      "nameVi": "Tulip vàng",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (245, 203, 54))",
+      "frameCoords": [
+        224,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_yellow",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_tulip_pink",
+      "nameVi": "Hạt giống tulip hồng",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(tulip_pink)",
+      "frameCoords": [
+        48,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_tulip_pink",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_pink",
+      "nameVi": "Tulip hồng",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"tulip\")",
+      "frameCoords": [
+        144,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_pink",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_tulip_purple",
+      "nameVi": "Hạt giống tulip tím",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(tulip_purple)",
+      "frameCoords": [
+        64,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_tulip_purple",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_purple",
+      "nameVi": "Tulip tím",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (155, 89, 208))",
+      "frameCoords": [
+        160,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_purple",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_rose_red",
+      "nameVi": "Hạt giống hồng đỏ",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(rose_red)",
+      "frameCoords": [
+        144,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_rose_red",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_red",
+      "nameVi": "Hồng đỏ",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"rose\")",
+      "frameCoords": [
+        80,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_red",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_rose_white",
+      "nameVi": "Hạt giống hồng trắng",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(rose_white)",
+      "frameCoords": [
+        160,
+        144,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_rose_white",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_white",
+      "nameVi": "Hồng trắng",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"white_rose\")",
+      "frameCoords": [
+        128,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_white",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_lavender",
+      "nameVi": "Hạt giống oải hương",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "seed_packet(lavender)",
+      "frameCoords": [
+        240,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_lavender",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lavender",
+      "nameVi": "Oải hương",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"lavender\")",
+      "frameCoords": [
+        32,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lavender",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_blue_jazz",
+      "nameVi": "Hạt giống cúc thanh lam",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(blue_jazz)",
+      "frameCoords": [
+        224,
+        112,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_blue_jazz",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "blue_jazz",
+      "nameVi": "Cúc thanh lam",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"pansy\")",
+      "frameCoords": [
+        160,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:blue_jazz",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "seed_fairy_rose",
+      "nameVi": "Hạt giống hồng tiên",
+      "semanticCategory": "flower_seed",
+      "sourcePack": "FarmRanchLife+donor_emblem",
+      "sourceFile": "seed_packet(fairy_rose)",
+      "frameCoords": [
+        144,
+        128,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:seed_fairy_rose",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fairy_rose",
+      "nameVi": "Hồng tiên",
+      "semanticCategory": "flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"hibiscus\")",
+      "frameCoords": [
+        48,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fairy_rose",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_orange",
+      "nameVi": "Tulip cam",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (245, 132, 42))",
+      "frameCoords": [
+        128,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_orange",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_white",
+      "nameVi": "Tulip trắng tuyết",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (245, 248, 252))",
+      "frameCoords": [
+        208,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_white",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_black",
+      "nameVi": "Tulip huyền đêm",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (76, 56, 98))",
+      "frameCoords": [
+        96,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_black",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_rainbow",
+      "nameVi": "Tulip cầu vồng",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"tulip\"), (255, 120, 180), rainbow=True)",
+      "frameCoords": [
+        176,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_rainbow",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_yellow",
+      "nameVi": "Hồng vàng nắng",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"yellow_rose\")",
+      "frameCoords": [
+        144,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_yellow",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_orange",
+      "nameVi": "Hồng cam hoàng hôn",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"rose\"), (245, 118, 46))",
+      "frameCoords": [
+        32,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_orange",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_lavender",
+      "nameVi": "Hồng oải hương",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"purple_rose\")",
+      "frameCoords": [
+        16,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_lavender",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_blue",
+      "nameVi": "Hồng xanh lam",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"blue_rose\")",
+      "frameCoords": [
+        240,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_blue",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_gold",
+      "nameVi": "Hồng vàng kim",
+      "semanticCategory": "hybrid_flower",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"yellow_rose\"), (255, 212, 59))",
+      "frameCoords": [
+        0,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_gold",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wild_clover",
+      "nameVi": "Cỏ ba lá tươi",
+      "semanticCategory": "forage",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"sprout\")",
+      "frameCoords": [
+        64,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:wild_clover",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "egg",
+      "nameVi": "Trứng gà tươi",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/egg_small_white.png\")",
+      "frameCoords": [
+        16,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:egg",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "golden_egg",
+      "nameVi": "Trứng vàng quý",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/egg_large_brown.png\")",
+      "frameCoords": [
+        128,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:golden_egg",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip / Yoshino -> Recolor egg_small_white/egg_large to warm gold #f6c431 with sparkle (Currently brown egg (egg_large_brown))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "duck_egg",
+      "nameVi": "Trứng vịt",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/egg_duck_green.png\")",
+      "frameCoords": [
+        240,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:duck_egg",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "duck_feather",
+      "nameVi": "Lông vịt óng mượt",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/goose_feather.png\")",
+      "frameCoords": [
+        0,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:duck_feather",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "milk",
+      "nameVi": "Sữa bò tươi",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/milk_bottle.png\")",
+      "frameCoords": [
+        144,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:milk",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cream_top",
+      "nameVi": "Váng sữa thượng hạng",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/milk_bottle_large.png\")",
+      "frameCoords": [
+        176,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cream_top",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "goat_milk",
+      "nameVi": "Sữa dê béo",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/goat_milk.png\")",
+      "frameCoords": [
+        112,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:goat_milk",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "aged_curd",
+      "nameVi": "Sữa đông đặc sản",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/cheese_wheel.png\")",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:aged_curd",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wool",
+      "nameVi": "Lông cừu mịn",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/wool_cream.png\")",
+      "frameCoords": [
+        128,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:wool",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fine_fleece",
+      "nameVi": "Lông cừu tơ",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/alpaca_fleece.png\")",
+      "frameCoords": [
+        240,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fine_fleece",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "angora_wool",
+      "nameVi": "Lông thỏ Angora",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/angora_wool.png\")",
+      "frameCoords": [
+        32,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:angora_wool",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "silky_tuft",
+      "nameVi": "Bông lụa Angora",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_products/wool_brown.png\")",
+      "frameCoords": [
+        176,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:silky_tuft",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "honey",
+      "nameVi": "Mật ong hoa rừng",
+      "semanticCategory": "animal_product",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"honey\")",
+      "frameCoords": [
+        192,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:honey",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "beeswax",
+      "nameVi": "Sáp ong thơm",
+      "semanticCategory": "animal_product",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/beeswax.png\")",
+      "frameCoords": [
+        112,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:beeswax",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "feed_chicken",
+      "nameVi": "Cám gà vịt",
+      "semanticCategory": "livestock_feed",
+      "sourcePack": "FarmRanchLife/05_Buildings_Machines/Ranch_Props/sack_chicken_feed.png",
+      "sourceFile": "pool.load_image(FRL_Z",
+      "frameCoords": [
+        80,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:feed_chicken",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "feed_livestock",
+      "nameVi": "Cỏ trộn bò dê cừu",
+      "semanticCategory": "livestock_feed",
+      "sourcePack": "FarmRanchLife/05_Buildings_Machines/Ranch_Props/sack_grain.png",
+      "sourceFile": "pool.load_image(FRL_Z",
+      "frameCoords": [
+        112,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:feed_livestock",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "feed_rabbit",
+      "nameVi": "Rau củ cho thỏ",
+      "semanticCategory": "livestock_feed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_care/hay_feed.png\")",
+      "frameCoords": [
+        128,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:feed_rabbit",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "feed_deluxe",
+      "nameVi": "Thức ăn thượng hạng",
+      "semanticCategory": "livestock_feed",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"animal_care/sugar_cube.png\")",
+      "frameCoords": [
+        96,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:feed_deluxe",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> Use feed_deluxe bag or carrot/apple treat (Duplicate pixel hash with sugar_pack)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fert_compost",
+      "nameVi": "Phân hữu cơ",
+      "semanticCategory": "fertilizer",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fertilizers/fertilizer_basic.png\")",
+      "frameCoords": [
+        144,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fert_compost",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fert_speed",
+      "nameVi": "Phân kích thích lớn nhanh",
+      "semanticCategory": "fertilizer",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fertilizers/speed_gro.png\")",
+      "frameCoords": [
+        192,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fert_speed",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fert_quality",
+      "nameVi": "Phân bón thượng hạng",
+      "semanticCategory": "fertilizer",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fertilizers/fertilizer_quality.png\")",
+      "frameCoords": [
+        176,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fert_quality",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fert_deluxe",
+      "nameVi": "Phân hỗn hợp toàn năng",
+      "semanticCategory": "fertilizer",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"fertilizers/fertilizer_deluxe.png\")",
+      "frameCoords": [
+        160,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fert_deluxe",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sprinkler_basic",
+      "nameVi": "Vòi phun cơ bản",
+      "semanticCategory": "sprinkler",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_spr(0)",
+      "frameCoords": [
+        240,
+        160,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sprinkler_basic",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sprinkler_quality",
+      "nameVi": "Vòi phun 3×3",
+      "semanticCategory": "sprinkler",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_spr(1)",
+      "frameCoords": [
+        16,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sprinkler_quality",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sprinkler_iridium",
+      "nameVi": "Vòi phun cao cấp 5×5",
+      "semanticCategory": "sprinkler",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_spr(2)",
+      "frameCoords": [
+        0,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sprinkler_iridium",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_can_copper",
+      "nameVi": "Bình tưới đồng (2 ô)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"milk_pail_copper_iron_gold_crystal_4f.png\", 0)",
+      "frameCoords": [
+        176,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_can_copper",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Actions/...water_copper_4dir_4f.png (extract/crop copper watering can icon) (Replace milk_pail frame 0)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_can_iron",
+      "nameVi": "Bình tưới thép (2×2)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"milk_pail_copper_iron_gold_crystal_4f.png\", 1)",
+      "frameCoords": [
+        208,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_can_iron",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Tool_Icons/iron_tier_for_pack1_tools_...png [idx=2] (Replace milk_pail frame 1)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_can_gold",
+      "nameVi": "Bình tưới vàng (3×3)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"milk_pail_copper_iron_gold_crystal_4f.png\", 2)",
+      "frameCoords": [
+        192,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_can_gold",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Actions/...water_gold_4dir_4f.png (extract gold can) (Replace milk_pail frame 2)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_hoe_copper",
+      "nameVi": "Cuốc đồng (2 ô)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"trowel_copper_iron_gold_crystal_4f.png\", 0)",
+      "frameCoords": [
+        240,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_hoe_copper",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Actions/...hoe_copper_4dir_4f.png (or recolor hoe icon) (Currently trowel_copper)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_hoe_iron",
+      "nameVi": "Cuốc thép (2×2)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"trowel_copper_iron_gold_crystal_4f.png\", 1)",
+      "frameCoords": [
+        16,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_hoe_iron",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Tool_Icons/iron_tier_for_pack1_tools_...png [idx=1] (Currently trowel_iron)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_hoe_gold",
+      "nameVi": "Cuốc vàng (3×3)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"trowel_copper_iron_gold_crystal_4f.png\", 2)",
+      "frameCoords": [
+        0,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_hoe_gold",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife_v1.0.zip -> FarmRanchLife/06_Characters_Tools/Actions/...hoe_gold_4dir_4f.png (Currently trowel_gold)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_sickle_wide",
+      "nameVi": "Liềm rộng (2×2)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"shears_copper_iron_gold_crystal_4f.png\", 1)",
+      "frameCoords": [
+        64,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_sickle_wide",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_sickle_grand",
+      "nameVi": "Đại liềm vàng (3×3)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"shears_copper_iron_gold_crystal_4f.png\", 2)",
+      "frameCoords": [
+        48,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_sickle_grand",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_seed_spreader",
+      "nameVi": "Khay gieo hạt (2×2)",
+      "semanticCategory": "tool",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl_tool(\"pitchfork_copper_iron_gold_crystal_4f.png\", 2)",
+      "frameCoords": [
+        32,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tool_seed_spreader",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tool_basket_orchard",
+      "nameVi": "Giỏ hái cây ăn quả",
+      "semanticCategory": "tool",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 0)",
+      "frameCoords": [
+        320,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:tool_basket_orchard",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sea_salt",
+      "nameVi": "Muối biển tinh",
+      "semanticCategory": "pantry",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_ap(0, 8)",
+      "frameCoords": [
+        224,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:sea_salt",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "yeast",
+      "nameVi": "Men nở làm bánh",
+      "semanticCategory": "pantry",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_fv(26, 2)",
+      "frameCoords": [
+        288,
+        96,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:yeast",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "vinegar",
+      "nameVi": "Giấm gạo lên men",
+      "semanticCategory": "pantry",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/grape_juice.png\")",
+      "frameCoords": [
+        16,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:vinegar",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with food-glitch.zip / lpc-food-v2.zip -> lpc-food-v2 condiment bottle / food-glitch dressing bottle (Currently FRL grape_juice.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "vanilla_bean",
+      "nameVi": "Trái vani thơm",
+      "semanticCategory": "pantry",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"vanilla\")",
+      "frameCoords": [
+        240,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:vanilla_bean",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cornmeal",
+      "nameVi": "Bột bắp",
+      "semanticCategory": "mill",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 8)",
+      "frameCoords": [
+        416,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cornmeal",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "oat_flour",
+      "nameVi": "Bột yến mạch",
+      "semanticCategory": "mill",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 11)",
+      "frameCoords": [
+        416,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:oat_flour",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "potato_starch",
+      "nameVi": "Tinh bột khoai tây",
+      "semanticCategory": "mill",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_ap(2, 8)",
+      "frameCoords": [
+        64,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:potato_starch",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "beet_sugar",
+      "nameVi": "Đường củ dền",
+      "semanticCategory": "mill",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 5)",
+      "frameCoords": [
+        96,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:beet_sugar",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "paprika_powder",
+      "nameVi": "Bột ớt paprika",
+      "semanticCategory": "mill",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 4)",
+      "frameCoords": [
+        480,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:paprika_powder",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "olive_oil",
+      "nameVi": "Dầu ô liu",
+      "semanticCategory": "mill",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/truffle_oil.png\")",
+      "frameCoords": [
+        176,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:olive_oil",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with food-glitch.zip -> 32x32/condiment/oil_olive.png (Currently FRL truffle_oil.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sunflower_oil",
+      "nameVi": "Dầu hướng dương",
+      "semanticCategory": "mill",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/sunflower_oil.png\")",
+      "frameCoords": [
+        128,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sunflower_oil",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cocoa_powder",
+      "nameVi": "Bột ca cao",
+      "semanticCategory": "mill",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(20, 3)",
+      "frameCoords": [
+        352,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cocoa_powder",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "butter",
+      "nameVi": "Bơ tươi",
+      "semanticCategory": "dairy",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/butter_block.png\")",
+      "frameCoords": [
+        0,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:butter",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cheese",
+      "nameVi": "Phô mai vàng",
+      "semanticCategory": "dairy",
+      "sourcePack": "food-ocal",
+      "sourceFile": "ocal(\"dairy/cheese_wedge\")",
+      "frameCoords": [
+        224,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cheese",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "goat_cheese",
+      "nameVi": "Phô mai dê",
+      "semanticCategory": "dairy",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/goat_cheese.png\")",
+      "frameCoords": [
+        96,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:goat_cheese",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "yogurt",
+      "nameVi": "Sữa chua trái cây",
+      "semanticCategory": "dairy",
+      "sourcePack": "food-glitch",
+      "sourceFile": "glitch(\"dessert/flummery\")",
+      "frameCoords": [
+        320,
+        96,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:yogurt",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Free_pixel_food_16x16.zip / lpc-food-v2.zip -> Free_pixel_food_16x16/Icons/soymilk_strawberry.png or dessert cup / OCAL smoothie (Currently glitch dessert/flummery)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "whipped_cream",
+      "nameVi": "Kem tươi đánh bông",
+      "semanticCategory": "dairy",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"coffee_foam\")",
+      "frameCoords": [
+        48,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:whipped_cream",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "herb_butter",
+      "nameVi": "Bơ thảo mộc",
+      "semanticCategory": "dairy",
+      "sourcePack": "lpc-food-v2",
+      "sourceFile": "lpc_ap(0, 11)",
+      "frameCoords": [
+        96,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:herb_butter",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "honey_ice_cream",
+      "nameVi": "Kem vani mật ong",
+      "semanticCategory": "dairy",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"57_icecream\")",
+      "frameCoords": [
+        192,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:honey_ice_cream",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "chocolate_truffle",
+      "nameVi": "Kẹo nấm sô-cô-la",
+      "semanticCategory": "dairy",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"26_chocolate\")",
+      "frameCoords": [
+        320,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:chocolate_truffle",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bread",
+      "nameVi": "Bánh mì ổ",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"07_bread\")",
+      "frameCoords": [
+        128,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:bread",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "potato_bread",
+      "nameVi": "Bánh mì khoai tây",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"65_loafbread\")",
+      "frameCoords": [
+        32,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:potato_bread",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cornbread",
+      "nameVi": "Bánh bắp nướng",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"11_bun\")",
+      "frameCoords": [
+        384,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cornbread",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "apple_pie",
+      "nameVi": "Bánh táo nướng",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"05_apple_pie\")",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:apple_pie",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pumpkin_pie",
+      "nameVi": "Bánh bí ngô",
+      "semanticCategory": "bakery",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"pie_pumpkin_whole\")",
+      "frameCoords": [
+        176,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pumpkin_pie",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cherry_pie",
+      "nameVi": "Bánh anh đào",
+      "semanticCategory": "bakery",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"pie_cherry_whole\")",
+      "frameCoords": [
+        96,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cherry_pie",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "peach_cobbler",
+      "nameVi": "Bánh đào nướng giòn",
+      "semanticCategory": "bakery",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"peach_cake\")",
+      "frameCoords": [
+        240,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:peach_cobbler",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "blueberry_muffin",
+      "nameVi": "Bánh muffin việt quất",
+      "semanticCategory": "bakery",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"muffin_blueberry\")",
+      "frameCoords": [
+        208,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:blueberry_muffin",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lemon_cake",
+      "nameVi": "Bánh bông lan chanh",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"63_lemonpie\")",
+      "frameCoords": [
+        320,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:lemon_cake",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "croissant",
+      "nameVi": "Bánh sừng bò bơ",
+      "semanticCategory": "bakery",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"pastry_croissant\")",
+      "frameCoords": [
+        192,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:croissant",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "walnut_cookie",
+      "nameVi": "Bánh quy óc chó",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"28_cookies\")",
+      "frameCoords": [
+        352,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:walnut_cookie",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "chocolate_cake",
+      "nameVi": "Bánh kem sô-cô-la",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"30_chocolatecake\")",
+      "frameCoords": [
+        288,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:chocolate_cake",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "strawberry_jam",
+      "nameVi": "Mứt dâu tây",
+      "semanticCategory": "preserves",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"jam_strawberry\")",
+      "frameCoords": [
+        80,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:strawberry_jam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "blueberry_jam",
+      "nameVi": "Mứt việt quất",
+      "semanticCategory": "preserves",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"jam_blueberry\")",
+      "frameCoords": [
+        192,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:blueberry_jam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "plum_jam",
+      "nameVi": "Mứt mận tím",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/plum_jam.png\")",
+      "frameCoords": [
+        112,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:plum_jam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fig_jam",
+      "nameVi": "Mứt sung mật",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/apricot_jam.png\")",
+      "frameCoords": [
+        224,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:fig_jam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "peach_preserves",
+      "nameVi": "Đào ngâm đường phèn",
+      "semanticCategory": "preserves",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"jam_peach\")",
+      "frameCoords": [
+        0,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:peach_preserves",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_petal_jelly",
+      "nameVi": "Thạch cánh hoa hồng",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/cherry_jam.png\")",
+      "frameCoords": [
+        48,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_petal_jelly",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pickled_radish",
+      "nameVi": "Củ cải muối giòn",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/pickled_radish.png\")",
+      "frameCoords": [
+        80,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pickled_radish",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pickled_cabbage",
+      "nameVi": "Bắp cải muối chua",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/pickled_cucumbers.png\")",
+      "frameCoords": [
+        48,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pickled_cabbage",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pickled_pepper",
+      "nameVi": "Ớt ngâm giấm",
+      "semanticCategory": "preserves",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"canned_soup\")",
+      "frameCoords": [
+        64,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pickled_pepper",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with food.zip / FRL -> Jar + jalapeno/chili emblem (like pickled_radish.png + chili) (Currently f16 canned_soup.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "dried_tomato",
+      "nameVi": "Cà chua sấy dầu",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/dried_fruit.png\")",
+      "frameCoords": [
+        224,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:dried_tomato",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "grape_raisin",
+      "nameVi": "Nho khô dẻo",
+      "semanticCategory": "preserves",
+      "sourcePack": "food16",
+      "sourceFile": "dcss(\"sultana\").resize((16, 16)) if False else food16(\"raisins\")",
+      "frameCoords": [
+        160,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:grape_raisin",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lemon_marmalade",
+      "nameVi": "Mứt chanh mật ong",
+      "semanticCategory": "preserves",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/honey_jar.png\")",
+      "frameCoords": [
+        80,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lemon_marmalade",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife / Yoshino -> yoshinos orange_jelly.png / citrus marmalade jar (Currently FRL honey_jar.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wool_yarn",
+      "nameVi": "Cuộn len cừu",
+      "semanticCategory": "loom",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(17, 6)",
+      "frameCoords": [
+        0,
+        96,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:wool_yarn",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "angora_yarn",
+      "nameVi": "Cuộn len thỏ Angora",
+      "semanticCategory": "loom",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"materials/rope_coil.png\")",
+      "frameCoords": [
+        48,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:angora_yarn",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with FarmRanchLife / Shikashi -> White fluffy yarn skein vs rope_coil (Currently rope_coil.png)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wool_cloth",
+      "nameVi": "Cuộn vải nỉ len",
+      "semanticCategory": "loom",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/linen_bolt.png\")",
+      "frameCoords": [
+        144,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:wool_cloth",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "knit_scarf",
+      "nameVi": "Khăn choàng len",
+      "semanticCategory": "loom",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/cloth_bolt.png\")",
+      "frameCoords": [
+        0,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:knit_scarf",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cozy_sweater",
+      "nameVi": "Áo len đôi ấm",
+      "semanticCategory": "loom",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(7, 8)",
+      "frameCoords": [
+        480,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cozy_sweater",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "wool_blanket",
+      "nameVi": "Chăn len ghép mảng",
+      "semanticCategory": "loom",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(7, 9)",
+      "frameCoords": [
+        480,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:wool_blanket",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Shikashi / FRL -> Cloth fold / blanket sprite (CRITICAL: shik(7,9) is a green fantasy tunic/shirt!)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rabbit_mittens",
+      "nameVi": "Găng tay lông thỏ",
+      "semanticCategory": "loom",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(8, 0)",
+      "frameCoords": [
+        96,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:rabbit_mittens",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "feather_pillow",
+      "nameVi": "Gối lông vũ êm ái",
+      "semanticCategory": "loom",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/cotton_cloth.png\")",
+      "frameCoords": [
+        64,
+        32,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:feather_pillow",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "tulip_bouquet",
+      "nameVi": "Bó hoa tulip ba màu",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"tulip\")",
+      "frameCoords": [
+        112,
+        192,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:tulip_bouquet",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with yoshinos / custom 3-flower bundle -> Composite 3-tulip bouquet (Duplicate pixel hash with tulip_pink)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "sunset_bouquet",
+      "nameVi": "Bó hoa hoàng hôn",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"hibiscus\"), (245, 130, 48))",
+      "frameCoords": [
+        144,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:sunset_bouquet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "starlight_bouquet",
+      "nameVi": "Bó hoa ánh sao",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "recolor_flower_petals(yosh(\"hibiscus\"), (92, 134, 240))",
+      "frameCoords": [
+        48,
+        176,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:starlight_bouquet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "royal_gold_bouquet",
+      "nameVi": "Bó hoa vàng hoàng gia",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"yellow_flower\")",
+      "frameCoords": [
+        160,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:royal_gold_bouquet",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "bridal_rose_bouquet",
+      "nameVi": "Bó hoa hồng chung đôi",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"white_rose\")",
+      "frameCoords": [
+        240,
+        0,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:bridal_rose_bouquet",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with yoshinos / custom 3-flower bundle -> Composite white-rose bouquet with ribbon (Duplicate pixel hash with rose_white)"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "honey_candle",
+      "nameVi": "Nến sáp mật ong",
+      "semanticCategory": "florist",
+      "sourcePack": "shikashi_v2",
+      "sourceFile": "shik(10, 11)",
+      "frameCoords": [
+        160,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:honey_candle",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lavender_candle",
+      "nameVi": "Nến thơm oải hương",
+      "semanticCategory": "florist",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/lavender_honey.png\")",
+      "frameCoords": [
+        48,
+        64,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:lavender_candle",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Shikashi's Fantasy Icons Pack v2.zip -> Recolor shik(10,11) candle wax/glow lavender instead of lavender_honey jar (Duplicate of rose_soap (lavender_honey.png))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "rose_soap",
+      "nameVi": "Xà phòng cánh hồng",
+      "semanticCategory": "florist",
+      "sourcePack": "FarmRanchLife",
+      "sourceFile": "frl(\"artisan/lavender_honey.png\")",
+      "frameCoords": [
+        112,
+        96,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:rose_soap",
+      "semanticAccuracy": "NEEDS_FIX",
+      "proposedUse": "REPLACE with Shikashi's Fantasy Icons Pack v2.zip / FRL -> Custom/recolored pink soap bar from Shikashi or clay/honey bar (Duplicate of lavender_candle (lavender_honey.png))"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "flower_crown",
+      "nameVi": "Vòng hoa đội đầu",
+      "semanticCategory": "florist",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"purple_pansy\")",
+      "frameCoords": [
+        16,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:flower_crown",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "veggie_soup",
+      "nameVi": "Súp rau củ đồng quê",
+      "semanticCategory": "dish",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"soup_pea\")",
+      "frameCoords": [
+        0,
+        208,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:veggie_soup",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "roasted_fish",
+      "nameVi": "Cá nướng bơ thảo mộc",
+      "semanticCategory": "dish",
+      "sourcePack": "food-ocal",
+      "sourceFile": "ocal(\"meat/sashimi\")",
+      "frameCoords": [
+        192,
+        64,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:roasted_fish",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "lotus_broth",
+      "nameVi": "Lẩu cá hồi sen",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"87_ramen\")",
+      "frameCoords": [
+        384,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:lotus_broth",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "koi_bentou",
+      "nameVi": "Hộp cơm cá koi ngũ sắc",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"97_sushi\")",
+      "frameCoords": [
+        256,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:koi_bentou",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "pumpkin_soup",
+      "nameVi": "Súp bí ngô kem tươi",
+      "semanticCategory": "dish",
+      "sourcePack": "food16",
+      "sourceFile": "food16(\"soup_mushroom\")",
+      "frameCoords": [
+        192,
+        80,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:pumpkin_soup",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "glazed_yam",
+      "nameVi": "Khoai mỡ nướng mật ong",
+      "semanticCategory": "dish",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"kabocha_dango\")",
+      "frameCoords": [
+        80,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:glazed_yam",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cheese_omelette",
+      "nameVi": "Trứng cuộn phô mai",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"74_omlet_dish\")",
+      "frameCoords": [
+        256,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cheese_omelette",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "honey_pancakes",
+      "nameVi": "Bánh kếp mật ong",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"80_pancakes_dish\")",
+      "frameCoords": [
+        224,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:honey_pancakes",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "hot_cocoa",
+      "nameVi": "Ca cao nóng kem béo",
+      "semanticCategory": "dish",
+      "sourcePack": "free_pixel_food_16",
+      "sourceFile": "f16(\"coffee_mocha\")",
+      "frameCoords": [
+        208,
+        48,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:hot_cocoa",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cozy_feast",
+      "nameVi": "Mâm cơm ấm cúng hai người",
+      "semanticCategory": "dish",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"86_roastedchicken_dish\")",
+      "frameCoords": [
+        448,
+        0,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:cozy_feast",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "cranberry_sauce",
+      "nameVi": "Sốt nam việt quất",
+      "semanticCategory": "preserves",
+      "sourcePack": "yoshinos_bright_16",
+      "sourceFile": "yosh(\"raspberry_jelly\")",
+      "frameCoords": [
+        160,
+        16,
+        16,
+        16
+      ],
+      "atlas": "items16",
+      "currentUsage": "runtime:items16:cranberry_sauce",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    },
+    {
+      "kind": "canonical_sku",
+      "sku": "fig_tart",
+      "nameVi": "Bánh tart sung phô mai dê",
+      "semanticCategory": "bakery",
+      "sourcePack": "ghostpixxells",
+      "sourceFile": "ghost(\"42_eggtart\")",
+      "frameCoords": [
+        0,
+        32,
+        32,
+        32
+      ],
+      "atlas": "items32",
+      "currentUsage": "runtime:items32:fig_tart",
+      "semanticAccuracy": "OK",
+      "proposedUse": "KEEP"
+    }
+  ],
+  "unusedDonorHighlights": [
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/chicken/* (78 sheets, e.g. chicken_black_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for chicken (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/duck/* (52 sheets, e.g. duck_mallard_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for duck (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/cow/* (52 sheets, e.g. cow_highland_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for cow (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/goat/* (26 sheets, e.g. goat_alpine_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for goat (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/sheep/* (78 sheets, e.g. sheep_black_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for sheep (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/rabbit/* (52 sheets, e.g. rabbit_angora_idle_down_2f.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "livestock_animated",
+      "currentUsage": "UNUSED (LivestockVisualController currently draws procedural Canvas in proceduralAnimalTextures.ts)",
+      "proposedUse": "M3: Direct animated sprite transplant for rabbit (replaces proceduralAnimalTextures.ts)"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/10_Effects/bees_swarm_4f.png",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "livestock_or_fauna",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M3 bee visual transplant"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/alpaca/*",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_or_fauna",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M10 new ranch animal"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/horse/*",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_or_fauna",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M10 mount/ranch animal"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/04_Ranch_Animals/pig/*",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "livestock_or_fauna",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M10 new ranch animal"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/06_Characters_Tools/Actions/* (62 sheets)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "character_farming_actions",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M3/M9: Tool tier animations (copper/iron/gold/crystal) & action FX reference"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/05_Buildings_Machines/Artisan_Machines/* (14 files x 6f = 84 frames)",
+      "frameCoords": [
+        16,
+        0,
+        16,
+        32
+      ],
+      "semanticCategory": "workshop_machine_anim",
+      "currentUsage": "PARTIAL (only frame 0 of 8/14 machines packed)",
+      "proposedUse": "M3/M4: Animate 4 working frames + done frame for all 8 workshops; add keg/butter_churn/incubator/tapper"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/05_Buildings_Machines/Buildings/* (21 files + winter snow)",
+      "frameCoords": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "semanticCategory": "buildings_and_interiors",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M4/M10: Upgradeable barn_level1..3, coop_level1..3, artisan_shed, shipping_bin_lid_open_4f"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/05_Buildings_Machines/Ranch_Props/* (20 files)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "ranch_props",
+      "currentUsage": "PARTIAL (2 sacks only)",
+      "proposedUse": "M3/M4/M6: pet_bowl_3f, nesting_box_3f, compost_bin_4f, market_stall_dairy/fruit/veg, egg_basket_2f"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/10_Effects/* (22 x 4f/6f VFX strips)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "vfx_particles",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M3: soil_dust_till_4f, water_hit_4f, seed_scatter_4f, harvest_pop_4f, hearts_petting_4f, ready_sparkle"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/11_Fishing/* (7 x 4f strips)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "fishing_fx",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M3/M9: bobber_float_4f, bobber_bite_4f, fishing_spot_bubbles_4f, crab_pot_4f"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/03_Fruit_Trees/* (10 species x states + harvest_shake_3f + fallen_fruit)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        48
+      ],
+      "semanticCategory": "orchard_anim",
+      "currentUsage": "UNUSED (lpc-fruit-trees used statically)",
+      "proposedUse": "M3: Tree harvest shake VFX & fallen fruit pickup animation"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/02_Crops/* unused (coffee, tea, rice, pineapple, garlic, hops, cotton, flax, okra, giant_crops)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        32
+      ],
+      "semanticCategory": "crops_expansion",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M5/M10: Unlock tea, coffee, rice, garlic, pineapple, hops + M10 giant crops"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "FarmRanchLife_v1.0.zip",
+      "sourceFile": "FarmRanchLife/08_Items/crab_pot/* (8 shellfish) + fish/* (22 extra fish) + artisan/{tea_leaves_tin,coffee_beans_bag,mayonnaise,maple_syrup,wine_red,wine_white}",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "items_expansion",
+      "currentUsage": "UNUSED",
+      "proposedUse": "M5/M6/M10: Seafood recipes, mayo, tea/coffee tins, crab-pot coastal catches"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "Ghostpixxells_pixelfood.zip",
+      "sourceFile": "Remaining 83/102 dishes (*.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "cooked_dish_and_dessert",
+      "currentUsage": "PARTIAL (19/102 used)",
+      "proposedUse": "M5/M6: Cheesecake, spaghetti, curry, steak, ramen, dumplings, waffle, pancakes, fruitcake, sandwich dishes"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "Free_pixel_food_16x16.zip",
+      "sourceFile": "Remaining 83/100 icons (Free_pixel_food_16x16/Icons/*.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "drinks_cakes_ingredients",
+      "currentUsage": "PARTIAL (17/100 used)",
+      "proposedUse": "M5/M6: 7 boba drinks, 11 coffee/tea cups, 5 cake slices, 4 cheeses, garlic/onion/ginger/lime/watermelon, yogurt fix"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "yoshinos _bright_icons_16x16_v1.3.zip",
+      "sourceFile": "Remaining 106/130 icons (yoshinos .../icons/*.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "tea_dango_gifts_flowers",
+      "currentUsage": "PARTIAL (24 base / 38 SKUs)",
+      "proposedUse": "M5/M6/M2: birthday_cake, lily/poppy/dandelion flowers, 7 dango skewers, 10 fruit bowls, fruit wines & pigments"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food-fleurman.zip",
+      "sourceFile": "32x32/tea_01..10.png, cup.png, cookie.png",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "tea_time",
+      "currentUsage": "UNUSED (0/24)",
+      "proposedUse": "M6: Couple Afternoon Tea & Biscuit rituals"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food-melle.zip",
+      "sourceFile": "32x32/{croissant,cupcake,doughnut,gelatin,pie,strawberry_shortcake_cookie}.png",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "bakery_desserts",
+      "currentUsage": "UNUSED (0/6)",
+      "proposedUse": "M5/M6: Dessert & bakery cafe menu"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "lpc-food-v2.zip",
+      "sourceFile": "fruits-veggies.png, animal-products.png, bread-pastry.png (~1,649 unused 32x32 cells)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "ingredients_and_prepared",
+      "currentUsage": "PARTIAL (8/1657 used)",
+      "proposedUse": "M5/M9/M10: Pasta, noodles, dough, spices, condiments, cheese/meat/fish plates, bakery"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food.zip",
+      "sourceFile": "Remaining 175/188 16x16 icons (food/*.png)",
+      "frameCoords": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "semanticCategory": "food_ingredients",
+      "currentUsage": "PARTIAL (13/188 used)",
+      "proposedUse": "M5: garlic, onion, avocado, herbs, vinegar.png, egg_whole_blue.png, sushi, pizzas, steaks"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food-ocal.zip",
+      "sourceFile": "Remaining 132/138 32x32 icons (32x32/*.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "cooked_meals_drinks",
+      "currentUsage": "PARTIAL (6/138 used)",
+      "proposedUse": "M5/M6: pasta lasagna/macaroni, salad, sandwich, strawberry_smoothie, milk_carton"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food-glitch.zip",
+      "sourceFile": "Remaining 245/246 32x32 icons (32x32/*.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "sauces_oils_drinks",
+      "currentUsage": "PARTIAL (1/246 used)",
+      "proposedUse": "M3 fix olive_oil -> 32x32/condiment/oil_olive.png; M5 sauces, bubble_tea, smoothies, coffee"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "food-bluecarrot16_20201221.zip",
+      "sourceFile": "575 icons (24x24 & 32x32)",
+      "frameCoords": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "semanticCategory": "seafood_cheese_eggs_breads",
+      "currentUsage": "DEAD REF ONLY (0 used)",
+      "proposedUse": "M5/M10: Coffee beans, 9+ fish species, cheese wheels, artisan loaves"
+    },
+    {
+      "kind": "unused_donor_asset",
+      "sourcePack": "Shikashi's Fantasy Icons Pack v2.zip",
+      "sourceFile": "268/284 remaining 32x32 RPG/craft icons (#1 - Transparent Icons.png)",
+      "frameCoords": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "semanticCategory": "craft_gifts_decor",
+      "currentUsage": "PARTIAL (16/284 used)",
+      "proposedUse": "M4/M6/M10: Gift boxes, keys, lanterns, tools, scrolls (remove mis-mapped chicken/potion/tunic)"
+    }
+  ]
+}
