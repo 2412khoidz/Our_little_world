@@ -139,4 +139,70 @@ describe('olwRemoteShare zero-config tunnel & cookie reverse proxy', () => {
       await new Promise((resolve) => upstream.close(() => resolve()));
     }
   });
+
+  it('does not expose temporary 192.168.x LAN URL while tunnel is starting, surfacing only one durable HTTPS link once ready', async () => {
+    const upstream = http.createServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
+    await new Promise((resolve) => upstream.listen(0, '127.0.0.1', () => resolve()));
+    const addr = upstream.address();
+    const upstreamPort = typeof addr === 'object' && addr ? addr.port : 0;
+
+    let triggerReady = null;
+    let triggerError = null;
+    try {
+      const initial = await startRemoteShare({
+        targetPort: upstreamPort,
+        tunnel: true,
+        refresh: true,
+        interfaces: {
+          'Wi-Fi': [{ family: 'IPv4', internal: false, address: '192.168.1.231' }],
+        },
+        tunnelSpawner: async (_proxyPort, _probeToken, onReady, onError) => {
+          triggerReady = onReady;
+          triggerError = onError;
+          return { close: () => {} };
+        },
+      });
+
+      // While starting, no LAN URL is surfaced in shareUrl/publicShareUrl/lanShareUrl
+      expect(initial.tunnelStatus).toBe('starting');
+      expect(initial.shareUrl).toBeNull();
+      expect(initial.publicShareUrl).toBeNull();
+      expect(initial.lanShareUrl).toBeNull();
+
+      // Once tunnel is ready, only the single durable HTTPS tunnel link is returned
+      triggerReady('https://afterwards-niagara-paste-leslie.trycloudflare.com', 'cloudflared');
+      const readyStatus = getRemoteShareStatus();
+      expect(readyStatus.tunnelStatus).toBe('ready');
+      expect(readyStatus.shareUrl).toBe(
+        `https://afterwards-niagara-paste-leslie.trycloudflare.com${readyStatus.sharePath}`,
+      );
+      expect(readyStatus.publicShareUrl).toBe(readyStatus.shareUrl);
+      expect(readyStatus.lanShareUrl).toBeNull();
+
+      // Separate session where tunnel genuinely errors still exposes explicit LAN fallback
+      await startRemoteShare({
+        targetPort: upstreamPort,
+        tunnel: true,
+        refresh: true,
+        interfaces: {
+          'Wi-Fi': [{ family: 'IPv4', internal: false, address: '192.168.1.231' }],
+        },
+        tunnelSpawner: async (_proxyPort, _probeToken, _onReady, onError) => {
+          triggerError = onError;
+          return { close: () => {} };
+        },
+      });
+      triggerError('Tunnel unavailable');
+      const errored = getRemoteShareStatus();
+      expect(errored.tunnelStatus).toBe('error');
+      expect(errored.publicShareUrl).toBeNull();
+      expect(errored.shareUrl).toMatch(/^http:\/\/192\.168\.1\.231:\d+\/__share\//);
+    } finally {
+      await stopRemoteShare();
+      await new Promise((resolve) => upstream.close(() => resolve()));
+    }
+  });
 });

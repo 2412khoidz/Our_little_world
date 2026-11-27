@@ -502,12 +502,16 @@ function buildInfo(session) {
       lastClientAtMs: null,
     };
   }
-  const lanShareUrl = session.recommendedLanIp
+  const rawLanShareUrl = session.recommendedLanIp
     ? `http://${session.recommendedLanIp}:${session.proxyPort}/__share/${session.pairToken}`
     : null;
   const publicShareUrl = session.tunnelOrigin
     ? `${session.tunnelOrigin}/__share/${session.pairToken}`
     : null;
+  // Never expose a temporary 192.168.x.x LAN URL while the HTTPS tunnel is starting or once ready;
+  // LAN fallback is exposed only if public tunneling genuinely errored or tunnel=false (local testing).
+  const allowLanFallback = !publicShareUrl && (session.tunnelStatus === 'error' || session.tunnelStatus === 'idle');
+  const lanShareUrl = allowLanFallback ? rawLanShareUrl : null;
   return {
     active: true,
     tunnelStatus: session.tunnelStatus,

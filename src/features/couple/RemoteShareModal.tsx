@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, Globe, RefreshCw, ShieldCheck, Smartphone, Wifi, X } from 'lucide-react';
+import { Check, Copy, Globe, RefreshCw, ShieldCheck, Smartphone, X } from 'lucide-react';
 
 interface RemoteShareStatus {
   active: boolean;
@@ -121,7 +121,9 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
     }
   };
 
-  const primaryUrl = status?.publicShareUrl ?? status?.shareUrl ?? null;
+  const primaryUrl =
+    status?.publicShareUrl ??
+    (status?.tunnelStatus === 'error' || status?.tunnelStatus === 'idle' ? (status?.shareUrl ?? null) : null);
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Chơi cùng người thương">
@@ -175,8 +177,8 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
                   {status.tunnelStatus === 'ready'
                     ? 'Đường link HTTPS riêng tư đã sẵn sàng'
                     : status.tunnelStatus === 'starting'
-                      ? 'Đang mở đường hầm HTTPS bảo mật...'
-                      : 'Chế độ Wi-Fi cục bộ'}
+                      ? 'Đang khởi tạo link HTTPS riêng tư...'
+                      : 'Không mở được đường hầm HTTPS công khai'}
                 </strong>
                 {status.provider && (
                   <span className="pill" style={{ fontSize: 11 }}>
@@ -186,8 +188,8 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
               </div>
 
               {status.tunnelStatus === 'starting' && (
-                <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)' }}>
-                  Đang tạo tên miền HTTPS riêng tư (Cloudflare / máy chủ dự phòng)... thường mất 3–10 giây.
+                <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-muted)' }} data-testid="remote-share-starting-note">
+                  Đang tạo một đường link HTTPS bền vững duy nhất (hoạt động ổn định khi chuyển Wi-Fi ↔ 5G)... thường mất 3–10 giây.
                 </p>
               )}
 
@@ -227,20 +229,10 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
                 </div>
               )}
 
-              {status.lanShareUrl && status.lanShareUrl !== primaryUrl && (
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
-                  <Wifi size={14} />
-                  <span style={{ color: 'var(--ink-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    Cùng Wi-Fi: {status.lanShareUrl}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn--secondary btn--sm"
-                    onClick={() => void handleCopy(status.lanShareUrl!)}
-                  >
-                    {copiedUrl === status.lanShareUrl ? 'Đã chép' : 'Copy LAN'}
-                  </button>
-                </div>
+              {status.tunnelStatus === 'error' && primaryUrl && (
+                <p style={{ margin: 0, fontSize: 12, color: '#b4483a' }}>
+                  Lưu ý: Link Wi-Fi nội bộ ở trên không tự kết nối lại được nếu người thương chuyển sang 4G/5G. Hãy thử bấm «Đổi link mới» khi mạng ổn định để lấy link HTTPS.
+                </p>
               )}
             </div>
 

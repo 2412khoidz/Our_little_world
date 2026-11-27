@@ -2,6 +2,14 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## FIX `fix/remote-share-single-link` — Chỉ xuất một link HTTPS bền vững khi chia sẻ từ xa
+
+- **Lỗi thực tế do chủ dự án phát hiện:** Khi bấm *Tạo đường link mời từ xa*, `buildInfo()` trong `scripts/olwRemoteShare.mjs` trả sớm `shareUrl = lanShareUrl` (`http://192.168.1.x:.../__share/...`) trong khi tunnel Cloudflare còn ở trạng thái `'starting'`, rồi mới đổi thành `https://...trycloudflare.com/__share/...` sau vài giây; ngoài ra `RemoteShareModal.tsx` còn hiển thị thêm nút `Copy LAN`. Nếu gửi hoặc mở link LAN tạm, điện thoại sẽ mất khả năng reconnect khi chuyển Wi-Fi ↔ 5G.
+- **Khắc phục:**
+  - `scripts/olwRemoteShare.mjs` (`buildInfo`): khi `tunnelStatus === 'starting'`, trả `shareUrl: null` và `lanShareUrl: null`; chỉ trả link LAN dự phòng khi `tunnelStatus === 'error'` hoặc chế độ local `tunnel: false`. Khi tunnel sẵn sàng (`'ready'`), chỉ xuất duy nhất `publicShareUrl` HTTPS (`https://.../__share/...`).
+  - `src/features/couple/RemoteShareModal.tsx`: ẩn ô link & nút sao chép trong lúc `tunnelStatus === 'starting'` (hiển thị trạng thái chờ 3–10 giây để tạo link bền vững), bỏ dòng `Copy LAN` phụ khi đã có link HTTPS; chỉ hiện link LAN fallback kèm cảnh báo rõ ràng nếu tạo tunnel lỗi.
+- **Kiểm chứng:** `npm run lint` (`0` errors, `1` warning có sẵn), `npm run typecheck`, `npm run build`, `node scripts/verify-prod-guard.mjs`, 7 file Vitest (`26/26` tests pass gồm `remoteShareTunnel.test.mjs` 4/4 & `remoteShareModal.test.tsx` 1/1), và Playwright `multiplayer-ws-hardening.spec.ts` trên `chromium-desktop` (**2/2 pass**, `34.6s`) & `chromium-iphone-16-pro-max` (**2/2 pass**, `25.2s`) xác minh link hiển thị khớp `^https://` qua Cloudflare Quick Tunnel thật. (Chưa test lại trên điện thoại thật sau chỉnh sửa này; chưa hợp nhất vào `main`.)
+
 ## HOTFIX POST-`v0.2.5` — Pet Interaction Priority & Orchard Collision (`fix/pet-interaction-and-orchard-collision`)
 
 - **Nghiệm thu từ chủ dự án:** Chủ dự án đã playtest và phê duyệt cả hai bản sửa lỗi nóng trên baseline `v0.2.5` (`6c1bc66` → `main`):
