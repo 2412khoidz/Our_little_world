@@ -271,6 +271,7 @@ function createSim3DRuntime(props: BilliardsGameProps): Sim3DRuntime {
       isBreakShot: false,
       intendedTargetId: null,
       firstContactId: null,
+      shotAimAngle: 0,
       cueStopGraceUntilMs: 0,
       firstContactGraceUntilMs: 0,
       recentPockets: [],
@@ -592,6 +593,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
       sim.adaptiveContext.isBreakShot = sim.proto.isBreakShot;
       sim.adaptiveContext.intendedTargetId = aimRayBeforeShot?.hitBall?.id ?? null;
       sim.adaptiveContext.firstContactId = null;
+      sim.adaptiveContext.shotAimAngle = shot.angle;
       sim.adaptiveContext.cueStopGraceUntilMs = 0;
       sim.adaptiveContext.firstContactGraceUntilMs = 0;
       sim.adaptiveContext.recentPockets = sim.adaptiveRecentPockets;
@@ -978,6 +980,19 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     return true;
   }, [getServerNowMs, getSim]);
 
+  const resumeAimFromPostShotOverview = useCallback(() => {
+    const sim = getSim();
+    if (
+      sim.cameraStage === 'overview' &&
+      resolveEffectiveShotCameraMode(touchPrefsRef.current) === 'adaptive' &&
+      canHumanInteractNow() &&
+      !sim.draggingCueBall
+    ) {
+      sim.cameraStage = 'aiming';
+      setCameraStage('aiming');
+    }
+  }, [canHumanInteractNow, getSim]);
+
   const { stepKeyboardControls } = useBilliardsKeyboard({
     active: true,
     canShootNow: () => canHumanInteractNow() && !getSim().powerDragging && !getSim().draggingCueBall,
@@ -989,10 +1004,12 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     },
     getAimAngle: () => getSim().aimAngle,
     setAimAngle: (a) => {
+      resumeAimFromPostShotOverview();
       getSim().aimAngle = a;
     },
     getPower: () => getSim().power,
     setPower: (p) => {
+      if (p > 0) resumeAimFromPostShotOverview();
       getSim().power = p;
     },
     onPowerUiSync: (p) => {
@@ -1070,7 +1087,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0f1624);
-    scene.fog = new THREE.FogExp2(0x0f1624, 0.1);
+    scene.fog = new THREE.FogExp2(0x0f1624, 0.062);
 
     const camera = new THREE.PerspectiveCamera(42, 16 / 9, 0.05, 30);
 
@@ -1526,6 +1543,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     const ndcVec = new THREE.Vector2();
     const hitVec = new THREE.Vector3();
     const cueProjVec = new THREE.Vector3();
+    const camDirVec = new THREE.Vector3();
     const tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -BALL_R_3D);
 
     const resolveTableWorldPoint = (clientX: number, clientY: number) => {
@@ -1701,8 +1719,12 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
         timeMs: performance.now(),
       });
 
-      // In free 'orbit' mode, let OrbitControls exclusively own stage rotation/pinch/pan without pointer capture fighting
-      if (camModeRef.current === 'orbit') {
+      // In free 'orbit' mode, let OrbitControls exclusively own stage rotation/pinch/pan
+      // unless automatic shot camera is actively tracking
+      const inAutoTrackStage =
+        sim.cameraStage === 'shot_transition' || sim.cameraStage === 'tracking';
+      if (camModeRef.current === 'orbit' && !inAutoTrackStage) {
+        resumeAimFromPostShotOverview();
         camCtrl.controls.enabled = !sim.hoverZoomActive && !sim.draggingCueBall;
         return;
       }
@@ -1727,14 +1749,18 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
       sim.lastTapWorldAngle =
         initPt && cue ? Math.atan2(initPt.z - cue.z, initPt.x - cue.x) : null;
 
+      const effectiveShotSetting = resolveEffectiveShotCameraMode(touchPrefsRef.current);
       const visualCam =
-        sim.cameraStage === 'overview' ||
         sim.cameraStage === 'shot_transition' ||
-        sim.cameraStage === 'tracking'
+        sim.cameraStage === 'tracking' ||
+        (sim.cameraStage === 'overview' && effectiveShotSetting === 'overview')
           ? 'top'
           : camModeRef.current;
 
       if (!canHumanInteractNow()) return;
+      if (!isTouch && !aimLockedRef.current) {
+        resumeAimFromPostShotOverview();
+      }
       if (!isTouch && !aimLockedRef.current && visualCam === 'top' && initPt && cue) {
         sim.aimAngle = Math.atan2(initPt.z - cue.z, initPt.x - cue.x);
         if (modeRef.current === 'online') {
@@ -1856,8 +1882,15 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
       const dx = e.clientX - sim.lastPointerX;
       sim.lastPointerX = e.clientX;
       sim.lastPointerY = e.clientY;
-      const curCam = sim.cameraStage === 'overview' ? 'top' : camModeRef.current;
+      const effectiveShotSetting = resolveEffectiveShotCameraMode(touchPrefsRef.current);
+      const curCam =
+        sim.cameraStage === 'overview' && effectiveShotSetting === 'overview'
+          ? 'top'
+          : camModeRef.current;
       if (sim.proto.phase === 'aim' && canHumanInteractNow()) {
+        if (!isTouch || total >= TOUCH_TAP_SLOP_PX) {
+          resumeAimFromPostShotOverview();
+        }
         const cue = sim.balls3D.find((b) => b.id === 0);
         const { aimMul, lockedFineMul } = normalizeSensitivityMultipliers(touchPrefsRef.current);
         if (curCam === 'top' && cue) {
@@ -2004,6 +2037,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     let lastTime = performance.now();
     let lastReportedAimDeg = -1;
     let lastReportedCamY = '';
+    let lastReportedCamElev = '';
 
     const frame = (now: number) => {
       if (!active) return;
@@ -2593,6 +2627,14 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
             lastReportedCamY = cy;
             rootRef.current.setAttribute('data-cam-y', cy);
           }
+          camera.getWorldDirection(camDirVec);
+          const elevDeg = String(
+            Math.round(Math.asin(Math.max(0, Math.min(1, -camDirVec.y))) * (180 / Math.PI)),
+          );
+          if (elevDeg !== lastReportedCamElev) {
+            lastReportedCamElev = elevDeg;
+            rootRef.current.setAttribute('data-cam-elev-deg', elevDeg);
+          }
         }
       }
 
@@ -2656,6 +2698,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
     getSim,
     launchShotWithStrikeAnim,
     resolvedQuality,
+    resumeAimFromPostShotOverview,
     scheduleAiTurnIfNeeded,
     showTempBanner,
     syncReactFromProto,
@@ -2680,6 +2723,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
   const startFineAim = (deltaRad: number) => {
     const sim = getSim();
     if (!canHumanInteractNow()) return;
+    resumeAimFromPostShotOverview();
     sim.aimAngle += deltaRad;
     stopFineAim();
     fineAimIntervalRef.current = window.setInterval(() => {
@@ -2776,9 +2820,10 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
 
   const effectiveShotCamMode = resolveEffectiveShotCameraMode(touchPrefs);
   const effectiveSegCamMode: Billiards3DCamMode =
-    cameraStage === 'shot_transition' ||
-    cameraStage === 'tracking' ||
-    cameraStage === 'overview'
+    effectiveShotCamMode === 'overview' &&
+    (cameraStage === 'shot_transition' ||
+      cameraStage === 'tracking' ||
+      cameraStage === 'overview')
       ? 'top'
       : camMode;
   const selectManualCamMode = (next: Billiards3DCamMode) => {
@@ -3050,6 +3095,7 @@ export const Billiards3DGame: React.FC<BilliardsGameProps> = (props) => {
             onPointerDown={(e) => {
               const sim = getSim();
               if (!canHumanInteractNow()) return;
+              resumeAimFromPostShotOverview();
               billiardsSound.unlock();
               try {
                 e.currentTarget.setPointerCapture?.(e.pointerId);

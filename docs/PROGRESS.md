@@ -372,3 +372,24 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
   - Chờ chủ dự án **nghiệm thu trực quan** P0 couple animations trước khi mở P1 (`kiss`, `lean_shoulder`, `dance`, `give_flower`).
   - Chờ chủ dự án **nghiệm thu âm thanh thực tế** 8 tiếng mèo ghi âm thật trên loa máy tính & iPhone.
   - Chưa test thực tế trên **iPhone 16 Pro Max Safari / PWA Add to Home Screen** qua 4G khác mạng với đối phương, và chưa test **Supabase Cloud** thật.
+
+## 17. Billiards V4.1 — True 3D Cinematic Camera Correction (`feat/billiards-v4-camera`)
+
+- **Phạm vi & Kiến trúc Camera 3D Nghiêng Điện Ảnh (`cameraController3d.ts`, `Billiards3DGame.tsx`):**
+  - **Loại bỏ triệt để góc nhìn phẳng 90° ở chế độ `Adaptive Cinematic`:** Giữ vector `worldUp = [0, 1, 0]` và giải bài toán `fitBoxInObliqueFrustum3D` (chiếu 8 góc hộp bounding theo camera basis thật cho viewport portrait & landscape, trừ biên an toàn HUD) thay cho chế độ sụp tilt về 0 / chuyển sang `Toàn bàn` 90° của V4.
+  - **Ngữ cảnh xoay chuyển mượt theo cú đánh (`35°–68°`):**
+    - Trước cú đánh giữ nguyên góc cơ thấp (`Góc cơ` ~`20°`); khi bắt đầu đánh nhấc mượt lên góc nghiêng chéo `40°–55°` quanh `shotAimAngle` (`computeObliqueShotAzimuth3D`).
+    - Khi đánh vỡ bi / nhiều bi chạy: nới khoảng cách & góc nghiêng lên tới tối đa `68°` (giữ rõ thành gỗ, chân bàn, cả 6 lỗ và bóng đổ 3D). Khi theo bi mục tiêu / đường vào lỗ: theo mượt kiểu máy quay thể thao (`42°–64°`) với smoothing bất đối xứng (mở rộng nhanh, thu hẹp chậm + giữ ổn định `480ms`).
+  - **Hậu cú đánh & Phục hồi góc cơ không làm kẹt chế độ:** Kết thúc cú đánh dừng ở **tổng quan 3D nghiêng (`52°–56°`)** (`cameraStage = 'overview'`) mà vẫn giữ nguyên `camMode` người chơi đã chọn (`Góc cơ`), và mượt mà trả về góc cơ khi người chơi chủ động ngắm (`drag` trên bàn, nút `⟲`/`⟳`, phím mũi tên, hoặc kéo thanh lực), đồng thời không ngắt lượt đối phương hay Bot AI. Chế độ `Toàn bàn` (90°) vẫn được giữ riêng cho người chơi chọn `Tổng quan 90°`.
+  - **Bảo toàn tuyệt đối:** Không chỉnh sửa `Billiards2DGame.tsx`, `touchControls.ts`, `touchPreferences.ts`, physics (`physicsEngine.ts`, `physics3dEngine.ts`), luật bi-a, multiplayer sync hay nhánh `main`.
+- **Kiểm chứng cục bộ sau lần sửa cuối (Windows Chromium headless + Vitest + Dev LAN WS):**
+  - `npm run typecheck` (`tsc -b`): **Pass** (exit `0`).
+  - `npm run lint`: **Pass** (`0` errors; 1 warning có sẵn tại `ChillFishingModal.tsx`).
+  - Targeted Vitest (**8/8 suites, 26/26 tests pass**): gồm `billiardsTouchAndViewport.test.ts` (`11` tests kiểm tra `computePoseElevationDeg`, oblique break/tight/overview/fallback framing & hysteresis), `billiards3dPhysicsDeterminism.test.ts`, `billiardsBotAi.test.ts`, `billiardsLobbyProtocol.test.ts`, `billiardsControlsAndLifecycle.test.tsx`, `billiardsModalLifecycle.test.tsx`, `billiardsLobbyWs.test.ts`, `privateAssetSync.test.ts`.
+  - `npm run build` + VitePWA + `node scripts/verify-prod-guard.mjs` + `npm run assets:private:verify`: **Pass** (quét 7 JS bundle, 0 dev leaks).
+  - Playwright E2E trên Chromium WebGL (`PLAYWRIGHT_PORT=4183`):
+    - `--project=chromium-desktop`: **10/10 pass** (`billiards-multiplayer.spec.ts`, `billiards-v3-modes.spec.ts`, `billiards-v4-camera.spec.ts`).
+    - `--project=chromium-iphone-16-pro-max`: **7/7 pass** (`billiards-v3-modes.spec.ts`, `billiards-v4-camera.spec.ts`), `frame-time` đo được `p50 = 16.7ms`, `p95 = 33.4ms`.
+  - Kiểm tra trực quan 7 ảnh PNG (`portrait` `430×932` & `landscape` `844×390`) và video `.webm` xác nhận bàn 3D giữ chiều sâu thành gỗ/lỗ bi rõ nét ở mọi pha và không che lấp HUD.
+- **Chưa kiểm chứng trên thiết bị thật:** Chưa playtest trên phần cứng **iPhone 16 Pro Max Safari / PWA Add to Home Screen** hoặc Android thật, và chưa kiểm tra qua Supabase Cloud thật.
+

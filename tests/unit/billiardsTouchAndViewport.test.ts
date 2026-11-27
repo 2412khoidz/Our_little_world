@@ -40,6 +40,8 @@ import {
 import {
   computeAdaptiveFramingRegion3D,
   computeCameraPose3D,
+  computeObliqueOverviewPose3D,
+  computePoseElevationDeg,
   computeTacticalOverviewPose3D,
   createAdaptiveSmootherState,
   shortestAngleDelta3D,
@@ -508,16 +510,70 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
     expect(heldPose.position[1]).toBeCloseTo(portraitOv.position[1], 5);
   });
 
-  it('P2/P3/P4: Adaptive Cinematic tracks tight shots, adapts on missed targets, preserves pockets/break, applies asymmetric hysteresis, and defaults to adaptive on mobile', () => {
+  it('P2/P3/P4/V4.1: Adaptive Cinematic maintains genuine oblique 3D perspective, adapts on missed targets, preserves pockets/break, applies asymmetric hysteresis, and never flattens to 90deg', () => {
     const def = createDefaultTouchPreferences();
     expect(resolveEffectiveShotCameraMode(def, true)).toBe('adaptive');
     expect(resolveEffectiveShotCameraMode(def, false)).toBe('manual');
     expect(resolveEffectiveShotCameraMode({ shotCameraMode: 'overview' }, false)).toBe('overview');
 
-    const aspect = 430 / 820;
-    const overviewH = computeTacticalOverviewPose3D(aspect).position[1];
+    const portraitAspect = 430 / 820;
+    const landscapeAspect = 844 / 390;
 
-    // 1. Tight nearby shot: cue & ball 2 close together on right side -> tighter than full overview
+    // 0. True Oblique Overview check (50°-60° elevation, world up = [0,1,0], never vertical 90° 2D)
+    for (const asp of [portraitAspect, landscapeAspect, 1280 / 680]) {
+      const obPose = computeObliqueOverviewPose3D(asp, 0.15);
+      const obElev = computePoseElevationDeg(obPose);
+      expect(obPose.up).toEqual([0, 1, 0]);
+      expect(obElev).toBeGreaterThanOrEqual(45);
+      expect(obElev).toBeLessThanOrEqual(62);
+    }
+
+    // Held post-shot overview returns oblique 3D for Adaptive Cinematic, and 90° vertical only for Tactical Overview
+    const adaptivePostShot = computeCameraPose3D({
+      mode: 'follow',
+      shotCameraMode: 'adaptive',
+      cameraStage: 'overview',
+      aspect: portraitAspect,
+      zoomLevel: 1.0,
+      visualAimAngle: 0.1,
+      cueX: -0.5,
+      cueZ: 0,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+    });
+    expect(adaptivePostShot.up).toEqual([0, 1, 0]);
+    expect(computePoseElevationDeg(adaptivePostShot)).toBeLessThan(65);
+
+    const tacticalPostShot = computeCameraPose3D({
+      mode: 'follow',
+      shotCameraMode: 'overview',
+      cameraStage: 'overview',
+      aspect: portraitAspect,
+      zoomLevel: 1.0,
+      visualAimAngle: 0.1,
+      cueX: -0.5,
+      cueZ: 0,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+    });
+    expect(computePoseElevationDeg(tacticalPostShot)).toBeGreaterThan(85);
+
+    const obOverview = computeObliqueOverviewPose3D(portraitAspect, 0);
+    const obDist = Math.hypot(
+      obOverview.position[0] - obOverview.lookAt[0],
+      obOverview.position[1] - obOverview.lookAt[1],
+      obOverview.position[2] - obOverview.lookAt[2],
+    );
+
+    // 1. Tight nearby shot: cue & ball 2 close together on right side -> tight oblique tracking (40°-55°)
     const cue = makeBall3D(0, 0.55, 0.15);
     cue.vx = 0.8;
     const b2 = makeBall3D(2, 0.78, 0.18);
@@ -528,36 +584,41 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
         isBreakShot: false,
         intendedTargetId: 2,
         firstContactId: null,
+        shotAimAngle: 0.12,
         cueStopGraceUntilMs: 2000,
         firstContactGraceUntilMs: 0,
         recentPockets: [],
         nowMs: 1000,
       },
-      aspect,
+      portraitAspect,
     );
     expect(tightRegion.valid).toBe(true);
     expect(tightRegion.fullTable).toBe(false);
-    expect(tightRegion.targetHeight).toBeLessThan(overviewH - 0.3);
-    expect(tightRegion.cx).toBeGreaterThan(0.2);
+    expect(tightRegion.targetDistance).toBeLessThan(obDist - 0.35);
+    expect(tightRegion.targetElevationRad * (180 / Math.PI)).toBeGreaterThanOrEqual(38);
+    expect(tightRegion.targetElevationRad * (180 / Math.PI)).toBeLessThanOrEqual(56);
+    expect(tightRegion.cx).toBeGreaterThan(0.15);
 
-    // 2. Break shot: immediately returns full-table overview
+    // 2. Break shot: wide oblique full-table framing (55°-68°, never 90° vertical)
     const breakRegion = computeAdaptiveFramingRegion3D(
       [cue, b2, b5],
       {
         isBreakShot: true,
         intendedTargetId: 1,
         firstContactId: null,
+        shotAimAngle: 0,
         cueStopGraceUntilMs: 2000,
         firstContactGraceUntilMs: 0,
         recentPockets: [],
         nowMs: 1000,
       },
-      aspect,
+      portraitAspect,
     );
     expect(breakRegion.fullTable).toBe(true);
-    expect(breakRegion.targetHeight).toBeCloseTo(overviewH, 4);
+    expect(breakRegion.targetElevationRad * (180 / Math.PI)).toBeGreaterThanOrEqual(55);
+    expect(breakRegion.targetElevationRad * (180 / Math.PI)).toBeLessThanOrEqual(68);
 
-    // 3. Missed target (intended 5, actually hit 2 moving at +0.75) -> ignores stationary missed 5, follows real contact 2
+    // 3. Missed target (intended 5, actually hit 2 moving at +0.7) -> follows real contact 2
     cue.vx = 0;
     b2.vx = 0.7;
     const realContactRegion = computeAdaptiveFramingRegion3D(
@@ -566,12 +627,13 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
         isBreakShot: false,
         intendedTargetId: 5,
         firstContactId: 2,
-        cueStopGraceUntilMs: 500, // expired grace
+        shotAimAngle: 0.2,
+        cueStopGraceUntilMs: 500,
         firstContactGraceUntilMs: 1600,
         recentPockets: [],
         nowMs: 1000,
       },
-      aspect,
+      portraitAspect,
     );
     expect(realContactRegion.cx).toBeGreaterThan(0.2);
     expect(realContactRegion.fullTable).toBe(false);
@@ -587,40 +649,46 @@ describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobb
         isBreakShot: false,
         intendedTargetId: null,
         firstContactId: null,
+        shotAimAngle: -0.4,
         cueStopGraceUntilMs: 1500,
         firstContactGraceUntilMs: 0,
         recentPockets: [],
         nowMs: 1000,
       },
-      aspect,
+      portraitAspect,
     );
     expect(scratchRegion.valid).toBe(true);
-    expect(scratchRegion.cx).toBeGreaterThan(0.3);
+    expect(scratchRegion.cx).toBeGreaterThan(0.25);
 
-    // 5. Asymmetric widen vs tighten hysteresis
+    // 5. Asymmetric widen vs tighten hysteresis + strict oblique pose elevation bounds
     const smoother = createAdaptiveSmootherState();
     smoother.initialized = true;
-    smoother.height = 1.5;
+    smoother.distance = 1.85;
+    smoother.elevationRad = (42 * Math.PI) / 180;
+    smoother.azimuthRad = breakRegion.targetAzimuthRad;
     smoother.cx = 0;
     smoother.cz = 0;
-    stepAdaptiveShotCamera(smoother, breakRegion, aspect, 0.1, 1000);
-    const widenedDelta = smoother.height - 1.5;
-    expect(widenedDelta).toBeGreaterThan(0.8);
+    const widenPose = stepAdaptiveShotCamera(smoother, breakRegion, portraitAspect, 0.1, 1000);
+    const widenedDelta = smoother.distance - 1.85;
+    expect(widenedDelta).toBeGreaterThan(0.6);
+    expect(computePoseElevationDeg(widenPose)).toBeLessThanOrEqual(69);
+    expect(computePoseElevationDeg(widenPose)).toBeGreaterThanOrEqual(35);
 
-    // Immediately requesting tighter height during cooldown is blocked (hysteresis!)
-    const afterCooldownStart = smoother.height;
-    stepAdaptiveShotCamera(smoother, tightRegion, aspect, 0.05, 1100);
-    expect(smoother.height).toBeCloseTo(afterCooldownStart, 5);
+    // Immediately requesting tighter distance during cooldown is blocked (hysteresis!)
+    const afterCooldownStart = smoother.distance;
+    stepAdaptiveShotCamera(smoother, tightRegion, portraitAspect, 0.05, 1100);
+    expect(smoother.distance).toBeCloseTo(afterCooldownStart, 5);
 
     // After cooldown expires, tightens slowly (much less than widen rate)
-    stepAdaptiveShotCamera(smoother, tightRegion, aspect, 0.1, 2000);
-    const tightenedDelta = afterCooldownStart - smoother.height;
+    stepAdaptiveShotCamera(smoother, tightRegion, portraitAspect, 0.1, 2000);
+    const tightenedDelta = afterCooldownStart - smoother.distance;
     expect(tightenedDelta).toBeGreaterThan(0.01);
     expect(tightenedDelta).toBeLessThan(widenedDelta * 0.5);
 
-    // 6. Invalid / empty input falls back safely to Tactical Overview
-    const fallback = computeAdaptiveFramingRegion3D(undefined, undefined, aspect);
+    // 6. Invalid / empty input falls back safely to oblique 3D overview
+    const fallback = computeAdaptiveFramingRegion3D(undefined, undefined, portraitAspect);
     expect(fallback.fullTable).toBe(true);
-    expect(Number.isFinite(fallback.targetHeight)).toBe(true);
+    expect(Number.isFinite(fallback.targetDistance)).toBe(true);
+    expect(fallback.targetElevationRad * (180 / Math.PI)).toBeLessThan(65);
   });
 });

@@ -1,3 +1,4 @@
+import { promises as fs } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const EVIDENCE_DIR =
@@ -266,24 +267,35 @@ test.describe('Billiards V4 — Touch Sensitivity, Ball Tap Discrimination & Ada
     });
     await page.mouse.up();
 
-    // Verify camera transitions automatically into tracking -> overview and STAYS in overview after settle!
+    // Verify camera transitions into oblique tracking -> oblique post-shot overview WITHOUT flattening to 90deg 2D
     await expect(game3d).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
     await expect
       .poll(async () => await game3d.getAttribute('data-camera-stage'), { timeout: 5_000 })
       .toMatch(/shot_transition|tracking/);
 
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: `${EVIDENCE_DIR}/v4-mobile-3d-tracking.png` });
+    await page.waitForTimeout(350);
+    const trackElev = Number((await game3d.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(trackElev).toBeGreaterThanOrEqual(24);
+    expect(trackElev).toBeLessThanOrEqual(72);
 
     await expect(game3d).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
     await expect(game3d).toHaveAttribute('data-camera-stage', 'overview');
-    await expect(game3d).toHaveAttribute('data-camera-mode', 'top');
-    await page.waitForTimeout(350);
-    await page.screenshot({ path: `${EVIDENCE_DIR}/v4-mobile-3d-postshot-overview.png` });
+    // Persistent mode stays 'follow' rather than trapping player in 'top'
+    await expect(game3d).toHaveAttribute('data-camera-mode', 'follow');
+    await page.waitForTimeout(550);
+    const postElev = Number((await game3d.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(postElev).toBeGreaterThanOrEqual(38);
+    expect(postElev).toBeLessThanOrEqual(66);
 
-    // P3 Manual Override during next active shot
-    await page.getByTestId('billiards-3d-cam-follow').click();
+    // Deliberate aiming interaction (fine-aim button) smoothly restores cue view ('aiming', elev < 35°)
+    await page.getByTestId('billiards-aim-right').dispatchEvent('pointerdown');
+    await page.getByTestId('billiards-aim-right').dispatchEvent('pointerup');
     await expect(game3d).toHaveAttribute('data-camera-stage', 'aiming');
+    await expect
+      .poll(async () => Number((await game3d.getAttribute('data-cam-elev-deg')) ?? '90'), {
+        timeout: 5_000,
+      })
+      .toBeLessThan(35);
     await page.waitForTimeout(250);
 
     await page.mouse.move(slotBox!.x + slotBox!.width / 2, slotBox!.y + 12);
@@ -369,8 +381,8 @@ test.describe('Billiards V4 — Touch Sensitivity, Ball Tap Discrimination & Ada
     await page.mouse.up();
     await expect(game3d).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
     await expect(game3d).toHaveAttribute('data-camera-stage', 'overview');
+    await expect(game3d).toHaveAttribute('data-camera-mode', 'top');
     await page.waitForTimeout(300);
-    await page.screenshot({ path: `${EVIDENCE_DIR}/v4-mobile-3d-landscape-overview.png` });
 
     // Record measured frame-time telemetry
     await expect
@@ -382,5 +394,173 @@ test.describe('Billiards V4 — Touch Sensitivity, Ball Tap Discrimination & Ada
 
     expect(errors).toEqual([]);
     await ctx.close();
+  });
+
+  test('V4.1 visual acceptance: records portrait & landscape Adaptive Cinematic oblique 3D gameplay videos and keyframes', async ({
+    browser,
+  }) => {
+    test.setTimeout(150_000);
+    await fs.mkdir(EVIDENCE_DIR, { recursive: true });
+
+    // --- 1. Portrait 430x932 recording ---
+    const ctxPort = await browser.newContext({
+      viewport: { width: 430, height: 932 },
+      hasTouch: true,
+      isMobile: true,
+      recordVideo: { dir: EVIDENCE_DIR, size: { width: 430, height: 932 } },
+    });
+    const pagePort = await ctxPort.newPage();
+    const portErrors: string[] = [];
+    pagePort.on('pageerror', (err) => portErrors.push(err.message));
+
+    await pagePort.goto('/');
+    await joinSingleClient(pagePort, 'preset-partner-a');
+    await openEntryMenu(pagePort);
+    await pagePort.getByTestId('billiards-edition-3d').click();
+    await pagePort.getByTestId('billiards-mode-local').click();
+    await pagePort.getByTestId('billiards-start-btn').click();
+
+    const gPort = pagePort.getByTestId('billiards-3d-game');
+    await expect(gPort).toBeVisible({ timeout: 20_000 });
+    await expect(gPort).toHaveAttribute('data-shot-camera-mode', 'adaptive');
+    await pagePort.waitForTimeout(450);
+    const cueElev = Number((await gPort.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(cueElev).toBeLessThan(35);
+    await pagePort.screenshot({ path: `${EVIDENCE_DIR}/v41-portrait-1-cue.png` });
+
+    // Fire firm break shot -> wide oblique break tracking
+    const slotP = pagePort.getByTestId('billiards-power-slot');
+    const slotBoxP = (await slotP.boundingBox())!;
+    await pagePort.mouse.move(slotBoxP.x + slotBoxP.width / 2, slotBoxP.y + 12);
+    await pagePort.mouse.down();
+    await pagePort.mouse.move(slotBoxP.x + slotBoxP.width / 2, slotBoxP.y + slotBoxP.height * 0.78, {
+      steps: 6,
+    });
+    await pagePort.mouse.up();
+
+    await expect(gPort).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+    await pagePort.waitForTimeout(450);
+    const breakElev = Number((await gPort.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(breakElev).toBeGreaterThanOrEqual(28);
+    expect(breakElev).toBeLessThanOrEqual(72);
+    await pagePort.screenshot({ path: `${EVIDENCE_DIR}/v41-portrait-2-break-oblique.png` });
+
+    // Wait for balls to stop -> oblique post-shot overview
+    await expect(gPort).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+    await expect(gPort).toHaveAttribute('data-camera-stage', 'overview');
+    await pagePort.waitForTimeout(650);
+    const postElevP = Number((await gPort.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(postElevP).toBeGreaterThanOrEqual(40);
+    expect(postElevP).toBeLessThanOrEqual(66);
+    await pagePort.screenshot({ path: `${EVIDENCE_DIR}/v41-portrait-3-postshot-oblique.png` });
+
+    // Deliberate aiming restores cue view ('follow') and lines up an angled object-ball shot
+    await pagePort.getByTestId('billiards-aim-left').dispatchEvent('pointerdown');
+    await pagePort.waitForTimeout(260);
+    await pagePort.getByTestId('billiards-aim-left').dispatchEvent('pointerup');
+    await expect(gPort).toHaveAttribute('data-camera-stage', 'aiming');
+    await expect
+      .poll(async () => Number((await gPort.getAttribute('data-cam-elev-deg')) ?? '90'), {
+        timeout: 5_000,
+      })
+      .toBeLessThan(35);
+    await pagePort.waitForTimeout(300);
+    await pagePort.screenshot({ path: `${EVIDENCE_DIR}/v41-portrait-4-return-cue.png` });
+
+    // Shoot second non-break shot -> tight oblique object-ball / pocket tracking
+    const slotBoxP2 = (await slotP.boundingBox())!;
+    await pagePort.mouse.move(slotBoxP2.x + slotBoxP2.width / 2, slotBoxP2.y + 12);
+    await pagePort.mouse.down();
+    await pagePort.mouse.move(slotBoxP2.x + slotBoxP2.width / 2, slotBoxP2.y + slotBoxP2.height * 0.62, {
+      steps: 6,
+    });
+    await pagePort.mouse.up();
+
+    await expect(gPort).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+    await pagePort.waitForTimeout(500);
+    const track2Elev = Number((await gPort.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(track2Elev).toBeGreaterThanOrEqual(25);
+    expect(track2Elev).toBeLessThanOrEqual(70);
+    await pagePort.screenshot({ path: `${EVIDENCE_DIR}/v41-portrait-5-single-ball-track.png` });
+    await expect(gPort).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+
+    const portVideo = pagePort.video();
+    await ctxPort.close();
+    if (portVideo) {
+      const pSrc = await portVideo.path();
+      await fs.copyFile(pSrc, `${EVIDENCE_DIR}/v41-portrait-3d-cinematic.webm`);
+      await fs.unlink(pSrc).catch(() => {});
+    }
+    expect(portErrors).toEqual([]);
+
+    // --- 2. Landscape 844x390 recording ---
+    await pagePort.request?.post('/api/dev-lan/reset', { data: {} }).catch(() => {});
+    const ctxLand = await browser.newContext({
+      viewport: { width: 844, height: 390 },
+      hasTouch: true,
+      isMobile: true,
+      recordVideo: { dir: EVIDENCE_DIR, size: { width: 844, height: 390 } },
+    });
+    const pageLand = await ctxLand.newPage();
+    const landErrors: string[] = [];
+    pageLand.on('pageerror', (err) => landErrors.push(err.message));
+
+    const resetRes = await pageLand.request.post('/api/dev-lan/reset', { data: {} });
+    expect(resetRes.ok()).toBe(true);
+    await pageLand.goto('/');
+    await joinSingleClient(pageLand, 'preset-partner-a');
+    await openEntryMenu(pageLand);
+    await pageLand.getByTestId('billiards-edition-3d').click();
+    await pageLand.getByTestId('billiards-mode-local').click();
+    await pageLand.getByTestId('billiards-start-btn').click();
+
+    const gLand = pageLand.getByTestId('billiards-3d-game');
+    await expect(gLand).toBeVisible({ timeout: 20_000 });
+    await expect(gLand).toHaveAttribute('data-shot-camera-mode', 'adaptive');
+    await pageLand.waitForTimeout(450);
+
+    const slotL = pageLand.getByTestId('billiards-power-slot');
+    const slotBoxL = (await slotL.boundingBox())!;
+    await pageLand.mouse.move(slotBoxL.x + slotBoxL.width / 2, slotBoxL.y + 10);
+    await pageLand.mouse.down();
+    await pageLand.mouse.move(slotBoxL.x + slotBoxL.width / 2, slotBoxL.y + slotBoxL.height * 0.72, {
+      steps: 6,
+    });
+    await pageLand.mouse.up();
+
+    await expect(gLand).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+    await pageLand.waitForTimeout(450);
+    const landTrackElev = Number((await gLand.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(landTrackElev).toBeGreaterThanOrEqual(24);
+    expect(landTrackElev).toBeLessThanOrEqual(68);
+    await pageLand.screenshot({ path: `${EVIDENCE_DIR}/v41-landscape-1-oblique-track.png` });
+
+    await expect(gLand).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+    await expect(gLand).toHaveAttribute('data-camera-stage', 'overview');
+    await pageLand.waitForTimeout(650);
+    const landPostElev = Number((await gLand.getAttribute('data-cam-elev-deg')) ?? '90');
+    expect(landPostElev).toBeGreaterThanOrEqual(38);
+    expect(landPostElev).toBeLessThanOrEqual(64);
+    await pageLand.screenshot({ path: `${EVIDENCE_DIR}/v41-landscape-2-postshot-oblique.png` });
+
+    // Deliberate aiming interaction restores cue view cleanly on landscape too
+    await pageLand.getByTestId('billiards-aim-right').dispatchEvent('pointerdown');
+    await pageLand.waitForTimeout(120);
+    await pageLand.getByTestId('billiards-aim-right').dispatchEvent('pointerup');
+    await expect(gLand).toHaveAttribute('data-camera-stage', 'aiming');
+    await expect
+      .poll(async () => Number((await gLand.getAttribute('data-cam-elev-deg')) ?? '90'), {
+        timeout: 5_000,
+      })
+      .toBeLessThan(35);
+
+    const landVideo = pageLand.video();
+    await ctxLand.close();
+    if (landVideo) {
+      const lSrc = await landVideo.path();
+      await fs.copyFile(lSrc, `${EVIDENCE_DIR}/v41-landscape-3d-cinematic.webm`);
+      await fs.unlink(lSrc).catch(() => {});
+    }
+    expect(landErrors).toEqual([]);
   });
 });
