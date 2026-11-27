@@ -85,6 +85,8 @@ export interface RealtimeHandle {
   publishMinigameEvent?: (packet: MinigameEventEnvelope) => void;
   probeLiveness?: () => Promise<boolean>;
   getDiagnostics?: () => NetworkDiagnosticsState;
+  getServerClockOffsetMs?: () => number;
+  getRttMs?: () => number | null;
   reconnect: () => Promise<void>;
   setSimulatedOffline?: (offline: boolean) => void;
   disconnect: () => Promise<void>;

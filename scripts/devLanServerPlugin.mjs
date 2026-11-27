@@ -327,6 +327,11 @@ export function createDevLanHandler({
     return (db.memberships[worldId] ?? []).some((m) => m.userId === userId);
   }
 
+  function getMemberRole(worldId, userId) {
+    const member = (db.memberships[worldId] ?? []).find((m) => m.userId === userId);
+    return member ? member.role : null;
+  }
+
   function getProfile(userId) {
     const profile = db.profiles[userId];
     const fallbackId = DEV_IDENTITIES.find((d) => d.userId === userId);
@@ -382,6 +387,7 @@ export function createDevLanHandler({
 
   const wsHub = createDevLanWsHub({
     isWorldMember,
+    getMemberRole,
     getProfile,
     getWorldStateMeta: ensureWorldVersionState,
     ...wsOptions,

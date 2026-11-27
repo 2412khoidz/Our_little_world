@@ -1,24 +1,4 @@
-export { LazyBilliardsModal } from './LazyBilliardsModal';
+export { BilliardsModal } from './BilliardsModal';
 export type { BilliardsModalProps } from './BilliardsModal';
-export type {
-  BallGroup,
-  BallState,
-  BilliardsConnectionStatus,
-  BilliardsMatchPhase,
-  BilliardsMatchRecordInput,
-  BilliardsMatchResult,
-  BilliardsPlayMode,
-  BilliardsRule,
-  BilliardsTransport,
-  BilliardsTransportMeta,
-  BilliardsWinTally,
-  BilliardsWireEnvelope,
-  BilliardsWireEvent,
-  MatchSnapshot,
-  MatchStartPayload,
-  PlaceCuePayload,
-  PlayerSlot,
-  SettledStatePayload,
-  ShotParams,
-  StateRequestPayload,
-} from '../../../shared/billiards/types';
+export { LazyBilliardsModal } from './LazyBilliardsModal';
+export * from '../../../shared/billiards/types';
