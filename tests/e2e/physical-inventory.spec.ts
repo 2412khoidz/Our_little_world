@@ -49,6 +49,15 @@ test('real slots persist across row rotation and only one client withdraws the l
     await modal.getByTestId('physical-backpack-9').click();
     await expect(modal.getByTestId('physical-backpack-9')).toHaveAttribute('data-qty', '1');
     await expect(modal.getByTestId('physical-home-' + seedIndex)).toHaveAttribute('data-qty', '4');
+    if (info.project.name === 'chromium-desktop') {
+      const rowStart = modal.getByTestId('physical-backpack-9');
+      const adjacent = modal.getByTestId('physical-backpack-10');
+      await rowStart.dragTo(adjacent);
+      await expect(rowStart).toHaveAttribute('data-qty', '0');
+      await expect(adjacent).toHaveAttribute('data-qty', '1');
+      await adjacent.dragTo(rowStart);
+      await expect(rowStart).toHaveAttribute('data-qty', '1');
+    }
     await modal.getByRole('button', { name: 'Đổi hàng' }).click();
     await expect(modal.getByText('Ba lô · Hàng đang dùng 2')).toBeVisible();
     await modal.getByRole('button', { name: 'Đóng' }).click();
@@ -107,10 +116,11 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
         headers: headers(actor), data: { worldId, version, idempotencyKey: key, command, query: INITIAL_PHYSICAL_QUERY },
       });
     const initial = await getA();
-    const seedStack = initial.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat')!;
+    const seedStack = initial.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat');
+    if (!seedStack?.stack) throw new Error('Missing starter wheat in home storage');
     const took = await send(page, may, initial.version, 'withdraw', {
       kind: 'transfer', from: { container: 'home', index: seedStack.index },
-      to: 'backpack', qty: 5, stackId: seedStack.stack!.id,
+      to: 'backpack', qty: 5, stackId: seedStack.stack.id,
     });
     expect(took.ok()).toBe(true);
     const afterWithdraw = await getA();
@@ -135,4 +145,26 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
   } finally {
     await ctx.close();
   }
+});
+
+test('keeps browser shortcuts available until the player requests a real import', async ({ page, request }) => {
+  expect((await request.post(api + '/reset', { data: {} })).ok()).toBe(true);
+  const seed = await request.post(api + '/seed-couple', { data: {} });
+  const worldId = (await seed.json()).data.world.id as string;
+  await page.addInitScript(({ key }) => {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, JSON.stringify({
+      sharedCells: [], personalCells: [], hotbarCustomized: true,
+      hotbarBindings: [null, { itemSku: 'seed_wheat', quality: 'normal', ownerScope: 'shared' }],
+    }));
+  }, { key: `olw_inv_layout_v2:${worldId}:${may}` });
+  await enter(page, 'partner-a');
+  await expect.poll(async () => (await getInventory(request, worldId, may)).atHome).toBe(true);
+  await page.getByRole('button', { name: 'Ba lô', exact: true }).click();
+  const modal = page.getByTestId('physical-inventory-modal');
+  await modal.getByRole('button', { name: 'Lấy món từ ô nhanh cũ' }).click();
+  await expect(modal.getByTestId('physical-backpack-1')).toHaveAttribute('data-qty', '1');
+  await expect(modal.getByRole('button', { name: 'Lấy món từ ô nhanh cũ' })).toHaveCount(0);
+  const view = await getInventory(request, worldId, may);
+  expect(view.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat')?.stack?.qty).toBe(4);
 });

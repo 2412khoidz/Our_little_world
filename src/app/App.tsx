@@ -779,14 +779,16 @@ function MainCoupleApp({
       }
       if (res.data.worldId !== targetWorldId) return;
       const next = res.data;
-      setSavedLayoutEntry((prev) => ({
-        key,
-        layout: reconcileInventoryLayout(
-          prev?.key === key ? prev.layout : loadInventoryLayout(targetWorldId, userId),
-          next,
-          userId,
-        ),
-      }));
+      if (next.physicalVersion === undefined) {
+        setSavedLayoutEntry((prev) => ({
+          key,
+          layout: reconcileInventoryLayout(
+            prev?.key === key ? prev.layout : loadInventoryLayout(targetWorldId, userId),
+            next,
+            userId,
+          ),
+        }));
+      }
       setInventoryEntry({ key, snapshot: next });
     },
     [backend, showToast],
@@ -3057,11 +3059,11 @@ function MainCoupleApp({
         toast={toast}
       />
 
-      <MainGameInteractionLayer
+      {!backend.inventory?.physical && <MainGameInteractionLayer
         localUserId={currentUser.userId}
         key={currentMapId}
         petCareOverlayActive={petCareMode}
-        enabled={Boolean(backend.inventory && !backend.inventory.physical)}
+        enabled={Boolean(backend.inventory)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}
         hotbarBindings={inventoryLayout.hotbarBindings}
@@ -3185,7 +3187,7 @@ function MainCoupleApp({
         farmPlotByIndex={farmPlotByIndex}
         farmServerNowMs={farmServerNowMs}
         onNotice={(message, isError) => showToast(message, isError)}
-      />
+      />}
 
       {!decorateActive && !isAnyModalOpen && !petCareMode && (
         <CoupleEmoteDock

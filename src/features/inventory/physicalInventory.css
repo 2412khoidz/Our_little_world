@@ -5,6 +5,7 @@
 }
 
 .physical-slot-grid {
+  --nuvora-slot: min(44px, calc((92vw - 100px) / 9));
   display: grid;
   grid-template-columns: repeat(9, var(--nuvora-slot));
   gap: 4px;

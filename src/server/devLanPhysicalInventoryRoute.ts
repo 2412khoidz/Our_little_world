@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { FarmShippingMeta } from '../shared/farming/farmShipping';
+import { editPhysicalEconomy, physicalSaleChannel } from '../shared/inventory/physicalInventoryEconomy';
 import {
   migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
   physicalSlots, playerBackpack, readPhysicalContainer, STORAGE_PAGE_SIZE,
@@ -43,6 +45,8 @@ const inputSchema = z.strictObject({
     z.strictObject({ kind: z.literal('deposit'), matchingOnly: z.boolean() }),
     z.strictObject({ kind: z.literal('drop'), ...stackSource }),
     z.strictObject({ kind: z.literal('pickup'), dropId: identifier }),
+    z.strictObject({ kind: z.literal('upgrade_backpack') }),
+    z.strictObject({ kind: z.literal('sell'), ...stackSource, channel: z.enum(['market', 'shipping']) }),
     z.strictObject({ kind: z.literal('discard'), ...stackSource, confirm: z.literal(true) }),
   ]),
 });
@@ -51,6 +55,7 @@ export interface PhysicalDevLanDatabase {
   v015: {
     inventory: Record<string, LegacyPhysicalEntry[]>;
     wallets: Record<string, { coins: number }>;
+    shippingBin?: Record<string, FarmShippingMeta>;
     physicalInventory?: Record<string, PhysicalInventory>;
     physicalReceipts?: Record<string, Record<string, { actor: string; fingerprint: string }>>;
     petLiving?: Record<string, { offers?: readonly { inventoryReserved?: boolean }[] }>;
@@ -131,7 +136,7 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
   return {
     worldId: ctx.worldId, version: state.version, atHome,
     player: playerBackpack(state, ctx.userId), coins: ctx.db.v015.wallets[ctx.worldId]?.coins ?? 0,
-    backpack, storage, definitions, categories, nearbyDrops, canDrop: position !== null,
+    backpack, storage, definitions, categories, nearbyDrops, canDrop: position !== null, saleChannel: physicalSaleChannel(ctx.position),
   };
 }
 
@@ -143,9 +148,10 @@ function toLegacySnapshot(ctx: Context, state: PhysicalInventory): InventorySnap
       worldId: ctx.worldId, ownerScope: 'user:' + ctx.userId as `user:${string}`,
       itemSku: stack.itemSku, qty: stack.qty, quality: stack.quality, updatedAt: date,
     }));
+  const skus = new Set(items.map((item) => item.itemSku));
   return {
     worldId: ctx.worldId, serverNowMs: now, serverDateUtc: date.slice(0, 10), physicalVersion: state.version,
-    canClaimFreeKibble: false, catalog: ctx.catalog, items,
+    canClaimFreeKibble: false, catalog: ctx.catalog.filter((row) => skus.has(row.sku)), items,
   };
 }
 
@@ -232,13 +238,33 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       return true;
     }
     const edit = new PhysicalInventoryEdit(state, ctx.userId, catalog, ctx.position?.mapId === 'home');
-    editPhysicalInventory(edit, input.command, positionIsUsable(ctx.position) ? ctx.position : null);
+    const wallet = v015.wallets[worldId];
+    const shipping = v015.shippingBin?.[worldId];
+    let economy: ReturnType<typeof editPhysicalEconomy> | undefined;
+    if (input.command.kind === 'upgrade_backpack' || input.command.kind === 'sell') {
+      economy = editPhysicalEconomy(edit, input.command, {
+        worldId, coins: wallet?.coins ?? 0, shipping, position: ctx.position,
+        idempotencyKey: input.idempotencyKey, nowMs: Date.now(),
+      });
+    } else {
+      editPhysicalInventory(edit, input.command, positionIsUsable(ctx.position) ? ctx.position : null);
+    }
     const next = edit.finish();
+    if (economy) v015.wallets[worldId] = { coins: economy.coins };
+    if (economy?.shipping) (v015.shippingBin ??= {})[worldId] = economy.shipping;
     v015.physicalInventory[worldId] = next;
     receipts[receiptKey] = { actor: ctx.userId, fingerprint };
     try { ctx.saveDb(); } catch (error) {
       v015.physicalInventory[worldId] = state;
       delete receipts[receiptKey];
+      if (economy) {
+        if (wallet) v015.wallets[worldId] = wallet;
+        else delete v015.wallets[worldId];
+      }
+      if (economy?.shipping && v015.shippingBin) {
+        if (shipping) v015.shippingBin[worldId] = shipping;
+        else delete v015.shippingBin[worldId];
+      }
       throw error;
     }
     ctx.broadcastInventory(worldId);

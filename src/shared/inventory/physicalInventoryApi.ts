@@ -27,6 +27,7 @@ export interface PhysicalInventoryView {
   readonly categories: readonly string[];
   readonly nearbyDrops: readonly PhysicalDrop[];
   readonly canDrop: boolean;
+  readonly saleChannel: 'market' | 'shipping' | null;
 }
 
 export interface PhysicalInventoryRequest {

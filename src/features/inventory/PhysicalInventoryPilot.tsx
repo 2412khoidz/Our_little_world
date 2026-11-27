@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PhysicalInventoryBackend } from '../../lib/backend/types';
-import { BACKPACK_ROW_SIZE, physicalHotbarIndices, type PhysicalCommand, type PhysicalShortcut, type PhysicalSlotAddress } from '../../shared/inventory/physicalInventory';
+import { BACKPACK_ROW_SIZE, BACKPACK_TIERS, BACKPACK_UPGRADE_COSTS, physicalHotbarIndices, type PhysicalCommand, type PhysicalShortcut, type PhysicalSlotAddress } from '../../shared/inventory/physicalInventory';
 import { INITIAL_PHYSICAL_QUERY, preferPhysicalSnapshot, type PhysicalInventoryView, type PhysicalSlotView } from '../../shared/inventory/physicalInventoryApi';
 import { loadInventoryLayout } from '../../shared/inventory/inventoryLayoutStore';
 import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
+import { gameEventBus } from '../../game/eventBus';
+import { hotbarSkuToHeldKind } from '../../shared/interaction/hotbarContract';
+import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
 import './nuvora/nuvoraInventorySkin.css';
 import './physicalInventory.css';
 
@@ -27,6 +30,15 @@ interface Selection {
 }
 
 const CONTAINER_LABEL = { backpack: 'Ba lô', home: 'Kho nhà', overflow: 'Đồ giữ hộ' };
+
+const CATEGORY_VI: Readonly<Record<string, string>> = {
+  seed: 'Hạt giống', crop: 'Nông sản', grain: 'Ngũ cốc', veg: 'Rau củ', fruit: 'Trái cây',
+  fish: 'Cá', bait: 'Mồi câu', dish: 'Món ăn', tool: 'Dụng cụ', keepsake: 'Kỷ vật',
+  pet_food: 'Thức ăn cho mèo', pet_toy: 'Đồ chơi cho mèo', flower: 'Hoa', gift: 'Quà',
+  ingredient: 'Nguyên liệu', tree_sapling: 'Cây giống', animal_product: 'Sản phẩm chăn nuôi',
+  livestock_feed: 'Thức ăn chăn nuôi', fertilizer: 'Phân bón', sprinkler: 'Vòi tưới',
+  stationery: 'Giấy viết thư', artisan: 'Thành phẩm', bouquet: 'Bó hoa',
+};
 
 function selectedSlot(view: PhysicalInventoryView | null, address: PhysicalSlotAddress): PhysicalSlotView | undefined {
   return address.container === 'backpack'
@@ -65,8 +77,9 @@ export default function PhysicalInventoryPilot({
   }, [backend, worldId, query]);
 
   useEffect(() => {
-    void refresh();
-    return () => { sequence.current += 1; };
+    let active = true;
+    queueMicrotask(() => { if (active) void refresh(); });
+    return () => { active = false; sequence.current += 1; };
   }, [refresh, revision, location, connection, open]);
 
   const apply = useCallback(async (command: PhysicalCommand) => {
@@ -97,7 +110,23 @@ export default function PhysicalInventoryPilot({
 
   const activeRow = view?.player.activeRow ?? 0;
   const hotbar = physicalHotbarIndices(activeRow).map((index) => view?.backpack[index]);
-  const visibleHeld = hotbar.find((cell) => cell?.stack?.id === equipped)?.stack;
+  const equippedIndex = hotbar.findIndex((cell) => cell?.stack?.id === equipped);
+  const visibleHeld = hotbar[equippedIndex]?.stack;
+  const equippedName = visibleHeld ? view?.definitions[visibleHeld.itemSku]?.name ?? visibleHeld.itemSku : '';
+  if (equipped && view && !visibleHeld) setEquipped(null);
+
+  useEffect(() => {
+    if (!visibleHeld) gameEventBus.emit('cmd:sync-held-item', EMPTY_HELD_ITEM);
+    else gameEventBus.emit('cmd:sync-held-item', {
+      ...EMPTY_HELD_ITEM,
+      slotIndex: equippedIndex,
+      itemSku: visibleHeld.itemSku,
+      itemKind: hotbarSkuToHeldKind(visibleHeld.itemSku),
+      ownerScope: `user:${userId}`,
+      labelVi: equippedName,
+      quality: visibleHeld.quality,
+    });
+  }, [equippedIndex, equippedName, userId, visibleHeld]);
   const source = selection && selectedSlot(view, selection.address);
   const held = selection && source?.stack?.id === selection.stackId && source.stack.qty >= selection.qty ? selection : null;
 
@@ -164,9 +193,13 @@ export default function PhysicalInventoryPilot({
         data-testid={`physical-${container}-${cell.index}`} data-qty={stack?.qty ?? 0}
         aria-label={`${CONTAINER_LABEL[container]} ô ${cell.index + 1}, ${name}${stack ? ` ×${stack.qty}` : ''}`}
         aria-pressed={selected} data-locked={cell.locked || undefined} draggable={Boolean(stack && !cell.locked && !busy)}
-        onClick={() => pick(address, cell, false)}
+        onClick={(event) => {
+          if (event.shiftKey && !held && stack && !cell.locked && view?.atHome) {
+            void apply({ kind: 'transfer', from: address, qty: stack.qty, stackId: stack.id,
+              to: container === 'backpack' ? 'home' : 'backpack' });
+          } else pick(address, cell, false);
+        }}
         onContextMenu={(event) => { event.preventDefault(); pick(address, cell, true); }}
-        onPointerCancel={() => { dragging.current = null; }}
         onDragStart={(event) => {
           if (!stack || cell.locked) return;
           dragging.current = { address, stackId: stack.id, qty: stack.qty };
@@ -191,6 +224,8 @@ export default function PhysicalInventoryPilot({
   }
 
   const storage = view?.storage;
+  const upgradeCost = view ? BACKPACK_UPGRADE_COSTS.at(view.player.tier) : undefined;
+  const nextCapacity = view ? BACKPACK_TIERS.at(view.player.tier + 1) : undefined;
   const shortcuts = open && view?.atHome && !view.player.importedShortcuts ? oldShortcuts(worldId, userId) : [];
   return <>
     {showHud && !open && (
@@ -229,6 +264,12 @@ export default function PhysicalInventoryPilot({
             <section aria-label="Ba lô">
               <div className="physical-inventory-actions">
                 <strong>Ba lô · Hàng đang dùng {activeRow + 1}</strong>
+                {view.atHome && upgradeCost !== undefined && nextCapacity !== undefined && (
+                  <button type="button" className="btn btn--secondary btn--sm" disabled={busy || view.coins < upgradeCost}
+                    onClick={() => void apply({ kind: 'upgrade_backpack' })}>
+                    Mở {nextCapacity} ô · {upgradeCost} xu
+                  </button>
+                )}
                 <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
                   onClick={() => void apply({ kind: 'rotate', direction: 1 })}>Đổi hàng</button>
                 <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
@@ -268,6 +309,13 @@ export default function PhysicalInventoryPilot({
                         if (Number.isInteger(qty) && qty >= 1 && qty <= source.stack!.qty) setSelection({ ...held, qty });
                         setConfirmDiscard(false);
                       }} /></label>
+                    {view.saleChannel && (
+                      <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                        onClick={() => void apply({ kind: 'sell', from: held.address, qty: held.qty,
+                          stackId: held.stackId, channel: view.saleChannel! })}>
+                        {view.saleChannel === 'shipping' ? 'Gửi thùng hàng' : 'Bán'} {held.qty} món
+                      </button>
+                    )}
                     <button type="button" className="btn btn--secondary btn--sm" disabled={busy || !view.canDrop}
                       onClick={() => void apply({ kind: 'drop', from: held.address, qty: held.qty, stackId: held.stackId })}>Thả</button>
                     <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
@@ -318,7 +366,7 @@ export default function PhysicalInventoryPilot({
                     setQuery((old) => ({ ...old, page: 0, category }));
                   }}>
                     <option value="">Tất cả loại</option>
-                    {view.categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                    {view.categories.map((category) => <option key={category} value={category}>{CATEGORY_VI[category] ?? 'Khác'}</option>)}
                   </select>
                   <button className="btn btn--secondary btn--sm" type="submit">Tìm</button>
                 </form>

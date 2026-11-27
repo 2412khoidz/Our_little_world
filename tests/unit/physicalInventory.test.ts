@@ -19,7 +19,7 @@ const wheat = (qty: number, ownerScope: LegacyPhysicalEntry['ownerScope'] = 'sha
 const create = (...rows: LegacyPhysicalEntry[]) => migratePhysicalInventory(undefined, 'world', rows, catalog);
 const read = (state: PhysicalInventory, kind: 'home' | 'backpack' | 'overflow' = 'backpack', actor = 'may') =>
   readPhysicalContainer(state, kind, actor);
-const apply = (state: PhysicalInventory, command: PhysicalCommand, actor = 'may', atHome = true) => {
+const apply = (state: PhysicalInventory, command: Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' }>, actor = 'may', atHome = true) => {
   const edit = new PhysicalInventoryEdit(state, actor, catalog, atHome);
   editPhysicalInventory(edit, command, null);
   return edit.finish();

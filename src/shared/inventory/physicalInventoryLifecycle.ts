@@ -15,7 +15,7 @@ export function canReachDrop(drop: PhysicalDrop, position: PhysicalPosition): bo
   return drop.mapId === position.mapId && Math.hypot(drop.x - position.x, drop.y - position.y) <= PICKUP_RADIUS;
 }
 
-function isProtected(stack: PhysicalStack): boolean {
+export function isProtectedPhysicalStack(stack: PhysicalStack): boolean {
   return Boolean(stack.favorite || stack.metadata?.reserved === true);
 }
 
@@ -23,7 +23,7 @@ function organize(edit: PhysicalInventoryEdit, kind: 'backpack' | 'home' | 'over
   const container = edit.edit(kind);
   const active = new Set(kind === 'backpack' ? physicalHotbarIndices(edit.player().activeRow) : []);
   const fixed = (index: number, stack?: PhysicalStack) =>
-    Boolean(active.has(index) || container.locked[index] || (stack && isProtected(stack)));
+    Boolean(active.has(index) || container.locked[index] || (stack && isProtectedPhysicalStack(stack)));
   const items = physicalSlots(container)
     .filter(({ index, stack }) => !fixed(index, stack))
     .sort(({ stack: a }, { stack: b }) =>
@@ -57,9 +57,11 @@ function organize(edit: PhysicalInventoryEdit, kind: 'backpack' | 'home' | 'over
   }
 }
 
+type LifecycleCommand = Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' }>;
+
 export function editPhysicalInventory(
   edit: PhysicalInventoryEdit,
-  command: PhysicalCommand,
+  command: LifecycleCommand,
   position: PhysicalPosition | null,
 ): void {
   switch (command.kind) {
@@ -85,7 +87,7 @@ export function editPhysicalInventory(
       const home = edit.edit('home');
       const eligible = physicalSlots(home).filter(({ index }) => !home.locked[index]).map(({ stack }) => stack);
       for (const { index, stack } of physicalSlots(bag)) {
-        if (bag.locked[index] || isProtected(stack) || edit.catalog.get(stack.itemSku)?.individual) continue;
+        if (bag.locked[index] || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.individual) continue;
         if (command.matchingOnly && !eligible.some((target) => canStackPhysical(stack, target, edit.catalog))) continue;
         const deposited = edit.insert(home, stack);
         if (deposited > 0) edit.take(bag, index, stack, deposited);
@@ -96,7 +98,7 @@ export function editPhysicalInventory(
     case 'drop': {
       if (command.from.container !== 'backpack') physicalError('FORBIDDEN', 'Hãy chuyển món vào ba lô trước.');
       const { container, stack } = edit.source(command.from, command.stackId, command.qty);
-      if (isProtected(stack) || edit.catalog.get(stack.itemSku)?.essential) physicalError('PROTECTED', 'Món này đang được bảo vệ.');
+      if (isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) physicalError('PROTECTED', 'Món này đang được bảo vệ.');
       if (command.kind === 'drop') {
         if (!position) physicalError('UNAVAILABLE', 'Hãy di chuyển một chút để cập nhật vị trí.');
         if (Object.keys(edit.readDrops()).length >= MAX_PHYSICAL_DROPS) {
@@ -141,7 +143,7 @@ export function reservePhysicalIngredients(
       const container = edit.edit(kind);
       for (const { index, stack } of physicalSlots(container)) {
         if (!remaining) break;
-        if (container.locked[index] || isProtected(stack) || stack.itemSku !== requirement.sku
+        if (container.locked[index] || isProtectedPhysicalStack(stack) || stack.itemSku !== requirement.sku
           || edit.catalog.get(stack.itemSku)?.individual) continue;
         const qty = Math.min(remaining, stack.qty);
         reservations.push({ container: kind, originalIndex: index, stack: edit.span(stack, qty, qty === stack.qty) });
@@ -152,4 +154,41 @@ export function reservePhysicalIngredients(
     if (remaining) physicalError('NOT_FOUND', 'Thiếu nguyên liệu trong ba lô hoặc kho đang mở.');
   }
   return reservations;
+}
+
+/** Rewards use the backpack. The domain retains any returned remainder as unclaimed. */
+export function creditPhysicalReward(edit: PhysicalInventoryEdit, stack: PhysicalStack): PhysicalStack | null {
+  if (!Number.isSafeInteger(stack.qty) || stack.qty < 1) physicalError('INVALID', 'Số lượng phần thưởng không hợp lệ.');
+  if ((stack.metadata?.instanceId || edit.catalog.get(stack.itemSku)?.individual)
+    && (!stack.metadata?.instanceId || stack.qty !== 1)) physicalError('INVALID', 'Trang bị phải có định danh riêng.');
+  const awarded = edit.insert(edit.edit('backpack'), stack);
+  return awarded === stack.qty ? null : edit.span(stack, stack.qty - awarded, awarded === 0);
+}
+
+/** Callers persist the returned amount if a cancelled reservation cannot yet be refunded. */
+export function refundPhysicalIngredients(
+  edit: PhysicalInventoryEdit,
+  reservations: ReturnType<typeof reservePhysicalIngredients>,
+): ReturnType<typeof reservePhysicalIngredients> {
+  const residual: ReturnType<typeof reservePhysicalIngredients> = [];
+  for (const entry of reservations) {
+    if (entry.container === 'home' && !edit.atHome) {
+      residual.push(entry);
+      continue;
+    }
+    const bag = edit.edit(entry.container);
+    const stack = entry.stack;
+    const target = bag.slots[entry.originalIndex];
+    let placed: number;
+    if (!bag.locked[entry.originalIndex] && !target && stack.qty <= physicalStackLimit(stack, edit.catalog)) {
+      bag.slots[entry.originalIndex] = stack;
+      placed = stack.qty;
+    } else {
+      placed = edit.insert(bag, stack);
+    }
+    if (placed < stack.qty) residual.push({
+      ...entry, stack: edit.span(stack, stack.qty - placed, placed === 0),
+    });
+  }
+  return residual;
 }

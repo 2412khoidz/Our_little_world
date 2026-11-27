@@ -2,6 +2,7 @@ import type { InventoryOwnerScope, ItemQualityTier } from './inventoryTypes';
 
 export const BACKPACK_ROW_SIZE = 9;
 export const BACKPACK_TIERS = [18, 27, 36, 45, 54] as const;
+export const BACKPACK_UPGRADE_COSTS = [100, 250, 500, 850] as const;
 export const STORAGE_PAGE_SIZE = 36;
 const MAX_INDEX = 2_147_483_646;
 
@@ -96,6 +97,8 @@ export type PhysicalCommand =
   | { readonly kind: 'deposit'; readonly matchingOnly: boolean }
   | { readonly kind: 'drop'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string }
   | { readonly kind: 'pickup'; readonly dropId: string }
+  | { readonly kind: 'upgrade_backpack' }
+  | { readonly kind: 'sell'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string; readonly channel: 'market' | 'shipping' }
   | { readonly kind: 'discard'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string; readonly confirm: true };
 
 export type PhysicalErrorCode = 'FORBIDDEN' | 'NOT_FOUND' | 'VERSION_CONFLICT' | 'FULL' | 'PROTECTED'
@@ -273,15 +276,25 @@ export function migratePhysicalInventory(
   catalog: PhysicalCatalog,
 ): PhysicalInventory {
   if (previous) return previous;
+  if (rows.some((row) => row.worldId !== worldId)) physicalError('INVALID', 'Save có vật phẩm thuộc một nhà khác.');
   const initial: PhysicalInventory = { schemaVersion: 1, version: 0, nextId: 1, containers: {}, players: {} };
   // Stable ordering keeps the same slot assignments across repeat imports of the same legacy save.
-  const ordered = rows.filter((row) => row.worldId === worldId && row.qty !== 0)
+  const ordered = rows.filter((row) => row.qty !== 0)
     .map((row, index) => ({ row, index, key: JSON.stringify([row.ownerScope, row.itemSku, row.quality ?? 'normal', canonicalMetadata(row.metadata)]) }))
     .sort((a, b) => (a.key < b.key ? -1 : a.key === b.key ? a.index - b.index : 1));
   let state = initial;
   // Rows for the same scope are contiguous after sorting. Copy a container once per owner.
   let edit: PhysicalInventoryEdit | undefined;
   let ownerScope: InventoryOwnerScope | undefined;
+  const instances = new Set<string>();
+  for (const { row } of ordered) {
+    const instance = row.metadata?.instanceId;
+    if (!instance) continue;
+    if (row.qty !== 1 || instances.has(instance)) {
+      physicalError('INVALID', 'Save có định danh trang bị trùng hoặc không hợp lệ.');
+    }
+    instances.add(instance);
+  }
   for (const { row } of ordered) {
     checkAmount(row.qty, 2_147_483_647);
     const isShared = row.ownerScope === 'shared';
@@ -297,12 +310,14 @@ export function migratePhysicalInventory(
     const target = edit.edit(isShared ? 'home' : 'backpack');
     const id = edit.newId();
     const stack: PhysicalStack = { id, itemSku: row.itemSku, quality: row.quality ?? 'normal', qty: row.qty, metadata: row.metadata };
-    if (row.metadata?.instanceId && row.qty !== 1) physicalError('INVALID', 'Trang bị cũ có số lượng không hợp lệ.');
     if (catalog.get(row.itemSku)?.individual && !row.metadata?.instanceId) {
       if (row.qty > 4096) physicalError('INVALID', 'Save có quá nhiều bản sao của một trang bị. Hãy giữ bản sao để kiểm tra.');
       for (let index = 0; index < row.qty; index++) {
-        const unitId = edit.newId();
-        const individual = { ...stack, id: unitId, qty: 1, metadata: { ...stack.metadata, instanceId: unitId } };
+        let unitId = edit.newId();
+        while (instances.has('legacy-' + unitId)) unitId = edit.newId();
+        const instanceId = 'legacy-' + unitId;
+        instances.add(instanceId);
+        const individual = { ...stack, id: unitId, qty: 1, metadata: { ...stack.metadata, instanceId } };
         if (edit.insert(target, individual) === 0) edit.insert(edit.edit('overflow'), individual);
       }
     } else {
