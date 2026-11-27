@@ -115,8 +115,7 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
 
       expect(errors).toEqual([]);
     } finally {
-      await ctxA.close();
-      await ctxB.close();
+      await Promise.allSettled([ctxB.close(), ctxA.close()]);
     }
   });
 
