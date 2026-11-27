@@ -15,11 +15,18 @@ import {
   physicsToClient2D,
 } from '../../src/features/minigames/billiards/viewportTransform';
 import {
-  computeAdaptiveAimDelta,
+  MIN_DIRECT_AIM_SCREEN_PX,
+  computeDirectAimAngle2D,
+  computeRelativeFineAimDelta2D,
   evaluatePowerPull,
+  normalizeAngleDelta,
 } from '../../src/features/minigames/billiards/touchControls';
+import {
+  computeCameraPose3D,
+  shortestAngleDelta3D,
+} from '../../src/features/minigames/billiards/cameraController3d';
 
-describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset', () => {
+describe('Billiards V3.2 — Direct Touch Geometry, 3D Camera Math & Online Lobby', () => {
   it('rotates 2D table -90deg cleanly for portrait mobile and preserves coordinates round-trip', () => {
     expect(isPortraitTableViewport(430, 932)).toBe(true);
     expect(isPortraitTableViewport(1280, 800)).toBe(false);
@@ -40,46 +47,157 @@ describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset'
       expect(back.y).toBeCloseTo(pt.y, 4);
     }
 
-    // Also verifies zoom-space round-trip under portrait orientation
     const zoomClient = physicsToClient2D(680, 310, rect, 1.7, 650, 300, true);
     const zoomBack = clientToPhysics2D(zoomClient.x, zoomClient.y, rect, 1.7, 650, 300, true);
     expect(zoomBack.x).toBeCloseTo(680, 3);
     expect(zoomBack.y).toBeCloseTo(310, 3);
   });
 
-  it('provides micro/fast adaptive touch aim sensitivity and power pull cancel zone', () => {
-    const slow = computeAdaptiveAimDelta({
-      dx: 1,
-      dy: 0,
-      cueClientX: 200,
-      cueClientY: 500,
-      pointerClientX: 200,
-      pointerClientY: 360,
-      precisionMode: false,
-    });
-    const fast = computeAdaptiveAimDelta({
-      dx: 10,
-      dy: 0,
-      cueClientX: 200,
-      cueClientY: 500,
-      pointerClientX: 200,
-      pointerClientY: 360,
-      precisionMode: false,
-    });
-    const precision = computeAdaptiveAimDelta({
-      dx: 10,
-      dy: 0,
-      cueClientX: 200,
-      cueClientY: 500,
-      pointerClientX: 200,
-      pointerClientY: 360,
-      precisionMode: true,
-    });
+  it('direct tap/drag aiming maps accurately across all 4 quadrants in landscape & portrait (1.0x and zoomed)', () => {
+    const configs = [
+      { portraitRotated: false, rect: { left: 20, top: 60, width: 800, height: 432 }, zoom: 1.0, camX: TABLE_W / 2, camY: TABLE_H / 2 },
+      { portraitRotated: true, rect: { left: 60, top: 90, width: 270, height: 500 }, zoom: 1.0, camX: TABLE_W / 2, camY: TABLE_H / 2 },
+      { portraitRotated: true, rect: { left: 60, top: 90, width: 270, height: 500 }, zoom: 1.7, camX: 620, camY: 280 },
+    ];
 
-    expect(Math.abs(fast)).toBeGreaterThan(Math.abs(slow) * 10);
-    expect(Math.abs(precision)).toBeLessThan(Math.abs(fast) * 0.4);
+    const cueSpots = [
+      { x: 260, y: 270 },
+      { x: 640, y: 290 },
+    ];
 
-    // Valid vertical pull
+    const quadrantTargets = [
+      { dx: 140, dy: 90 },
+      { dx: -140, dy: 90 },
+      { dx: -140, dy: -90 },
+      { dx: 140, dy: -90 },
+    ];
+
+    for (const cfg of configs) {
+      for (const cue of cueSpots) {
+        for (const offset of quadrantTargets) {
+          const targetPhy = { x: cue.x + offset.dx, y: cue.y + offset.dy };
+          const expectedAngle = Math.atan2(offset.dy, offset.dx);
+          const client = physicsToClient2D(
+            targetPhy.x,
+            targetPhy.y,
+            cfg.rect,
+            cfg.zoom,
+            cfg.camX,
+            cfg.camY,
+            cfg.portraitRotated,
+          );
+          const computed = computeDirectAimAngle2D({
+            clientX: client.x,
+            clientY: client.y,
+            rect: cfg.rect,
+            cueX: cue.x,
+            cueY: cue.y,
+            zoomCurrent: cfg.zoom,
+            camX: cfg.camX,
+            camY: cfg.camY,
+            portraitRotated: cfg.portraitRotated,
+          });
+          expect(computed).not.toBeNull();
+          expect(Math.abs(normalizeAngleDelta(expectedAngle, computed!))).toBeLessThan(1e-4);
+        }
+      }
+    }
+  });
+
+  it('maintains consistent screen-clockwise / CCW rotation across portrait, landscape, zoomed & all 4 quadrants and suppresses near-cue jitter', () => {
+    const scenarios = [
+      { portraitRotated: false, rect: { left: 0, top: 0, width: 1000, height: 540 }, zoom: 1.0 },
+      { portraitRotated: true, rect: { left: 0, top: 0, width: 540, height: 1000 }, zoom: 1.0 },
+      { portraitRotated: true, rect: { left: 0, top: 0, width: 540, height: 1000 }, zoom: 1.8 },
+    ];
+    const cue = { x: 480, y: 260 };
+
+    for (const sc of scenarios) {
+      const cueClient = physicsToClient2D(
+        cue.x,
+        cue.y,
+        sc.rect,
+        sc.zoom,
+        cue.x,
+        cue.y,
+        sc.portraitRotated,
+      );
+
+      // Inside MIN_DIRECT_AIM_SCREEN_PX deadzone -> returns null
+      expect(
+        computeDirectAimAngle2D({
+          clientX: cueClient.x + MIN_DIRECT_AIM_SCREEN_PX * 0.4,
+          clientY: cueClient.y + 2,
+          rect: sc.rect,
+          cueX: cue.x,
+          cueY: cue.y,
+          zoomCurrent: sc.zoom,
+          camX: cue.x,
+          camY: cue.y,
+          portraitRotated: sc.portraitRotated,
+        }),
+      ).toBeNull();
+
+      // Walking clockwise around cue center in SCREEN coordinates at radius 110px
+      const screenAngles = [0.2, 0.35, 1.4, 1.55, 2.8, 2.95, 4.3, 4.45];
+      for (let i = 0; i < screenAngles.length; i += 2) {
+        const a0 = screenAngles[i]!;
+        const a1 = screenAngles[i + 1]!;
+        const p0 = computeDirectAimAngle2D({
+          clientX: cueClient.x + Math.cos(a0) * 110,
+          clientY: cueClient.y + Math.sin(a0) * 110,
+          rect: sc.rect,
+          cueX: cue.x,
+          cueY: cue.y,
+          zoomCurrent: sc.zoom,
+          camX: cue.x,
+          camY: cue.y,
+          portraitRotated: sc.portraitRotated,
+        })!;
+        const p1 = computeDirectAimAngle2D({
+          clientX: cueClient.x + Math.cos(a1) * 110,
+          clientY: cueClient.y + Math.sin(a1) * 110,
+          rect: sc.rect,
+          cueX: cue.x,
+          cueY: cue.y,
+          zoomCurrent: sc.zoom,
+          camX: cue.x,
+          camY: cue.y,
+          portraitRotated: sc.portraitRotated,
+        })!;
+
+        // Increasing screen angle (CW in screen Y-down coordinates) MUST advance physics aimAngle CW too
+        // because -90deg rotation is rigid orientation-preserving (det = +1).
+        const step = normalizeAngleDelta(p0, p1);
+        expect(step).toBeGreaterThan(0);
+
+        // Sampling-rate invariance: 3 sub-steps sum identically to 1 coarse step
+        const midAngle = (a0 + a1) * 0.5;
+        const pMid = computeDirectAimAngle2D({
+          clientX: cueClient.x + Math.cos(midAngle) * 110,
+          clientY: cueClient.y + Math.sin(midAngle) * 110,
+          rect: sc.rect,
+          cueX: cue.x,
+          cueY: cue.y,
+          zoomCurrent: sc.zoom,
+          camX: cue.x,
+          camY: cue.y,
+          portraitRotated: sc.portraitRotated,
+        })!;
+        const fineSum =
+          computeRelativeFineAimDelta2D({ prevPhysicsAngle: p0, curPhysicsAngle: pMid, scale: 0.28 }) +
+          computeRelativeFineAimDelta2D({ prevPhysicsAngle: pMid, curPhysicsAngle: p1, scale: 0.28 });
+        const coarseStep = computeRelativeFineAimDelta2D({
+          prevPhysicsAngle: p0,
+          curPhysicsAngle: p1,
+          scale: 0.28,
+        });
+        expect(fineSum).toBeCloseTo(coarseStep, 6);
+      }
+    }
+  });
+
+  it('evaluates touch power pull & horizontal cancel gesture cleanly', () => {
     const validPull = evaluatePowerPull({
       startX: 24,
       startY: 300,
@@ -90,7 +208,6 @@ describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset'
     expect(validPull.cancelled).toBe(false);
     expect(validPull.power).toBeGreaterThan(0.5);
 
-    // Too small pull -> cancelled
     const shortPull = evaluatePowerPull({
       startX: 24,
       startY: 300,
@@ -101,7 +218,6 @@ describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset'
     expect(shortPull.cancelled).toBe(true);
     expect(shortPull.power).toBe(0);
 
-    // Sideways slide cancel gesture
     const slideCancel = evaluatePowerPull({
       startX: 24,
       startY: 300,
@@ -110,6 +226,46 @@ describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset'
       trackHeight: 240,
     });
     expect(slideCancel.cancelled).toBe(true);
+  });
+
+  it('computes shortest-angle 3D wrap and aspect-aware top/follow camera poses without jumps', () => {
+    const diffAcrossPi = shortestAngleDelta3D(Math.PI - 0.1, -Math.PI + 0.1);
+    expect(diffAcrossPi).toBeCloseTo(0.2, 6);
+
+    const topPortrait = computeCameraPose3D({
+      mode: 'top',
+      aspect: 430 / 820,
+      zoomLevel: 1.0,
+      visualAimAngle: 0,
+      cueX: -0.5,
+      cueZ: 0,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+    });
+    expect(topPortrait.up).toEqual([1, 0, 0]);
+    expect(topPortrait.fov).toBe(54);
+    expect(topPortrait.position[1]).toBeGreaterThan(3.0);
+
+    const followPortrait = computeCameraPose3D({
+      mode: 'follow',
+      aspect: 430 / 820,
+      zoomLevel: 1.0,
+      visualAimAngle: 0,
+      cueX: -0.5,
+      cueZ: 0,
+      cuePocketed: false,
+      phase: 'aim',
+      isStriking: false,
+      draggingCueBall: false,
+      hoverZoomActive: false,
+      hoverWorldPt: null,
+    });
+    expect(followPortrait.position[0]).toBeLessThan(-0.5);
+    expect(followPortrait.lookAt[0]).toBeCloseTo(-0.05, 5);
   });
 
   it('resets active in_match to fresh lobby on explicit new_lobby while preserving disconnect reconnect', () => {
@@ -135,11 +291,9 @@ describe('Billiards V3 — Portrait Transform, Smart Touch & Online Lobby Reset'
     lobby = promoteCountdownToMatch(lobby, 3600);
     expect(lobby.status).toBe('in_match');
 
-    // Network disconnect preserves in_match for reconnect
     const afterDisconnect = applyLobbyConnectionChange(lobby, 1, false, 4000);
     expect(afterDisconnect.status).toBe('in_match');
 
-    // Explicit new_lobby reset clears in_match so players can pick 2D or 3D freshly
     const afterNewLobby = applyLobbyLeave(
       afterDisconnect,
       { playerSlot: 0, reason: 'new_lobby' },

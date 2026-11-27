@@ -1,46 +1,86 @@
-export const TOUCH_TAP_DEADZONE_PX = 6;
+import { clientToPhysics2D, physicsToClient2D } from './viewportTransform';
+
+export const MIN_DIRECT_AIM_SCREEN_PX = 14;
+export const TOUCH_TAP_SLOP_PX = 8;
+export const TOUCH_TAP_MAX_MS = 450;
 export const TOUCH_CUE_BALL_LIFT_PX = 36;
 export const POWER_CANCEL_SLIDE_X_PX = 54;
 export const POWER_MIN_RATIO = 0.06;
 
 /**
- * Computes responsive angular delta from a touch drag increment `(dx, dy)`.
- * Slow careful drags produce fine precision adjustment (like 8 Ball Pool micro-aim),
- * while wider sweeps rotate faster. Tangential drag around the cue ball matches natural winding.
+ * Returns the shortest signed angular difference `(toAngle - fromAngle)` wrapped into `(-PI, PI]`.
  */
-export function computeAdaptiveAimDelta(params: {
-  dx: number;
-  dy: number;
-  cueClientX: number;
-  cueClientY: number;
-  pointerClientX: number;
-  pointerClientY: number;
-  precisionMode: boolean;
-  flippedHandedness?: boolean;
-}): number {
-  const { dx, dy, cueClientX, cueClientY, pointerClientX, pointerClientY, precisionMode } = params;
-  const moveDist = Math.hypot(dx, dy);
-  if (moveDist < 0.05) return 0;
+export function normalizeAngleDelta(fromAngle: number, toAngle: number): number {
+  let diff = (toAngle - fromAngle) % (Math.PI * 2);
+  if (diff > Math.PI) diff -= Math.PI * 2;
+  if (diff <= -Math.PI) diff += Math.PI * 2;
+  return diff;
+}
 
-  // Non-linear speed curve: slow drags (< 3px) -> micro precision, larger drags -> smooth sweep
-  const speedScale =
-    moveDist < 2.5 ? 0.28 : moveDist < 7 ? 0.52 : Math.min(1.22, 0.72 + moveDist * 0.025);
-  const precisionMul = precisionMode ? 0.35 : 1.0;
-
-  const rx = pointerClientX - cueClientX;
-  const ry = pointerClientY - cueClientY;
-  const radius = Math.hypot(rx, ry);
-
-  let rawDelta: number;
-  if (radius >= 28) {
-    // 2D cross product / r^2 gives natural angular delta around the cue ball
-    const angularDelta = (rx * dy - ry * dx) / (radius * radius);
-    rawDelta = angularDelta * (params.flippedHandedness ? -1 : 1) * 1.15;
-  } else {
-    rawDelta = -dx * 0.0055;
+/**
+ * Direct touch/pointer aiming in 2D physics space (modeled after Mankolik/Pool `aimAt` and
+ * vigu-sinuca-arena `updateTouchAimFromPosition`), accounting for portrait -90deg display rotation
+ * and zoom via `clientToPhysics2D`.
+ *
+ * Returns `null` when the pointer is within `MIN_DIRECT_AIM_SCREEN_PX` of the cue ball center on screen
+ * to avoid unstable jitter near zero radius.
+ */
+export function computeDirectAimAngle2D(params: {
+  clientX: number;
+  clientY: number;
+  rect: { left: number; top: number; width: number; height: number };
+  cueX: number;
+  cueY: number;
+  zoomCurrent: number;
+  camX: number;
+  camY: number;
+  portraitRotated: boolean;
+}): number | null {
+  const cueClient = physicsToClient2D(
+    params.cueX,
+    params.cueY,
+    params.rect,
+    params.zoomCurrent,
+    params.camX,
+    params.camY,
+    params.portraitRotated,
+  );
+  if (
+    Math.hypot(params.clientX - cueClient.x, params.clientY - cueClient.y) <
+    MIN_DIRECT_AIM_SCREEN_PX
+  ) {
+    return null;
   }
 
-  return rawDelta * speedScale * precisionMul;
+  const phy = clientToPhysics2D(
+    params.clientX,
+    params.clientY,
+    params.rect,
+    params.zoomCurrent,
+    params.camX,
+    params.camY,
+    params.portraitRotated,
+  );
+  const dx = phy.x - params.cueX;
+  const dy = phy.y - params.cueY;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.hypot(dx, dy) < 1e-4) {
+    return null;
+  }
+  return Math.atan2(dy, dx);
+}
+
+/**
+ * Computes consistent signed fine-aim rotation delta between two direct physics-space angles.
+ * Independent of pointer sampling rate, never reverses handedness on portrait rotation,
+ * and never switches formulas inside a gesture.
+ */
+export function computeRelativeFineAimDelta2D(params: {
+  prevPhysicsAngle: number;
+  curPhysicsAngle: number;
+  scale?: number;
+}): number {
+  const scale = params.scale ?? 0.28;
+  return normalizeAngleDelta(params.prevPhysicsAngle, params.curPhysicsAngle) * scale;
 }
 
 /**

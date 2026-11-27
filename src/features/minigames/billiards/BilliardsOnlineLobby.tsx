@@ -6,6 +6,7 @@ import type {
   BilliardsRule,
   PlayerSlot,
 } from '../../../shared/billiards/types';
+import { BilliardsAvatarPortrait } from './BilliardsAvatarPortrait';
 
 export interface BilliardsOnlineLobbyProps {
   localPlayerSlot: PlayerSlot;
@@ -215,10 +216,13 @@ export const BilliardsOnlineLobby: React.FC<BilliardsOnlineLobbyProps> = ({
                 className={`olw-lobby-player${pReady ? ' olw-lobby-player--ready' : ''}`}
               >
                 <div className="olw-choice-title">
-                  <span>
-                    {slot === 0 ? '🏡' : '🌙'} {playerNames[slot]}{' '}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <span className="olw-lobby-avatar">
+                      <BilliardsAvatarPortrait slot={slot} kind="human" size={28} />
+                    </span>
+                    {playerNames[slot]}{' '}
                     {isLocal && (
-                      <span style={{ fontSize: 11, color: '#93c5fd', fontWeight: 700 }}>(Bạn)</span>
+                      <span style={{ fontSize: 11, color: '#fde68a', fontWeight: 700 }}>(Bạn)</span>
                     )}
                   </span>
                   <span className={`olw-badge ${connected ? 'olw-badge--ok' : 'olw-badge--warn'}`}>

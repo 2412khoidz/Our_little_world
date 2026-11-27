@@ -52,10 +52,12 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     const modal = await openEntryMenu(page);
     await expect(worldCanvas).toHaveAttribute('data-render-suspended', '1', { timeout: 5_000 });
 
-    // Launch Local 2P 2D (8-Ball)
+    // Launch Local 2P 2D (8-Ball) — rule lives cleanly in secondary settings modal
     await page.getByTestId('billiards-edition-2d').click();
     await page.getByTestId('billiards-mode-local').click();
+    await page.getByTestId('billiards-entry-settings-btn').click();
     await page.getByTestId('billiards-entry-rule-8ball').click();
+    await page.getByTestId('billiards-entry-settings-close').click();
     await page.getByTestId('billiards-start-btn').click();
 
     const game2d = page.getByTestId('billiards-2d-game');
@@ -101,8 +103,10 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
 
     await page.getByTestId('billiards-edition-2d').click();
     await page.getByTestId('billiards-mode-ai').click();
+    await page.getByTestId('billiards-entry-settings-btn').click();
     await page.getByTestId('billiards-bot-medium').click();
     await page.getByTestId('billiards-entry-rule-9ball').click();
+    await page.getByTestId('billiards-entry-settings-close').click();
     await page.getByTestId('billiards-start-btn').click();
 
     await expect(game2d).toBeVisible({ timeout: 10_000 });
@@ -165,11 +169,13 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await page.goto('/');
     const worldCanvas = await joinSingleClient(page, 'preset-partner-a');
 
-    // Open 3D Local 2P
+    // Open 3D Local 2P (settings modal holds 3D quality)
     const modal = await openEntryMenu(page);
     await page.getByTestId('billiards-edition-3d').click();
     await page.getByTestId('billiards-mode-local').click();
+    await page.getByTestId('billiards-entry-settings-btn').click();
     await page.getByTestId('billiards-3d-quality-medium').click();
+    await page.getByTestId('billiards-entry-settings-close').click();
     await page.getByTestId('billiards-start-btn').click();
 
     const game3d = page.getByTestId('billiards-3d-game');
@@ -182,23 +188,27 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     expect(box!.width).toBeGreaterThan(200);
     expect(box!.height).toBeGreaterThan(150);
 
-    // Cycle 3D cameras & test Massé elevation slider
-    const camBtn = page.getByTestId('billiards-3d-cam-btn');
-    await expect(camBtn).toContainText('Gậy');
+    // Verify 3-button direct 3D camera switcher + Massé elevation slider
     await expect(game3d).toHaveAttribute('data-camera-mode', 'follow');
-    await camBtn.click();
-    await expect(camBtn).toContainText('Trên cao');
+    await page.getByTestId('billiards-3d-cam-top').click();
     await expect(game3d).toHaveAttribute('data-camera-mode', 'top');
-    await camBtn.click();
-    await expect(camBtn).toContainText('Góc rộng');
+    await page.getByTestId('billiards-3d-cam-orbit').click();
     await expect(game3d).toHaveAttribute('data-camera-mode', 'orbit');
-    await camBtn.click();
+    await page.getByTestId('billiards-3d-cam-follow').click();
     await expect(game3d).toHaveAttribute('data-camera-mode', 'follow');
 
     const elevSlider = page.getByTestId('billiards-3d-elev-slider');
     await elevSlider.fill('15');
     await expect(elevSlider).toHaveValue('15');
     await elevSlider.fill('0');
+
+    // Collect Chromium 3D RAF frame-time stats once 15+ frames render
+    await expect
+      .poll(async () => await game3d.getAttribute('data-perf-p50'), { timeout: 5_000 })
+      .not.toBeNull();
+    const perfP50 = await game3d.getAttribute('data-perf-p50');
+    const perfP95 = await game3d.getAttribute('data-perf-p95');
+    console.log(`[Chromium Desktop 3D] frame-time p50=${perfP50}ms p95=${perfP95}ms`);
 
     // Fire 3D shot with original Space hold/release control
     await page.keyboard.down('Space');
@@ -215,7 +225,9 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await page.getByTestId('billiards-exit-to-menu').click();
     await page.getByTestId('billiards-edition-3d').click();
     await page.getByTestId('billiards-mode-ai').click();
+    await page.getByTestId('billiards-entry-settings-btn').click();
     await page.getByTestId('billiards-bot-easy').click();
+    await page.getByTestId('billiards-entry-settings-close').click();
     await page.getByTestId('billiards-start-btn').click();
 
     await expect(game3d).toBeVisible({ timeout: 15_000 });
@@ -422,6 +434,28 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await slot.dispatchEvent('pointerup', { pointerId: 11, pointerType: 'touch' });
     await expect(game2d).toHaveAttribute('data-shot-count', '0');
 
+    // Touch V3.2: short tap aims directly on table WITHOUT shooting, and drag obeys intuitive clockwise/CCW direction
+    const canvas2d = page.getByTestId('billiards-canvas');
+    const initialAimDeg = Number((await game2d.getAttribute('data-aim-deg')) ?? '0');
+    const tapX = canvas2dBox!.x + canvas2dBox!.width * 0.78;
+    const tapY = canvas2dBox!.y + canvas2dBox!.height * 0.25;
+    await canvas2d.dispatchEvent('pointerdown', { pointerId: 21, pointerType: 'touch', clientX: tapX, clientY: tapY });
+    await canvas2d.dispatchEvent('pointerup', { pointerId: 21, pointerType: 'touch', clientX: tapX, clientY: tapY });
+    await expect(game2d).toHaveAttribute('data-shot-count', '0');
+    await expect
+      .poll(async () => Number((await game2d.getAttribute('data-aim-deg')) ?? '0'), { timeout: 2_000 })
+      .not.toBe(initialAimDeg);
+
+    // 2->1 finger pinch transition never jumps aimAngle
+    const aimBeforePinch = Number((await game2d.getAttribute('data-aim-deg')) ?? '0');
+    await canvas2d.dispatchEvent('pointerdown', { pointerId: 31, pointerType: 'touch', clientX: tapX - 20, clientY: tapY });
+    await canvas2d.dispatchEvent('pointerdown', { pointerId: 32, pointerType: 'touch', clientX: tapX + 20, clientY: tapY });
+    await canvas2d.dispatchEvent('pointermove', { pointerId: 32, pointerType: 'touch', clientX: tapX + 60, clientY: tapY + 20 });
+    await canvas2d.dispatchEvent('pointerup', { pointerId: 32, pointerType: 'touch', clientX: tapX + 60, clientY: tapY + 20 });
+    await canvas2d.dispatchEvent('pointermove', { pointerId: 31, pointerType: 'touch', clientX: tapX - 80, clientY: tapY + 80 });
+    await canvas2d.dispatchEvent('pointerup', { pointerId: 31, pointerType: 'touch', clientX: tapX - 80, clientY: tapY + 80 });
+    expect(Number((await game2d.getAttribute('data-aim-deg')) ?? '0')).toBe(aimBeforePinch);
+
     // Mobile aim buttons visible & functional + normal power pull shoots (Practice mode keeps cue free!)
     await expect(page.getByTestId('billiards-aim-left')).toBeVisible();
     await expect(page.getByTestId('billiards-aim-right')).toBeVisible();
@@ -437,21 +471,37 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await expect(game2d).toHaveAttribute('data-shot-count', '1', { timeout: 10_000 });
     await expect(game2d).toHaveAttribute('data-phase', 'aim', { timeout: 15_000 });
 
-    // Switch to 3D on mobile 430x932 and verify zero HUD overlap + non-zero 3D canvas
+    // Switch to 3D Practice on mobile 430x932 and verify zero HUD/dock/hand-hint overlap + non-zero 3D canvas
     await page.getByTestId('billiards-menu-btn').click();
     await page.getByTestId('billiards-exit-to-menu').click();
     await page.getByTestId('billiards-edition-3d').click();
-    await page.getByTestId('billiards-mode-local').click();
+    await page.getByTestId('billiards-mode-practice').click();
     await page.getByTestId('billiards-start-btn').click();
-    await expect(page.getByTestId('billiards-3d-game')).toBeVisible({ timeout: 20_000 });
+    const game3d = page.getByTestId('billiards-3d-game');
+    await expect(game3d).toBeVisible({ timeout: 20_000 });
     const box3d = await page.getByTestId('billiards-canvas-3d').boundingBox();
     expect(box3d).not.toBeNull();
     expect(box3d!.width).toBeGreaterThan(250);
     expect(box3d!.height).toBeGreaterThan(180);
 
-    const cam3dBox = await page.getByTestId('billiards-3d-cam-btn').boundingBox();
+    const cam3dBox = await page.getByTestId('billiards-3d-cam-top').boundingBox();
     const score3dBox = await page.getByTestId('billiards-score').boundingBox();
+    const hint3dBox = await page.getByTestId('billiards-3d-hand-hint').boundingBox();
+    const elev3dBox = await page.getByTestId('billiards-3d-elev-slider').boundingBox();
     expect(boxesOverlap(cam3dBox, score3dBox)).toBe(false);
+    expect(boxesOverlap(hint3dBox, elev3dBox)).toBe(false);
+
+    await page.getByTestId('billiards-3d-cam-top').click();
+    await expect(game3d).toHaveAttribute('data-camera-mode', 'top');
+    await page.getByTestId('billiards-3d-cam-orbit').click();
+    await expect(game3d).toHaveAttribute('data-camera-mode', 'orbit');
+
+    await expect
+      .poll(async () => await game3d.getAttribute('data-perf-p50'), { timeout: 5_000 })
+      .not.toBeNull();
+    console.log(
+      `[Chromium 430x932 Mobile 3D] frame-time p50=${await game3d.getAttribute('data-perf-p50')}ms p95=${await game3d.getAttribute('data-perf-p95')}ms`,
+    );
 
     expect(errors).toEqual([]);
     await ctx.close();
