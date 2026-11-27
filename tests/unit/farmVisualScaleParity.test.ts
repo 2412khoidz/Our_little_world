@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import farmMapJson from '../../src/assets/maps/farm.json';
-import { getFarmingCropStageFrame, getFarmingTreeFrame } from '../../src/shared/art/farmingSpriteAtlas';
+import { getFarmingCropStageFrame, getFarmingTreeFrame, getLivestockAtlasSpec } from '../../src/shared/art/farmingSpriteAtlas';
 import { DEEP_FIELD_CROP_SKUS } from '../../src/shared/farming/deepCropSimulation';
+import { LIVESTOCK_SPECIES_LIST } from '../../src/shared/farming/livestock';
 import { ORCHARD_TREE_DEFS } from '../../src/shared/farming/orchard';
 import {
   computeFarmCropDisplayScale,
@@ -15,6 +16,7 @@ import {
 } from '../../src/game/farming/OrchardVisualController';
 import {
   computeLivestockDisplayScale,
+  computeLivestockSpeciesDisplayScale,
   DEFAULT_LIVESTOCK_TILES,
 } from '../../src/game/farming/LivestockVisualController';
 import { TILE_SIZE } from '../../src/shared/maps';
@@ -72,6 +74,14 @@ describe('Farm Visual Scale & 16px Coordinate Parity (Checkpoint 4)', () => {
 
     const livestockRenderedPx = 24 * computeLivestockDisplayScale(16);
     expect(livestockRenderedPx).toBeCloseTo(18);
+
+    // Real FarmRanchLife donor livestock frames fit cleanly below 32px Cozy avatar height
+    for (const def of LIVESTOCK_SPECIES_LIST) {
+      const spec = getLivestockAtlasSpec(def.speciesId)!;
+      const renderedH = spec.frameH * computeLivestockSpeciesDisplayScale(def.speciesId, 16);
+      expect(renderedH, `${def.speciesId} rendered height`).toBeGreaterThanOrEqual(14);
+      expect(renderedH, `${def.speciesId} rendered height`).toBeLessThanOrEqual(32);
+    }
   });
 
   it('places all 12 orchard slots and 14 livestock slots on walkable, non-soil, non-road, disjoint tiles', () => {
