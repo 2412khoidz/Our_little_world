@@ -147,5 +147,33 @@ describe('Mobile interactables & touch-friendly primary action resolution', () =
       interactables: targets,
     });
     expect(withToy.primary?.code).toBe('roll_toy');
+
+    // Standing beside a farm plot while holding farming tools or seeds prioritizes the plot over the cat.
+    const withFarmPlotAndCat = resolveContextualActions({
+      playerX: 88,
+      playerY: 110,
+      facing: 'right',
+      heldItem: heldHoe,
+      interactables: [
+        {
+          id: 'pet:cat',
+          kind: 'pet',
+          labelVi: 'Quýt',
+          x: 90,
+          y: 112,
+          maxRadiusPx: 76,
+        },
+        {
+          id: 'plot:12',
+          kind: 'crop_plot',
+          labelVi: 'Ô ruộng 12',
+          x: 104,
+          y: 112,
+          maxRadiusPx: 32,
+        },
+      ],
+    });
+    expect(withFarmPlotAndCat.primary?.targetId).toBe('plot:12');
+    expect(withFarmPlotAndCat.primary?.code).toBe('till_plot');
   });
 });
