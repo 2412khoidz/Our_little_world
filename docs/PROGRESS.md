@@ -2,6 +2,10 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## INV.2 — Thí điểm ba lô và kho vật lý
+
+- Có bản thử Dev LAN cô lập trên `feature/inv2-physical-inventory`. Ba lô, kho, vòng đời vật phẩm và giao dịch thử có dữ liệu máy chủ. Các điểm nối farming, fishing và backend production còn mở. [Báo cáo INV.2](reports/INV2_PHYSICAL_INVENTORY.md)
+
 ## Hotfix quyền sở hữu túi đồ sau RC2
 
 - Worktree `fix/inventory-integrity` tách từ `origin/main` tại `fe1937b`. Đã tái hiện hạt tự sinh khi nhà có mèo và táo hiển thị đồng thời trong túi lẫn trên con trỏ.
