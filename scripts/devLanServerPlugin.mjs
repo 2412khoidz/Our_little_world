@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ensureV015Db, initializeDevLanWorldInventory, handleV015Route } from './devLanV015Handlers.mjs';
+import { V015_CATALOG, ensureV015Db, initializeDevLanWorldInventory, handleV015Route } from './devLanV015Handlers.mjs';
 import { createSharedPetCareSession, mergeSharedPetCareSession } from './devLanPetCareSession.mjs';
 import { handleBilliardsRoute } from './devLanBilliardsHandlers.mjs';
 import { createDevLanWsHub } from './devLanWsHub.mjs';
@@ -287,6 +287,7 @@ export function createDevLanHandler({
   stateFilePath = path.join(process.cwd(), '.dev-lan-state.json'),
   getTryHandleFarmDevLan = () => null,
   getTryHandleDonorDevLan = () => null,
+  getTryHandlePhysicalInventory = () => null,
   getServerPort = () => 5173,
   wsOptions = {},
 } = {}) {
@@ -1188,6 +1189,22 @@ export function createDevLanHandler({
       });
       if (handledBilliards) return;
 
+      const physicalWorldId = String(reqUrl.searchParams.get('worldId') ?? body.worldId ?? '');
+      const physicalRequest = /^\/(inventory|farm|donor|pet|mailbox|dev-console)(\/|$)/.test(route);
+      const physicalSaved = Boolean(db.v015?.physicalInventory?.[physicalWorldId]);
+      const physicalLoader = physicalRequest || physicalSaved ? getTryHandlePhysicalInventory() : null;
+      if (physicalLoader) {
+        const physicalHandler = await physicalLoader;
+        if (physicalHandler({
+          req, res, reqUrl, route, body, db, userId, worldId: physicalWorldId, catalog: V015_CATALOG,
+          isWorldMember, sendJson, saveDb, broadcastInventory: (worldId) => broadcastWorldMutated(worldId, 'inventory'),
+          position: wsHub.getActivePlayerPosition(physicalWorldId, userId),
+        })) return;
+      } else if (physicalSaved) {
+        sendJson(res, 409, { ok: false, code: 'VALIDATION_ERROR', message: 'Hãy mở save này bằng chế độ túi đồ INV.2.' });
+        return;
+      }
+
       const resolvedFarmDevLan =
         route.startsWith('/farm') ? await Promise.resolve(getTryHandleFarmDevLan()) : getTryHandleFarmDevLan();
       const resolvedDonorDevLan =
@@ -1300,8 +1317,17 @@ export function devLanServerPlugin(options = {}) {
           console.warn('[dev-lan] donor routes unavailable:', err?.message ?? err);
           return null;
         });
+      const stateFilePath = options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined;
+      const physicalEnabled = process.env.OLW_DEV_LAN_PHYSICAL_INVENTORY === '1';
+      if (physicalEnabled && !/^\.dev-lan-state-inv2-[a-z0-9_-]+\.json$/i.test(path.basename(stateFilePath ?? ''))) {
+        throw new Error('INV.2 cần save riêng .dev-lan-state-inv2-*.json.');
+      }
+      const physicalRoute = physicalEnabled
+        ? server.ssrLoadModule('/src/server/devLanPhysicalInventoryRoute.ts').then((mod) => mod.handleDevLanPhysicalInventory)
+        : null;
       const handler = createDevLanHandler({
-        stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
+        stateFilePath,
+        getTryHandlePhysicalInventory: () => physicalRoute,
         getTryHandleFarmDevLan: () => tryHandleFarmDevLan ?? farmRoutePromise,
         getTryHandleDonorDevLan: () => tryHandleDonorDevLan ?? donorRoutePromise,
         getServerPort: () => {

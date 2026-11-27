@@ -1,0 +1,57 @@
+.physical-inventory-panel {
+  width: min(92vw, 590px);
+  max-height: min(90dvh, 820px);
+  overflow-y: auto;
+}
+
+.physical-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(9, var(--nuvora-slot));
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.physical-inventory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-block: 5px;
+}
+
+.physical-slot-mark {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  color: #704918;
+}
+
+.physical-hotbar {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px;
+  background: #dec096;
+  border: 2px solid #805635;
+  border-radius: 8px;
+}
+
+.physical-hotbar .nuvora-sl[aria-pressed='true'] {
+  outline: 2px solid #b34e30;
+  outline-offset: -2px;
+}
+
+.physical-hotbar small {
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  font-size: 9px;
+}

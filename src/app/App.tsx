@@ -148,6 +148,10 @@ import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
 import { getIslandZoneMeta } from '../shared/world/worldGraph';
 
+const PhysicalInventoryPilot = import.meta.env.DEV
+  ? lazy(() => import('../features/inventory/PhysicalInventoryPilot'))
+  : null;
+
 const DevSpikeLabModal = import.meta.env.DEV
   ? lazy(() =>
       import('../features/spike/SpikeLabModal').then((m) => ({
@@ -3057,7 +3061,7 @@ function MainCoupleApp({
         localUserId={currentUser.userId}
         key={currentMapId}
         petCareOverlayActive={petCareMode}
-        enabled={Boolean(backend.inventory)}
+        enabled={Boolean(backend.inventory && !backend.inventory.physical)}
         currentMapId={currentMapId}
         inventorySnapshot={inventorySnapshot}
         hotbarBindings={inventoryLayout.hotbarBindings}
@@ -3563,7 +3567,25 @@ function MainCoupleApp({
 
       {activeModal === 'pwa' && <IosInstallModal onClose={() => setActiveModal(null)} />}
 
-      {activeModal === 'inventory' && backend.inventory && currentUser && (
+      {import.meta.env.DEV && PhysicalInventoryPilot && backend.inventory?.physical && worldId && currentUser && (
+        <Suspense fallback={null}>
+          <PhysicalInventoryPilot
+            key={`${worldId}:${currentUser.userId}`}
+            backend={backend.inventory.physical}
+            worldId={worldId}
+            userId={currentUser.userId}
+            revision={inventorySnapshot?.physicalVersion}
+            location={currentMapId}
+            connection={connectionStatus}
+            showHud={!isAnyModalOpen}
+            open={activeModal === 'inventory'}
+            onOpen={() => setActiveModal('inventory')}
+            onClose={() => setActiveModal(null)}
+          />
+        </Suspense>
+      )}
+
+      {activeModal === 'inventory' && backend.inventory && !backend.inventory.physical && currentUser && (
         <InventoryModal
           key={layoutScopeKey}
           snapshot={inventorySnapshot}

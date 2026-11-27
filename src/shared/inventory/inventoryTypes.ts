@@ -87,6 +87,7 @@ export interface InventorySnapshot {
   serverNowMs: number;
   serverDateUtc: string;
   canClaimFreeKibble: boolean;
+  physicalVersion?: number;
   catalog: readonly InventoryCatalogItem[];
   items: InventoryEntry[];
 }

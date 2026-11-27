@@ -339,6 +339,19 @@ export function createDevLanBackend(): WorldBackend {
     },
 
     inventory: {
+      ...(import.meta.env.VITE_OLW_PHYSICAL_INVENTORY === '1' ? {
+        physical: {
+          read(worldId, query) {
+            const queryString = new URLSearchParams({
+              worldId, storage: query.storage, page: String(query.page), search: query.search, category: query.category ?? '',
+            });
+            return apiJson('/inventory/physical?' + queryString);
+          },
+          apply(request) {
+            return apiJson('/inventory/physical', { method: 'POST', body: JSON.stringify(request) });
+          },
+        },
+      } : {}),
       async getInventory(worldId) {
         return apiJson<InventorySnapshot>(`/inventory?worldId=${encodeURIComponent(worldId)}`);
       },
