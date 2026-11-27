@@ -8,6 +8,10 @@
 - Đã chuyển gói khởi đầu sang lúc tạo nhà và nâng cấp save theo phiên bản. Túi chung và ngăn riêng tự thêm trang. Khi người chơi khác tiêu vật phẩm, túi và thanh nhanh cập nhật từ snapshot mới.
 - [Báo cáo tái hiện, kiểm thử và save nghiệm thu](reports/INVENTORY_INTEGRITY_HOTFIX.md). Nghiệm thu Safari trên iPhone thật và Supabase Cloud còn chờ.
 
+- Đã ghép hotfix `5be8de5` vào RC2 trên `integration/inventory-integrity` (`c6df885`). NET.1/NET.1.1 đã có trong RC2. Dry-run với M3d/M3e tự ghép được `App.tsx`; M3g chỉ trùng mục nhật ký này. Các nhánh mission vẫn độc lập.
+- Gate tích hợp đã qua lint (4 cảnh báo có sẵn), typecheck, build, production guard, Vitest (933/933 test, 204 suite) và 7 ca Chromium desktop về hai client, kho/xưởng và kết nối lại, kể cả remote join. Hai ca đã qua khi chạy lại riêng sau lỗi WebGL và bước chờ link tunnel. PostgreSQL nhúng chạy đủ 29 migration, với 15/15 script cài mới và 16/16 script nâng cấp.
+- Còn chờ iPhone Safari/PWA thật qua Quick Tunnel (Wi-Fi ↔ 5G và khóa màn hình/mở lại) và kiểm tra migration cùng giao dịch đồng thời trên Supabase Cloud.
+
 ## CANONICAL RC2 INTEGRATION (`integration/olw-canonical-rc2` → `main`)
 
 - **Hợp nhất thống nhất Canonical RC2 (`M0 Phase 1` + `M1 Billiards V4.1` + `M3a–M3c.2` + Multiplayer Maintenance):**
