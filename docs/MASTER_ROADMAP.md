@@ -1,51 +1,68 @@
-# Lộ trình Tổng thể — Our Little World (`MASTER_ROADMAP`)
+# Our Little World — Master Roadmap V3 (Reconciled Source of Truth)
 
-*Hợp nhất và phản biện từ lộ trình gốc, bổ sung kết quả nghiên cứu mở rộng & ngân sách bổ sung `0₫` ([ADR-008, ADR-009, PD-06](DECISIONS.md)). Tài liệu thay thế nội dung chi tiết từng phiên bản cho `docs/ROADMAP.md`.*
-
----
-
-## 1. Phản biện Dependency & Pacing (Cải thiện Lộ trình Đề xuất)
-
-1. **Giải quyết nghẽn Tặng quà & Thức ăn Mèo (`K5`):** Trong lộ trình cũ, *Tặng quà / Hộp thư / Nuôi thú cưng* nằm ở `V0.1.5` trước `Economy Foundation V0.2.0`. Giải pháp đã duyệt trong PD-06: đưa **`item_catalog` read-only + `inventory_items` (`shared` / cá nhân) + Hạt mèo cơ bản miễn phí** vào **`V0.1.5`**, còn tiền tệ (`world_wallet`), `economy_ledger` và mua bán cơ bản tại cổng mở ở **`V0.2.0`** để không bị khóa chéo.
-2. **Đưa Pomodoro Co-presence lên `V0.1.5` & Sắp xếp tiện ích đời thường sớm:** Hai bạn ưu tiên công năng cặp đôi mỗi ngày và `cocoworking` cho module Pomodoro thuần TS (`MIT`) dễ port ngay trong 0.5 ngày. Do đó đưa Pomodoro bản im lặng + Thú cưng cơ bản + Hộp thư/Quà/Khung ảnh chung về **`V0.1.5`** giúp sản phẩm có giá trị sử dụng hàng ngày rất sớm mà không cần chờ xong toàn bộ kinh tế/nấu ăn.
-3. **Tách Spike `S0-5b` (Cinema VPN-less Transport Benchmark) sau `V0.1`:** Cinema trên LAN đã thử chạy được Sync PoC, nhưng qua Phase 1 phát hiện Cloudflare CDN có điều khoản giới hạn video và Tunnel chưa vượt gate dịch vụ. Khi tới S0-5b sau V0.1, đo Funnel HLS và WebRTC từ Windows host tới iPhone Safari qua 4G theo PD-03. Dùng kết quả để quyết định transport V0.4.
+*Cập nhật: 27/11/2026 | Canonical Branch: `main` (`e5de4ac`) | Release Tag: `v0.2.5` + Accepted Hotfixes (`5de7317`)*
+*Kiến trúc vận hành hiện tại: **Windows-hosted Dev LAN + Cloudflare Quick Tunnel** (`npm run host:couple`, chi phí bổ sung `0₫`). Tài liệu này là lộ trình tổng thể chuẩn duy nhất; lịch sử V0.1/V0.2 cũ được giữ tham chiếu tại [PROGRESS.md](PROGRESS.md), [DECISIONS.md](DECISIONS.md) và [V02_ROADMAP.md](V02_ROADMAP.md).*
 
 ---
 
-## 2. Trạng thái Spike 0 & V0.1 Slices (Di chuyển từ `ROADMAP.md`)
+## 1. Quy ước Trạng thái (Status Definitions)
 
-### Chi tiết Spike 0 (Đã làm nền PoC; còn mục chờ thiết bị thật)
-| Mã | Hạng mục | Tiêu chí thoát | Hiện trạng (`25/11/2026`) |
-|---|---|---|---|
-| `S0-1` | Shell PWA (`sw.js`, `manifest`, không cache API/video) | Add to Home Screen iPhone thật | Build pass; **chờ iPhone thật** |
-| `S0-2` | Phaser 4 pixel art + chạm/bàn phím dọc-ngang | Mượt, không cuộn nhầm Safari | E2E `430×932` pass; **chờ iPhone thật** |
-| `S0-3` | 2 client realtime, mất mạng, background iPhone | Tự đồng bộ lại không kẹt ghost | Playwright Dev LAN 2 browser context pass; **chờ 2 mạng thật + iPhone** |
-| `S0-4` | PoC Cinema sync (`Play/Pause/Seek/Offset/Drift`) | Sync mượt không echo loop | Windows↔K70E Wi-Fi OK; **chờ iPhone Safari; WAN đo riêng ở S0-5b** |
-| `S0-5a` | Tài liệu & khung Jellyfin/Tailscale ban đầu | Xong khung thử nghiệm | Có `MEDIA_SETUP.md` (cập nhật sang VPN-less) |
-| **`S0-5b`** | **Mới:** Benchmark truyền media **không cài VPN trên iPhone** (Tailscale Funnel HLS vs WebRTC + TURN Free) | 720p/1080p mượt qua 4G iPhone Safari, xác thực token, chi phí `0₫` | **Chạy khi tới S0-5b sau V0.1. Transport chờ benchmark** |
-| `S0-6` | Chốt Art Direction & License | Người dùng duyệt pack `0₫` | **ĐÃ DUYỆT Demo E** ([ART_DIRECTION.md](art/ART_DIRECTION.md)) |
+Tách bạch **mức độ hoàn thiện mã nguồn** với **nghiệm thu của chủ dự án**:
 
-### Các lát cắt đã code trong V0.1 (Chưa nghiệm thu hoàn tất trước khi tích hợp Demo E & Test thật)
-`V0.1-1` Scaffold + PWA + Tests → `V0.1-2` Starter Phaser 4 Map + BFS → `V0.1-3` Supabase Auth/RLS/2-member cap + Dev LAN → `V0.1-4` Realtime Presence/10Hz TX → `V0.1-5` Tủ đồ Avatar → `V0.1-6` Nội thất atomic occupancy → `V0.1-7` UI tiếng Việt & Prod Guard. *(Lưu ý: cần **tích hợp artwork Demo E**, **đo TX và thử trần 8 Hz**, **triển khai Supabase Cloud + host HTTPS đã duyệt**, và **nghiệm thu iPhone thật** trước khi đóng V0.1).*
+- **`OWNER APPROVED`**: Đã triển khai trong canonical `main`, đã được chủ dự án playtest & phê duyệt.
+- **`IMPLEMENTED`**: Code, UI và wiring đã có trên `main`; chưa có vòng playtest phê duyệt riêng cho hạng mục đó hoặc còn chờ test thiết bị thật.
+- **`PARTIALLY IMPLEMENTED`**: Đã có domain thuần hoặc bản prototype Dev-only / UI rời; còn thiếu nối end-to-end hoặc nội dung.
+- **`IN PROGRESS`**: Đang phát triển tích cực trên worktree/nhánh riêng, chưa gộp `main`.
+- **`PLANNED`**: Đã chốt phạm vi trong lộ trình V3, sẵn sàng tách worktree khi đạt dependency.
+- **`DEFERRED`**: Tạm hoãn có chủ đích (hạ tầng cloud, DB luôn bật, dịch vụ trả phí) — **không chặn** phát triển gameplay local.
+- **`BLOCKED`**: Chưa thể triển khai cho tới khi hoàn tất benchmark hoặc điều kiện phụ thuộc.
+- **`UNVERIFIED`**: Chưa xác minh trên thiết bị thật (iPhone Safari + 4G/5G) hoặc hạ tầng thật (Supabase Cloud / SQL).
 
 ---
 
-## 3. Lộ trình Dài hạn Đã Duyệt (`V0.1 → Post-V1.0`)
+## 2. Kiểm toán Thực trạng Sản phẩm trên Canonical `main` (`e5de4ac`)
 
-| Phiên bản | Mục tiêu Cốt lõi | Phạm vi Chính | Phụ thuộc | Tiêu chí Thoát Chính |
+Nhiều hệ thống V0.1.5, V0.2 và V0.3 đã được triển khai vượt xa thứ tự milestone cũ. Bảng dưới đây phản ánh **thực tế mã nguồn** tại `e5de4ac`:
+
+| Hệ thống | Trạng thái Hiện tại | Đã có & Nguồn Donor/Code | Còn thiếu / Lỗi đã biết / Chưa kiểm | Độ ưu tiên & Độc lập Worktree |
 |---|---|---|---|---|
-| **`V0.1` — Foundation** *(Chưa đóng)* | Ngôi nhà 2 người chạy HTTPS ổn định, hình ảnh Demo E | Tích hợp atlas Demo E (sửa sàn/đường/cỏ/pet/camera), Supabase thật, ưu tiên deploy HTTPS trên Cloudflare Pages Free, test Windows+Android+iPhone thật | Demo E đã duyệt, quyền Web/PWA, xác minh tài khoản và slot Free | Đạt đủ 18 điều kiện trong `MILESTONE_ACCEPTANCE.md` |
-| **`V0.1.5` — Living Home** | Căn nhà có nhịp sống & dùng được mỗi ngày | **Pet MVP** (`cat-orange`, ăn hạt free, ngủ, vuốt ve), **Inventory tối thiểu (K5)**, Tương tác đôi (ngồi sofa/giường/ôm `0₫`/emote), Hộp thư & Quà, Khung ảnh chung, **Pomodoro im lặng**, Dev Console cơ bản | `V0.1` đã nghiệm thu đủ 18 gate | Hai bạn dùng Pomodoro, nuôi mèo cơ bản & gửi quà qua hộp thư được hàng ngày |
-| **`V0.2.0` — Economy Foundation** | Nền kinh tế household atomic & cân bằng | `world_wallet`, `economy_ledger`, nâng cấp Inventory sang full catalog, NPC Bác Hai Mùa & Shipping Bin 24/7, `scripts/economy-sim.ts`, Dev Console tiền tệ | `V0.1.5` đóng, dùng lại Inventory | Simulator 0 arbitrage/deadlock; RPC `FOR UPDATE` pass race tests |
-| **`V0.2.1` — Farming** | Vườn trồng rau, hoa, lai giống & cây ăn quả | Làm đất, gieo, tưới, chất lượng `★`, hoa lai 8 hướng (`webfarmville`), bó hoa, cây Kỷ niệm, Cô Mai Hoa | `V0.2.0` | Cây mọc theo server time, không chết offline, 0 xung đột thu hoạch |
-| **`V0.2.2` — Fishing** | Ao cá giải trí có kỹ năng 1 ngón | Mini-game kéo thanh (`greens` FSM), 3 bậc hiếm, mồi `0c`/cao cấp, nâng cần, bể cá, Chú Tư Cần | `V0.2.0`, Ao Demo E | Câu mượt 1 ngón trên iPhone, co-op đứng cạnh ao cùng câu |
-| **`V0.2.3` — Intelligent Pet** | Mèo sống động có tính cách & ký ức | Full 8 needs, 9 emotions, 7 traits, 24 memories, Utility AI + Affordances thích nghi dời đồ, **Sim-Host Election**, Pet Brain Debugger | `V0.1.5` + nội thất V0.2 | Mèo tự ăn/ngủ/phơi nắng/ngồi cạnh bàn học; 2 máy nhất quán & failover `<7s` |
-| **`V0.2.4` — Home Progression** | Cửa hàng nội thất 4 phong cách & mở rộng nhà | Shop nội thất `Pastel/Modern/Cottage/Rustic`, nâng công cụ, mở rộng phòng ngủ/bếp/nhà kính/hiên, Chú Mộc Lâm | `V0.2.0–V0.2.3` | Nâng cấp nhà không làm mất đồ cũ; tiện ích đời thường vẫn `0c` unlock |
-| **`V0.2.5` — Cooperative Gameplay** | Hoạt động mini-game gắn kết & bảng đơn hàng | Hạ tầng **K4**, **4 mini-game MVP** (Caro PvP thân thiện, Lật thẻ, Đoán ý, Mê cung bất đối xứng), NPC Order Board 3 slot | `V0.2.0` | 4 game chạy mượt mobile, mất mạng phục hồi bàn cờ, Caro không cược/mất tài sản hay xếp hạng |
-| **`V0.3` — Shared Life** | Nấu ăn kỹ năng & nhật ký đời thường cặp đôi | **Cooking 3 chế độ** (Casual/Co-op/Restaurant Orders có cháy khét), Nhật ký, Album ảnh private, Lịch hẹn, Wishlist, Picnic | `V0.2.1–V0.2.5` | Nấu ăn có rủi ro cháy thật; Nhật ký/Album RLS riêng 2 người |
-| **`V0.4` — Cinema** | Rạp phim tại gia `0₫` không VPN phía iPhone | Transport theo kết quả `S0-5b` (Tailscale Funnel HLS hoặc WebRTC TURN), sync `ClockSync` suspend fix + hysteresis, phụ đề WebVTT/SRT, Voice & Ducking tùy chọn | `V0.3` đóng, `S0-5b` có phương án Go trên iPhone | Xem trọn phim 1–2h Windows→iPhone 4G không cài app ngoài, drift ổn định |
-| **`V0.5` — Polish & Living Feel** | Hoàn thiện trải nghiệm như game thương mại nhẹ | Ngày/đêm, thời tiết trang trí, âm thanh nền, tối ưu 60fps/pin, backup/restore dữ liệu, audit toàn diện iPhone thật | `V0.1–V0.4` | Không leak RAM/context loss khi bật nền 30p; full regression xanh |
-| **`V1.0` — Our Island** | Mở rộng đảo/làng khi chơi ổn định | Khu chợ, làng nhỏ, đảo và khám phá bằng logic Utility AI/scripted | `V0.5` ổn định và có nhu cầu thực | Cặp đôi chơi tốt trên iPhone, đơn giản để vận hành |
-| **Sau V1.0 — Future AI World** | Thử nghiệm Level 3 rồi mới xét AI Town Level 4 | Ưu tiên thử model local có Utility fallback; chỉ xét API có chi phí bổ sung 0₫ | Nhu cầu đã được quan sát, ngân sách và dữ liệu được duyệt | Engine/DB giữ quyền quyết định, dữ liệu riêng không đưa vào prompt |
+| **Core World `16×16` (6 khu vực + 4 shop interiors)** | `OWNER APPROVED` | `home`, `garden`, `village`, `farm`, `beach`, `forest`, `shop*` (`Cabacos@79e423d`, `Hollowmere@a7a8e5a`, `Tuxemon@4e63c45`, `Sprout/Demo E`), va chạm, cửa, thang, `WorldLightingOverlay`, NPCs | Nội thất `shop_*` vẫn dùng Sunnyside pre-rendered plate (tinh chỉnh đồng nhất ở V0.5); 2 Vitest Canvas 2D donor cũ fail dưới `jsdom` | Nền dùng chung — sửa qua worktree riêng + pass `worldReconstructionGraph` |
+| **Avatar Cozy Human V2, Nuvora Inventory & Custom Audio** | `OWNER APPROVED` | PyDew/Modern Interiors `avatars.png`, `private-unified/` (10 file), Nuvora Inventory + `CatalogPropsIcon`, 5 track riêng tư `private-audio/` + SFX MIT/CC0 | Không có hồi quy mở; asset private giữ cục bộ (`.gitignore`) cho tới khi chốt bản quyền phân phối | Bảo toàn tuyệt đối qua `assets:private:verify` |
+| **Multiplayer `NET.1.1` (WS + Remote Onboarding)** | `OWNER APPROVED` *(9/11 real-device NET.1.1 pass; bản gộp RC1 chờ Safari lại)* | `devLanWsHub.mjs`, `olwRemoteShare.mjs` (`/__share/<token>` auto-join `Nắng`, cookie HMAC, khóa Host route `403`), `devLanRealtimeClient.ts`, `RemoteMotionInterpolator`, `NetworkDiagnosticsOverlay` | `UNVERIFIED` cho tổ hợp đầy đủ `v0.2.5` trên iPhone Safari thật qua Quick Tunnel & đổi Wi-Fi↔5G | Chỉnh ở `App.tsx`/`devLanServerPlugin.mjs` cần kiểm chéo Farming & Billiards |
+| **Deep Farming & Economy (`Checkpoints A–G`)** | `OWNER APPROVED` *(kèm hotfix collision 3 cây `5de7317`)* | 267 canonical SKUs, 40 crops (`greens`), 20 flowers + lai 8 hướng (`webfarmville`), 12 orchard trees (`refreshBlockedGrid` đã khóa gốc cây), 7 livestock + 84 recipes + 8 workshops (`harvest-hollow`), 3-slot Order Board, fishing (`chill`/`tension` + `fish_minnow`), `farming/*.png` atlases | `UNVERIFIED` 2 migration SQL (`20261127000100..200`) trên Postgres/Supabase Cloud thật; cần thêm polish discoverability & hướng dẫn UX nhẹ nhàng | Cao (V0.2.x) — worktree riêng được nếu không đè `App.tsx` |
+| **Living Pet (`Quýt` 2D + Vuena 3D Pet Care V2)** | `OWNER APPROVED` *(kèm hotfix chặn tap mở nhầm `5de7317`)* | `Quýt` 32×32 avoid obstacles/plots, `vuena-cat.glb` (CC0), 8 real cat vocalizations, quality presets, `SharedPetCareSession` 2P, chạm mèo không còn mở nhầm khi làm vườn (`J`/nút ngữ cảnh + farm plot priority) | `UNVERIFIED` WebGL2 dài hơi (`OLW_ACCEPTANCE_LONG=1`) & iPhone Safari thật; `SawyerHood/nintendogs-threejs` thiếu LICENSE file gốc (chỉ lưu ý nếu public thương mại) | Trung bình (V0.2.x) — độc lập cao |
+| **Billiards V2** | `OWNER APPROVED` | `BilliardsModal.tsx`, fixed-timestep `physicsEngine.ts` (`1/480s`), `protocol.ts`, NET.1 `minigame_event`, lazy-load + `cmd:set-render-suspended`, `20261126000100_v02_billiards_minigame.sql` | Chờ nâng cấp lên Billiards V3 & 3D (`feat/billiards-v3`); SQL chưa chạy trên Cloud thật | Đã hoàn thành baseline V2 |
+| **Billiards V3 & 3D Transplant** | `IN PROGRESS` | Worktree `C:\Users\admin\Downloads\OLW-Billiards-V3` (nhánh `feat/billiards-v3`): đang phát triển menu vào chế độ, Local 2P, Bot AI (`botAi.ts`), Online Lobby (`BilliardsOnlineLobby.tsx`, `lobbyProtocol.ts`), bàn phím desktop (`useBilliardsKeyboard.ts`), ghép `physics3dEngine.ts` từ gói 3D chủ dự án cung cấp (`our_little_billiards_3d_*`) | Chưa hoàn tất tích hợp UI/3D render & chưa reconcile lên `origin/main` (`e5de4ac`); **chưa** kiểm chứng playtest của chủ dự án | **P0 ngay lập tức (`V0.2.x`)** — hoàn tất trong `OLW-Billiards-V3` rồi mới merge |
+| **Couple Interactions (`P0` vs `P1`)** | `OWNER APPROVED` (P0) / `PARTIALLY IMPLEMENTED` (P1) | P0 `hold_hands` + `hug` + `CoupleEmoteDock` + posture `sit_sofa`/`sit_bench`/`lie_bed`/`sit_study` (`promenad` FABRIK, `embrace` pixel rig). P1 (`kiss`, `lean_shoulder`, `dance`, `give_flower`) đã có schema trong `coupleTypes.ts` (`COUPLE_P1_ENABLED = false`) | Chưa có sprite/animation frames & pose pairing cho `kiss` (và P1 khác), chưa bật flag `COUPLE_P1_ENABLED` | Cao (`V0.2.x`) — tách worktree riêng |
+| **Study Room & Pomodoro** | `IMPLEMENTED` *(chưa nghiệm thu riêng V0.3)* | `PomodoroPanel.tsx`, `src/shared/study/pomodoro.ts` (MIT `cocoworking`), `ambientAudio.ts` (tắt sạch AudioContext theo phản hồi owner), nút trong `MenuModal` | Chưa có playtest chuyên sâu dài phiên 2 người cho V0.3 Shared Life | Trung bình (`V0.3`) — độc lập cao |
+| **Mailbox & Secret Gifts** | `IMPLEMENTED` *(Dev LAN)* | `MailboxModal.tsx`, `mailboxRules.ts` (`ownerScope` quà riêng tư trước khi mở), nút trong `MenuModal` | Mở rộng thiệp kỷ niệm / đính kèm quà nông trại & hoa ở V0.3 | Trung bình (`V0.3`) |
+| **Scrapbook Photo Album** | `IMPLEMENTED` *(Local preview / Dev LAN)* | `ScrapbookAlbumModal.tsx` (`react-pageflip`), `scrapbookAlbumStorage.ts`, giới hạn upload `5MB` trong `sharedLifeTypes.ts` | Ảnh lưu cục bộ/Dev LAN; cloud private storage bucket hoãn cùng hạ tầng Cloud | Trung bình (`V0.3`) |
+| **Cooking (`src/shared/cooking/`)** | `PARTIALLY IMPLEMENTED` | Domain `cookingMachine.ts`, `recipes.ts` clean-room hoàn chỉnh với 3 chế độ & rủi ro cháy | Chưa có UI bếp tương tác, chưa nối nguyên liệu chung từ Deep Farming / Workshop & chưa mở trong game chính | Cao (`V0.3`) — tách worktree riêng |
+| **Shared Journal, Wishlist, Date Calendar & Picnic** | `PARTIALLY IMPLEMENTED` | Kiểu dữ liệu `sharedLifeTypes.ts` + màn hình mẫu Dev-only `V03PrototypesModal.tsx` | Thiếu persistence Dev LAN (`devLanSharedLifeHandlers.mjs` cần nối thật), thiếu UI chính thức & điểm picnic ngoài trời | Trung bình (`V0.3`) — độc lập cao |
+| **Furniture Shop & Home Progression** | `PARTIALLY IMPLEMENTED` | `DecorateDrawer.tsx`, `decorateInteriorPolicy.ts`, 12+ món starter, atomic footprint grid `placement.ts` | Chưa có shop nội thất 4 phong cách, chưa có nâng cấp/mở rộng phòng (`kitchen`, `bedroom`, `study`, `greenhouse`), chưa có cơ chế bảo toàn vị trí đồ khi nâng cấp map | Cao (`V0.2.4`) — cần cẩn thận `maps.ts` & `placement.ts` |
+| **Mini-games (`Caro`, `Othello`, `Battleship`, `Memory`)** | `PARTIALLY IMPLEMENTED` | Pure reducers & privacy helpers (`src/shared/minigames/`), React UIs (`CaroGame`, `OthelloGame`, `BattleshipGame`, `MemoryGame`) | Chưa nối WS `minigame_event` realtime 2 người và chưa mở lại trên `MenuModal.tsx` | Trung bình (`V0.4`) — tái sử dụng pattern `Billiards` |
+| **Cinema & VPN-less Media Sync (`V0.4`)** | `PARTIALLY IMPLEMENTED` / `BLOCKED` *(chờ S0-5b)* | `src/shared/cinemaSync.ts`, `SpikeLabModal.tsx` (Dev-only PoC `<video playsInline>`), `/spike/sample-cozy-sync.mp4` | Chưa chạy benchmark `S0-5b` (Tailscale Funnel HLS vs WebRTC TURN 0₫) từ Windows host tới iPhone 4G không cài VPN; chưa có Movie Room UI, chọn phụ đề/audio track | `BLOCKED` bước player chính cho tới khi `S0-5b` PASS trên iPhone Safari |
+| **Supabase Cloud, RLS SQL Migrations & Hosting 24/7** | `DEFERRED` / `UNVERIFIED` | `supabase/migrations/20261124000100..20261127000200` (27 files), `supabaseBackend.ts`, `supabase/tests/` | Chưa chạy Postgres/RLS thật trên Supabase Cloud; không chặn phát triển Dev LAN hiện tại | `DEFERRED` theo quyết định chủ dự án |
 
-Bước mở triển khai tiếp theo là `OLW-010-01`. Thứ tự V0.1: atlas → avatar → scene → HTTPS/Supabase → thiết bị thật; đo realtime `OLW-010-04` có thể song song với atlas. Mốc dài hạn là dự kiến. Tiện ích đời thường không bị khóa sau số dư hoặc nâng cấp nhà.
+---
+
+## 3. Lộ trình Tái cấu trúc Chính thức (V3 Sequence)
+
+> Lưu ý đánh số: Vì phiên bản phát hành `v0.2.5` đã hợp nhất sẵn Deep Farming, Economy, Livestock, Living Pet & Billiards V2 từ nhánh thử nghiệm, giai đoạn tiếp theo bắt đầu từ **`V0.2.x`** để hoàn thiện nền tảng chơi hiện tại, sau đó tiến tới **`V0.2.4` → `V0.3` → `V0.4` → `V0.5` → `V1.0`**.
+
+| Milestone | Mục tiêu Cốt lõi | Phạm vi Thành phần | Phụ thuộc Chính | Tiêu chí Nghiệm thu Chủ dự án | Trạng thái |
+|---|---|---|---|---|---|
+| **`V0.2.x` — Gameplay Foundation Polish** | Hoàn tất các tính năng nền tảng đang dang dở & tương tác cặp đôi tự nhiên | 1) **Billiards V3 + 3D** (Local 2P, Bot, Online Ready Lobby, Desktop keyboard, 3D board/cue)<br>2) **Couple P1 Animations** (`kiss`, `lean_shoulder`, `dance`, `give_flower`)<br>3) **Farming / Fishing / Pet polish** + discoverability & nút ngữ cảnh rõ ràng | Baseline `main` (`e5de4ac`) + hoàn tất merge `feat/billiards-v3` | Chủ dự án chơi trọn ván Billiards 3D (Bot, Local 2P, Online Ready), duyệt animation Hôn/Nắm tay/Ôm, không còn kẹt va chạm hay nhầm nút | `IN PROGRESS` |
+| **`V0.2.4` — Home Progression & Interior Expansion** | Dùng kinh tế nông trại để mua sắm & mở rộng không gian sống cho cặp đôi | Shop nội thất (`Pastel`, `Modern`, `Cottage`, `Rustic`), nâng cấp mở rộng phòng (`bedroom`, `kitchen`, `study`, `greenhouse`, hiên vườn), **bảo toàn 100% nội thất cũ & `.dev-lan-state.json`** | `V0.2.x` ổn định, tái sử dụng `walletCoins` & `catalog.ts` | Nâng cấp nhà & đặt đồ mới mượt; đồ cũ tự giữ hoặc thu hồi an toàn về kho, không mất save | `PLANNED` |
+| **`V0.3` — Shared Life** | Biến ngôi nhà thành không gian sống & kỷ niệm mỗi ngày | 1) **Interactive Cooking UI** (`src/shared/cooking/`) nối nguyên liệu nông trại & ăn chung<br>2) Nối thật **Nhật ký, Wishlist, Lịch kỷ niệm & Picnic** (Dev LAN persistence, thay thế `V03PrototypesModal`)<br>3) Nâng cấp **Pomodoro + Mailbox + Album ảnh** gắn ngữ cảnh | `V0.2.4` (góc bếp & bàn ăn) cho Cooking; `SharedLife` độc lập theo worktree | Cặp đôi nấu ăn co-op từ nguyên liệu tự trồng, viết nhật ký/lịch hẹn/album ảnh và lưu bền qua reload | `PLANNED` |
+| **`V0.4` — Cinema & Shared Entertainment** | Xem phim chung từ Windows sang iPhone không VPN & hoàn thiện mini-game co-op | 1) Chốt benchmark **`S0-5b`** (Windows → iPhone 4G Safari, 0₫, không app VPN)<br>2) Rạp phim trong nhà đồng bộ Play/Pause/Seek, reconnect, chọn **phụ đề `.vtt/.srt` & audio track**<br>3) Nối **Caro, Othello, Battleship, Memory** lên WS `minigame_event` | `S0-5b` PASS trên iPhone thật trước khi code UI rạp phim; mini-game độc lập | Xem trọn 1 bộ phim `>= 60 phút` Windows → iPhone Safari 4G mượt, lệch đồng bộ thấp, chuyển Wi-Fi↔5G nối lại được; 4 mini-game chơi 2 máy | `PLANNED` *(Cinema player `BLOCKED` tới khi `S0-5b` Go)* |
+| **`V0.5` — Quality & Living World** | Nâng tầm đồng bộ mỹ thuật, âm thanh, hiệu năng & an toàn dữ liệu | Đồng bộ mỹ thuật các shop Cabacos (`shop_*`), chiều sâu NPC theo lịch/thời tiết, âm thanh môi trường theo vùng/giờ, tối ưu FPS/pin Safari PWA, công cụ **sao lưu & khôi phục save (`.dev-lan-state.json` export/import)**, test ổn định phiên dài | `V0.2.4–V0.4` | Chơi phiên dài 30–60p trên iPhone Safari không rò rỉ RAM/mất WebGL; backup/restore world 1 chạm | `PLANNED` |
+| **`V1.0` — Our Island** | Thế giới mở rộng cho cặp đôi khám phá lâu dài | Mở rộng làng, tiệm mới & interiors, hoạt động bãi biển & rừng sâu, sự kiện theo mùa/kỷ niệm, tiến trình đảo chung | `V0.5` ổn định sau playtest thực tế | Cặp đôi khám phá trơn tru trên iPhone & Windows, chi phí `0₫` | `PLANNED` |
+| **`Deferred Infra` — Cloud / Production Scale** | Vận hành 24/7 trên cloud khi thực sự có nhu cầu | Áp 27 SQL migrations lên Supabase Cloud thật, RLS verify, Cloudflare Pages HTTPS, Auth prod (`PD-08`), private asset CDN licensing | Quyết định riêng của chủ dự án | Đạt đủ SQL assertions + Auth + Hosting 0₫ | `DEFERRED` |
+
+---
+
+## 4. Nguyên tắc Vận hành Tài liệu
+
+- **Tách riêng backlog hành động:** Xem 10 nhiệm vụ kế tiếp chi tiết (worktree, overlap, song song/tuần tự, donor sẵn có) tại [NEXT_MISSIONS.md](NEXT_MISSIONS.md).
+- **Bảo toàn lịch sử:** Các quyết định nền tảng `ADR-001..010` và `PD-01..08` trong [DECISIONS.md](DECISIONS.md) vẫn có hiệu lực cho nguyên tắc `0₫`, `pixelArt`, `atomic occupancy`, `Dev-only` isolation và `zero-config` cho người thương.

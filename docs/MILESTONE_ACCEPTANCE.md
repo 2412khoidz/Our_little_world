@@ -1,43 +1,44 @@
-# Tiêu chí Nghiệm thu Theo Milestone (`MILESTONE_ACCEPTANCE`)
+# Tiêu chí Nghiệm thu (`MILESTONE_ACCEPTANCE` — V3 Reconciled)
 
-*Quy tắc trung thực: Không bao giờ đánh dấu đạt **V0.1** chỉ dựa trên Dev LAN và Playwright Desktop. Mọi mục cần thiết bị thật hoặc tài khoản người dùng ghi rõ `Pending Manual Verification`.*
+*Cập nhật: 27/11/2026 | Quy tắc trung thực: Mọi cổng chạy trên Dev LAN / Chromium Desktop tách biệt hoàn toàn với nghiệm thu iPhone Safari thật và Supabase Cloud thật. Hạ tầng Cloud (`Tier C`) đang **`DEFERRED`** và **không chặn** phát triển gameplay local (`Tier A` & `Tier B`).*
 
 ---
 
-## 1. Bảng Nghiệm thu Bắt buộc Cho `V0.1 — Foundation` (`18` Cổng Kiểm chứng)
+## Tier A — Kiến trúc Vận hành Hiện tại (Windows Dev LAN + Cloudflare Quick Tunnel · `v0.2.5+`)
 
-| # | Hạng mục nghiệm thu (Đề bài 6.4) | Trạng thái hiện tại (`25/11/2026`) | Ghi chú trung thực |
+| # | Cổng kiểm chứng | Trạng thái | Bằng chứng & Điều kiện |
 |---|---|---|---|
-| 1 | Artwork chính thức (Demo E) được người dùng duyệt | **ĐÃ DUYỆT** | Người dùng chốt Demo E + avatar Modern Interiors + ngân sách `0₫` |
-| 2 | License và asset pipeline rõ ràng | **Đặc tả có · Chờ quyền ship** | Ghi bằng chứng quyền Web/PWA cho từng asset trong dist và Service Worker theo PD-01. Atlas riêng theo PD-01. Internet chờ xác minh quyền triển khai và quyền truy cập URL asset hạn chế. |
-| 3 | **Artwork Demo E được tích hợp vào game chính V0.1** | **Tích hợp profile riêng · Chờ nghiệm thu thật** | OLW-010-01..03 đã pass local và Chromium. Cần kiểm quyền deploy và chạy các gate trên build triển khai. |
-| 4 | Windows và Android multiplayer | **Một phần (Dev LAN)** | Đã pass logic & hướng dẫn; cần test lại bản nối Supabase & artwork mới trên K70E thật |
-| 5 | **Supabase thật** (Migrations + Auth + DB) | **`Pending Manual Verification`** | Đã viết 3 migrations + SQL tests; **chưa chạy trên Supabase Cloud project thật** |
-| 6 | **Authentication** (Email/Password thật) | **`Pending Manual Verification`** | Có `SupabaseBackend`. PD-08 ưu tiên tài khoản tạo sẵn và tắt đăng ký công khai. Chờ thử đăng nhập, duy trì phiên và quy trình khôi phục an toàn. |
-| 7 | **RLS** (Row Level Security + Private Realtime) | **Viết SQL / `Pending Cloud Verify`** | Có `supabase/tests/rls_and_pairing.sql`; chưa chạy ở Cloud Test; cần test người ngoài đọc/ghi và đăng ký private channel độc lập với token đã dùng |
-| 8 | **Remote HTTPS** (host static theo PD-02) | **`Pending Implementation`** | Chưa deploy. Cloudflare Pages Free là ưu tiên đã duyệt ở PD-02 |
-| 9 | **iPhone 16 Pro Max Safari thật** (Touch, 100dvh, PWA Add to Home Screen) | **`Pending Manual Verification`** | Mới giả lập viewport `430×932` trên Playwright Chromium; chưa test iOS Safari thật |
-| 10 | Persistence (Reload giữ nguyên đồ & avatar) | Pass Local/DevLAN E2E · Chờ Cloud Verify | Cần xác minh thêm trên Supabase Cloud |
-| 11 | Refresh / Reload giữa phiên chơi | Pass Local/DevLAN E2E · Chờ Safari Verify | Cần test WebGL + session reload trên iPhone Safari thật |
-| 12 | Reconnect (Mất mạng / khóa màn hình / đổi Wi-Fi ↔ 4G) | Có logic lifecycle · `Pending Manual Verification` | Bắt buộc kiểm thử khóa màn hình iPhone & chuyển Wi-Fi ↔ 4G thật |
-| 13 | Concurrent furniture placement (`FOR UPDATE` + tiles) | Pass kiểm tra occupancy local · Chờ race Cloud | Bài E2E kiểm tra đặt tuần tự. Bổ sung 2 writer đồng thời trên Cloud Test và xác minh rollback |
-| 14 | Membership limit (Cứng 2 người + 1 user đa thiết bị, chặn người thứ 3) | Pass luồng Dev LAN · Chờ Cloud SQL | E2E thử mã mời đã dùng. Test C riêng ở Cloud để kiểm membership, read/write và private channel |
-| 15 | Production guard (`verify-prod-guard.mjs`) | **ĐÃ ĐẠT** | `0` dev/LAN/`art-demo` leaks trong `dist/assets/*.js` |
-| 16 | Unit tests (`npm run test`) | **ĐÃ ĐẠT** | Vitest `6 files, 24/24 tests pass` |
-| 17 | Server tests (`tests/server/devLanServer.test.ts` + SQL assertions) | Pass Node Server · Chờ Postgres SQL | Node server pass local. SQL chờ Cloud Test và đủ fixture, không tính skip là pass |
-| 18 | E2E tests (`npm run test:e2e`) | **ĐÃ ĐẠT (Chromium)** | Takeover chạy lại `8/8 tests pass` (Desktop + `430×932` Dev LAN SSE) |
+| A1 | Canonical workspace & clean Git history (`main` @ `e5de4ac`, `v0.2.5`) | `OWNER APPROVED` | Lịch sử `main` sạch bí mật/state/private audio; `assets:private:verify` pass 15 file |
+| A2 | Thế giới `16×16` 6 khu vực, Avatar V2, Audio riêng tư, Nuvora Inventory | `OWNER APPROVED` | Owner playtest duyệt RC1 + kiểm tra va chạm 3 gốc cây (`5de7317`) |
+| A3 | Multiplayer `NET.1.1` (`WSS`, `/__share/<token>` auto-join `Nắng`, khóa Host `403`) | `OWNER APPROVED` *(9/11 NET.1.1)* / `UNVERIFIED` *(tổ hợp `v0.2.5` iPhone Safari)* | Playwright WS 2-client pass; cần chạy lại 1 lượt iPhone Safari + Wi-Fi↔5G trên `main` mới nhất |
+| A4 | Deep Farming A–G + Order Board + Fishing (`fish_minnow`) + Orchard | `OWNER APPROVED` | Chromium E2E + Unit + owner playtest + hotfix collision 3 cây (`5de7317`) |
+| A5 | Living Pet (`Quýt` 2D + `vuena-cat.glb` 3D) & ưu tiên ô ruộng | `OWNER APPROVED` | Hotfix chặn tap nhầm mở Pet Care 3D (`5de7317`) đã được chủ dự án duyệt; `OLW_ACCEPTANCE_LONG=1` còn `UNVERIFIED` |
+| A6 | Billiards V2 (`BilliardsModal`, NET.1 WS sync) | `OWNER APPROVED` | Đã gộp `v0.2.5` + 3/3 E2E Chromium; bản nâng cấp Billiards V3 + 3D (`feat/billiards-v3`) đang `IN PROGRESS` |
+| A7 | Production Build & Guard (`dist/` + `sw.js`) | `OWNER APPROVED` | `npm run build && node scripts/verify-prod-guard.mjs` exit 0, zero dev/private leaks |
 
 ---
 
-## 2. Tiêu chí Thoát Nhanh Cho Các Milestone Tiếp Theo (`V0.1.5 → V1.0`)
+## Tier B — Tiêu chí Thoát cho Các Milestone Tiếp theo (`V0.2.x → V1.0`)
 
-- **`V0.1.5` (Living Home):** Pomodoro co-presence đồng bộ qua reload/khóa máy (`±1s` theo server time); Inventory cá nhân ẩn đúng quà cho tới khi gửi qua Hộp thư; Mèo `cat-orange` render từ `Free Pets Pack` không chết khi bỏ quên `> 48h`, `verify-prod-guard.mjs` chặn 100% Dev Console.
-- **`V0.2.0` (Economy Foundation):** Economy Simulator chạy `180` ngày cho cả 7 personas đạt `0` arbitrage, `0` deadlock, `0` chiến lược vượt trần `2.2×`; `economy_apply_transaction` pass concurrency race test 2 client mua món cuối cùng lúc; `DevLanBackend` đạt `100%` contract test parity với schema SQL.
-- **`V0.2.1` (Farming) & `V0.2.2` (Fishing):** Trồng/tưới/lai hoa chạy theo server timestamp (`0` lỗi lệch múi giờ); mini-game câu cá 1 ngón đạt `>= 30 FPS` trên iPhone Safari và không thể tự gửi request thu cá dưới `800ms`.
-- **`V0.2.3` (Intelligent Pet):** Sim-Host tự chuyển giao `< 7s` khi host rớt mạng; dời bát ăn lúc mèo đang đi tới không làm mèo kẹt tường; Pet Brain Debugger bị loại sạch khỏi `dist/`.
-- **`V0.2.4` (Home Progression) & `V0.2.5` (Co-op Gameplay):** Mở rộng phòng tự thu hồi đồ sát mép vào kho không mất; 4 mini-game MVP chơi hết 1 ván + mất mạng nối lại không mất trạng thái.
-- **`V0.3` (Shared Life):** Nấu ăn Co-op/Order cháy thật khi quá nhiệt/hết giờ; Nhật ký/Album ảnh dùng Supabase Private Storage Signed URLs (`RLS`), tuyệt đối không gửi nội dung ra API LLM ngoài.
-- **`V0.4` (Cinema):** Chạy được trọn vẹn 1 phim `60+ phút` từ laptop Windows tới **iPhone Safari thật qua 4G không cài app VPN**, giữ drift ổn định theo `ClockSync` và lỗi codec hiển thị tiếng Việt có phương án xử lý.
-- **`V0.5` & `V1.0`:** Kiểm thử hồi quy đầy đủ trên thiết bị thật, backup/restore DB test, và chỉ xét thử `HybridLlmBrain` sau V1.0 và đo chi phí theo ngân sách đã duyệt.
+- **`V0.2.x` (Gameplay Foundation Polish):**
+  - **Billiards V3 + 3D:** Chơi mượt 3 chế độ (Bot, Local 2P, Online Ready Lobby), bàn phím desktop & chạm mobile, giải phóng WebGL sạch khi thoát, owner playtest pass.
+  - **Couple P1:** Hình ảnh cặp đôi hôn/tựa vai/tặng hoa bảo toàn 100% `AvatarConfig`, không giật vị trí hay trùng tay, owner duyệt hình ảnh trước khi bật `COUPLE_P1_ENABLED = true`.
+  - **Polish & Discoverability:** Nút `J`/ngữ cảnh mobile rõ ràng ở orchard, chuồng nuôi, order board, xưởng & ao cá; `npm run lint` đạt 0 errors, 0 warnings.
+- **`V0.2.4` (Home Progression):**
+  - Shop nội thất `Pastel / Modern / Cottage / Rustic` tiêu coin đúng server ledger; mở rộng phòng không làm mất bất kỳ món đồ hay vị trí lưu cũ trong `.dev-lan-state.json`.
+- **`V0.3` (Shared Life):**
+  - **Interactive Cooking:** Nối thật vào `src/shared/cooking/` + nguyên liệu nông trại, có cháy khét thật & ăn chung.
+  - **Nhật ký / Wishlist / Lịch hẹn / Album / Pomodoro / Mailbox:** Lưu bền trong Dev LAN DB (thay thế hoàn toàn `V03PrototypesModal` giả), bài viết riêng tư (`visibility: 'private'`) ẩn đúng với đối phương.
+- **`V0.4` (Cinema & Shared Entertainment):**
+  - **`S0-5b` PASS trên iPhone 4G thật:** Không cài VPN/app ngoài phía người thương, xem mượt `>= 60 phút` Windows → iPhone Safari, drift thấp, reconnect Wi-Fi ↔ 4G, media ngoài `sw.js` precache và chi phí `0₫`.
+  - **Mini-games (`Caro`, `Othello`, `Battleship`, `Memory`):** Chơi realtime 2 máy qua WS `minigame_event`, ẩn bài bí mật (`privacy.ts`), không xếp hạng hay mất tài sản.
+- **`V0.5` (Quality & Living World):**
+  - Đồng bộ mỹ thuật các shop `shop_*`, hành vi NPC sâu hơn, sao lưu & khôi phục `.dev-lan-state.json` 1 chạm, test ổn định 30–60p trên iPhone Safari không WebGL context loss.
+- **`V1.0` (Our Island):**
+  - Bản đồ mở rộng làng/biển/rừng xuyên suốt `worldReconstructionGraph`, sự kiện theo mùa & hoạt động đảo đôi ở chi phí `0₫`.
 
-**Điều kiện đóng V0.1:** tất cả 18 gate có bằng chứng của build triển khai. Chạy lại các gate sau khi tích hợp artwork. Ghi môi trường, ngày, build/commit, thiết bị/iOS và kết quả pass/fail vào [PROGRESS.md](PROGRESS.md). Tách ba phép thử Cinema: LAN sync đã có quan sát, S0-5b WAN/iPhone chưa chạy, nghiệm thu V0.4 sau khi có transport.
+---
+
+## Tier C — Hạ tầng Cloud / Production 24/7 (`DEFERRED` — Không chặn Local Dev)
+
+Giữ nguyên 18 cổng kiểm chứng V0.1 lịch sử (áp migration lên Supabase Cloud thật, RLS verify với 3 UUID thật, Auth theo `PD-08`, deploy Cloudflare Pages HTTPS `PD-02`, kiểm tra bản quyền phân phối public cho các asset private) ở trạng thái **`DEFERRED / UNVERIFIED`**. Chỉ kích hoạt Tier C khi chủ dự án quyết định đưa bản public/cloud lên vận hành 24/7.

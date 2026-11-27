@@ -1,10 +1,26 @@
 # Backlog Triển khai Chi tiết (`IMPLEMENTATION_BACKLOG`)
 
-*Phân rã nhiệm vụ nhỏ (`0.5–1.5 ngày/task`) cho **DeepSeek V4.1 Flash**, **Copilot Student** hoặc **Codex** khi dependency đã đạt. Chuẩn đầu ra mỗi task theo [AGENT_HANDOVER.md](AGENT_HANDOVER.md).*
+*Cập nhật: 27/11/2026 | Canonical Baseline: `main` (`e5de4ac`, release `v0.2.5+`)*
+*Phân rã nhiệm vụ nhỏ cho **Codex / Claude / DeepSeek / Gemini** qua worktree riêng (`npm run worktree:new -- --name <slug>`). Chuẩn bàn giao theo [CANONICAL_BASELINE.md](CANONICAL_BASELINE.md) và [REGRESSION_CHECKLIST.md](REGRESSION_CHECKLIST.md).*
+
+> [!IMPORTANT]
+> **Backlog V3 Hiện hành:** Phần lớn task trong `Phần A` lịch sử dưới đây (`V0.1-1..7`, `OLW-010-01..03`, `V0.1.5`, `V0.2.0`) đã được hợp nhất vào canonical `main` (`v0.2.5`). Danh sách **10 Mission hành động hiện tại (`M1`..`M10`)** nằm tại **[NEXT_MISSIONS.md](NEXT_MISSIONS.md)**:
+> - **M1 (`IN PROGRESS`):** Billiards V3 & 3D Transplant (`feat/billiards-v3` tại `OLW-Billiards-V3`)
+> - **M2 (`V0.2.x`):** Couple P1 Animations (`kiss`, `lean_shoulder`, `dance`, `give_flower`)
+> - **M3 (`V0.2.x`):** Farming, Fishing, Pet & Discoverability Polish
+> - **M4 (`V0.2.4`):** Home Progression (Shop nội thất 4 phong cách + mở rộng nhà giữ nguyên đồ cũ)
+> - **M5 (`V0.3`):** Interactive Cooking UI (`src/shared/cooking/`) nối nguyên liệu nông trại
+> - **M6 (`V0.3`):** Persistent Shared Life UI (Nhật ký, Wishlist, Lịch hẹn, Picnic)
+> - **M7 (`S0-5b` Spike):** Cinema VPN-less WAN Transport Benchmark (Windows → iPhone 4G)
+> - **M8 (`V0.4`):** Home Cinema Player + Subtitles & WS cho `Caro/Othello/Battleship/Memory`
+> - **M9 (`V0.5`):** Shop Art Unity, NPC depth, Save Backup/Restore & Mobile Perf
+> - **M10 (`V1.0`):** Our Island Expansion
+>
+> Mục **`OLW-010-05` / `OLW-010-06`** (Supabase Cloud SQL & Cloudflare Pages HTTPS 24/7) chuyển sang **`DEFERRED`** (chỉ chạy khi chuyển sang vận hành cloud). Mục **`Phần A` bên dưới được giữ nguyên làm tài liệu tham chiếu lịch sử.**
 
 ---
 
-## Phần A — Các Task Chi tiết và Dependency (`V0.1 Còn lại`, `S0-5b`, `V0.1.5`, `V0.2.0`)
+## Phần A — Tài liệu Tham chiếu Lịch sử (`V0.1` · `S0-5b` · `V0.1.5` · `V0.2.0`)
 
 ### 1. Hoàn thiện `V0.1` — Tích hợp Demo E, Tối ưu Quota & Triển khai Thực tế
 

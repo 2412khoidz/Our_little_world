@@ -1,14 +1,26 @@
-# Roadmap — Our Little World (Đã hợp nhất)
+# Roadmap Tổng quan — Our Little World
 
-> **V0.2 P0 (đang chạy, 25/11/2026):** Nguồn chân lý là **[V02_ROADMAP.md](V02_ROADMAP.md)** (Roadmap v2). Các milestone Spike/V0.1 lịch sử vẫn tham chiếu **[MASTER_ROADMAP.md](MASTER_ROADMAP.md)**.
+*Cập nhật: 27/11/2026 | Canonical Baseline: `main` (`e5de4ac`, release `v0.2.5` + hotfixes đã duyệt)*
 
-> [!NOTE]
-> Lộ trình Spike 0, V0.1–V1.0+ và phân tích phụ thuộc đã được hợp nhất vào các tài liệu chính thức sau (tránh trùng lặp):
-> - **[V02_ROADMAP.md](V02_ROADMAP.md)** — P0 V0.2 & snapshot PR #10–#14.
-> - **[MASTER_ROADMAP.md](MASTER_ROADMAP.md)** — Lộ trình tổng thể & trạng thái từng lát cắt.
-> - **[IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md)** — Backlog task chi tiết bàn giao cho DeepSeek V4.1 Flash.
-> - **[PROGRESS.md](PROGRESS.md)** — Trạng thái code & kiểm thử thực tế hiện tại.
+Tài liệu này cung cấp cái nhìn nhanh; **nguồn chân lý chi tiết** nằm ở **[MASTER_ROADMAP.md](MASTER_ROADMAP.md)** và danh sách triển khai nằm ở **[NEXT_MISSIONS.md](NEXT_MISSIONS.md)**.
 
-V0.1 đã tích hợp Demo E ở profile riêng. Còn các gate quyền triển khai, HTTPS/Supabase Cloud và thiết bị thật. V0.1.5 chỉ bắt đầu sau nghiệm thu V0.1.
+## Bức tranh Tổng thể
 
-> **Cập nhật 26/11/2026:** Đã hoàn tất ổn định bản đồ độ cao `Elevation`, hotfix 8 tiếng mèo thật, Dev Tunnel Share qua link riêng tư, và P0 hoạt ảnh cặp đôi (**Ôm nhau** & **Nắm tay cùng đi** — xem [PROGRESS.md §16](PROGRESS.md#16-final-world-stabilization-real-cat-vocalizations-remote-tunnel-share--p0-natural-couple-animations-antigravityunified-neon-carbon) và [COUPLE_ANIMATION_DONORS.md](COUPLE_ANIMATION_DONORS.md)); P1 giữ tắt cho tới khi chủ dự án duyệt hình ảnh P0.
+| Giai đoạn | Trạng thái | Tóm tắt trọng tâm |
+|---|---|---|
+| **`v0.2.5` Baseline (`main`)** | `OWNER APPROVED` | Thế giới `16×16` 6 khu vực, Avatar V2, Audio riêng tư, `NET.1.1` WS + `/__share/<token>`, Deep Farming A–G (40 cây, 20 hoa, 12 cây ăn quả, 7 thú nuôi, 84 công thức, 8 xưởng, Order Board, Câu cá), Quýt 2D + Vuena 3D Pet Care, Billiards V2, Couple P0 (`hug`, `hold_hands`), Study Pomodoro, Mailbox, Album ảnh + Hotfix chặn tap nhầm mèo & va chạm 3 gốc cây |
+| **`V0.2.x` — Gameplay Foundation** | `IN PROGRESS` | Hoàn tất **Billiards V3 + 3D** (`feat/billiards-v3`), bật **Couple P1** (`kiss` v.v.), đánh bóng farming/fishing/pet & discoverability |
+| **`V0.2.4` — Home Progression** | `PLANNED` | Cửa hàng nội thất 4 phong cách, mở rộng phòng (bếp, ngủ, học, nhà kính), giữ nguyên đồ & save cũ |
+| **`V0.3` — Shared Life** | `PLANNED` | Bếp nấu ăn tương tác co-op (`src/shared/cooking/`), Nhật ký / Wishlist / Lịch hẹn thật (thay Dev prototype), Picnic |
+| **`V0.4` — Cinema & Co-op Play** | `PLANNED` *(Cinema UI `BLOCKED` chờ `S0-5b`)* | Benchmark streaming Windows → iPhone 4G không VPN (`S0-5b`), rạp phim tại gia (sync, phụ đề, track âm thanh), nối WS cho Caro / Othello / Battleship / Memory |
+| **`V0.5` — Quality & Living World** | `PLANNED` | Đồng bộ mỹ thuật các shop, hành vi NPC sâu hơn, âm thanh môi trường, tối ưu Safari/pin, sao lưu/khôi phục save |
+| **`V1.0` — Our Island** | `PLANNED` | Mở rộng làng/biển/rừng, interiors mới, sự kiện theo mùa & tiến trình đảo chung cho 2 người |
+| **Cloud / Supabase 24/7** | `DEFERRED` | Tạm hoãn có chủ đích; kiến trúc chính hiện tại là **Windows Dev LAN + Cloudflare Quick Tunnel** |
+
+## Tài liệu Liên quan
+- [MASTER_ROADMAP.md](MASTER_ROADMAP.md) — Lộ trình tổng thể & kiểm toán thực trạng đầy đủ.
+- [V02_ROADMAP.md](V02_ROADMAP.md) — Chi tiết phần công việc `V0.2` còn lại.
+- [NEXT_MISSIONS.md](NEXT_MISSIONS.md) — 10 mission tiếp theo, phân tích song song/tuần tự & donor sẵn có.
+- [PROGRESS.md](PROGRESS.md) — Nhật ký tích hợp & kiểm chứng thực tế.
+- [MILESTONE_ACCEPTANCE.md](MILESTONE_ACCEPTANCE.md) — Cổng nghiệm thu Local Playable vs Deferred Cloud.
+- [IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md) — Backlog nhiệm vụ chi tiết cho coding agent.

@@ -2,6 +2,16 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## MASTER ROADMAP V3 RECONCILIATION (`main` @ `e5de4ac` / `v0.2.5+`)
+
+- **Kiểm toán thực trạng đã xác minh trên `main` (`e5de4ac`):**
+  - **`OWNER APPROVED`:** Thế giới `16×16` 6 khu vực + 4 shop, Cozy Human V2 + Nuvora Inventory + 5 track nhạc nền riêng tư, `NET.1.1` WS + `/__share/<token>`, Deep Farming A–G (`40` crops, `20` flowers, `12` orchard species, `7` livestock, `84` recipes, `8` workshops, Order Board, Chill/Tension Fishing), `Quýt` 2D + Vuena 3D Pet Care V2, Billiards V2, Couple P0 (`hold_hands`, `hug`, posture anchors), và 2 hotfix hậu `v0.2.5` (`5de7317`: chặn tap mèo mở nhầm Pet Care 3D + chặn noclip 3 gốc cây ăn quả).
+  - **`IN PROGRESS`:** **Billiards V3 & 3D Transplant** trên worktree riêng `C:\Users\admin\Downloads\OLW-Billiards-V3` (`feat/billiards-v3` tách từ `6c1bc66` — đã có khung `botAi.ts`, `lobbyProtocol.ts`, `physics3dEngine.ts`, `BilliardsEntryMenu.tsx`, `BilliardsOnlineLobby.tsx`, `useBilliardsKeyboard.ts`, cần hoàn thiện & reconcile lên `e5de4ac`, chưa test owner).
+  - **`IMPLEMENTED` (chưa nghiệm thu playtest riêng V0.3):** `PomodoroPanel` (Study Room + tắt audio sạch), `MailboxModal`, `ScrapbookAlbumModal` (`react-pageflip`, `5MB` local/Dev LAN).
+  - **`PARTIALLY IMPLEMENTED`:** Domain thuần `src/shared/cooking/` (chưa có UI Bếp), `sharedLifeTypes.ts` + `V03PrototypesModal.tsx` (Dev prototype dữ liệu giả), `Couple` P1 (`kiss` v.v. — `COUPLE_P1_ENABLED = false`), `DecorateDrawer` (chưa có shop nội thất/mở rộng phòng V0.2.4), `Caro/Othello/Battleship/Memory` (chưa nối WS `minigame_event` & `MenuModal`), `SpikeLabModal` + `cinemaSync.ts` (`V0.4` chờ benchmark `S0-5b`).
+  - **`DEFERRED` / `UNVERIFIED`:** Supabase Cloud migrations (`20261124000100..20261127000200`), RLS cloud test, HTTPS Cloudflare Pages 24/7 (không chặn phát triển local Dev LAN); kiểm chứng iPhone Safari + Quick Tunnel lại cho toàn bộ bản gộp `v0.2.5+` và `OLW_ACCEPTANCE_LONG=1`.
+- **Tài liệu lộ trình chuẩn hóa mới:** [MASTER_ROADMAP.md](MASTER_ROADMAP.md) · [ROADMAP.md](ROADMAP.md) · [V02_ROADMAP.md](V02_ROADMAP.md) · [NEXT_MISSIONS.md](NEXT_MISSIONS.md) · [MILESTONE_ACCEPTANCE.md](MILESTONE_ACCEPTANCE.md).
+
 ## HOTFIX POST-`v0.2.5` — Pet Interaction Priority & Orchard Collision (`fix/pet-interaction-and-orchard-collision`)
 
 - **Nghiệm thu từ chủ dự án:** Chủ dự án đã playtest và phê duyệt cả hai bản sửa lỗi nóng trên baseline `v0.2.5` (`6c1bc66` → `main`):
