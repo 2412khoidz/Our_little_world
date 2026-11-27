@@ -13,4 +13,4 @@ Original zip archives stay outside the repository and are not redistributed stan
 | **LPC Fruit Trees** (`lpc-fruit-trees.zip`) | Multi-stage perennial orchard tree frames (`trees-orchard.png`) | CC-BY-SA 3.0 / GPL 3.0 |
 | **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops & machine icons | Perpetual commercial/personal game license (no standalone resale) |
 | **Shikashi's Fantasy Icons Pack v2** (`Shikashi's Fantasy Icons Pack v2.zip`) | Powders, spices, candles, yarn, wool knitwear, basket, scrolls | Personal & commercial project license |
-| **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-dcss_20201222.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, bait | CC0 / Public Domain (FGA/OCAL/Glitch/DCSS) |
+| **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-bluecarrot16_20201221.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, olive oil, vinegar, walnuts, cocoa beans, bait | CC0 / Public Domain (FGA/OCAL/Glitch/Bluecarrot16) |
