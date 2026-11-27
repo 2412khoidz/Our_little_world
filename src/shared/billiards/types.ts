@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 export type BilliardsRule = '8ball' | '9ball';
-export type BilliardsPlayMode = 'online' | 'local_pvp' | 'ai';
+export type BilliardsEdition = '2d' | '3d';
+export type BilliardsPlayMode = 'online' | 'local_pvp' | 'ai' | 'practice';
+export type BotDifficulty = 'easy' | 'medium' | 'hard';
+export type Billiards3DQuality = 'auto' | 'low' | 'medium' | 'high';
+export type BilliardsOrientation = 'auto' | 'portrait' | 'landscape';
 export type BallGroup = 'solid' | 'stripe' | null;
 export type PlayerSlot = 0 | 1;
 export type BilliardsMatchPhase = 'aim' | 'moving' | 'gameOver';
@@ -11,6 +15,9 @@ export type BilliardsConnectionStatus =
   | 'connected'
   | 'reconnecting'
   | 'offline';
+
+export const BilliardsEditionSchema = z.enum(['2d', '3d']);
+export const BilliardsRuleSchema = z.enum(['8ball', '9ball']);
 
 export interface Quat {
   w: number;
@@ -76,6 +83,9 @@ export const AimSyncSchema = z.object({
   playerSlot: PlayerSlotSchema,
   angle: z.number().finite(),
   power: z.number().min(0).max(1),
+  spinX: z.number().min(-0.85).max(0.85).optional(),
+  spinY: z.number().min(-0.85).max(0.85).optional(),
+  elevationDeg: z.number().min(0).max(45).optional(),
 });
 export type AimSyncPayload = z.infer<typeof AimSyncSchema>;
 
@@ -93,9 +103,11 @@ export const MatchStartSchema = z.object({
   matchSeq: z.number().int().positive(),
   initiatorSlot: PlayerSlotSchema,
   createdAtMs: z.number().int().positive(),
-  rule: z.enum(['8ball', '9ball']),
+  edition: BilliardsEditionSchema.optional(),
+  rule: BilliardsRuleSchema,
   rackSeed: z.number().int(),
   startingPlayer: PlayerSlotSchema,
+  startAtServerMs: z.number().int().positive().optional(),
   turnDeadlineMs: z.number().int().positive(),
   turnRemainingMs: z.number().int().nonnegative().max(120_000),
   scores: ScoresTupleSchema,
@@ -107,6 +119,7 @@ export const BallGroupSchema = z.union([z.literal('solid'), z.literal('stripe'),
 export const SettledStateSchema = z.object({
   matchId: z.string().min(1).max(128),
   matchSeq: z.number().int().positive(),
+  edition: BilliardsEditionSchema.optional(),
   kind: z.enum(['shot_settled', 'turn_timeout']),
   actorSlot: PlayerSlotSchema,
   shotIndex: z.number().int().nonnegative().nullable(),
@@ -147,7 +160,9 @@ export const MatchSnapshotSchema = z.object({
   senderSlot: PlayerSlotSchema,
   createdAtMs: z.number().int().positive(),
   startedAtMs: z.number().int().positive(),
-  rule: z.enum(['8ball', '9ball']),
+  startAtServerMs: z.number().int().positive().optional(),
+  edition: BilliardsEditionSchema.optional(),
+  rule: BilliardsRuleSchema,
   rackSeed: z.number().int(),
   phase: z.enum(['aim', 'moving', 'gameOver']),
   stateVersion: z.number().int().nonnegative(),
@@ -182,6 +197,96 @@ export const StateRequestSchema = z.object({
 });
 export type StateRequestPayload = z.infer<typeof StateRequestSchema>;
 
+export const LobbyPlayerStateSchema = z.object({
+  joined: z.boolean(),
+  connected: z.boolean(),
+  ready: z.boolean(),
+  assetsReady: z.boolean(),
+  wantRematch: z.boolean(),
+});
+export type LobbyPlayerState = z.infer<typeof LobbyPlayerStateSchema>;
+
+export const LobbyConfirmedConfigSchema = z.object({
+  matchId: z.string().min(1).max(128),
+  matchSeq: z.number().int().positive(),
+  edition: BilliardsEditionSchema,
+  rule: BilliardsRuleSchema,
+  rackSeed: z.number().int(),
+  startingPlayer: PlayerSlotSchema,
+  startAtServerMs: z.number().int().positive(),
+  countdownMs: z.number().int().positive().max(15_000),
+  serverConfirmedAtMs: z.number().int().positive(),
+  scores: ScoresTupleSchema,
+});
+export type LobbyConfirmedConfig = z.infer<typeof LobbyConfirmedConfigSchema>;
+
+export const BilliardsLobbyStateSchema = z.object({
+  lobbyId: z.string().min(1).max(128),
+  configVersion: z.number().int().nonnegative(),
+  status: z.enum(['idle', 'lobby', 'countdown', 'in_match']),
+  edition: BilliardsEditionSchema,
+  rule: BilliardsRuleSchema,
+  startingPlayer: PlayerSlotSchema,
+  players: z.tuple([LobbyPlayerStateSchema, LobbyPlayerStateSchema]),
+  confirmedConfig: LobbyConfirmedConfigSchema.nullable(),
+  activeMatchId: z.string().min(1).max(128).nullable(),
+  serverNowMs: z.number().int().positive(),
+});
+export type BilliardsLobbyState = z.infer<typeof BilliardsLobbyStateSchema>;
+
+export const LobbyJoinPayloadSchema = z.object({
+  playerSlot: PlayerSlotSchema,
+  edition: BilliardsEditionSchema.optional(),
+  rule: BilliardsRuleSchema.optional(),
+  startingPlayer: PlayerSlotSchema.optional(),
+  assetsReady: z.boolean().optional(),
+});
+export type LobbyJoinPayload = z.infer<typeof LobbyJoinPayloadSchema>;
+
+export const LobbyInvitePayloadSchema = z.object({
+  inviterSlot: PlayerSlotSchema,
+  inviterName: z.string().min(1).max(64),
+  edition: BilliardsEditionSchema,
+  rule: BilliardsRuleSchema,
+  sentAtMs: z.number().int().positive(),
+});
+export type LobbyInvitePayload = z.infer<typeof LobbyInvitePayloadSchema>;
+
+export const LobbyConfigPayloadSchema = z.object({
+  actorSlot: PlayerSlotSchema,
+  configVersion: z.number().int().nonnegative(),
+  edition: BilliardsEditionSchema,
+  rule: BilliardsRuleSchema,
+  startingPlayer: PlayerSlotSchema,
+});
+export type LobbyConfigPayload = z.infer<typeof LobbyConfigPayloadSchema>;
+
+export const LobbyReadyPayloadSchema = z.object({
+  playerSlot: PlayerSlotSchema,
+  configVersion: z.number().int().nonnegative(),
+  ready: z.boolean(),
+  assetsReady: z.boolean(),
+});
+export type LobbyReadyPayload = z.infer<typeof LobbyReadyPayloadSchema>;
+
+export const LobbyLeavePayloadSchema = z.object({
+  playerSlot: PlayerSlotSchema,
+  reason: z.enum(['leave', 'cancel', 'new_lobby']),
+});
+export type LobbyLeavePayload = z.infer<typeof LobbyLeavePayloadSchema>;
+
+export const LobbyRematchPayloadSchema = z.object({
+  playerSlot: PlayerSlotSchema,
+  matchId: z.string().min(1).max(128),
+  wantRematch: z.boolean(),
+});
+export type LobbyRematchPayload = z.infer<typeof LobbyRematchPayloadSchema>;
+
+export const LobbySyncRequestPayloadSchema = z.object({
+  requesterSlot: PlayerSlotSchema,
+});
+export type LobbySyncRequestPayload = z.infer<typeof LobbySyncRequestPayloadSchema>;
+
 export const BilliardsWireEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('billiards:start'), payload: MatchStartSchema }),
   z.object({ type: z.literal('billiards:aim'), payload: AimSyncSchema }),
@@ -190,6 +295,14 @@ export const BilliardsWireEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('billiards:settled'), payload: SettledStateSchema }),
   z.object({ type: z.literal('billiards:state_request'), payload: StateRequestSchema }),
   z.object({ type: z.literal('billiards:state_snapshot'), payload: MatchSnapshotSchema }),
+  z.object({ type: z.literal('billiards:lobby_join'), payload: LobbyJoinPayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_invite'), payload: LobbyInvitePayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_config'), payload: LobbyConfigPayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_ready'), payload: LobbyReadyPayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_leave'), payload: LobbyLeavePayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_rematch'), payload: LobbyRematchPayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_sync_request'), payload: LobbySyncRequestPayloadSchema }),
+  z.object({ type: z.literal('billiards:lobby_state'), payload: BilliardsLobbyStateSchema }),
 ]);
 export type BilliardsWireEvent = z.infer<typeof BilliardsWireEventSchema>;
 
@@ -206,6 +319,8 @@ export interface BilliardsTransportMeta {
 
 export interface BilliardsMatchResult {
   matchId: string;
+  edition?: BilliardsEdition;
+  mode?: BilliardsPlayMode;
   rule: BilliardsRule;
   winnerSlot: PlayerSlot;
   reason: string;
@@ -221,6 +336,8 @@ export interface BilliardsTransport {
   ) => () => void;
   subscribeConnection?: (handler: (status: BilliardsConnectionStatus) => void) => () => void;
   getConnectionStatus?: () => BilliardsConnectionStatus;
+  getServerClockOffsetMs?: () => number;
+  getRttMs?: () => number | null;
 }
 
 export interface BilliardsWinTally {

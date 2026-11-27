@@ -78,6 +78,19 @@ export function createDevLanRealtimeConnection({
   const backoff = new ReconnectBackoff({ minMs: 300, maxMs: 5000, factor: 1.8, jitter: 0.4 });
   const outboundQueue = new BoundedOutboundQueue<ClientWsFrame>(64);
   const rttTracker = new RttJitterTracker();
+  let serverClockOffsetMs = 0;
+  let hasServerClockSample = false;
+
+  const recordServerClockSample = (serverNowMs: number | undefined, halfRttMs = 0) => {
+    if (typeof serverNowMs !== 'number' || !Number.isFinite(serverNowMs)) return;
+    const sampleOffset = serverNowMs + halfRttMs - Date.now();
+    if (!hasServerClockSample) {
+      serverClockOffsetMs = sampleOffset;
+      hasServerClockSample = true;
+    } else {
+      serverClockOffsetMs = serverClockOffsetMs * 0.75 + sampleOffset * 0.25;
+    }
+  };
 
   const resolveWsTransportKind = (): 'wss' | 'ws' =>
     typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -520,6 +533,7 @@ export function createDevLanRealtimeConnection({
         if (typeof frame.stateVersion === 'number') {
           stateVersion = frame.stateVersion;
         }
+        recordServerClockSample(frame.serverNowMs, 0);
         updatePresenceDiagnostics(frame.presences);
         setStatus('connected');
         startHeartbeatsAndWatchdog(ws);
@@ -540,6 +554,7 @@ export function createDevLanRealtimeConnection({
       if (frame.type === 'pong') {
         const rttSample = performance.now() - frame.clientSentMonoMs;
         rttTracker.recordSample(rttSample);
+        recordServerClockSample(frame.serverNowMs, Math.max(0, rttSample * 0.5));
         if (typeof frame.stateVersion === 'number' && frame.stateVersion > stateVersion) {
           stateVersion = frame.stateVersion;
         }
@@ -753,6 +768,12 @@ export function createDevLanRealtimeConnection({
     },
     getDiagnostics() {
       return snapshotDiagnostics();
+    },
+    getServerClockOffsetMs() {
+      return Math.round(serverClockOffsetMs);
+    },
+    getRttMs() {
+      return rttTracker.getStats().smoothedRttMs;
     },
     async reconnect() {
       if (onlineDebounceTimer !== null) {

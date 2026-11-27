@@ -285,6 +285,43 @@ export function isLegalTargetBall(
   return ballType(ballId) === myGroup;
 }
 
+export function applyShotImpulse2D(
+  balls: BallState[],
+  shot: {
+    angle: number;
+    power: number;
+    spinX: number;
+    spinY: number;
+    cueX?: number;
+    cueY?: number;
+  },
+): boolean {
+  const cue = balls.find((b) => b.id === 0);
+  if (!cue || cue.pocketed) return false;
+  if (shot.cueX !== undefined) cue.x = shot.cueX;
+  if (shot.cueY !== undefined) cue.y = shot.cueY;
+
+  const speed = MIN_SPEED_SHOT + Math.pow(shot.power, 1.32) * (MAX_SPEED - MIN_SPEED_SHOT);
+  const dx = Math.cos(shot.angle);
+  const dy = Math.sin(shot.angle);
+  cue.vx = dx * speed;
+  cue.vy = dy * speed;
+  if (shot.spinY > 0.02) {
+    const f = 1.0 + shot.spinY * 1.4;
+    cue.rollVx = dx * speed * f;
+    cue.rollVy = dy * speed * f;
+  } else if (shot.spinY < -0.02) {
+    const f = shot.spinY * 2.2;
+    cue.rollVx = dx * speed * f;
+    cue.rollVy = dy * speed * f;
+  } else {
+    cue.rollVx = dx * speed * 0.14;
+    cue.rollVy = dy * speed * 0.14;
+  }
+  cue.spinZ = shot.spinX * speed * 1.1;
+  return true;
+}
+
 export interface StepCallbacks {
   onFirstHit: (ballId: number) => void;
   onPocket: (ball: BallState, pocketX: number, pocketY: number) => void;
@@ -455,14 +492,14 @@ function resolveRailAndJaws(b: BallState, onCushion: (speed: number) => void): v
           const spd = -b.vy; b.y = seg.y + BALL_R;
           if (spd > 0) {
             b.vy = spd * CUSHION_RESTITUTION; b.rollVy *= -0.35;
-            if (Math.abs(b.spinZ) > 1) { b.vx += b.spinZ * 0.28; b.spinZ *= 0.62; }
+            if (Math.abs(b.spinZ) > 1) { b.vx += b.spinZ * 0.34; b.spinZ *= 0.66; }
             onCushion(spd);
           }
         } else if (seg.ny < 0 && b.y + BALL_R > seg.y) {
           const spd = b.vy; b.y = seg.y - BALL_R;
           if (spd > 0) {
             b.vy = -spd * CUSHION_RESTITUTION; b.rollVy *= -0.35;
-            if (Math.abs(b.spinZ) > 1) { b.vx -= b.spinZ * 0.28; b.spinZ *= 0.62; }
+            if (Math.abs(b.spinZ) > 1) { b.vx -= b.spinZ * 0.34; b.spinZ *= 0.66; }
             onCushion(spd);
           }
         }
@@ -472,14 +509,14 @@ function resolveRailAndJaws(b: BallState, onCushion: (speed: number) => void): v
         const spd = -b.vx; b.x = seg.x + BALL_R;
         if (spd > 0) {
           b.vx = spd * CUSHION_RESTITUTION; b.rollVx *= -0.35;
-          if (Math.abs(b.spinZ) > 1) { b.vy -= b.spinZ * 0.28; b.spinZ *= 0.62; }
+          if (Math.abs(b.spinZ) > 1) { b.vy -= b.spinZ * 0.34; b.spinZ *= 0.66; }
           onCushion(spd);
         }
       } else if (seg.nx < 0 && b.x + BALL_R > seg.x) {
         const spd = b.vx; b.x = seg.x - BALL_R;
         if (spd > 0) {
           b.vx = -spd * CUSHION_RESTITUTION; b.rollVx *= -0.35;
-          if (Math.abs(b.spinZ) > 1) { b.vy += b.spinZ * 0.28; b.spinZ *= 0.62; }
+          if (Math.abs(b.spinZ) > 1) { b.vy += b.spinZ * 0.34; b.spinZ *= 0.66; }
           onCushion(spd);
         }
       }

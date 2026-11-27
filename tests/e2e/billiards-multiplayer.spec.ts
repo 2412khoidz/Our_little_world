@@ -20,6 +20,8 @@ import {
 import { compareMatchOrder } from '../../src/shared/billiards/protocol';
 import type {
   BallState,
+  BilliardsEdition,
+  BilliardsLobbyState,
   BilliardsRule,
   MatchSnapshot,
   MatchStartPayload,
@@ -79,6 +81,25 @@ function recordBilliardsWireEvent(
     ) {
       state.latestStart = start;
     }
+  } else if (evt.type === 'billiards:lobby_state') {
+    const lobby = evt.payload as BilliardsLobbyState;
+    if (lobby.confirmedConfig && !state.startsByMatchId.has(lobby.confirmedConfig.matchId)) {
+      const start: MatchStartPayload = {
+        matchId: lobby.confirmedConfig.matchId,
+        matchSeq: lobby.confirmedConfig.matchSeq,
+        initiatorSlot: lobby.confirmedConfig.startingPlayer,
+        edition: lobby.confirmedConfig.edition,
+        rule: lobby.confirmedConfig.rule,
+        startingPlayer: lobby.confirmedConfig.startingPlayer,
+        rackSeed: lobby.confirmedConfig.rackSeed,
+        scores: lobby.confirmedConfig.scores,
+        createdAtMs: lobby.confirmedConfig.startAtServerMs,
+        turnDeadlineMs: lobby.confirmedConfig.startAtServerMs + 30_000,
+        turnRemainingMs: 30_000,
+        startAtServerMs: lobby.confirmedConfig.startAtServerMs,
+      };
+      recordBilliardsWireEvent(state, worldId, { type: 'billiards:start', payload: start });
+    }
   } else if (evt.type === 'billiards:settled') {
     const settled = evt.payload as SettledStatePayload;
     state.settledByKey.set(`${settled.matchId}:${settled.stateVersion}`, settled);
@@ -94,7 +115,7 @@ function recordBilliardsWireEvent(
 function attachWireTracker(page: Page, state: WireState): void {
   page.on('websocket', (ws) => {
     if (!ws.url().includes('/api/dev-lan/ws')) return;
-    ws.on('framesent', ({ payload }) => {
+    const handleFrame = ({ payload }: { payload: string | Buffer }) => {
       if (typeof payload !== 'string') return;
       try {
         const frame = JSON.parse(payload) as {
@@ -115,7 +136,9 @@ function attachWireTracker(page: Page, state: WireState): void {
       } catch {
         // Ignore malformed WS frames
       }
-    });
+    };
+    ws.on('framesent', handleFrame);
+    ws.on('framereceived', handleFrame);
   });
 
   page.on('request', (req) => {
@@ -174,6 +197,65 @@ async function openBilliardsModal(page: Page): Promise<Locator> {
   const modal = page.getByTestId('billiards-modal');
   await expect(modal).toBeVisible({ timeout: 10_000 });
   return modal;
+}
+
+async function enterOnlineLobby(page: Page): Promise<Locator> {
+  const modal = await openBilliardsModal(page);
+  await expect(page.getByTestId('billiards-entry-menu')).toBeVisible({ timeout: 5_000 });
+  await page.getByTestId('billiards-mode-online').click();
+  await page.getByTestId('billiards-start-btn').click();
+  await expect(page.getByTestId('billiards-online-lobby')).toBeVisible({ timeout: 10_000 });
+  return modal;
+}
+
+async function resumeOnlineMatch(page: Page, edition: BilliardsEdition = '2d'): Promise<Locator> {
+  await openBilliardsModal(page);
+  const resumeBtn = page.getByTestId('billiards-resume-online-btn');
+  await expect(resumeBtn).toBeVisible({ timeout: 10_000 });
+  await resumeBtn.click();
+  const game = page.getByTestId(edition === '3d' ? 'billiards-3d-game' : 'billiards-2d-game');
+  await expect(game).toBeVisible({ timeout: 15_000 });
+  return game;
+}
+
+async function startOnlineMatchViaLobby(
+  pageA: Page,
+  pageB: Page,
+  opts?: { edition?: BilliardsEdition; rule?: BilliardsRule; startingPlayer?: PlayerSlot },
+): Promise<{ modalA: Locator; modalB: Locator }> {
+  const edition = opts?.edition ?? '2d';
+  const rule = opts?.rule ?? '9ball';
+  const startingPlayer = opts?.startingPlayer ?? 0;
+
+  await Promise.all([enterOnlineLobby(pageA), enterOnlineLobby(pageB)]);
+
+  await expect(pageA.getByTestId('lobby-player-0')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+  await expect(pageA.getByTestId('lobby-player-1')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+
+  await pageA.getByTestId(`lobby-edition-${edition}`).click();
+  await pageA.getByTestId(`lobby-rule-${rule}`).click();
+  await pageA.getByTestId(`lobby-starter-${startingPlayer}`).click();
+
+  await expect(pageA.getByTestId('lobby-player-0')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+  await expect(pageA.getByTestId('lobby-player-1')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+  await expect(pageB.getByTestId('lobby-player-0')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+  await expect(pageB.getByTestId('lobby-player-1')).toHaveAttribute('data-assets-ready', '1', { timeout: 15_000 });
+
+  await Promise.all([
+    pageA.getByTestId('billiards-lobby-ready-btn').click(),
+    pageB.getByTestId('billiards-lobby-ready-btn').click(),
+  ]);
+
+  await expect(pageA.getByTestId('billiards-countdown')).toBeVisible({ timeout: 5_000 });
+  await expect(pageB.getByTestId('billiards-countdown')).toBeVisible({ timeout: 5_000 });
+
+  const gameTestId = edition === '3d' ? 'billiards-3d-game' : 'billiards-2d-game';
+  const gameA = pageA.getByTestId(gameTestId);
+  const gameB = pageB.getByTestId(gameTestId);
+  await expect(gameA).toBeVisible({ timeout: 15_000 });
+  await expect(gameB).toBeVisible({ timeout: 15_000 });
+  await waitForMatchConvergence(gameA, gameB, { expectedRule: rule });
+  return { modalA: gameA, modalB: gameB };
 }
 
 async function waitForMatchConvergence(
@@ -448,12 +530,11 @@ async function resolveCurrentBallsForModal(
 
 test.describe('Billiards V2 multiplayer integration — two independent clients', () => {
   test.beforeEach(async ({ request }) => {
-    const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
-    const res = await request.post(`${base}/api/dev-lan/reset`, { data: {} });
+    const res = await request.post('/api/dev-lan/reset', { data: {} });
     expect(res.ok()).toBe(true);
   });
 
-  test('converges on simultaneous start/reset race, plays full 9-ball match to completion, persists idempotently, and supports rematch', async ({
+  test('coordinates lobby ready check & synchronized start, plays full 9-ball match to completion, persists idempotently, and supports mutual rematch', async ({
     browser,
     request,
   }) => {
@@ -476,39 +557,10 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
     await joinWorldPreset(pageA, 'preset-partner-a');
     await joinWorldPreset(pageB, 'preset-partner-b');
 
-    // Open nav menu on both first, then simultaneously click menu-billiards
-    await pageA.getByTestId('nav-menu').click();
-    await pageB.getByTestId('nav-menu').click();
-    await expect(pageA.getByTestId('menu-billiards')).toBeVisible();
-    await expect(pageB.getByTestId('menu-billiards')).toBeVisible();
-
-    await Promise.all([
-      pageA.getByTestId('menu-billiards').click(),
-      pageB.getByTestId('menu-billiards').click(),
-    ]);
-
-    const modalA = pageA.getByTestId('billiards-modal');
-    const modalB = pageB.getByTestId('billiards-modal');
-    await expect(modalA).toBeVisible();
-    await expect(modalB).toBeVisible();
-    await waitForMatchConvergence(modalA, modalB);
-
-    // Switch to 9-Ball on Client A -> Client B adopts 9ball
-    await pageA.getByTestId('billiards-menu-btn').click();
-    await pageA.getByTestId('billiards-rule-9ball').click();
-    await waitForMatchConvergence(modalA, modalB, { expectedRule: '9ball' });
-
-    // Simultaneous reset/new-match race: open menu on both and click new-match together
-    const preRaceSeq = Number(await modalA.getAttribute('data-match-seq') ?? '0');
-    await pageA.getByTestId('billiards-menu-btn').click();
-    await pageB.getByTestId('billiards-menu-btn').click();
-    await Promise.all([
-      pageA.getByTestId('billiards-new-match').click(),
-      pageB.getByTestId('billiards-new-match').click(),
-    ]);
-    await waitForMatchConvergence(modalA, modalB, {
-      expectedRule: '9ball',
-      minMatchSeq: preRaceSeq + 1,
+    const { modalA, modalB } = await startOnlineMatchViaLobby(pageA, pageB, {
+      edition: '2d',
+      rule: '9ball',
+      startingPlayer: 0,
     });
 
     // Play full genuine 9-ball match to completion using UI pointer aim & power drag
@@ -579,12 +631,11 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
 
     // Idempotent DB persistence check on dev-lan backend
     expect(wire.worldId).toBeTruthy();
-    const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
     await expect
       .poll(
         async () => {
           const statsRes = await request.get(
-            `${base}/api/dev-lan/billiards/stats?worldId=${encodeURIComponent(wire.worldId!)}`,
+            `/api/dev-lan/billiards/stats?worldId=${encodeURIComponent(wire.worldId!)}`,
             { headers: { 'x-dev-user-id': wire.partnerAUserId } },
           );
           if (!statsRes.ok()) return -1;
@@ -598,15 +649,18 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
       )
       .toBe(1);
 
-    // Rematch triggered by slot 1 (partner) -> preserves score & increments matchSeq
+    // Mutual Rematch triggered by both partner & owner -> preserves score & increments matchSeq
     const endMatchSeq = Number(await modalA.getAttribute('data-match-seq') ?? '0');
-    await pageB.getByTestId('billiards-next-match').click();
+    await Promise.all([
+      pageB.getByTestId('billiards-next-match').click(),
+      pageA.getByTestId('billiards-next-match').click(),
+    ]);
     await waitForMatchConvergence(modalA, modalB, {
       expectedRule: '9ball',
       minMatchSeq: endMatchSeq + 1,
     });
-    await expect(modalA).toHaveAttribute('data-phase', 'aim');
-    await expect(modalB).toHaveAttribute('data-phase', 'aim');
+    await expect(modalA).toHaveAttribute('data-phase', 'aim', { timeout: 10_000 });
+    await expect(modalB).toHaveAttribute('data-phase', 'aim', { timeout: 10_000 });
     expect(await pageA.getByTestId('billiards-score').textContent()).toBe(scoreA);
 
     expect(errors).toEqual([]);
@@ -673,13 +727,12 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
     await joinWorldPreset(pageA, 'preset-partner-a');
     await joinWorldPreset(pageB, 'preset-partner-b');
 
-    const modalA = await openBilliardsModal(pageA);
-    let modalB = await openBilliardsModal(pageB);
-    await waitForMatchConvergence(modalA, modalB);
-
-    await pageA.getByTestId('billiards-menu-btn').click();
-    await pageA.getByTestId('billiards-rule-9ball').click();
-    await waitForMatchConvergence(modalA, modalB, { expectedRule: '9ball' });
+    const { modalA, modalB: initialModalB } = await startOnlineMatchViaLobby(pageA, pageB, {
+      edition: '2d',
+      rule: '9ball',
+      startingPlayer: 0,
+    });
+    let modalB = initialModalB;
 
     // Shot 0 on Client A: clean pass shot (3 deg, 0.35 power -> no pocket, turn switches to 1)
     const state0 = await resolveCurrentBallsForModal(modalA, wire);
@@ -696,10 +749,10 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
     const staleSettledCopy = wire.settledHistory[0]!;
     expect(staleSettledCopy).toBeTruthy();
 
-    // 1) Between-shot full page reload on Client B -> reopen modal -> recovers shots, replay button & state
+    // 1) Between-shot full page reload on Client B -> reopen modal -> resume online -> recovers shots, replay button & state
     await pageB.reload();
     await joinWorldPreset(pageB, 'preset-partner-b', { afterReload: true });
-    modalB = await openBilliardsModal(pageB);
+    modalB = await resumeOnlineMatch(pageB, '2d');
 
     await expect(modalB).toHaveAttribute('data-match-id', preReloadMatchId!, { timeout: 15_000 });
     await expect(modalB).toHaveAttribute('data-state-version', preReloadSv!, { timeout: 15_000 });
@@ -720,8 +773,7 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
     const svBeforeDelayed = Number(await modalB.getAttribute('data-state-version') ?? '0');
 
     // 2) Inject delayed stale settled packet from shot 0 via genuine server relay -> must be ignored
-    const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
-    const delayedRes = await request.post(`${base}/api/dev-lan/realtime`, {
+    const delayedRes = await request.post('/api/dev-lan/realtime', {
       headers: { 'x-dev-user-id': wire.partnerAUserId },
       data: {
         worldId: wire.worldId,
@@ -748,43 +800,48 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
     expect(Number(await modalB.getAttribute('data-state-version'))).toBe(svBeforeDelayed);
     expect(await modalB.getAttribute('data-shot-seq')).toBe('2');
 
-    // 3) Mid-shot (in-flight) reconnect recovery: close B, start fresh match on A, fire 4.87s break, reopen B mid-flight
+    // 3) Mid-shot (in-flight) reconnect recovery: close B, current turn owner fires high-power shot, reopen B mid-flight
     await pageB.getByTestId('billiards-close').click();
-    await expect(modalB).toBeHidden();
+    await expect(pageB.getByTestId('billiards-modal')).toBeHidden();
 
-    const preMidMatchSeq = Number(await modalA.getAttribute('data-match-seq') ?? '0');
-    await pageA.getByTestId('billiards-menu-btn').click();
-    await pageA.getByTestId('billiards-new-match').click();
-    await expect
-      .poll(async () => Number(await modalA.getAttribute('data-match-seq') ?? '0'), { timeout: 10_000 })
-      .toBeGreaterThan(preMidMatchSeq);
+    const midTurn = Number(await modalA.getAttribute('data-current-player') ?? '0') as PlayerSlot;
+    if (midTurn !== 0) {
+      // If B owns turn 2, resume B cleanly first so a hard shot puts balls in motion on A
+      modalB = await resumeOnlineMatch(pageB, '2d');
+      const s2 = await resolveCurrentBallsForModal(modalB, wire);
+      await performUiShot(pageB, s2.balls, (3 * Math.PI) / 180, 1.0);
+      await expect(modalB).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+      await expect(modalA).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+      await expect(modalA).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+      await expect(modalB).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+    } else {
+      const midMatchId = await modalA.getAttribute('data-match-id');
+      const midState = await resolveCurrentBallsForModal(modalA, wire);
+      await performUiShot(pageA, midState.balls, (3 * Math.PI) / 180, 1.0);
+      await expect(modalA).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
 
-    const midMatchId = await modalA.getAttribute('data-match-id');
-    const midState = await resolveCurrentBallsForModal(modalA, wire);
-    await performUiShot(pageA, midState.balls, (3 * Math.PI) / 180, 1.0);
-    await expect(modalA).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+      // Open Client B while balls on Client A are still in motion
+      await pageB.waitForTimeout(350);
+      modalB = await resumeOnlineMatch(pageB, '2d');
+      await expect(modalB).toHaveAttribute('data-match-id', midMatchId!, { timeout: 10_000 });
+      await expect(modalB).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
 
-    // Open Client B while balls on Client A are still in motion
-    await pageB.waitForTimeout(350);
-    modalB = await openBilliardsModal(pageB);
-    await expect(modalB).toHaveAttribute('data-match-id', midMatchId!, { timeout: 10_000 });
-    await expect(modalB).toHaveAttribute('data-phase', 'moving', { timeout: 5_000 });
+      // Wait for both clients to settle in sync
+      await expect(modalA).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+      await expect(modalB).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
+      await expect
+        .poll(
+          async () => {
+            const svA = await modalA.getAttribute('data-state-version');
+            const svB = await modalB.getAttribute('data-state-version');
+            return svA === svB && Number(svA ?? '0') >= 2;
+          },
+          { timeout: 10_000 },
+        )
+        .toBe(true);
+    }
 
-    // Wait for both clients to settle in sync
-    await expect(modalA).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
-    await expect(modalB).toHaveAttribute('data-phase', 'aim', { timeout: 20_000 });
-    await expect
-      .poll(
-        async () => {
-          const svA = await modalA.getAttribute('data-state-version');
-          const svB = await modalB.getAttribute('data-state-version');
-          return svA === svB && Number(svA ?? '0') >= 2;
-        },
-        { timeout: 10_000 },
-      )
-      .toBe(true);
-
-    // 4) Safari background/SSE+WS termination -> visibilitychange/pageshow/online resume recovery
+    // 4) Safari background/SSE+WS termination while in active match -> visibilitychange/pageshow/online resume recovery
     await pageB.evaluate(() => {
       const w = window as unknown as {
         __olwHidden?: boolean;
@@ -806,17 +863,15 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
       window.dispatchEvent(new Event('offline'));
     });
 
-    // Client A switches rule to 8ball & starts a new match while Client B's SSE is terminated in background
-    const preBgSeq = Number(await modalA.getAttribute('data-match-seq') ?? '0');
-    await pageA.getByTestId('billiards-menu-btn').click();
-    await pageA.getByTestId('billiards-rule-8ball').click();
-    await expect
-      .poll(async () => Number(await modalA.getAttribute('data-match-seq') ?? '0'), { timeout: 10_000 })
-      .toBeGreaterThan(preBgSeq);
-
-    await pageB.waitForTimeout(250);
-    const newBgMatchId = await modalA.getAttribute('data-match-id');
-    expect(await modalB.getAttribute('data-match-id')).not.toBe(newBgMatchId);
+    // If current turn is B, let Client B wake up first; if A owns turn, Client A shoots while B is offline
+    const preBgOwner = Number(await modalA.getAttribute('data-current-player') ?? '0') as PlayerSlot;
+    const preBgShotSeq = Number(await modalA.getAttribute('data-shot-seq') ?? '0');
+    if (preBgOwner === 0) {
+      const bgState = await resolveCurrentBallsForModal(modalA, wire);
+      await performUiShot(pageA, bgState.balls, (2 * Math.PI) / 180, 0.45);
+      await expect(modalA).toHaveAttribute('data-shot-seq', String(preBgShotSeq + 1), { timeout: 15_000 });
+      await expect(modalA).toHaveAttribute('data-phase', 'aim', { timeout: 15_000 });
+    }
 
     const reqBeforeResume = wire.stateRequestCount;
     await pageB.evaluate(() => {
@@ -826,7 +881,15 @@ test.describe('Billiards V2 multiplayer integration — two independent clients'
       window.dispatchEvent(new Event('online'));
     });
 
-    await waitForMatchConvergence(modalA, modalB, { expectedRule: '8ball' });
+    await waitForMatchConvergence(modalA, modalB, { expectedRule: '9ball' });
+    await expect
+      .poll(
+        async () =>
+          Number(await modalB.getAttribute('data-shot-seq') ?? '0') ===
+          Number(await modalA.getAttribute('data-shot-seq') ?? '0'),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
     expect(wire.stateRequestCount).toBeGreaterThan(reqBeforeResume);
 
     await ctxA.close();
