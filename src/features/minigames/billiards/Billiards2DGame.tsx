@@ -176,6 +176,8 @@ function createSimRuntime(props: BilliardsGameProps): BilliardsSimRuntime {
     proto.currentPlayer = cfg.startingPlayer;
     proto.turnDeadlineMs = Math.max(now, cfg.startAtServerMs) + TURN_DURATION_MS;
   } else {
+    const firstStarter: PlayerSlot =
+      props.mode === 'local_pvp' ? (Math.random() < 0.5 ? 0 : 1) : 0;
     proto = createInitialProtocolState({
       edition: '2d',
       rule: props.initialRule,
@@ -185,8 +187,9 @@ function createSimRuntime(props: BilliardsGameProps): BilliardsSimRuntime {
       nowMs: now,
       hasAuthoritativeMatch: props.mode !== 'online',
       matchSeq: props.mode !== 'online' ? 1 : 0,
-      initiatorSlot: 0,
+      initiatorSlot: firstStarter,
     });
+    proto.currentPlayer = firstStarter;
   }
 
   if (props.recoveredSnapshot && props.recoveredSnapshot.edition !== '3d') {
@@ -2603,7 +2606,8 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                           wantRematch: true,
                         });
                       } else {
-                        const nextStarter: PlayerSlot = winner.slot === 0 ? 1 : 0;
+                        const nextStarter: PlayerSlot =
+                          mode === 'practice' ? 0 : (getSim().proto.initiatorSlot === 0 ? 1 : 0);
                         startNewMatch(rule, nextStarter);
                       }
                     }}
@@ -2658,7 +2662,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                     data-testid="billiards-rule-8ball"
                     onClick={() => {
                       setShowMenu(false);
-                      startNewMatch('8ball', 0);
+                      const nextStarter: PlayerSlot =
+                        mode === 'practice' ? 0 : (getSim().proto.initiatorSlot === 0 ? 1 : 0);
+                      startNewMatch('8ball', nextStarter);
                     }}
                     className={`olw-billiards-pill${rule === '8ball' ? ' olw-billiards-pill--active' : ''}`}
                   >
@@ -2669,7 +2675,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                     data-testid="billiards-rule-9ball"
                     onClick={() => {
                       setShowMenu(false);
-                      startNewMatch('9ball', 0);
+                      const nextStarter: PlayerSlot =
+                        mode === 'practice' ? 0 : (getSim().proto.initiatorSlot === 0 ? 1 : 0);
+                      startNewMatch('9ball', nextStarter);
                     }}
                     className={`olw-billiards-pill${rule === '9ball' ? ' olw-billiards-pill--active' : ''}`}
                   >
@@ -2744,7 +2752,9 @@ export const Billiards2DGame: React.FC<BilliardsGameProps> = (props) => {
                 data-testid="billiards-new-match"
                 onClick={() => {
                   setShowMenu(false);
-                  startNewMatch(rule, 0);
+                  const nextStarter: PlayerSlot =
+                    mode === 'practice' ? 0 : (getSim().proto.initiatorSlot === 0 ? 1 : 0);
+                  startNewMatch(rule, nextStarter);
                 }}
                 className="olw-billiards-btn-cozy"
               >

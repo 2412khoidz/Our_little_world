@@ -295,7 +295,6 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
         playerSlot: localPlayerSlot,
         edition,
         rule,
-        startingPlayer: 0,
         assetsReady: false,
       });
       sync.requestLobbySync();
@@ -335,7 +334,6 @@ const BilliardsModalInner: React.FC<BilliardsModalProps> = ({
       playerSlot: localPlayerSlot,
       edition,
       rule,
-      startingPlayer: 0,
       assetsReady: false,
     });
   };

@@ -393,3 +393,20 @@ Di chuyển thường giới hạn 8 Hz, ngưỡng 2 px tích lũy và cập nh�
   - Kiểm tra trực quan 7 ảnh PNG (`portrait` `430×932` & `landscape` `844×390`) và video `.webm` xác nhận bàn 3D giữ chiều sâu thành gỗ/lỗ bi rõ nét ở mọi pha và không che lấp HUD.
 - **Chưa kiểm chứng trên thiết bị thật:** Chưa playtest trên phần cứng **iPhone 16 Pro Max Safari / PWA Add to Home Screen** hoặc Android thật, và chưa kiểm tra qua Supabase Cloud thật.
 
+## 18. Billiards V4.1 — Fair Starting Player Selection & Alternating Rematches (`feat/billiards-v4-camera`)
+
+- **Vấn đề giải quyết:** Trước đây Mây luôn là người khai cuộc mặc định ở mọi ván đấu.
+- **Giải pháp tối thiểu:**
+  - **Ván đầu tiên:** Lựa chọn ngẫu nhiên xác suất 50/50 giữa Mây (slot 0) và Nắng (slot 1) trong chế độ 2 người cùng máy (`local_pvp`) và online.
+  - **Tái đấu (Rematch) & Chơi ván mới:** Luôn luân phiên người khai cuộc (`initiatorSlot === 0 ? 1 : 0`), không phụ thuộc vào người thắng ván trước.
+  - **Chế độ Luyện tập (Practice):** Luôn luôn bắt đầu với người chơi (slot 0) và mở sẵn quyền di chuyển bi cái (`canMoveCueBall === true`).
+  - **Đồng bộ Online & Điều phối viên có thẩm quyền (Authoritative Coordinator):** Tính ngẫu nhiên ban đầu của ván online được giải quyết duy nhất 1 lần trên server (`devLanBilliardsLobby.mjs`), truyền đồng bộ qua `billiards:lobby_state` cho cả hai client nhận diện chính xác cùng một người khai cuộc; giữ nguyên lựa chọn người khai cuộc rõ ràng của người chơi khi bấm chọn trên giao diện lobby; tái đấu online tự động luân phiên người khai cuộc dựa trên ván trước.
+  - **Nhất quán 2D và 3D:** Triển khai giống hệt nhau trên cả `Billiards2DGame.tsx` và `Billiards3DGame.tsx`.
+- **Kiểm chứng cục bộ (DoD):**
+  - `npm run typecheck` (`tsc -b`): **Pass** (exit `0`).
+  - `npm run lint`: **Pass** (`0` errors).
+  - Focused Vitest: `tests/unit/billiardsStartingPlayer.test.ts` (7/7 tests pass: xác nhận phân phối 50/50 qua 200 mẫu, practice slot 0, rematch luân phiên, server coordinator sync & explicit selection), `tests/unit/billiardsLobbyProtocol.test.ts`, `tests/unit/billiardsProtocol.test.ts`, `tests/server/billiardsLobbyWs.test.ts`.
+  - Playwright E2E: `tests/e2e/billiards-multiplayer.spec.ts` (3/3 pass), `tests/e2e/billiards-v3-modes.spec.ts` (4/4 pass), `tests/e2e/billiards-v4-camera.spec.ts` (3/3 pass).
+  - `npm run build` + `verify-prod-guard.mjs` + `assets:private:verify`: **Pass** (0 dev leaks).
+
+

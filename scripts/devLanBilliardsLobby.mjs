@@ -21,7 +21,8 @@ function makeLobbyRecord(worldId, nowMs) {
     status: 'idle',
     edition: '2d',
     rule: '8ball',
-    startingPlayer: 0,
+    startingPlayer: Math.random() < 0.5 ? 0 : 1,
+    hasExplicitStartingPlayer: false,
     players: [makeEmptyPlayer(), makeEmptyPlayer()],
     confirmedConfig: null,
     activeMatchId: null,
@@ -221,7 +222,10 @@ export function createDevLanBilliardsLobby({
       if (wasIdle && !other.joined) {
         if (p.edition === '2d' || p.edition === '3d') rec.edition = p.edition;
         if (p.rule === '8ball' || p.rule === '9ball') rec.rule = p.rule;
-        if (p.startingPlayer === 0 || p.startingPlayer === 1) rec.startingPlayer = p.startingPlayer;
+        if ((p.startingPlayer === 0 || p.startingPlayer === 1) && p.hasExplicitStartingPlayer) {
+          rec.startingPlayer = p.startingPlayer;
+          rec.hasExplicitStartingPlayer = true;
+        }
       }
       if (rec.status === 'idle') rec.status = 'lobby';
       emitLobbyState(rec);
@@ -259,6 +263,7 @@ export function createDevLanBilliardsLobby({
       rec.edition = nextEdition;
       rec.rule = nextRule;
       rec.startingPlayer = nextStart;
+      rec.hasExplicitStartingPlayer = true;
       rec.status = 'lobby';
       for (const pl of rec.players) {
         pl.ready = false;
@@ -316,6 +321,8 @@ export function createDevLanBilliardsLobby({
         rec.confirmedConfig = null;
         rec.activeMatchId = null;
         rec.lastMatchSnapshot = null;
+        rec.startingPlayer = Math.random() < 0.5 ? 0 : 1;
+        rec.hasExplicitStartingPlayer = false;
         rec.players[actorSlot].joined = true;
         rec.players[actorSlot].connected = true;
         for (const pl of rec.players) {
@@ -336,6 +343,8 @@ export function createDevLanBilliardsLobby({
           rec.confirmedConfig = null;
           rec.activeMatchId = null;
           rec.lastMatchSnapshot = null;
+          rec.startingPlayer = Math.random() < 0.5 ? 0 : 1;
+          rec.hasExplicitStartingPlayer = false;
         }
       }
       emitLobbyState(rec);
@@ -361,8 +370,9 @@ export function createDevLanBilliardsLobby({
         p0.assetsReady &&
         p1.assetsReady
       ) {
-        const nextStarter = rec.startingPlayer === 0 ? 1 : 0;
+        const nextStarter = (rec.confirmedConfig?.startingPlayer ?? rec.startingPlayer) === 0 ? 1 : 0;
         rec.startingPlayer = nextStarter;
+        rec.hasExplicitStartingPlayer = true;
         p0.wantRematch = false;
         p1.wantRematch = false;
         p0.ready = true;

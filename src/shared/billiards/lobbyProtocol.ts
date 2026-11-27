@@ -322,8 +322,8 @@ export function applyLobbyRematch(
   state: BilliardsLobbyState,
   payload: LobbyRematchPayload,
   nowMs: number,
-  nextStartingPlayer: PlayerSlot,
-  nextMatchMeta: NextLobbyMatchMeta,
+  nextStartingPlayer?: PlayerSlot,
+  nextMatchMeta?: NextLobbyMatchMeta,
 ): { accepted: boolean; nextState: BilliardsLobbyState; startedCountdown: boolean } {
   const next = cloneLobby(state, nowMs);
   if (next.activeMatchId !== payload.matchId && next.confirmedConfig?.matchId !== payload.matchId) {
@@ -343,9 +343,17 @@ export function applyLobbyRematch(
     p0.assetsReady &&
     p1.assetsReady
   ) {
-    next.startingPlayer = nextStartingPlayer;
+    const resolvedNextStarter: PlayerSlot =
+      nextStartingPlayer ?? ((state.confirmedConfig?.startingPlayer ?? state.startingPlayer) === 0 ? 1 : 0);
+    const meta: NextLobbyMatchMeta = nextMatchMeta ?? {
+      matchId: `m-${nowMs}`,
+      matchSeq: (state.confirmedConfig?.matchSeq ?? 0) + 1,
+      rackSeed: (state.confirmedConfig?.rackSeed ?? 0) + 1,
+      scores: state.confirmedConfig?.scores ?? [0, 0],
+    };
+    next.startingPlayer = resolvedNextStarter;
     next.status = 'countdown';
-    next.confirmedConfig = buildConfirmedConfig(next, nextStartingPlayer, nowMs, nextMatchMeta);
+    next.confirmedConfig = buildConfirmedConfig(next, resolvedNextStarter, nowMs, meta);
     next.activeMatchId = next.confirmedConfig.matchId;
     p0.wantRematch = false;
     p1.wantRematch = false;

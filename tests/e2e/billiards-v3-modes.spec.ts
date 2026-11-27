@@ -284,6 +284,7 @@ test.describe('Billiards V3 — Entry Menu, Modes, Controls, 3D Edition & Mobile
     await pageA.getByTestId('billiards-start-btn').click();
     await expect(pageA.getByTestId('billiards-online-lobby')).toBeVisible({ timeout: 10_000 });
     await pageA.getByTestId('lobby-edition-3d').click();
+    await pageA.getByTestId('lobby-starter-0').click();
     await pageA.getByTestId('billiards-invite-partner').click();
 
     // Client B receives overworld invite toast & clicks accept -> goes to lobby

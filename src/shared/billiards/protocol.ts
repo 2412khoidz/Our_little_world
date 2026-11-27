@@ -157,7 +157,7 @@ export function createInitialProtocolState(params: {
     balls: createRackForEdition(edition, rule, seed),
     preShotBalls: null,
     groups: [null, null],
-    currentPlayer: 0,
+    currentPlayer: params.initiatorSlot ?? 0,
     canMoveCueBall: false,
     isBreakShot: true,
     turnDeadlineMs: params.nowMs + TURN_DURATION_MS,
