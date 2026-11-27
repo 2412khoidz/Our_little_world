@@ -1,4 +1,4 @@
-import type { ContainerKind, PhysicalBackpack, PhysicalCommand, PhysicalStack, PhysicalDefinition } from './physicalInventory';
+import type { ContainerKind, PhysicalBackpack, PhysicalCommand, PhysicalStack, PhysicalDefinition, PhysicalDrop } from './physicalInventory';
 
 export interface PhysicalStorageQuery {
   readonly storage: 'home' | 'overflow';
@@ -25,6 +25,8 @@ export interface PhysicalInventoryView {
   readonly storage: { readonly kind: Exclude<ContainerKind, 'backpack'>; readonly page: number; readonly pages: number; readonly slots: readonly PhysicalSlotView[] } | null;
   readonly definitions: Readonly<Record<string, PhysicalDefinition>>;
   readonly categories: readonly string[];
+  readonly nearbyDrops: readonly PhysicalDrop[];
+  readonly canDrop: boolean;
 }
 
 export interface PhysicalInventoryRequest {

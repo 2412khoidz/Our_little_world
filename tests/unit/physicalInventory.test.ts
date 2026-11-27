@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canStackPhysical, debitPhysicalBackpackSlot, editBasicPhysicalInventory, migratePhysicalInventory,
+  canStackPhysical, debitPhysicalBackpackSlot, migratePhysicalInventory,
   PhysicalInventoryEdit, physicalHotbarIndices, physicalSlots, playerBackpack, readPhysicalContainer,
   type LegacyPhysicalEntry, type PhysicalCommand, type PhysicalInventory, type PhysicalStack,
 } from '../../src/shared/inventory/physicalInventory';
+
+import { editPhysicalInventory, reservePhysicalIngredients } from '../../src/shared/inventory/physicalInventoryLifecycle';
 
 const catalog = new Map([
   ['seed_wheat', { name: 'Hạt lúa', stackLimit: 10, category: 'seed' }],
@@ -19,7 +21,7 @@ const read = (state: PhysicalInventory, kind: 'home' | 'backpack' | 'overflow' =
   readPhysicalContainer(state, kind, actor);
 const apply = (state: PhysicalInventory, command: PhysicalCommand, actor = 'may', atHome = true) => {
   const edit = new PhysicalInventoryEdit(state, actor, catalog, atHome);
-  editBasicPhysicalInventory(edit, command);
+  editPhysicalInventory(edit, command, null);
   return edit.finish();
 };
 const qty = (state: PhysicalInventory) => Object.values(state.containers)
@@ -107,5 +109,52 @@ describe('Physical inventory foundation', () => {
       const ids = Object.values(state.containers).flatMap(physicalSlots).map(({ stack }) => stack.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
+  });
+});
+
+describe('Physical storage lifecycle', () => {
+  it('leaves favorites and locked slots out of bulk deposit, and protects discards', () => {
+    let state = create(wheat(25, 'user:may'), wheat(1));
+    const first = read(state).slots[0]!;
+    state = apply(state, { kind: 'favorite', at: pack(0), stackId: first.id });
+    state = apply(state, { kind: 'lock_slot', at: pack(1) });
+    state = apply(state, { kind: 'deposit', matchingOnly: true });
+    expect(qty(state)).toBe(26);
+    expect(read(state).slots[0]?.qty).toBe(10);
+    expect(read(state).slots[1]?.qty).toBe(10);
+    expect(read(state).slots[2]).toBeUndefined();
+    expect(() => apply(state, { kind: 'discard', from: pack(0), qty: 1, stackId: first.id, confirm: true })).toThrow('bảo vệ');
+  });
+
+  it('leaves the rest of a drop on the ground after partial pickup', () => {
+    let state = create(wheat(179, 'user:may'), wheat(10, 'user:nang'));
+    const position = { mapId: 'garden', x: 80, y: 80 };
+    const maker = new PhysicalInventoryEdit(state, 'nang', catalog, false);
+    const seed = read(state, 'backpack', 'nang').slots[0]!;
+    editPhysicalInventory(maker, { kind: 'drop', from: pack(0), qty: 10, stackId: seed.id }, position);
+    state = maker.finish();
+    const drop = Object.values(state.drops!)[0]!;
+    expect(() => editPhysicalInventory(new PhysicalInventoryEdit(state, 'may', catalog, false),
+      { kind: 'pickup', dropId: drop.id }, { ...position, x: 500 })).toThrow('xa');
+    const picker = new PhysicalInventoryEdit(state, 'may', catalog, false);
+    editPhysicalInventory(picker, { kind: 'pickup', dropId: drop.id }, position);
+    state = picker.finish();
+    expect(state.drops?.[drop.id]?.stack.qty).toBe(9);
+    expect(qty(state)).toBe(180);
+    expect(() => editPhysicalInventory(new PhysicalInventoryEdit(state, 'may', catalog, false),
+      { kind: 'pickup', dropId: drop.id }, position)).toThrow('đầy');
+  });
+
+  it('reserves from authorized nearby storage and preserves metadata in the reservation', () => {
+    const data = create({
+      worldId: 'world', ownerScope: 'shared', itemSku: 'apple', quality: 'gold', qty: 2, metadata: { cultivar: 'honey' },
+    });
+    const recipe = [{ sku: 'apple', qty: 1 }];
+    expect(() => reservePhysicalIngredients(new PhysicalInventoryEdit(data, 'may', catalog, false), recipe, true)).toThrow('Thiếu');
+    const edit = new PhysicalInventoryEdit(data, 'may', catalog, true);
+    const reserved = reservePhysicalIngredients(edit, recipe, true);
+    expect(reserved[0]?.stack).toMatchObject({ qty: 1, quality: 'gold', metadata: { cultivar: 'honey' } });
+    expect(qty(data)).toBe(2);
+    expect(qty(edit.finish())).toBe(1);
   });
 });

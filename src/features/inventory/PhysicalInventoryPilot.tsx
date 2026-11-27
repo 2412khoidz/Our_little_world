@@ -49,6 +49,8 @@ export default function PhysicalInventoryPilot({
   const [query, setQuery] = useState(INITIAL_PHYSICAL_QUERY);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [lockedSlot, setLockedSlot] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const sequence = useRef(0);
   const applying = useRef(false);
@@ -81,6 +83,7 @@ export default function PhysicalInventoryPilot({
         if (request === sequence.current) setView((old) => preferPhysicalSnapshot(old, result.data));
         else void refresh();
         setSelection(null);
+        setConfirmDiscard(false);
         if (command.kind === 'rotate') setEquipped(null);
       } else {
         setMessage(result.message);
@@ -131,6 +134,12 @@ export default function PhysicalInventoryPilot({
 
   function pick(address: PhysicalSlotAddress, cell: PhysicalSlotView, single: boolean) {
     if (busy) return;
+    setConfirmDiscard(false);
+    if (address.container === 'backpack' && !held && (!cell.stack || cell.locked)) {
+      setLockedSlot(address.index);
+      return;
+    }
+    setLockedSlot(null);
     if (held) {
       if (held.address.container === address.container && held.address.index === address.index) {
         setSelection(null);
@@ -148,12 +157,13 @@ export default function PhysicalInventoryPilot({
     const address = { container, index: cell.index };
     const stack = cell.stack;
     const name = stack ? view?.definitions[stack.itemSku]?.name ?? stack.itemSku : 'Ô trống';
-    const selected = held?.address.container === container && held.address.index === cell.index;
+    const selected = (held?.address.container === container && held.address.index === cell.index)
+      || (container === 'backpack' && !held && lockedSlot === cell.index);
     return (
       <button key={cell.index} type="button" className={`nuvora-sl ${selected ? 'nuvora-sl--selected' : ''}`}
         data-testid={`physical-${container}-${cell.index}`} data-qty={stack?.qty ?? 0}
         aria-label={`${CONTAINER_LABEL[container]} ô ${cell.index + 1}, ${name}${stack ? ` ×${stack.qty}` : ''}`}
-        aria-pressed={selected} draggable={Boolean(stack && !cell.locked && !busy)}
+        aria-pressed={selected} data-locked={cell.locked || undefined} draggable={Boolean(stack && !cell.locked && !busy)}
         onClick={() => pick(address, cell, false)}
         onContextMenu={(event) => { event.preventDefault(); pick(address, cell, true); }}
         onPointerCancel={() => { dragging.current = null; }}
@@ -173,6 +183,7 @@ export default function PhysicalInventoryPilot({
         }}>
         {stack && <CatalogSkuIcon sku={stack.itemSku} size={25} />}
         {stack && stack.qty > 1 && <b className="nuvora-sl__qty">{stack.qty}</b>}
+        {(cell.locked || stack?.favorite) && <span className="physical-slot-lock" aria-hidden>{cell.locked ? '🔒' : '♥'}</span>}
         {stack?.quality !== undefined && stack.quality !== 'normal' &&
           <span className="physical-slot-mark" aria-hidden>{stack.quality === 'gold' ? '★' : '◆'}</span>}
       </button>
@@ -199,7 +210,9 @@ export default function PhysicalInventoryPilot({
           title="Tab khi đang điều khiển nhân vật" onClick={() => void apply({ kind: 'rotate', direction: 1 })}>
           Hàng {activeRow + 1} ↻
         </button>
-        <button className="btn btn--primary btn--sm" type="button" onClick={onOpen}>Ba lô</button>
+        <button className="btn btn--primary btn--sm" type="button" onClick={onOpen}>
+          Ba lô{view?.nearbyDrops.length ? ` · ${view.nearbyDrops.length} đồ gần đây` : ''}
+        </button>
       </div>
     )}
     {open && (
@@ -207,9 +220,10 @@ export default function PhysicalInventoryPilot({
         <div className="nuvora-desk physical-inventory-panel" data-testid="physical-inventory-modal">
           <header className="nuvora-desk__title-row">
             <h2 className="nuvora-desk__title">Ba lô và kho</h2>
-            <button className="btn btn--secondary btn--sm" type="button" onClick={() => { setSelection(null); onClose(); }}>Đóng</button>
+            <button className="btn btn--secondary btn--sm" type="button" onClick={() => { setSelection(null); setConfirmDiscard(false); setLockedSlot(null); onClose(); }}>Đóng</button>
           </header>
           {message && <p role="status">{message}</p>}
+          {view && <button type="button" className="btn btn--secondary btn--sm" onClick={() => void refresh()}>Làm mới</button>}
           {!view && <button className="btn btn--secondary btn--sm" type="button" onClick={() => void refresh()}>Tải lại</button>}
           {view && <>
             <section aria-label="Ba lô">
@@ -217,11 +231,19 @@ export default function PhysicalInventoryPilot({
                 <strong>Ba lô · Hàng đang dùng {activeRow + 1}</strong>
                 <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
                   onClick={() => void apply({ kind: 'rotate', direction: 1 })}>Đổi hàng</button>
+                <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                  onClick={() => void apply({ kind: 'organize', container: 'backpack' })}>Sắp xếp</button>
                 {shortcuts.length > 0 && <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
                   onClick={() => void apply({ kind: 'import_shortcuts', shortcuts })}>Lấy món từ ô nhanh cũ</button>}
               </div>
               <div className="physical-slot-grid">{view.backpack.map((cell) => drawCell(cell, 'backpack'))}</div>
             </section>
+            {!held && lockedSlot !== null && (
+              <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                onClick={() => void apply({ kind: 'lock_slot', at: { container: 'backpack', index: lockedSlot } })}>
+                {view.backpack[lockedSlot]?.locked ? 'Mở khóa ô' : 'Khóa ô trống'}
+              </button>
+            )}
             {held && source?.stack && (
               <div className="physical-inventory-actions" aria-label="Món đang chọn">
                 <span>{view.definitions[source.stack.itemSku]?.name ?? source.stack.itemSku} · chọn {held.qty}</span>
@@ -232,13 +254,55 @@ export default function PhysicalInventoryPilot({
                 {view.atHome && <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
                   onClick={() => void apply({ kind: 'transfer', from: held.address, stackId: held.stackId, qty: held.qty,
                     to: held.address.container === 'backpack' ? 'home' : 'backpack' })}>Chuyển nhanh</button>}
-                <button type="button" className="btn btn--secondary btn--sm" onClick={() => setSelection(null)}>Bỏ chọn</button>
+                {held.address.container === 'backpack' && <>
+                  <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                    onClick={() => void apply({ kind: 'favorite', at: held.address, stackId: held.stackId })}>
+                    {source.stack.favorite ? 'Bỏ yêu thích' : 'Yêu thích'}
+                  </button>
+                  <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                    onClick={() => void apply({ kind: 'lock_slot', at: held.address })}>Khóa ô</button>
+                  {!source.stack.favorite && !view.definitions[source.stack.itemSku]?.essential && <>
+                    <label>Số lượng <input aria-label="Số lượng đang chọn" type="number" min={1} max={source.stack.qty}
+                      value={held.qty} onChange={(event) => {
+                        const qty = Number(event.target.value);
+                        if (Number.isInteger(qty) && qty >= 1 && qty <= source.stack!.qty) setSelection({ ...held, qty });
+                        setConfirmDiscard(false);
+                      }} /></label>
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={busy || !view.canDrop}
+                      onClick={() => void apply({ kind: 'drop', from: held.address, qty: held.qty, stackId: held.stackId })}>Thả</button>
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                      onClick={() => setConfirmDiscard(true)}>Bỏ vĩnh viễn…</button>
+                    {confirmDiscard && <button type="button" className="btn btn--primary btn--sm" disabled={busy}
+                      onClick={() => void apply({ kind: 'discard', from: held.address, qty: held.qty, stackId: held.stackId, confirm: true })}>
+                      Xác nhận bỏ {held.qty} món
+                    </button>}
+                  </>}
+                </>}
+                <button type="button" className="btn btn--secondary btn--sm" onClick={() => { setSelection(null); setConfirmDiscard(false); }}>Bỏ chọn</button>
               </div>
             )}
+            {view.nearbyDrops.length > 0 && <section aria-label="Đồ rơi gần đây">
+              <div className="physical-inventory-actions">
+                {view.nearbyDrops.map((drop) => (
+                  <button type="button" key={drop.id} className="btn btn--secondary btn--sm" disabled={busy}
+                    onClick={() => void apply({ kind: 'pickup', dropId: drop.id })}>
+                    Nhặt {view.definitions[drop.stack.itemSku]?.name ?? drop.stack.itemSku} ×{drop.stack.qty}
+                  </button>
+                ))}
+              </div>
+            </section>}
             {storage ? (
               <section aria-label={CONTAINER_LABEL[storage.kind]}>
                 <div className="physical-inventory-actions">
                   <strong>{CONTAINER_LABEL[storage.kind]}</strong>
+                  {storage.kind === 'home' && <>
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                      onClick={() => void apply({ kind: 'deposit', matchingOnly: true })}>Cất món cùng loại</button>
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                      onClick={() => void apply({ kind: 'deposit', matchingOnly: false })}>Cất nhanh tất cả</button>
+                  </>}
+                  <button type="button" className="btn btn--secondary btn--sm" disabled={busy}
+                    onClick={() => void apply({ kind: 'organize', container: storage.kind })}>Xếp kho</button>
                   <button type="button" className="btn btn--secondary btn--sm" onClick={() => {
                     setSelection(null);
                     setQuery({ storage: storage.kind === 'home' ? 'overflow' : 'home', page: 0, search: '' });

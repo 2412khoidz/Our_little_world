@@ -71,7 +71,7 @@ test('real slots persist across row rotation and only one client withdraws the l
     const [a, b] = await Promise.all([withdraw(page, may, 'last-a'), withdraw(other, nang, 'last-b')]);
     expect([a.status(), b.status()].sort()).toEqual([200, 409]);
     const winner = a.ok() ? [page, may, 'last-a'] as const : [other, nang, 'last-b'] as const;
-    expect((await withdraw(...winner)).ok()).toBe(true);
+    expect((await withdraw(winner[0], winner[1], winner[2])).ok()).toBe(true);
     const aInventory = await getA();
     const bInventory = await getB();
     expect(aInventory.storage?.slots.find(({ index }) => index === seedIndex)?.stack).toBeNull();
@@ -83,5 +83,56 @@ test('real slots persist across row rotation and only one client withdraws the l
     await expect(page.getByRole('button', { name: 'Hàng 2 ↻' })).toBeVisible();
   } finally {
     await secondContext.close();
+  }
+});
+
+test('dropping and concurrent pickup move the same unique stack once', async ({ page, request, browser, baseURL }) => {
+  test.setTimeout(60_000);
+  expect((await request.post(api + '/reset', { data: {} })).ok()).toBe(true);
+  const seed = await request.post(api + '/seed-couple', { data: {} });
+  const worldId = (await seed.json()).data.world.id as string;
+  const ctx = await browser.newContext({ baseURL });
+  try {
+    const other = await ctx.newPage();
+    await enter(page, 'partner-a');
+    await enter(other, 'partner-b');
+    const getA = () => getInventory(request, worldId, may);
+    const getB = () => getInventory(request, worldId, nang);
+    // Normal movement packets are emitted by the game canvas and accepted by the existing relay.
+    for (const client of [page, other]) await client.keyboard.press('ArrowRight', { delay: 180 });
+    await expect.poll(async () => (await getA()).canDrop).toBe(true);
+    await expect.poll(async () => (await getB()).canDrop).toBe(true);
+    const send = (client: Page, actor: string, version: number, key: string, command: PhysicalInventoryRequest['command']) =>
+      client.request.post(api + '/inventory/physical', {
+        headers: headers(actor), data: { worldId, version, idempotencyKey: key, command, query: INITIAL_PHYSICAL_QUERY },
+      });
+    const initial = await getA();
+    const seedStack = initial.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat')!;
+    const took = await send(page, may, initial.version, 'withdraw', {
+      kind: 'transfer', from: { container: 'home', index: seedStack.index },
+      to: 'backpack', qty: 5, stackId: seedStack.stack!.id,
+    });
+    expect(took.ok()).toBe(true);
+    const afterWithdraw = await getA();
+    const stack = afterWithdraw.backpack.find((cell) => cell.stack?.itemSku === 'seed_wheat')!;
+    const dropped = await send(page, may, afterWithdraw.version, 'drop', {
+      kind: 'drop', from: { container: 'backpack', index: stack.index }, qty: 5, stackId: stack.stack!.id,
+    });
+    expect(dropped.ok(), await dropped.text()).toBeTruthy();
+    const afterDrop = await getA();
+    const observed = await getB();
+    expect(afterDrop.nearbyDrops).toHaveLength(1);
+    const dropId = afterDrop.nearbyDrops[0]!.id;
+    expect(observed.nearbyDrops.some((drop) => drop.id === dropId)).toBe(true);
+    const [a, b] = await Promise.all([
+      send(page, may, afterDrop.version, 'pickup-a', { kind: 'pickup', dropId }),
+      send(other, nang, observed.version, 'pickup-b', { kind: 'pickup', dropId }),
+    ]);
+    expect([a.status(), b.status()].sort()).toEqual([200, 409]);
+    const totals = [...(await getA()).backpack, ...(await getB()).backpack];
+    expect(totals.filter(({ stack }) => stack?.itemSku === 'seed_wheat').map(({ stack }) => stack?.qty)).toEqual([5]);
+    expect((await getA()).nearbyDrops).toHaveLength(0);
+  } finally {
+    await ctx.close();
   }
 });

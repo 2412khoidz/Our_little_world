@@ -949,11 +949,11 @@ export function createDevLanWsHub({
     },
     getActivePlayerPosition(worldId, userId) {
       const room = rooms.get(worldId);
-      if (!room) return null;
+      if (!room || !Array.from(room.slots.values()).some((slot) => slot.userId === userId && !slot.closing)) return null;
       const present = buildAuthoritativePresences(worldId).find((entry) => entry.userId === userId);
       if (!present) return null;
       const packet = room.lastMovementByUser.get(userId);
-      return packet?.mapId === present.mapId
+      return packet?.mapId === present.mapId && packet.sessionId === present.sessionId
         ? { mapId: present.mapId, x: packet.x, y: packet.y }
         : { mapId: present.mapId };
     },

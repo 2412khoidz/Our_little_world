@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import {
-  editBasicPhysicalInventory, migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
+  migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
   physicalSlots, playerBackpack, readPhysicalContainer, STORAGE_PAGE_SIZE,
   type LegacyPhysicalEntry, type PhysicalCatalog, type PhysicalInventory,
 } from '../shared/inventory/physicalInventory';
+import { canReachDrop, editPhysicalInventory, positionIsUsable } from '../shared/inventory/physicalInventoryLifecycle';
 import type {
   PhysicalStorageQuery, PhysicalInventoryView, PhysicalSlotView,
 } from '../shared/inventory/physicalInventoryApi';
@@ -36,6 +37,13 @@ const inputSchema = z.strictObject({
     z.strictObject({ kind: z.literal('import_shortcuts'), shortcuts: z.array(z.strictObject({
       index, itemSku: identifier, ownerScope, quality,
     })).max(9) }),
+    z.strictObject({ kind: z.literal('favorite'), at: slot, stackId: identifier }),
+    z.strictObject({ kind: z.literal('lock_slot'), at: slot }),
+    z.strictObject({ kind: z.literal('organize'), container: kind }),
+    z.strictObject({ kind: z.literal('deposit'), matchingOnly: z.boolean() }),
+    z.strictObject({ kind: z.literal('drop'), ...stackSource }),
+    z.strictObject({ kind: z.literal('pickup'), dropId: identifier }),
+    z.strictObject({ kind: z.literal('discard'), ...stackSource, confirm: z.literal(true) }),
   ]),
 });
 
@@ -112,7 +120,10 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
       : Array.from({ length: STORAGE_PAGE_SIZE }, (_, i) => fullSlot(shelf, start + i));
     storage = { kind: query.storage, page, pages, slots };
   }
+  const position = positionIsUsable(ctx.position) ? ctx.position : null;
+  const nearbyDrops = position ? Object.values(state.drops ?? {}).filter((drop) => canReachDrop(drop, position)) : [];
   const visible = [...backpack, ...(storage?.slots ?? [])].flatMap(({ stack }) => stack ? [stack.itemSku] : []);
+  visible.push(...nearbyDrops.map(({ stack }) => stack.itemSku));
   const definitions = Object.fromEntries([...new Set(visible)].flatMap((sku) => {
     const item = catalog.get(sku);
     return item ? [[sku, item]] : [];
@@ -120,7 +131,7 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
   return {
     worldId: ctx.worldId, version: state.version, atHome,
     player: playerBackpack(state, ctx.userId), coins: ctx.db.v015.wallets[ctx.worldId]?.coins ?? 0,
-    backpack, storage, definitions, categories,
+    backpack, storage, definitions, categories, nearbyDrops, canDrop: position !== null,
   };
 }
 
@@ -221,7 +232,7 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       return true;
     }
     const edit = new PhysicalInventoryEdit(state, ctx.userId, catalog, ctx.position?.mapId === 'home');
-    editBasicPhysicalInventory(edit, input.command);
+    editPhysicalInventory(edit, input.command, positionIsUsable(ctx.position) ? ctx.position : null);
     const next = edit.finish();
     v015.physicalInventory[worldId] = next;
     receipts[receiptKey] = { actor: ctx.userId, fingerprint };
