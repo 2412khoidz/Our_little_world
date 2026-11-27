@@ -31,5 +31,8 @@ export function createWorldGame(parent: HTMLElement): Phaser.Game {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   game.canvas.style.imageRendering = 'pixelated';
   game.canvas.dataset.cappedDpr = String(dpr);
+  if (import.meta.env.DEV) {
+    (window as unknown as Record<string, unknown>).__OLW_DEV_GAME__ = game;
+  }
   return game;
 }

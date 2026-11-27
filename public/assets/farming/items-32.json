@@ -1,8 +1,28 @@
 {
   "frames": {
-    "apple_pie": {
+    "angora_yarn": {
       "frame": {
         "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "apple_pie": {
+      "frame": {
+        "x": 32,
         "y": 0,
         "w": 32,
         "h": 32
@@ -22,7 +42,7 @@
     },
     "bait_free_worm": {
       "frame": {
-        "x": 32,
+        "x": 64,
         "y": 0,
         "w": 32,
         "h": 32
@@ -42,7 +62,7 @@
     },
     "basil": {
       "frame": {
-        "x": 64,
+        "x": 96,
         "y": 0,
         "w": 32,
         "h": 32
@@ -62,7 +82,7 @@
     },
     "beet_sugar": {
       "frame": {
-        "x": 96,
+        "x": 128,
         "y": 0,
         "w": 32,
         "h": 32
@@ -82,7 +102,27 @@
     },
     "bread": {
       "frame": {
-        "x": 128,
+        "x": 160,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "bridal_rose_bouquet": {
+      "frame": {
+        "x": 192,
         "y": 0,
         "w": 32,
         "h": 32
@@ -102,7 +142,7 @@
     },
     "broccoli": {
       "frame": {
-        "x": 160,
+        "x": 224,
         "y": 0,
         "w": 32,
         "h": 32
@@ -122,7 +162,7 @@
     },
     "cabbage": {
       "frame": {
-        "x": 192,
+        "x": 256,
         "y": 0,
         "w": 32,
         "h": 32
@@ -142,7 +182,7 @@
     },
     "cheese": {
       "frame": {
-        "x": 224,
+        "x": 288,
         "y": 0,
         "w": 32,
         "h": 32
@@ -162,7 +202,7 @@
     },
     "cheese_omelette": {
       "frame": {
-        "x": 256,
+        "x": 320,
         "y": 0,
         "w": 32,
         "h": 32
@@ -182,7 +222,7 @@
     },
     "chocolate_cake": {
       "frame": {
-        "x": 288,
+        "x": 352,
         "y": 0,
         "w": 32,
         "h": 32
@@ -202,7 +242,27 @@
     },
     "chocolate_truffle": {
       "frame": {
-        "x": 320,
+        "x": 384,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "cocoa_bean": {
+      "frame": {
+        "x": 416,
         "y": 0,
         "w": 32,
         "h": 32
@@ -222,7 +282,7 @@
     },
     "cocoa_powder": {
       "frame": {
-        "x": 352,
+        "x": 448,
         "y": 0,
         "w": 32,
         "h": 32
@@ -242,7 +302,7 @@
     },
     "cornbread": {
       "frame": {
-        "x": 384,
+        "x": 480,
         "y": 0,
         "w": 32,
         "h": 32
@@ -262,66 +322,6 @@
     },
     "cornmeal": {
       "frame": {
-        "x": 416,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "cozy_feast": {
-      "frame": {
-        "x": 448,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "cozy_sweater": {
-      "frame": {
-        "x": 480,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "fig_tart": {
-      "frame": {
         "x": 0,
         "y": 32,
         "w": 32,
@@ -340,9 +340,89 @@
         "h": 32
       }
     },
-    "gift_star_jar": {
+    "cozy_feast": {
       "frame": {
         "x": 32,
+        "y": 32,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "cozy_sweater": {
+      "frame": {
+        "x": 64,
+        "y": 32,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "fig_tart": {
+      "frame": {
+        "x": 96,
+        "y": 32,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "gift_flower_bouquet": {
+      "frame": {
+        "x": 128,
+        "y": 32,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "gift_plush_cat": {
+      "frame": {
+        "x": 160,
         "y": 32,
         "w": 32,
         "h": 32
@@ -362,7 +442,7 @@
     },
     "gift_strawberry_cake": {
       "frame": {
-        "x": 64,
+        "x": 192,
         "y": 32,
         "w": 32,
         "h": 32
@@ -382,7 +462,7 @@
     },
     "herb_butter": {
       "frame": {
-        "x": 96,
+        "x": 224,
         "y": 32,
         "w": 32,
         "h": 32
@@ -402,7 +482,7 @@
     },
     "herb_carp": {
       "frame": {
-        "x": 128,
+        "x": 256,
         "y": 32,
         "w": 32,
         "h": 32
@@ -422,7 +502,7 @@
     },
     "honey_candle": {
       "frame": {
-        "x": 160,
+        "x": 288,
         "y": 32,
         "w": 32,
         "h": 32
@@ -442,7 +522,7 @@
     },
     "honey_ice_cream": {
       "frame": {
-        "x": 192,
+        "x": 320,
         "y": 32,
         "w": 32,
         "h": 32
@@ -462,7 +542,7 @@
     },
     "honey_pancakes": {
       "frame": {
-        "x": 224,
+        "x": 352,
         "y": 32,
         "w": 32,
         "h": 32
@@ -482,7 +562,7 @@
     },
     "koi_bentou": {
       "frame": {
-        "x": 256,
+        "x": 384,
         "y": 32,
         "w": 32,
         "h": 32
@@ -502,7 +582,27 @@
     },
     "koinori_platter": {
       "frame": {
-        "x": 288,
+        "x": 416,
+        "y": 32,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "lavender_candle": {
+      "frame": {
+        "x": 448,
         "y": 32,
         "w": 32,
         "h": 32
@@ -522,7 +622,7 @@
     },
     "lemon_cake": {
       "frame": {
-        "x": 320,
+        "x": 480,
         "y": 32,
         "w": 32,
         "h": 32
@@ -542,8 +642,8 @@
     },
     "letter_stationery_pink": {
       "frame": {
-        "x": 352,
-        "y": 32,
+        "x": 0,
+        "y": 64,
         "w": 32,
         "h": 32
       },
@@ -562,8 +662,8 @@
     },
     "lotus_broth": {
       "frame": {
-        "x": 384,
-        "y": 32,
+        "x": 32,
+        "y": 64,
         "w": 32,
         "h": 32
       },
@@ -582,8 +682,8 @@
     },
     "oat_flour": {
       "frame": {
-        "x": 416,
-        "y": 32,
+        "x": 64,
+        "y": 64,
         "w": 32,
         "h": 32
       },
@@ -602,8 +702,28 @@
     },
     "oats": {
       "frame": {
-        "x": 448,
-        "y": 32,
+        "x": 96,
+        "y": 64,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "olive_oil": {
+      "frame": {
+        "x": 128,
+        "y": 64,
         "w": 32,
         "h": 32
       },
@@ -622,27 +742,7 @@
     },
     "paprika_powder": {
       "frame": {
-        "x": 480,
-        "y": 32,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "pet_kibble_basic": {
-      "frame": {
-        "x": 0,
+        "x": 160,
         "y": 64,
         "w": 32,
         "h": 32
@@ -662,7 +762,7 @@
     },
     "potato_bread": {
       "frame": {
-        "x": 32,
+        "x": 192,
         "y": 64,
         "w": 32,
         "h": 32
@@ -682,7 +782,7 @@
     },
     "potato_starch": {
       "frame": {
-        "x": 64,
+        "x": 224,
         "y": 64,
         "w": 32,
         "h": 32
@@ -702,7 +802,7 @@
     },
     "rabbit_mittens": {
       "frame": {
-        "x": 96,
+        "x": 256,
         "y": 64,
         "w": 32,
         "h": 32
@@ -722,27 +822,7 @@
     },
     "rhubarb": {
       "frame": {
-        "x": 128,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "ribbon": {
-      "frame": {
-        "x": 160,
+        "x": 288,
         "y": 64,
         "w": 32,
         "h": 32
@@ -762,7 +842,7 @@
     },
     "roasted_fish": {
       "frame": {
-        "x": 192,
+        "x": 320,
         "y": 64,
         "w": 32,
         "h": 32
@@ -782,7 +862,7 @@
     },
     "sea_salt": {
       "frame": {
-        "x": 224,
+        "x": 352,
         "y": 64,
         "w": 32,
         "h": 32
@@ -802,7 +882,7 @@
     },
     "spice": {
       "frame": {
-        "x": 256,
+        "x": 384,
         "y": 64,
         "w": 32,
         "h": 32
@@ -822,7 +902,7 @@
     },
     "strawberry_tart": {
       "frame": {
-        "x": 288,
+        "x": 416,
         "y": 64,
         "w": 32,
         "h": 32
@@ -842,86 +922,6 @@
     },
     "tool_basket_orchard": {
       "frame": {
-        "x": 320,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "walnut_cookie": {
-      "frame": {
-        "x": 352,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "water_pitcher": {
-      "frame": {
-        "x": 384,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "wheat": {
-      "frame": {
-        "x": 416,
-        "y": 64,
-        "w": 32,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 32,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 32,
-        "h": 32
-      }
-    },
-    "wood_chair": {
-      "frame": {
         "x": 448,
         "y": 64,
         "w": 32,
@@ -940,7 +940,7 @@
         "h": 32
       }
     },
-    "wool_blanket": {
+    "tulip_bouquet": {
       "frame": {
         "x": 480,
         "y": 64,
@@ -960,7 +960,7 @@
         "h": 32
       }
     },
-    "wool_yarn": {
+    "vinegar": {
       "frame": {
         "x": 0,
         "y": 96,
@@ -980,7 +980,7 @@
         "h": 32
       }
     },
-    "ws_bakery": {
+    "walnut": {
       "frame": {
         "x": 32,
         "y": 96,
@@ -1000,7 +1000,7 @@
         "h": 32
       }
     },
-    "ws_dairy": {
+    "walnut_cookie": {
       "frame": {
         "x": 64,
         "y": 96,
@@ -1020,7 +1020,7 @@
         "h": 32
       }
     },
-    "ws_feed_mill": {
+    "water_pitcher": {
       "frame": {
         "x": 96,
         "y": 96,
@@ -1040,7 +1040,7 @@
         "h": 32
       }
     },
-    "ws_florist": {
+    "wheat": {
       "frame": {
         "x": 128,
         "y": 96,
@@ -1060,7 +1060,7 @@
         "h": 32
       }
     },
-    "ws_kitchen": {
+    "wild_herb": {
       "frame": {
         "x": 160,
         "y": 96,
@@ -1080,7 +1080,7 @@
         "h": 32
       }
     },
-    "ws_loom": {
+    "wood_chair": {
       "frame": {
         "x": 192,
         "y": 96,
@@ -1100,7 +1100,7 @@
         "h": 32
       }
     },
-    "ws_mill": {
+    "wool_blanket": {
       "frame": {
         "x": 224,
         "y": 96,
@@ -1120,7 +1120,7 @@
         "h": 32
       }
     },
-    "ws_preserves": {
+    "wool_yarn": {
       "frame": {
         "x": 256,
         "y": 96,
@@ -1140,7 +1140,7 @@
         "h": 32
       }
     },
-    "yeast": {
+    "ws_bakery": {
       "frame": {
         "x": 288,
         "y": 96,
@@ -1160,7 +1160,7 @@
         "h": 32
       }
     },
-    "yogurt": {
+    "ws_dairy": {
       "frame": {
         "x": 320,
         "y": 96,
@@ -1180,10 +1180,170 @@
         "h": 32
       }
     },
-    "zucchini": {
+    "ws_feed_mill": {
       "frame": {
         "x": 352,
         "y": 96,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "ws_florist": {
+      "frame": {
+        "x": 384,
+        "y": 96,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "ws_kitchen": {
+      "frame": {
+        "x": 416,
+        "y": 96,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "ws_loom": {
+      "frame": {
+        "x": 448,
+        "y": 96,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "ws_mill": {
+      "frame": {
+        "x": 480,
+        "y": 96,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "ws_preserves": {
+      "frame": {
+        "x": 0,
+        "y": 128,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "yeast": {
+      "frame": {
+        "x": 32,
+        "y": 128,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "yogurt": {
+      "frame": {
+        "x": 64,
+        "y": 128,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "zucchini": {
+      "frame": {
+        "x": 96,
+        "y": 128,
         "w": 32,
         "h": 32
       },
@@ -1208,7 +1368,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 512,
-      "h": 128
+      "h": 160
     },
     "cellSize": 32,
     "scale": "1"

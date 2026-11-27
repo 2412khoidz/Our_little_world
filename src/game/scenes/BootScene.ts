@@ -11,9 +11,14 @@ import {
   FARMING_CROPS_ATLAS_JSON,
   FARMING_CROPS_ATLAS_KEY,
   FARMING_CROPS_ATLAS_PNG,
+  FARMING_LIVESTOCK_ATLAS_JSON,
+  FARMING_LIVESTOCK_ATLAS_KEY,
+  FARMING_LIVESTOCK_ATLAS_PNG,
   FARMING_TREES_ATLAS_JSON,
   FARMING_TREES_ATLAS_KEY,
   FARMING_TREES_ATLAS_PNG,
+  getAllLivestockAtlasSpecs,
+  livestockAnimKey,
 } from '../../shared/art/farmingSpriteAtlas';
 import { STARTER_FURNITURE_CATALOG } from '../../shared/catalog';
 import { TILED_MAP_RAW_JSON_BY_PHASER_KEY } from '../../shared/world/tiledMapRegistry';
@@ -202,6 +207,7 @@ export class BootScene extends Phaser.Scene {
 
     this.load.atlas(FARMING_CROPS_ATLAS_KEY, FARMING_CROPS_ATLAS_PNG, FARMING_CROPS_ATLAS_JSON);
     this.load.atlas(FARMING_TREES_ATLAS_KEY, FARMING_TREES_ATLAS_PNG, FARMING_TREES_ATLAS_JSON);
+    this.load.atlas(FARMING_LIVESTOCK_ATLAS_KEY, FARMING_LIVESTOCK_ATLAS_PNG, FARMING_LIVESTOCK_ATLAS_JSON);
   }
 
   create(): void {
@@ -279,6 +285,7 @@ export class BootScene extends Phaser.Scene {
       LIVING_CAT_32_KEY,
       FARMING_CROPS_ATLAS_KEY,
       FARMING_TREES_ATLAS_KEY,
+      FARMING_LIVESTOCK_ATLAS_KEY,
       ...COUPLE_EMOTE_TEX_LIST.map(([key]) => key),
       ...PYDEW_RAIN_DROP_TEXTURE_KEYS,
     ]) {
@@ -294,6 +301,34 @@ export class BootScene extends Phaser.Scene {
           frameRate: rate,
           repeat: -1,
         });
+      }
+    }
+    if (this.textures.exists(FARMING_LIVESTOCK_ATLAS_KEY)) {
+      for (const [speciesId, spec] of Object.entries(getAllLivestockAtlasSpecs())) {
+        for (const [actName, frameKeys] of Object.entries(spec.animations)) {
+          if (actName === 'hive' || frameKeys.length === 0) continue;
+          const animKey = livestockAnimKey(speciesId, actName);
+          if (this.anims.exists(animKey)) continue;
+          const frameRate = actName.startsWith('walk_')
+            ? 6
+            : actName === 'swarm'
+              ? 7
+              : actName.startsWith('swim_sleep_')
+                ? 1
+                : actName.startsWith('swim_')
+                  ? 3.5
+                  : actName.startsWith('eat_')
+                    ? 3.5
+                    : actName.startsWith('sleep_')
+                      ? 1
+                      : 3;
+          this.anims.create({
+            key: animKey,
+            frames: frameKeys.map((frame) => ({ key: FARMING_LIVESTOCK_ATLAS_KEY, frame })),
+            frameRate,
+            repeat: -1,
+          });
+        }
       }
     }
     this.scene.start('WorldScene');
