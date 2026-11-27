@@ -1915,6 +1915,12 @@ function MainCoupleApp({
     gameEventBus.emit('cmd:set-render-suspended', { suspended: true });
   }, []);
 
+  const handleOpenBilliards = useCallback(() => {
+    setBilliardsInitialView('entry');
+    setBilliardsInviteBanner(null);
+    setActiveModal('billiards');
+  }, []);
+
   const handleResumeOverworldForBilliards = useCallback(() => {
     gameEventBus.emit('cmd:set-render-suspended', { suspended: false });
     resumeStudyAmbient();
@@ -3349,7 +3355,7 @@ function MainCoupleApp({
                 }
               : undefined
           }
-          onOpenBilliards={() => setActiveModal('billiards')}
+          onOpenBilliards={handleOpenBilliards}
           onOpenFlowerOrchard={
             backend.farm && worldId
               ? () => {
@@ -3532,11 +3538,7 @@ function MainCoupleApp({
                 }
               : undefined
           }
-          onOpenBilliards={() => {
-            setBilliardsInitialView('entry');
-            setBilliardsInviteBanner(null);
-            setActiveModal('billiards');
-          }}
+          onOpenBilliards={handleOpenBilliards}
           onOpenDonorFishing={
             import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
               ? () => setActiveModal('donor_fishing')

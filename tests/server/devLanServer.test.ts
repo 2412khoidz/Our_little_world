@@ -162,4 +162,50 @@ describe('Dev LAN Multiplayer Server Handler', () => {
     expect(afterReset.json.data.worldExists).toBe(false);
     expect(afterReset.json.data.memberCount).toBe(0);
   });
+
+  it('waits for async-loaded /donor/* route handlers on cold start instead of returning 404', async () => {
+    let delayedHandler: ReturnType<typeof createDevLanHandler> | null = null;
+    let delayedServer: http.Server | null = null;
+    try {
+      const delayedPromise = new Promise<
+        (ctx: { res: http.ServerResponse; sendJson: (r: http.ServerResponse, s: number, d: unknown) => void }) => boolean
+      >((resolve) => {
+        setTimeout(() => {
+          resolve(({ res, sendJson }) => {
+            sendJson(res, 200, { ok: true, data: { warmed: true } });
+            return true;
+          });
+        }, 40);
+      });
+
+      delayedHandler = createDevLanHandler({
+        stateFilePath: path.join(tmpDir, 'cold-start-state.json'),
+        getTryHandleDonorDevLan: () => delayedPromise,
+      });
+      delayedServer = http.createServer((req, res) => {
+        void delayedHandler!(req, res, () => {
+          res.statusCode = 404;
+          res.end('Not Found');
+        });
+      });
+      await new Promise<void>((resolve) => {
+        delayedServer!.listen(0, '127.0.0.1', () => resolve());
+      });
+      const addr = delayedServer.address() as { port: number };
+      const res = await fetch(`http://127.0.0.1:${addr.port}/api/dev-lan/donor/workshop/queue?worldId=w1`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dev-user-id': KHOI_ID },
+        body: '{}',
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean; data: { warmed: boolean } };
+      expect(body.ok).toBe(true);
+      expect(body.data.warmed).toBe(true);
+    } finally {
+      delayedHandler?.closeAll();
+      if (delayedServer) {
+        await new Promise<void>((resolve) => delayedServer!.close(() => resolve()));
+      }
+    }
+  });
 });

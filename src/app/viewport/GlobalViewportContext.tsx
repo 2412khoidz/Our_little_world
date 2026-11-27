@@ -510,6 +510,10 @@ export function GlobalViewportProvider({
   );
 }
 
+export function useOptionalGlobalViewport(): GlobalViewportContextValue | null {
+  return useContext(GlobalViewportContext);
+}
+
 export function useGlobalViewport(): GlobalViewportContextValue {
   const ctx = useContext(GlobalViewportContext);
   if (!ctx) {

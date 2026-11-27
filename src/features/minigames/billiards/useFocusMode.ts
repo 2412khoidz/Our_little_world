@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useOptionalGlobalViewport } from '../../../app/viewport/GlobalViewportContext';
 
 export interface FocusModeState {
   isFullscreen: boolean;
@@ -9,28 +10,48 @@ export interface FocusModeState {
 }
 
 /**
- * Manages mobile Focus Mode (visualViewport height tracking, body scroll lock,
- * Android Fullscreen API toggle where supported, and guaranteed cleanup on exit).
+ * Manages mobile Focus Mode and fullscreen ownership for Billiards 2D & 3D:
+ * - Inside GlobalViewportProvider (main app): delegates to the single global fullscreen
+ *   controller (`fullscreenOwner`) so closing Billiards preserves app-level fullscreen.
+ * - Outside GlobalViewportProvider (standalone unit tests): uses safe local fallback state.
  */
-export function useFocusMode(containerRef: RefObject<HTMLElement | null>): FocusModeState {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isFocusExpanded, setIsFocusExpanded] = useState(false);
-  const [viewportHeightPx, setViewportHeightPx] = useState<number | null>(() => {
+export function useFocusMode(
+  containerRef: RefObject<HTMLElement | null>,
+  minigameId = 'billiards',
+): FocusModeState {
+  const globalViewport = useOptionalGlobalViewport();
+  const [localIsFullscreen, setLocalIsFullscreen] = useState(false);
+  const [localIsFocusExpanded, setLocalIsFocusExpanded] = useState(false);
+  const [localViewportHeightPx, setLocalViewportHeightPx] = useState<number | null>(() => {
     if (typeof window === 'undefined') return null;
     return window.visualViewport?.height ?? window.innerHeight;
   });
+  const localOwnedFullscreenRef = useRef(false);
 
-  const canNativeFullscreen =
+  const localCanNativeFullscreen =
     typeof document !== 'undefined' &&
     Boolean(document.fullscreenEnabled) &&
     typeof HTMLElement !== 'undefined' &&
     typeof HTMLElement.prototype.requestFullscreen === 'function';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!globalViewport) return;
+    const { releaseMinigameFocus } = globalViewport;
+    return () => {
+      releaseMinigameFocus(minigameId);
+    };
+  }, [globalViewport, minigameId]);
+
+  useEffect(() => {
+    if (!globalViewport || !containerRef.current) return;
+    containerRef.current.style.setProperty('--olw-vvh', `${globalViewport.metrics.height}px`);
+  }, [containerRef, globalViewport]);
+
+  useEffect(() => {
+    if (globalViewport || typeof window === 'undefined') return;
     const syncViewport = () => {
       const vh = window.visualViewport?.height ?? window.innerHeight;
-      setViewportHeightPx(Math.round(vh));
+      setLocalViewportHeightPx(Math.round(vh));
       if (containerRef.current) {
         containerRef.current.style.setProperty('--olw-vvh', `${Math.round(vh)}px`);
       }
@@ -44,8 +65,12 @@ export function useFocusMode(containerRef: RefObject<HTMLElement | null>): Focus
 
     const onFsChange = () => {
       const fs = Boolean(document.fullscreenElement);
-      setIsFullscreen(fs);
-      if (fs) setIsFocusExpanded(true);
+      setLocalIsFullscreen(fs);
+      if (fs) {
+        setLocalIsFocusExpanded(true);
+      } else {
+        localOwnedFullscreenRef.current = false;
+      }
     };
     document.addEventListener('fullscreenchange', onFsChange);
 
@@ -54,34 +79,65 @@ export function useFocusMode(containerRef: RefObject<HTMLElement | null>): Focus
       window.removeEventListener('resize', syncViewport);
       window.removeEventListener('orientationchange', syncViewport);
       document.removeEventListener('fullscreenchange', onFsChange);
-      if (typeof document !== 'undefined' && document.fullscreenElement) {
+      if (
+        localOwnedFullscreenRef.current &&
+        typeof document !== 'undefined' &&
+        document.fullscreenElement
+      ) {
+        localOwnedFullscreenRef.current = false;
         void document.exitFullscreen().catch(() => undefined);
       }
     };
-  }, [containerRef]);
+  }, [containerRef, globalViewport]);
 
   const toggleFocusOrFullscreen = useCallback(() => {
+    if (globalViewport) {
+      if (globalViewport.isFullscreenOrExpanded) {
+        if (globalViewport.fullscreenOwner === 'app') {
+          globalViewport.exitAppFullscreen();
+        } else {
+          globalViewport.releaseMinigameFocus(minigameId);
+        }
+        return;
+      }
+      globalViewport.requestMinigameFocus(minigameId, containerRef.current);
+      return;
+    }
+
     const el = containerRef.current;
     if (typeof document !== 'undefined' && document.fullscreenElement) {
-      setIsFocusExpanded(false);
+      localOwnedFullscreenRef.current = false;
+      setLocalIsFocusExpanded(false);
       void document.exitFullscreen().catch(() => undefined);
       return;
     }
-    if (canNativeFullscreen && el && typeof el.requestFullscreen === 'function') {
-      setIsFocusExpanded(true);
+    if (localCanNativeFullscreen && el && typeof el.requestFullscreen === 'function') {
+      localOwnedFullscreenRef.current = true;
+      setLocalIsFocusExpanded(true);
       void el.requestFullscreen().catch(() => {
+        localOwnedFullscreenRef.current = false;
         // iOS Safari / embedded contexts ignore requestFullscreen -> keep expanded focus CSS state
       });
       return;
     }
-    setIsFocusExpanded((v) => !v);
-  }, [canNativeFullscreen, containerRef]);
+    setLocalIsFocusExpanded((v) => !v);
+  }, [containerRef, globalViewport, localCanNativeFullscreen, minigameId]);
+
+  if (globalViewport) {
+    return {
+      isFullscreen: globalViewport.isFullscreen,
+      isFocusExpanded: globalViewport.isFocusExpanded,
+      canNativeFullscreen: globalViewport.canNativeFullscreen,
+      viewportHeightPx: globalViewport.metrics.height,
+      toggleFocusOrFullscreen,
+    };
+  }
 
   return {
-    isFullscreen,
-    isFocusExpanded,
-    canNativeFullscreen,
-    viewportHeightPx,
+    isFullscreen: localIsFullscreen,
+    isFocusExpanded: localIsFocusExpanded,
+    canNativeFullscreen: localCanNativeFullscreen,
+    viewportHeightPx: localViewportHeightPx,
     toggleFocusOrFullscreen,
   };
 }
