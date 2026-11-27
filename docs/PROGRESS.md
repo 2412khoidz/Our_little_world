@@ -1,6 +1,28 @@
 # Progress Tracker — Our Little World
 
-*Cập nhật lần cuối: 27/11/2026*
+*Cập nhật lần cuối: 28/11/2026*
+
+## HOTFIX — BILLIARDS ROOM LIFECYCLE & REMATCH RECOVERY (`fix/billiards-room-lifecycle`)
+
+- **Nhánh & Worktree:** `fix/billiards-room-lifecycle` tại `C:\Users\admin\Downloads\OLW-Billiards-V4` (tách từ `feat/billiards-v4-camera` @ `fecb746`, tiếp tục hoàn thiện trên nền tảng Billiards V4.1 đã được chủ dự án phê duyệt; bảo toàn 100% physics, điều khiển cảm ứng, camera điện ảnh 3D và không chạm primary workspace `C:\Users\admin\Downloads\Our_little_world`).
+- **Khắc phục lỗi máy chủ Vite Crash (P0):** Sửa lỗi `ReferenceError: clearCountdownToLobby is not defined` tại `scripts/devLanBilliardsLobby.mjs` bằng cách chuẩn hóa `cancelCountdownToLobby(rec)` / `clearCountdownTimer(rec)` và khai báo alias an toàn; bọc toàn bộ `handleMinigameEvent` trong khối `try...catch` ngăn ngừa triệt để mọi trường hợp gói tin bất thường làm sập server Dev LAN WebSocket.
+- **Tách bạch Room vs. Match & Sửa lỗi hiển thị "Ván chưa kết thúc":**
+  - Phòng chơi (`lobbyId`, invite URL) đại diện cho session chơi kéo dài giữa hai người; ván đấu (`matchId`) là từng trận riêng lẻ trong phòng.
+  - Khi một trận đấu kết thúc (thắng hợp lệ, phạm quy ăn bi 8, scratch bi 8, hoặc đối thủ rời bàn/bỏ cuộc), server lập tức ghi nhận `endedMatchIds`, xóa `activeMatchId = null`, chuyển trạng thái phòng từ `in_match` về `lobby`, reset cờ sẵn sàng của hai bên và phát `emitLobbyState`. Khắc phục triệt để lỗi hiển thị sai banner "Đang có ván chưa kết thúc" khi quay lại menu hay sảnh chờ.
+- **Chu kỳ Tái đấu (Rematch) & Chống trùng ván:**
+  - Tái đấu trong cùng phòng giữ nguyên hoàn toàn `lobbyId` và URL mời, luân phiên người khai cuộc giữa Mây và Nắng (bảo toàn quy tắc V4.1), cộng dồn tỉ số trận đấu qua ít nhất 5 ván liên tiếp, tăng `matchSeq` và sinh `matchId` mới cho mỗi ván.
+  - Bổ sung chốt chặn countdown: khi một countdown tái đấu đã được kích hoạt, các yêu cầu tái đấu trùng lặp (double-click hoặc hai người gửi cùng lúc) được xử lý idempotent, tuyệt đối không tạo trùng ván đấu hay desync phiên chơi.
+- **Phân tách "Tạo phòng mới" (`new_lobby`):** Tạo `lobbyId` mới riêng biệt, reset tỉ số về `[0, 0]`, dọn dẹp bộ đếm giờ và bảo toàn danh tính phòng cũ mà không để lại trạng thái mồ côi trên máy chủ.
+- **Bộ kiểm thử hồi quy tự động:**
+  - `tests/server/billiardsRoomLifecycle.test.ts`: 6 bài test tích hợp WebSocket Dev LAN mô phỏng đầy đủ 12 kịch bản yêu cầu (kết thúc ván, xóa cờ ván dở, giữ ổn định phòng qua 5 ván tái đấu liên tiếp, luân phiên khai cuộc, triệt tiêu double-click rematch, xử lý scratch bi 8, hủy timer an toàn khi mất mạng trong countdown, kết nối lại sau ván đấu, tạo phòng mới riêng biệt không lỗi ReferenceError).
+  - `tests/unit/billiardsRoomLifecycleUnit.test.ts`: 4 bài test máy trạng thái giao thức thuần túy (`markLobbyMatchEnded`, `applyLobbyRematch`, `applyLobbyLeave`, `applyLobbyConnectionChange`).
+- **Kết quả kiểm chứng chất lượng (DoD):**
+  - `npm run typecheck`: **PASSED** (0 errors).
+  - `npm run lint`: **PASSED** (0 errors, 1 warning có sẵn tại `ChillFishingModal.tsx`).
+  - Vitest Bi-a: **13/13 suites, 50/50 tests PASSED**.
+  - Playwright E2E: **20/20 tests PASSED** (`billiards-multiplayer.spec.ts` 6/6, `billiards-v3-modes.spec.ts` 8/8, `billiards-v4-camera.spec.ts` 6/6).
+  - Build & Production Guard: `npm run build` (2617 modules, 45 PWA precache entries), `node scripts/verify-prod-guard.mjs`, `npm run assets:private:verify` đều **PASSED**.
+  - Không có file save, `.dev-lan-state*.json` hay asset riêng tư bị track vào Git.
 
 ## FEATURE BRANCH — BILLIARDS V4 (`feat/billiards-v4-camera`)
 

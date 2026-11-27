@@ -315,6 +315,14 @@ export function markLobbyMatchEnded(
   if (next.confirmedConfig && next.confirmedConfig.matchId === matchId) {
     next.confirmedConfig.scores = [scores[0], scores[1]];
   }
+  if (next.activeMatchId === matchId || next.status === 'in_match') {
+    next.activeMatchId = null;
+    next.status = 'lobby';
+    for (const p of next.players) {
+      p.ready = false;
+      p.wantRematch = false;
+    }
+  }
   return next;
 }
 
@@ -326,7 +334,17 @@ export function applyLobbyRematch(
   nextMatchMeta?: NextLobbyMatchMeta,
 ): { accepted: boolean; nextState: BilliardsLobbyState; startedCountdown: boolean } {
   const next = cloneLobby(state, nowMs);
-  if (next.activeMatchId !== payload.matchId && next.confirmedConfig?.matchId !== payload.matchId) {
+  // If already in countdown for next match, ignore duplicate request for old match
+  if (state.status === 'countdown' && state.confirmedConfig && state.confirmedConfig.matchId !== payload.matchId) {
+    return { accepted: true, nextState: next, startedCountdown: false };
+  }
+  const isValidMatch =
+    !payload.matchId ||
+    next.activeMatchId === payload.matchId ||
+    next.confirmedConfig?.matchId === payload.matchId ||
+    next.status === 'lobby';
+
+  if (!isValidMatch) {
     return { accepted: false, nextState: next, startedCountdown: false };
   }
   next.players[payload.playerSlot].wantRematch = payload.wantRematch;
