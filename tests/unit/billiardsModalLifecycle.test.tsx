@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BilliardsModal } from '../../src/features/minigames/billiards/BilliardsModal';
 import type {
@@ -60,7 +60,7 @@ describe('BilliardsModal lifecycle, visibility recovery & cleanup (P0 #9, P1)', 
     vi.restoreAllMocks();
   });
 
-  it('separates masterVolume from overworld pause/resume & keeps RAF loop stable', () => {
+  it('separates masterVolume from overworld pause/resume & keeps RAF loop stable', async () => {
     const onPause = vi.fn();
     const onResume = vi.fn();
 
@@ -77,6 +77,10 @@ describe('BilliardsModal lifecycle, visibility recovery & cleanup (P0 #9, P1)', 
 
     expect(onPause).toHaveBeenCalledTimes(1);
     expect(onResume).toHaveBeenCalledTimes(0);
+
+    // Launch 2D game from entry menu so RAF starts
+    fireEvent.click(screen.getByTestId('billiards-start-btn'));
+    await waitFor(() => expect(rafSpy.mock.calls.length).toBeGreaterThan(0));
     const initialRafStarts = rafSpy.mock.calls.length;
 
     // Changing volume must NOT pause/resume overworld or restart RAF!

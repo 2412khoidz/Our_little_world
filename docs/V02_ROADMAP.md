@@ -20,23 +20,16 @@
 - **Đã hợp nhất & duyệt (Phase 1 từ `feat/mobile-first-hud` @ `cfd3099`):** HUD gỗ 9-slice `Kiln Harvest`, joystick Pointer Events mượt (`src/shared/input/virtualJoystickController.ts`), chính sách viewport `--olw-vvh` (`src/shared/viewport/viewportPolicy.ts`), và `GlobalViewportContext` quản lý single `fullscreenOwner` ([VIEWPORT_FULLSCREEN_CONTRACT.md](handovers/VIEWPORT_FULLSCREEN_CONTRACT.md)) sẵn sàng cho Billiards V4.1.
 - **Chưa hoàn thành (`PLANNED`):** Tối ưu menu phụ trợ (auxiliary menu optimization) chưa hoàn tất và chưa được đánh dấu xong.
 
-### 2.1 `M1` — Billiards V3 & 3D Transplant — **`IN PROGRESS`** (`OLW-Billiards-V3` / `feat/billiards-v3`)
-- **Đã có trên worktree `feat/billiards-v3` (chưa merge / chưa owner verify):**
-  - Module mới: `botAi.ts`, `lobbyProtocol.ts`, `physics3dEngine.ts`, `BilliardsEntryMenu.tsx`, `BilliardsOnlineLobby.tsx`, `billiards3d.css`, `localStats.ts`, `useBilliardsKeyboard.ts`, `scripts/devLanBilliardsLobby.mjs`.
-  - Mở rộng: `physicsEngine.ts`, `protocol.ts`, `types.ts`, `netcode/protocol.ts`, `devLanServerPlugin.mjs`, `devLanWsHub.mjs`.
-- **Việc cần hoàn tất trước khi tích hợp:**
-  1. Reconcile nhánh `feat/billiards-v3` (tách từ `6c1bc66`) lên `origin/main` mới nhất (`e5de4ac`).
-  2. Hoàn chỉnh tích hợp cảnh 3D bi-a từ nguồn chủ dự án cung cấp (`C:\Users\admin\Downloads\our_little_billiards_3d_*`), giữ lazy-load (`Three.js` không làm phình initial chunk), giải phóng WebGL context gọn khi đóng.
-  3. Kiểm tra đủ 3 chế độ: Chơi 1 người với Bot, Local 2P chung máy, Online Ready Lobby 2 máy (`Mây` ↔ `Nắng`), cùng điều khiển bàn phím desktop gốc (`useBilliardsKeyboard.ts`) & chạm mobile.
-  4. Kiểm chứng hồi quy đối với file dùng chung (`devLanWsHub.mjs`, `devLanServerPlugin.mjs`, `netcode/protocol.ts`) + owner playtest phê duyệt.
+### 2.1 `M1` — Billiards V4.1 (2D/3D, Modes, Online Lobby & Fair Start) — **`OWNER APPROVED` (`main` RC2)**
+- Đã tích hợp `feat/billiards-v4-camera` (`fecb746`) và nối hợp đồng `useFocusMode` → `GlobalViewportContext` (`M0`): 2D/3D, Practice/Bot/Local 2P/Online Ready Lobby, độ nhạy cảm ứng, raycast chọn bi 3D, camera nghiêng V4.1 và chọn người khai cuộc công bằng + luân phiên tái đấu.
 
 ### 2.2 Couple Natural Animations P1 (`kiss`, `lean_shoulder`, `dance`, `give_flower`) — **`PLANNED`**
 - **Hiện trạng:** Schema & protocol đã có sẵn trong `src/shared/couple/coupleTypes.ts` (`COUPLE_P1_ENABLED = false`), `CoupleActionBar.tsx` đã có label.
 - **Cần làm:** Tạo cặp frame pixel-paired `couplePairedPoseTextures.ts` giữ nguyên `AvatarConfig` của 2 người chơi cho `kiss` (ưu tiên) và các dáng P1 còn lại, âm thanh/emote nhẹ nhàng, bật `COUPLE_P1_ENABLED = true` sau khi chủ dự án duyệt hình ảnh.
 
-### 2.3 `M3` — Farming, Fishing, Pet Polish + Icon Fixes & Livestock Transplant — **`PLANNED`**
-- Sửa nhóm SKU sai nghĩa / trùng ảnh trong `scripts/pack-farming-atlases.py` và transplant spritesheet thú nuôi (`FarmRanchLife/04_Ranch_Animals`) + VFX thay hình học Canvas thủ công theo kế hoạch đã duyệt ở **`M3a`** ([ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md)).
-- Rà soát độ rõ của nút ngữ cảnh mobile / `J` gần các điểm: cây ăn quả (trồng/thu hoạch), chuồng nuôi, bảng đơn hàng, xưởng chế biến & bàn câu cá; bổ sung E2E/unit regression cho tương tác `Quýt` + ô ruộng và cây ăn quả.
+### 2.3 `M3` — Farming Art (`M3b–M3c.2` `OWNER APPROVED`) & `M3d / M3e` (`PLANNED`)
+- **Đã hoàn tất & duyệt (`RC2`):** **M3b** sửa `32` SKU sai/trùng ảnh (`4bf8061`); **M3c / M3c.1 / M3c.2** đóng gói `livestock-ranch.{png,json}`, chân dung UI, ambient animals ở `farm`/`village`/`garden`, vịt bơi nước và `sheep_brown_baby` scale `1.00` (`0018d10`).
+- **Còn lại (`PLANNED`):** **M3d** hoạt ảnh máy chế biến + VFX môi trường (`10_Effects/*`, `05_Buildings_Machines/*`), **M3e** đồ họa/animation câu cá mới & dọn warning `ChillFishingModal.tsx:90`, và cải tiến menu phụ trợ còn lại của `M0`.
 
 ---
 

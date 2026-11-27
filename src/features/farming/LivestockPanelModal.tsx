@@ -9,8 +9,57 @@ import {
   type LivestockSpeciesId,
   type ProjectedLivestockAnimal,
 } from '../../shared/farming/livestock';
+import {
+  getLivestockPortraitSprite,
+  spriteBackgroundStyle,
+} from '../../shared/art/farmingSpriteAtlas';
 import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
 import './deepFarmingModals.css';
+
+function LivestockPortraitIcon({
+  speciesId,
+  fallbackSku,
+  size = 36,
+}: {
+  speciesId: string;
+  fallbackSku: string;
+  size?: number;
+}) {
+  const portrait = getLivestockPortraitSprite(speciesId);
+  if (!portrait) {
+    return <CatalogSkuIcon sku={fallbackSku} size={size} />;
+  }
+  const style = spriteBackgroundStyle(portrait, size);
+  return (
+    <span
+      role="img"
+      aria-label={speciesId}
+      data-livestock-portrait={speciesId}
+      data-donor={portrait.donor}
+      style={{
+        display: 'inline-block',
+        flexShrink: 0,
+        width: size,
+        height: size,
+        backgroundColor: 'rgba(255, 248, 232, 0.72)',
+        borderRadius: 8,
+        border: '1px solid rgba(145, 108, 66, 0.25)',
+        position: 'relative',
+      }}
+    >
+      <span
+        style={{
+          ...style,
+          display: 'block',
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+    </span>
+  );
+}
 
 export interface LivestockPanelModalProps {
   open: boolean;
@@ -116,7 +165,8 @@ export function LivestockPanelModal({
               {animals.length === 0 ? (
                 <div className="olw-deep-empty">
                   Chuồng trại đang trống — chuyển sang thẻ “Đón thêm vật nuôi” để nuôi gà, vịt, bò, dê,
-                  cừu, thỏ hoặc ong mật nhé.
+                  cừu, thỏ hoặc ong mật nhé. Vật nuôi sau khi đón sẽ xuất hiện ngay trên đồng cỏ phía
+                  bắc ruộng trồng.
                 </div>
               ) : (
                 <div className="olw-deep-grid-2">
@@ -134,13 +184,18 @@ export function LivestockPanelModal({
                       <div key={item.animal.animalId} className="olw-deep-card">
                         <div className="olw-deep-row-between" style={{ alignItems: 'flex-start' }}>
                           <div className="olw-deep-row">
-                            <CatalogSkuIcon sku={item.def.productSku} size={30} />
+                            <LivestockPortraitIcon
+                              speciesId={item.def.speciesId}
+                              fallbackSku={item.def.productSku}
+                              size={36}
+                            />
                             <div>
                               <div style={{ fontSize: 13.5, fontWeight: 700 }}>
                                 {item.animal.nickname}
                               </div>
-                              <div style={{ fontSize: 11.5, color: '#6d5238' }}>
-                                {item.def.nameVi} · {item.def.habitatNameVi}
+                              <div style={{ fontSize: 11.5, color: '#6d5238', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span>{item.def.nameVi} · {item.def.habitatNameVi}</span>
+                                <CatalogSkuIcon sku={item.def.productSku} size={14} />
                               </div>
                             </div>
                           </div>
@@ -224,14 +279,19 @@ export function LivestockPanelModal({
                 return (
                   <div key={sp.speciesId} className="olw-deep-card">
                     <div className="olw-deep-row" style={{ alignItems: 'flex-start' }}>
-                      <CatalogSkuIcon sku={sp.productSku} size={34} />
+                      <LivestockPortraitIcon
+                        speciesId={sp.speciesId}
+                        fallbackSku={sp.productSku}
+                        size={36}
+                      />
                       <div>
                         <div style={{ fontSize: 13.5, fontWeight: 700 }}>{sp.nameVi}</div>
                         <div style={{ fontSize: 12, color: '#6e5437' }}>
                           Nơi ở: {sp.habitatNameVi}
                         </div>
-                        <div style={{ fontSize: 11.5, color: '#5c442c', marginTop: 3 }}>
-                          Chu kỳ: {Math.round(sp.cycleMs / 60_000)} phút · Quý: {prizedName}
+                        <div style={{ fontSize: 11.5, color: '#5c442c', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CatalogSkuIcon sku={sp.productSku} size={14} />
+                          <span>Chu kỳ: {Math.round(sp.cycleMs / 60_000)} phút · Quý: {prizedName}</span>
                         </div>
                       </div>
                     </div>

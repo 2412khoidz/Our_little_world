@@ -318,7 +318,7 @@ test.describe('M0 — Mobile-first Game HUD, Touch Controls & Global Fullscreen'
     // Open & close Billiards — app focus/fullscreen must stay active
     await page.getByTestId('nav-menu').click();
     await page.getByTestId('menu-billiards').click();
-    const billiardsCloseBtn = page.getByRole('button', { name: 'Quay về làng' });
+    const billiardsCloseBtn = page.getByTestId('billiards-close');
     await expect(billiardsCloseBtn).toBeVisible({ timeout: 15_000 });
     await billiardsCloseBtn.click();
     await expect(billiardsCloseBtn).toHaveCount(0);

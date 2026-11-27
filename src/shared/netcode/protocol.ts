@@ -113,6 +113,7 @@ export type ServerWsFrame =
       sessionId: string;
       connectionId: string;
       serverSeq: number;
+      serverNowMs?: number;
       stateVersion: number;
       domainVersions: WorldDomainVersions;
       presences: PresencePayload[];
@@ -122,6 +123,7 @@ export type ServerWsFrame =
       type: 'pong';
       clientSentMonoMs: number;
       serverSeq: number;
+      serverNowMs?: number;
       stateVersion: number;
     }
   | {

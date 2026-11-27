@@ -2,8 +2,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   BilliardsWireEventSchema,
   type AimSyncPayload,
+  type BilliardsLobbyState,
   type BilliardsTransport,
   type BilliardsWireEvent,
+  type LobbyConfigPayload,
+  type LobbyInvitePayload,
+  type LobbyJoinPayload,
+  type LobbyLeavePayload,
+  type LobbyReadyPayload,
+  type LobbyRematchPayload,
   type MatchSnapshot,
   type MatchStartPayload,
   type PlaceCuePayload,
@@ -21,6 +28,8 @@ export interface BilliardsSyncHandlers {
   onRemoteSettled: (payload: SettledStatePayload, verifiedSenderSlot?: PlayerSlot) => void;
   onStateRequested: (payload: StateRequestPayload, verifiedSenderSlot?: PlayerSlot) => void;
   onRemoteSnapshot: (snapshot: MatchSnapshot, verifiedSenderSlot?: PlayerSlot) => void;
+  onLobbyState?: (state: BilliardsLobbyState) => void;
+  onLobbyInvite?: (invite: LobbyInvitePayload, verifiedSenderSlot?: PlayerSlot) => void;
   getStateRequestPayload: () => StateRequestPayload;
   needsSync: () => boolean;
 }
@@ -94,6 +103,14 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
     [clearRetryTimer, enabled, transport],
   );
 
+  const requestLobbySync = useCallback(() => {
+    if (!enabled || !transport) return;
+    transport.send({
+      type: 'billiards:lobby_sync_request',
+      payload: { requesterSlot: localPlayerSlot },
+    });
+  }, [enabled, localPlayerSlot, transport]);
+
   useEffect(() => {
     if (!enabled || !transport) {
       clearRetryTimer();
@@ -133,24 +150,34 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
           clearRetryTimer();
           h.onRemoteSnapshot(evt.payload, verifiedSlot);
           break;
+        case 'billiards:lobby_state':
+          h.onLobbyState?.(evt.payload);
+          break;
+        case 'billiards:lobby_invite':
+          h.onLobbyInvite?.(evt.payload, verifiedSlot);
+          break;
       }
     });
 
     const unsubConn = transport.subscribeConnection?.((status) => {
       if (status === 'connected') {
+        requestLobbySync();
         requestState(true);
       }
     });
 
     const handleVisibility = () => {
       if (typeof document !== 'undefined' && !document.hidden) {
+        requestLobbySync();
         requestState(false);
       }
     };
     const handlePageShow = () => {
+      requestLobbySync();
       requestState(false);
     };
     const handleOnline = () => {
+      requestLobbySync();
       requestState(true);
     };
 
@@ -162,9 +189,9 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
       window.addEventListener('online', handleOnline);
     }
 
-    // Request active match state immediately when mounted on an open/connected channel
     const status = transport.getConnectionStatus?.();
     if (!status || status === 'connected') {
+      requestLobbySync();
       requestState(true);
     }
 
@@ -180,7 +207,7 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
         window.removeEventListener('online', handleOnline);
       }
     };
-  }, [clearRetryTimer, enabled, localPlayerSlot, requestState, transport]);
+  }, [clearRetryTimer, enabled, localPlayerSlot, requestLobbySync, requestState, transport]);
 
   const broadcastStart = useCallback(
     (payload: MatchStartPayload) => {
@@ -191,9 +218,9 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
   );
 
   const broadcastAim = useCallback(
-    (payload: AimSyncPayload) => {
+    (payload: AimSyncPayload, flush = false) => {
       const now = performance.now();
-      if (now - lastAimSentRef.current < AIM_THROTTLE_MS) return;
+      if (!flush && now - lastAimSentRef.current < AIM_THROTTLE_MS) return;
       lastAimSentRef.current = now;
       sendEvent({ type: 'billiards:aim', payload });
     },
@@ -231,6 +258,57 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
     [sendEvent],
   );
 
+  const broadcastLobbyJoin = useCallback(
+    (payload: LobbyJoinPayload) => {
+      sendEvent({ type: 'billiards:lobby_join', payload });
+    },
+    [sendEvent],
+  );
+
+  const broadcastLobbyInvite = useCallback(
+    (payload: LobbyInvitePayload) => {
+      sendEvent({ type: 'billiards:lobby_invite', payload });
+    },
+    [sendEvent],
+  );
+
+  const broadcastLobbyConfig = useCallback(
+    (payload: LobbyConfigPayload) => {
+      sendEvent({ type: 'billiards:lobby_config', payload });
+    },
+    [sendEvent],
+  );
+
+  const broadcastLobbyReady = useCallback(
+    (payload: LobbyReadyPayload) => {
+      sendEvent({ type: 'billiards:lobby_ready', payload });
+    },
+    [sendEvent],
+  );
+
+  const broadcastLobbyLeave = useCallback(
+    (payload: LobbyLeavePayload) => {
+      sendEvent({ type: 'billiards:lobby_leave', payload });
+    },
+    [sendEvent],
+  );
+
+  const broadcastLobbyRematch = useCallback(
+    (payload: LobbyRematchPayload) => {
+      sendEvent({ type: 'billiards:lobby_rematch', payload });
+    },
+    [sendEvent],
+  );
+
+  const getServerNowMs = useCallback(() => {
+    const offset = transportRef.current?.getServerClockOffsetMs?.() ?? 0;
+    return Date.now() + offset;
+  }, []);
+
+  const getRttMs = useCallback(() => {
+    return transportRef.current?.getRttMs?.() ?? null;
+  }, []);
+
   return useMemo(
     () => ({
       broadcastStart,
@@ -239,15 +317,33 @@ export function useBilliardsSync(opts: UseBilliardsSyncOptions) {
       broadcastPlaceCue,
       broadcastSettled,
       broadcastSnapshot,
+      broadcastLobbyJoin,
+      broadcastLobbyInvite,
+      broadcastLobbyConfig,
+      broadcastLobbyReady,
+      broadcastLobbyLeave,
+      broadcastLobbyRematch,
+      requestLobbySync,
       requestState,
+      getServerNowMs,
+      getRttMs,
     }),
     [
       broadcastAim,
+      broadcastLobbyConfig,
+      broadcastLobbyInvite,
+      broadcastLobbyJoin,
+      broadcastLobbyLeave,
+      broadcastLobbyReady,
+      broadcastLobbyRematch,
       broadcastPlaceCue,
       broadcastSettled,
       broadcastShot,
       broadcastSnapshot,
       broadcastStart,
+      getRttMs,
+      getServerNowMs,
+      requestLobbySync,
       requestState,
     ],
   );

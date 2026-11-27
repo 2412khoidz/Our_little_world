@@ -8,29 +8,28 @@
 ## Tổng quan Điều phối (Parallel vs Sequential)
 
 ```text
-[M3a: Asset Library Audit] (COMPLETED & OWNER APPROVED on main)
+[M3a Audit, M3b 32 SKUs, M3c/M3c.1/M3c.2 Livestock & Ambient, M0 Phase 1 HUD, M1 Billiards V4.1] (COMPLETED & OWNER APPROVED in Canonical RC2)
          │
-         ▼ (Feeds curated icons, animal sheets, VFX, fishing & cooking art into M2..M10)
-[M0: Mobile-first HUD Phase 1, Touch & Fullscreen] (OWNER APPROVED on main; aux menu opt pending)
-[M1: Billiards V3/V4.1] (V4 NOT APPROVED — V4.1 pending in OLW-Billiards-V4; V2 preserved on main)
-[M2: Natural Couple Animations (P1 Kiss & Poses)] ─────────────────────────────────────────┤
-[M3b: Correct 32 SKU Mappings] & [M3c: Livestock Transplant] (NOT APPROVED — runtime investigation pending) ──┐
-[M3d: Animated Processing Machines & Env VFX] ──▶ [M3e: Fishing Artwork & Anim Transplant] ────────────────┘
-                                                                                                │
-                                                                                                ▼
-                                                                               [M4: Home Progression & Shop (V0.2.4)]
-                                                                               (Reserved: Building Upgrade Assets)
-                                                                                        │
-                                      ┌─────────────────────────────────────────────────┴────────────────────┐
-                                      ▼                                                                      ▼
-[M5: Interactive Cooking UI (V0.3)]                                [M6: Real Shared Life UI (Diary/Calendar/Picnic)]
-(Reserved: Food Assets)                                            (Reserved: Gifts, Tea, Flowers & Picnic Assets)
+         ▼ (Remaining V0.2.x polish & features)
+[M0 Follow-up: Auxiliary Mobile Menu Improvements] (PENDING) ──┐
+[M2: Natural Couple Animations (P1 Kiss & Poses)] ─────────────┼─▶ Complete V0.2.x
+[M3d: Animated Processing Machines & Env VFX] (PENDING) ───────┤
+[M3e: Fishing Artwork & Anim Transplant] (PENDING) ────────────┘
+                                                                      │
+                                                                      ▼
+                                                     [M4: Home Progression & Shop (V0.2.4)]
+                                                     (Reserved: Building Upgrade Assets)
+                                                                      │
+                              ┌───────────────────────────────────────┴────────────────────┐
+                              ▼                                                            ▼
+[M5: Interactive Cooking UI (V0.3)]                      [M6: Real Shared Life UI (Diary/Calendar/Picnic)]
+(Reserved: Food Assets)                                  (Reserved: Gifts, Tea, Flowers & Picnic Assets)
 [M7: S0-5b Cinema Transport Benchmark (Spike)]  (Chạy độc lập song song bất kỳ lúc nào có iPhone 4G)
-                                      │
-                                      ▼ (Chỉ chạy M8 khi M7 PASS Go)
+                              │
+                              ▼ (Chỉ chạy M8 khi M7 PASS Go)
 [M8: Cinema Player + Subtitles & Co-op Minigames (V0.4)]
-                                      │
-                                      ▼
+                              │
+                              ▼
 [M9: Living Polish, Save Backup/Restore & Mobile Perf (V0.5)] ──▶ [M10: Our Island Expansion (V1.0)]
 ```
 
@@ -53,15 +52,10 @@
 - **Donor sẵn có:** `Kiln Harvest` (`KILN-HARVEST-LICENSE.txt`), nghiên cứu clean-room `floating-thumb-dungeon` (`78e6337`), `nipplejs` (`ea425b3`), `mini-market-game` (`4fc4d96`), `phaser-toolkit`/`rex-notes`, mở rộng từ `useFocusMode.ts` của Billiards V3.2.
 - **Agent / Model đề xuất:** **Pro** (Pointer Events + DOM/Phaser viewport & fullscreen ownership).
 
-## Mission 1 — Billiards V3 Mobile Usability & Visual Recovery (và Tích hợp 3D) (`V0.2.x` · `IN PROGRESS`)
-- **Phạm vi & Trải nghiệm người chơi:** Hoàn thiện màn hình chọn chế độ (Chơi với Bot AI, Local 2P chung màn hình, Online Ready Check Lobby), khôi phục trải nghiệm mobile usability/visual recovery, điều khiển bàn phím desktop gốc (`useBilliardsKeyboard.ts`) và tích hợp cảnh bi-a 3D từ gói nguồn chủ dự án (`our_little_billiards_3d_*`), giữ lazy-load để không làm chậm lúc vào game.
-- **Dependencies:** Đang mở trên `C:\Users\admin\Downloads\OLW-Billiards-V3` (`feat/billiards-v3`). Cần reconcile lên `origin/main` trước khi merge.
-- **Branch / Worktree đề xuất:** Tiếp tục `feat/billiards-v3` tại `C:\Users\admin\Downloads\OLW-Billiards-V3`.
-- **Hệ thống & File chồng chéo:** `scripts/devLanServerPlugin.mjs`, `scripts/devLanWsHub.mjs`, `src/lib/backend/{devLanRealtimeClient.ts,types.ts}`, `src/shared/netcode/protocol.ts`, `src/features/minigames/billiards/*`.
-- **Song song / Tuần tự:** **Tuần tự tích hợp đầu tiên** với các task chạm `devLanServerPlugin.mjs`/`devLanWsHub.mjs`; có thể song song với M2/M3b–M3e/M7 nếu các nhánh kia không sửa `devLanWsHub.mjs`.
-- **Focused Acceptance:** `billiardsPhysicsDeterminism.test.ts`, `billiardsProtocol.test.ts`, `billiardsModalLifecycle.test.tsx`, `billiardsDevLan.test.ts`, `billiards-multiplayer.spec.ts`, `multiplayer-ws-hardening.spec.ts`, `verify-prod-guard.mjs` + playtest 3 chế độ (Bot, Local 2P, Online 2 máy).
-- **Donor sẵn có:** `C:\Users\admin\Downloads\our_little_billiards_3d_8_ball_pool_edition.html`, `our_little_world_billiards_3d_addon.zip`, `our_little_world_billiards_pack_v2.zip`, Three.js (`^0.186.1` đã có sẵn trong `package.json`).
-- **Agent / Model đề xuất:** **Pro / High-reasoning** (kiến trúc 3D WebGL + deterministic physics + WS lobby sync).
+## Mission 1 — Billiards V4.1 & Fair Starting-Player Selection (`V0.2.x` · `COMPLETED & OWNER APPROVED` in RC2)
+- **Trạng thái hiện tại:** Đã hoàn thiện, nghiệm thu và hợp nhất vào `main` trong đợt **Canonical RC2** (`feat/billiards-v4-camera` @ `fecb746` + nối contract `useFocusMode` → `GlobalViewportContext`).
+- **Phạm vi đã tích hợp:** 2D & 3D (9ft Three.js), 4 chế độ (`practice`, `ai`, `local_pvp`, `online` ready check lobby), bàn phím desktop (`useBilliardsKeyboard.ts`), độ nhạy cảm ứng cục bộ (`touchPreferences.ts`), raycast chọn bi 3D, camera điện ảnh góc nghiêng V4.1 + trở về góc cơ khi ngắm, và chọn người khai cuộc công bằng + luân phiên tái đấu (`fecb746`).
+- **Tồn đọng không chặn (`DEFERRED`):** Chưa playtest thiết bị Safari/Android vật lý thật; Supabase Cloud lobby coordinator hoãn theo `Tier C`.
 
 ## Mission 2 — Natural Couple Animations: Hôn, Tựa Vai, Nhảy Đôi, Tặng Hoa (`V0.2.x`)
 - **Phạm vi & Trải nghiệm người chơi:** Mở khóa cấp P1 (`COUPLE_P1_ENABLED = true`) với hoạt ảnh ghép pixel bảo toàn ngoại hình (`AvatarConfig`) cho `kiss` và ít nhất `give_flower` / `dance` / `lean_shoulder`, kèm lời mời đồng ý 2 người mượt mà.
@@ -79,23 +73,13 @@
 - **Tài liệu nguồn chân lý:** [ASSET_LIBRARY_INVENTORY.md](art/ASSET_LIBRARY_INVENTORY.md) · [ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md) · [asset-library-inventory.json](art/asset-library-inventory.json).
 - **Ghi chú ranh giới:** M3a chỉ kiểm kê và lập chỉ mục tài nguyên sẵn có — không thay đổi gameplay hay atlas runtime.
 
-## Mission 3b — Correct All 32 Inaccurate SKU Sprite Mappings (`V0.2.x`)
-- **Phạm vi & Trải nghiệm người chơi:** Sửa toàn bộ `32` SKU ánh xạ sai ngữ nghĩa, trùng pixel hoặc placeholder đã chỉ mặt ở M3a (`gift_plush_cat`, `pet_kibble_basic`, `wood_chair`, `tool_can_*`, `tool_hoe_*`, `ribbon`, `wool_blanket`, `gift_star_jar`, `golden_egg`, `yogurt`, `olive_oil`, `vinegar`, `ancient_green`, `lavender_candle`, `rose_soap`, 3 bó hoa, v.v.), đồng thời dọn sạch `7` lệnh ghi đè và `9` nhánh `if False` trong `scripts/pack-farming-atlases.py`.
-- **Ràng buộc bảo toàn:** Giữ nguyên 100% canonical SKU IDs, inventory bindings, công thức/giá, tương thích save, và hình ảnh đã duyệt; không import hàng nghìn sprite thừa.
-- **Dependencies:** Dựa trực tiếp trên M3a (`ASSET_REUSE_BACKLOG.md` §1) và `origin/main`.
-- **Branch / Worktree đề xuất:** `npm run worktree:new -- --name farming-art-recovery` (`feat/farming-art-recovery`, cùng đợt Checkpoint A với M3c).
-- **Hệ thống & File chồng chéo:** `scripts/pack-farming-atlases.py`, `public/assets/farming/{items-16,items-32}.{png,json}`, `public/assets/farming/CREDITS.md`, `src/shared/art/farmingSpriteAtlas.generated.json`.
-- **Focused Acceptance:** `farmingSpriteAtlas.test.ts`, `catalogParity.test.ts`, `itemCatalogGenerator.test.mjs`, đối chiếu contact sheet Before/After 32 SKU.
+## Mission 3b — Correct All 32 Inaccurate SKU Sprite Mappings (`V0.2.x` · `COMPLETED & OWNER APPROVED` in RC2)
+- **Trạng thái:** Đã hoàn tất sửa toàn bộ `32` SKU sai ngữ nghĩa/trùng pixel, dọn `7` lệnh ghi đè + `9` nhánh `if False` trong `scripts/pack-farming-atlases.py`, và hợp nhất vào `main` trong Canonical RC2 (`4bf8061`). Giữ nguyên 100% canonical SKU IDs và tương thích save.
 
-## Mission 3c — Animated Livestock Donor Transplant (`V0.2.x`)
-- **Phạm vi & Trải nghiệm người chơi:** Đóng gói và thay thế toàn bộ texture vẽ Canvas thủ công trong `proceduralAnimalTextures.ts` bằng spritesheet động thật từ `FarmRanchLife_v1.0.zip` (`04_Ranch_Animals/{chicken,duck,cow,goat,sheep,rabbit}` + `10_Effects/bees_swarm_4f.png` + `beehive_super_stack.png`) vào atlas gọn riêng (`livestock-ranch.{png,json}`) cho `LivestockVisualController.ts`, hỗ trợ idle/walk 4 hướng/eat/sleep, chuẩn hóa feet anchor, bóng đất và depth ordering theo lưới `16px`.
-- **Ràng buộc bảo toàn:** Giữ nguyên toàn bộ gameplay chăn nuôi, sản lượng, cho ăn, hạnh phúc, collision, save & multiplayer state; **tuyệt đối không đụng mèo `Quýt`**, avatar người chơi hay Pet Care 3D.
-- **Dependencies:** M3a (`ASSET_REUSE_BACKLOG.md` §2) và `origin/main`.
-- **Branch / Worktree đề xuất:** `feat/farming-art-recovery` (Checkpoint B–C sau M3b).
-- **Hệ thống & File chồng chéo:** `scripts/pack-farming-atlases.py`, `public/assets/farming/livestock-ranch.{png,json}`, `src/shared/art/farmingSpriteAtlas.{ts,generated.json}`, `src/game/scenes/BootScene.ts`, `src/game/farming/LivestockVisualController.ts`.
-- **Focused Acceptance:** `farmingSpriteAtlas.test.ts`, `farmVisualScaleParity.test.ts`, `livestockVisualController.test.ts`, `farming-co-op.spec.ts`, `donor-economy-two-client.spec.ts`, screenshot gameplay 7 loài thú.
+## Mission 3c / M3c.1 / M3c.2 — Animated Livestock & Ambient Animal Transplant (`V0.2.x` · `COMPLETED & OWNER APPROVED` in RC2)
+- **Trạng thái:** Đã đóng gói `public/assets/farming/livestock-ranch.{png,json}` từ `FarmRanchLife_v1.0.zip` cho đủ `7` loài vật nuôi, thêm chân dung UI (`LivestockPanelModal.tsx`), chuyển ghép ambient animals trên `farm`/`village`/`garden` (`ambientAnimalVisualAdapter.ts`), hoạt ảnh vịt bơi nước và chỉnh cừu sang `sheep_brown_baby` ở scale `1.00` (`0cf17fb`, `40f0504`, `469d3de`, `0018d10`); giữ nguyên mèo `Quýt` 2D/3D.
 
-## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x`)
+## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x` · `PLANNED`)
 - **Phạm vi & Trải nghiệm người chơi:** Mở rộng hình động 6 frame cho các máy chế biến (`FarmRanchLife/05_Buildings_Machines/Artisan_Machines/*_idle_work4_done_6f.png`) và gắn VFX môi trường từ `FarmRanchLife` (`10_Effects/{soil_dust_till_4f,water_hit_4f,seed_scatter_4f,harvest_pop_4f,hearts_petting_4f}.png`, `02_Crops/ready_sparkle_overlay_4f.png`, `03_Fruit_Trees/*_harvest_shake_3f.png`), kèm tinh chỉnh UX đứng cạnh cây ăn quả/chuồng/xưởng.
 - **Dependencies:** Sau M3b–M3c để tránh xung đột `scripts/pack-farming-atlases.py` và `BootScene.ts`.
 - **Branch / Worktree đề xuất:** `npm run worktree:new -- --name farming-machines-vfx` (`feat/farming-machines-vfx`).

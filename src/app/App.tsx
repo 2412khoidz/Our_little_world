@@ -106,7 +106,9 @@ import {
 import { LazyBilliardsModal } from '../features/minigames/billiards/LazyBilliardsModal';
 import {
   BilliardsWireEventSchema,
+  type BilliardsEdition,
   type BilliardsMatchResult,
+  type BilliardsRule,
   type BilliardsTransport,
   type BilliardsTransportMeta,
   type BilliardsWireEvent,
@@ -612,6 +614,16 @@ function MainCoupleApp({
   const billiardsSeqRef = useRef(0);
   const billiardsReportedMatchesRef = useRef<Set<string>>(new Set());
   const [billiardsScores, setBilliardsScores] = useState<[number, number]>([0, 0]);
+  const [billiardsInitialView, setBilliardsInitialView] = useState<'entry' | 'lobby'>('entry');
+  const [billiardsInviteBanner, setBilliardsInviteBanner] = useState<{
+    inviterName: string;
+    edition: BilliardsEdition;
+    rule: BilliardsRule;
+  } | null>(null);
+  const activeModalRef = useRef(activeModal);
+  useEffect(() => {
+    activeModalRef.current = activeModal;
+  }, [activeModal]);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [networkDiagnostics, setNetworkDiagnostics] = useState<NetworkDiagnosticsState>(() =>
     createInitialNetworkDiagnostics({ localSessionShort: sanitizeSessionShort(sessionId) }),
@@ -1723,12 +1735,27 @@ function MainCoupleApp({
           if (packet.sessionId === sessionId) return;
           const parsed = BilliardsWireEventSchema.safeParse(packet.payload);
           if (!parsed.success) return;
+          const isServerEvent = packet.sessionId === 'server-lobby';
           const members = snapshotRef.current?.members ?? [];
-          const sender = members.find((m) => m.userId === packet.actorUserId);
-          if (!sender) return;
-          const verifiedSenderSlot: PlayerSlot = sender.role === 'partner' ? 1 : 0;
+          const sender = isServerEvent ? null : members.find((m) => m.userId === packet.actorUserId);
+          if (!isServerEvent && !sender) return;
+          const verifiedSenderSlot: PlayerSlot | undefined = sender
+            ? sender.role === 'partner'
+              ? 1
+              : 0
+            : undefined;
+          if (parsed.data.type === 'billiards:lobby_invite' && activeModalRef.current !== 'billiards') {
+            setBilliardsInviteBanner({
+              inviterName: parsed.data.payload.inviterName,
+              edition: parsed.data.payload.edition,
+              rule: parsed.data.payload.rule,
+            });
+          }
           for (const listener of billiardsEventListenersRef.current) {
-            listener(parsed.data, { verifiedSenderSlot });
+            listener(
+              parsed.data,
+              verifiedSenderSlot !== undefined ? { verifiedSenderSlot } : undefined,
+            );
           }
         },
       })
@@ -1796,16 +1823,23 @@ function MainCoupleApp({
         const wid = snapshotRef.current?.world.id;
         const uid = currentUserRef.current?.userId;
         if (!wid || !uid || !realtimeRef.current) return;
+        const payloadObj = event.payload as Record<string, unknown>;
         const matchId =
           event.type === 'billiards:state_request'
-            ? event.payload.currentMatchId || 'billiards'
-            : event.payload.matchId;
+            ? (typeof payloadObj.currentMatchId === 'string' && payloadObj.currentMatchId) || 'billiards'
+            : typeof payloadObj.matchId === 'string' && payloadObj.matchId
+              ? payloadObj.matchId
+              : 'billiards-lobby';
         const stateVersion =
           event.type === 'billiards:start'
             ? 1
             : event.type === 'billiards:state_request'
-              ? event.payload.currentStateVersion ?? 0
-              : event.payload.stateVersion;
+              ? Number(payloadObj.currentStateVersion ?? 0)
+              : typeof payloadObj.stateVersion === 'number'
+                ? payloadObj.stateVersion
+                : typeof payloadObj.configVersion === 'number'
+                  ? payloadObj.configVersion
+                  : 0;
         realtimeRef.current.publishMinigameEvent?.({
           type: 'MINIGAME_EVENT',
           gameId: 'billiards',
@@ -1832,6 +1866,12 @@ function MainCoupleApp({
       },
       getConnectionStatus() {
         return realtimeStatusRef.current;
+      },
+      getServerClockOffsetMs() {
+        return realtimeRef.current?.getServerClockOffsetMs?.() ?? 0;
+      },
+      getRttMs() {
+        return realtimeRef.current?.getRttMs?.() ?? null;
       },
     }),
     [sessionId],
@@ -1875,6 +1915,12 @@ function MainCoupleApp({
     gameEventBus.emit('cmd:set-render-suspended', { suspended: true });
   }, []);
 
+  const handleOpenBilliards = useCallback(() => {
+    setBilliardsInitialView('entry');
+    setBilliardsInviteBanner(null);
+    setActiveModal('billiards');
+  }, []);
+
   const handleResumeOverworldForBilliards = useCallback(() => {
     gameEventBus.emit('cmd:set-render-suspended', { suspended: false });
     resumeStudyAmbient();
@@ -1883,6 +1929,7 @@ function MainCoupleApp({
 
   const handleBilliardsMatchComplete = useCallback(
     async (result: BilliardsMatchResult) => {
+      if (result.mode && result.mode !== 'online') return;
       const wid = snapshotRef.current?.world.id;
       if (!wid || !backend.billiards) return;
       if (billiardsReportedMatchesRef.current.has(result.matchId)) return;
@@ -3308,7 +3355,7 @@ function MainCoupleApp({
                 }
               : undefined
           }
-          onOpenBilliards={() => setActiveModal('billiards')}
+          onOpenBilliards={handleOpenBilliards}
           onOpenFlowerOrchard={
             backend.farm && worldId
               ? () => {
@@ -3491,7 +3538,7 @@ function MainCoupleApp({
                 }
               : undefined
           }
-          onOpenBilliards={() => setActiveModal('billiards')}
+          onOpenBilliards={handleOpenBilliards}
           onOpenDonorFishing={
             import.meta.env.DEV && backend.mode === 'dev-lan' && worldId
               ? () => setActiveModal('donor_fishing')
@@ -3895,14 +3942,84 @@ function MainCoupleApp({
         />
       )}
 
+      {billiardsInviteBanner && activeModal !== 'billiards' && (
+        <div
+          data-testid="billiards-invite-banner"
+          style={{
+            position: 'fixed',
+            top: 66,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 55,
+            background: 'rgba(31, 25, 42, 0.96)',
+            border: '2px solid #fbbf24',
+            borderRadius: 14,
+            padding: '8px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: '#fef7ed',
+            boxShadow: '0 10px 26px rgba(0,0,0,0.55)',
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700 }}>
+            🎱 {billiardsInviteBanner.inviterName} mời bạn chơi Bi-a{' '}
+            {billiardsInviteBanner.edition.toUpperCase()} (
+            {billiardsInviteBanner.rule === '8ball' ? '8-Bi' : '9-Bi'})
+          </span>
+          <button
+            type="button"
+            data-testid="billiards-invite-accept"
+            onClick={() => {
+              setBilliardsInitialView('lobby');
+              setBilliardsInviteBanner(null);
+              setActiveModal('billiards');
+            }}
+            style={{
+              background: '#34d399',
+              color: '#064e3b',
+              border: 'none',
+              borderRadius: 8,
+              padding: '5px 10px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            Vào phòng Bi-a
+          </button>
+          <button
+            type="button"
+            aria-label="Bỏ qua lời mời"
+            onClick={() => setBilliardsInviteBanner(null)}
+            style={{
+              background: 'transparent',
+              color: '#cbd5e1',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <LazyBilliardsModal
         open={activeModal === 'billiards'}
-        onClose={() => setActiveModal(null)}
+        onClose={() => {
+          setBilliardsInitialView('entry');
+          setActiveModal(null);
+        }}
         playerNames={billiardsPlayers.playerNames}
         localPlayerSlot={billiardsPlayers.localSlot}
         initialMode={billiardsPlayers.initialMode}
         initialScores={billiardsScores}
-        transport={billiardsPlayers.initialMode === 'online' ? billiardsTransport : undefined}
+        transport={billiardsPlayers.slotUserIds[1] ? billiardsTransport : undefined}
+        hasPartner={Boolean(billiardsPlayers.slotUserIds[1])}
+        partnerOnline={networkDiagnostics.playerCount >= 2}
+        initialView={billiardsInitialView}
         masterVolume={1}
         onPauseOverworld={handlePauseOverworldForBilliards}
         onResumeOverworld={handleResumeOverworldForBilliards}

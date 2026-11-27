@@ -327,6 +327,11 @@ export function createDevLanHandler({
     return (db.memberships[worldId] ?? []).some((m) => m.userId === userId);
   }
 
+  function getMemberRole(worldId, userId) {
+    const member = (db.memberships[worldId] ?? []).find((m) => m.userId === userId);
+    return member ? member.role : null;
+  }
+
   function getProfile(userId) {
     const profile = db.profiles[userId];
     const fallbackId = DEV_IDENTITIES.find((d) => d.userId === userId);
@@ -382,6 +387,7 @@ export function createDevLanHandler({
 
   const wsHub = createDevLanWsHub({
     isWorldMember,
+    getMemberRole,
     getProfile,
     getWorldStateMeta: ensureWorldVersionState,
     ...wsOptions,
@@ -1175,6 +1181,11 @@ export function createDevLanHandler({
       });
       if (handledBilliards) return;
 
+      const resolvedFarmDevLan =
+        route.startsWith('/farm') ? await Promise.resolve(getTryHandleFarmDevLan()) : getTryHandleFarmDevLan();
+      const resolvedDonorDevLan =
+        route.startsWith('/donor/') ? await Promise.resolve(getTryHandleDonorDevLan()) : getTryHandleDonorDevLan();
+
       const handledV015 = await handleV015Route({
         req,
         res,
@@ -1188,8 +1199,8 @@ export function createDevLanHandler({
         saveDb,
         broadcastEvent,
         bumpWorldStateVersion,
-        tryHandleFarmDevLan: getTryHandleFarmDevLan(),
-        tryHandleDonorDevLan: getTryHandleDonorDevLan(),
+        tryHandleFarmDevLan: typeof resolvedFarmDevLan === 'function' ? resolvedFarmDevLan : null,
+        tryHandleDonorDevLan: typeof resolvedDonorDevLan === 'function' ? resolvedDonorDevLan : null,
       });
       if (handledV015) return;
 
@@ -1262,26 +1273,30 @@ export function devLanServerPlugin(options = {}) {
     configureServer(server) {
       let tryHandleFarmDevLan = null;
       let tryHandleDonorDevLan = null;
-      server
+      const farmRoutePromise = server
         .ssrLoadModule('/src/server/devLanFarmRoute.ts')
         .then((mod) => {
           tryHandleFarmDevLan = mod.tryHandleFarmDevLan;
+          return mod.tryHandleFarmDevLan;
         })
         .catch((err) => {
           console.warn('[dev-lan] farm routes unavailable:', err?.message ?? err);
+          return null;
         });
-      server
+      const donorRoutePromise = server
         .ssrLoadModule('/src/server/devLanDonorRoute.ts')
         .then((mod) => {
           tryHandleDonorDevLan = mod.tryHandleDonorDevLan;
+          return mod.tryHandleDonorDevLan;
         })
         .catch((err) => {
           console.warn('[dev-lan] donor routes unavailable:', err?.message ?? err);
+          return null;
         });
       const handler = createDevLanHandler({
         stateFilePath: options.stateFilePath || process.env.OLW_DEV_LAN_STATE_FILE || undefined,
-        getTryHandleFarmDevLan: () => tryHandleFarmDevLan,
-        getTryHandleDonorDevLan: () => tryHandleDonorDevLan,
+        getTryHandleFarmDevLan: () => tryHandleFarmDevLan ?? farmRoutePromise,
+        getTryHandleDonorDevLan: () => tryHandleDonorDevLan ?? donorRoutePromise,
         getServerPort: () => {
           const addr = server.httpServer?.address?.();
           return (addr && typeof addr === 'object' ? addr.port : 0) || server.config.server.port || 5173;

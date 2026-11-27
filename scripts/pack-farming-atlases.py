@@ -201,6 +201,324 @@ def recolor_sapling_fruit_dot(src: Image.Image, dot_rgb: tuple[int, int, int]) -
     return out
 
 
+def recolor_tool_tier(
+    src: Image.Image,
+    palette: tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]],
+) -> Image.Image:
+    """Recolor FRL iron-tier metal pixels (dark, mid, highlight) to copper/steel/gold."""
+    metal_map = {
+        (107, 111, 128): palette[0],
+        (162, 167, 181): palette[1],
+        (223, 226, 232): palette[2],
+    }
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            if (r, g, b) in metal_map:
+                nr, ng, nb = metal_map[(r, g, b)]
+                out.putpixel((x, y), (nr, ng, nb, a))
+    return out
+
+
+def recolor_golden_egg(src: Image.Image) -> Image.Image:
+    """Recolor an FRL egg sprite to warm metallic gold with a crisp 2px sparkle."""
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            if l < 0.22:
+                # Warm bronze outline
+                out.putpixel((x, y), (110, 66, 16, a))
+                continue
+            nl = max(0.32, min(0.95, l * 0.92 + 0.14))
+            nr, ng, nb = colorsys.hls_to_rgb(0.125, nl, 0.92)
+            out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    # Tiny crisp sparkle at top-right of egg
+    for px, py, col in ((11, 3, (255, 252, 214, 255)), (10, 4, (255, 252, 214, 255)), (12, 4, (255, 252, 214, 255)), (11, 5, (255, 252, 214, 255))):
+        if 0 <= px < out.width and 0 <= py < out.height:
+            out.putpixel((px, py), col)
+    return out
+
+
+def recolor_ancient_sprout(src: Image.Image) -> Image.Image:
+    """Shift amaranth blossom pixels to luminous emerald-jade for ancient_green."""
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            if l < 0.18 or (0.20 <= h <= 0.44 and s >= 0.18):
+                continue
+            nr, ng, nb = colorsys.hls_to_rgb(0.45, max(0.38, min(0.88, l * 1.15)), 0.85)
+            out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    return out
+
+
+def recolor_lemon_marmalade(src: Image.Image) -> Image.Image:
+    """Shift Yoshino orange_jelly interior jam to sunny lemon-yellow."""
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            # Recolor warm orange/pink-red jelly pixels inside jar (y >= 5)
+            if y >= 5 and s >= 0.35 and (h <= 0.14 or h >= 0.85) and l > 0.25:
+                nr, ng, nb = colorsys.hls_to_rgb(0.145, min(0.88, max(0.45, l * 1.12)), 0.94)
+                out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    return out
+
+
+def compose_pickled_pepper(jar_src: Image.Image, chili_src: Image.Image) -> Image.Image:
+    """Place a crisp miniature red chili inside an FRL pickled glass jar."""
+    out = jar_src.copy()
+    bb = chili_src.getbbox()
+    trimmed = chili_src.crop(bb) if bb else chili_src
+    mini = trimmed.resize((7, 7), Image.NEAREST)
+    # Tint radish interior liquid softly golden-brine before stamping chili
+    for y in range(6, 14):
+        for x in range(4, 12):
+            r, g, b, a = out.getpixel((x, y))
+            if a > 200 and r > 150 and b > 100:
+                out.putpixel((x, y), (242, 224, 164, a))
+    out.paste(mini, (5, 7), mini)
+    return out
+
+
+def recolor_angora_yarn(src: Image.Image) -> Image.Image:
+    """Recolor Shikashi yarn skein from pink to fluffy pearl-white Angora wool."""
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            if (h >= 0.80 or h <= 0.08) and s >= 0.22 and l > 0.20:
+                nl = min(0.96, max(0.55, l * 1.18 + 0.16))
+                nr, ng, nb = colorsys.hls_to_rgb(0.09, nl, 0.22)
+                out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    return out
+
+
+def recolor_lavender_candle(src: Image.Image) -> Image.Image:
+    """Recolor Shikashi candle wax body to soft lavender while keeping warm flame intact."""
+    out = src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            if y < 12:
+                continue  # preserve yellow/orange flame
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            if l > 0.38 and s < 0.45:
+                nr, ng, nb = colorsys.hls_to_rgb(0.75, min(0.88, max(0.42, l * 0.92)), 0.62)
+                out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    return out
+
+
+def compose_rose_soap(butter_src: Image.Image) -> Image.Image:
+    """Derive a pastel rose soap bar from FRL's clean 16x16 rectangular bar silhouette."""
+    out = butter_src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+            if l < 0.22:
+                out.putpixel((x, y), (112, 42, 68, a))
+            else:
+                nr, ng, nb = colorsys.hls_to_rgb(0.94, min(0.92, max(0.48, l * 0.96)), 0.76)
+                out.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    # Tiny pressed rose petal emblem on soap top
+    for px, py, col in ((7, 6, (219, 68, 114, 255)), (8, 6, (219, 68, 114, 255)), (7, 7, (245, 130, 165, 255)), (9, 7, (92, 168, 86, 255))):
+        out.putpixel((px, py), col)
+    return out
+
+
+def compose_patchwork_blanket(blanket_tile: Image.Image) -> Image.Image:
+    """Create a 32x32 cozy folded patchwork wool blanket from world-props woven texture."""
+    swatch = blanket_tile.resize((22, 18), Image.NEAREST)
+    # Add warm cozy patchwork stripes & stitched edge
+    out = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    # Outer dark stitched outline
+    for y in range(6, 26):
+        for x in range(4, 28):
+            if y in (6, 25) or x in (4, 27):
+                out.putpixel((x, y), (88, 54, 62, 255))
+    out.paste(swatch, (5, 7), swatch)
+    # Patchwork quilt blocks & folded bottom lip
+    patches = [
+        (5, 7, 11, 13, (244, 178, 194, 255)),
+        (11, 7, 17, 13, (250, 234, 198, 255)),
+        (17, 7, 23, 13, (186, 216, 240, 255)),
+        (23, 7, 27, 13, (244, 178, 194, 255)),
+        (5, 13, 11, 19, (186, 216, 240, 255)),
+        (11, 13, 17, 19, (244, 178, 194, 255)),
+        (17, 13, 23, 19, (250, 234, 198, 255)),
+        (23, 13, 27, 19, (196, 226, 184, 255)),
+        (5, 19, 27, 22, (252, 244, 232, 255)),
+        (5, 22, 27, 25, (214, 148, 166, 255)),
+    ]
+    for x0, y0, x1, y1, col in patches:
+        for y in range(y0, y1):
+            for x in range(x0, x1):
+                out.putpixel((x, y), col)
+    # Subtle fold shadow line
+    for x in range(5, 27):
+        out.putpixel((x, 21), (168, 112, 128, 255))
+    return out
+
+
+def compose_bouquet_32(
+    left_bloom: Image.Image,
+    right_bloom: Image.Image,
+    center_bloom: Image.Image,
+    wrap_rgb: tuple[int, int, int],
+    ribbon_rgb: tuple[int, int, int],
+) -> Image.Image:
+    """Compose 3 real Yoshino 16x16 flowers into a 32x32 wrapped bouquet."""
+    canvas = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    # Draw crisp paper cone wrap at bottom (y=14..29)
+    wr, wg, wb = wrap_rgb
+    w_dark = (max(0, wr - 45), max(0, wg - 45), max(0, wb - 45), 255)
+    w_mid = (wr, wg, wb, 255)
+    w_outline = (74, 48, 42, 255)
+    for y in range(14, 29):
+        half_w = max(2, int(round(10 - (y - 14) * 0.55)))
+        cx = 16
+        for x in range(cx - half_w - 1, cx + half_w + 2):
+            if x == cx - half_w - 1 or x == cx + half_w + 1 or y == 28:
+                canvas.putpixel((x, y), w_outline)
+            elif x > cx + 2 or y > 23:
+                canvas.putpixel((x, y), w_dark)
+            else:
+                canvas.putpixel((x, y), w_mid)
+    # Ribbon bow at y=22..24
+    rr, rg, rb = ribbon_rgb
+    for px in range(12, 21):
+        canvas.putpixel((px, 22), (rr, rg, rb, 255))
+    for px, py in ((13, 21), (14, 21), (18, 21), (19, 21), (14, 23), (18, 23), (15, 23), (17, 23)):
+        canvas.putpixel((px, py), (max(0, rr - 30), max(0, rg - 30), max(0, rb - 30), 255))
+    # Paste 3 blooms in clean fan
+    canvas.paste(left_bloom, (2, 5), left_bloom)
+    canvas.paste(right_bloom, (14, 5), right_bloom)
+    canvas.paste(center_bloom, (8, 1), center_bloom)
+    return canvas
+
+
+def compose_star_jar(jar_src: Image.Image, star_src: Image.Image) -> Image.Image:
+    """Place tiny golden paper stars inside a clear glass FRL jar."""
+    out = jar_src.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a < 10:
+                continue
+            if y >= 5 and r > 140 and g > 70 and b < 130:
+                # Clear sky-tinted glass interior
+                out.putpixel((x, y), (202, 236, 250, a))
+    mini_star = star_src.resize((6, 6), Image.NEAREST)
+    out.paste(mini_star, (5, 7), mini_star)
+    out.putpixel((4, 11), (255, 224, 92, 255))
+    out.putpixel((10, 12), (255, 210, 74, 255))
+    out.putpixel((7, 12), (255, 240, 148, 255))
+    return out
+
+
+def make_plush_cat_icon(cat_sheet: Image.Image) -> Image.Image:
+    """Crop the sitting orange cat from cat-orange-32px.png and add a small plush neck bow."""
+    # Row 4 Col 0 = Idle_South sitting frame (0, 128, 32, 32)
+    frame = cat_sheet.crop((0, 128, 32, 160))
+    bb = frame.getbbox()
+    trimmed = frame.crop(bb) if bb else frame
+    out = center_in_cell(trimmed, 32)
+    # Add tiny pink plush neck bow near collar center
+    for px, py, col in (
+        (14, 19, (226, 72, 112, 255)),
+        (15, 19, (252, 132, 164, 255)),
+        (16, 19, (226, 72, 112, 255)),
+        (15, 20, (194, 48, 88, 255)),
+    ):
+        if 0 <= px < 32 and 0 <= py < 32:
+            out.putpixel((px, py), col)
+    return out
+
+
+def make_satin_ribbon_icon() -> Image.Image:
+    """Create a crisp 16x16 rose-pink satin ribbon bow (none present in the 28 donor packs)."""
+    # 16x16 pixel pattern: .=transparent, o=outline, d=dark pink, m=mid pink, h=highlight
+    rows = [
+        "................",
+        "................",
+        "..oooo....oooo..",
+        ".omhhmo..omhhmo.",
+        ".ommmmooommmmdo.",
+        ".omddmmoomddmdo.",
+        "..ooooimmmoooo..",
+        ".....omddmo.....",
+        "....ommoooom....",
+        "...omdo..odmo...",
+        "..omdo....odmo..",
+        "..omo......omo..",
+        "..oo........oo..",
+        "................",
+        "................",
+        "................",
+    ]
+    pal = {
+        "o": (98, 28, 56, 255),
+        "d": (188, 54, 98, 255),
+        "m": (236, 92, 138, 255),
+        "h": (255, 168, 196, 255),
+        "i": (252, 132, 170, 255),
+    }
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch in pal:
+                img.putpixel((x, y), pal[ch])
+    return img
+
+
+def make_swimming_duck_frame(src: Image.Image, is_sleep: bool, ripple_phase: int) -> Image.Image:
+    """Adapt FarmRanchLife mallard sprite onto water by submerging feet and adding pixel ripples."""
+    canvas = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    if is_sleep:
+        # Sleep frame already tucks legs; shift down 1px and clip bottom edge at waterline
+        body = src.crop((0, 0, 16, 15))
+        canvas.paste(body, (0, 1), body)
+    else:
+        # Remove standing legs (y >= 13) and lower body 2px into the water
+        body = src.crop((0, 0, 16, 13))
+        canvas.paste(body, (0, 2), body)
+    # Crisp 2-frame pixel waterline ripple under the duck's chest
+    foam = (224, 248, 255, 235)
+    ripple = (128, 206, 242, 215)
+    if ripple_phase % 2 == 0:
+        for px in range(4, 12):
+            canvas.putpixel((px, 14), foam if px % 2 == 0 else ripple)
+        for px in (3, 12):
+            canvas.putpixel((px, 13), ripple)
+    else:
+        for px in range(3, 13):
+            canvas.putpixel((px, 14), ripple if px % 2 == 0 else foam)
+        for px in (2, 13):
+            canvas.putpixel((px, 14), ripple)
+    return canvas
+
+
 def pack_grid_atlas(
     entries: list[tuple[str, Image.Image, dict]],
     cell_size: int,
@@ -346,12 +664,12 @@ def build_all(src_dir: Path) -> None:
     OCAL_Z = "food-ocal.zip"
     GLITCH_Z = "food-glitch.zip"
     BC_Z = "food-bluecarrot16_20201221.zip"
-    DCSS_Z = "food-dcss_20201222.zip"
 
     frl = lambda rel: pool.load_image(FRL_Z, f"FarmRanchLife/08_Items/{rel}")
     frl_tool = lambda rel, idx: pool.strip_frame(FRL_Z, f"FarmRanchLife/06_Characters_Tools/Tool_Icons/{rel}", idx, 16, 16)
     frl_spr = lambda idx: pool.strip_frame(FRL_Z, "FarmRanchLife/05_Buildings_Machines/Sprinklers/sprinkler_copper_iron_gold_3f.png", idx, 16, 16)
     frl_mach = lambda rel: pool.strip_frame(FRL_Z, f"FarmRanchLife/05_Buildings_Machines/Artisan_Machines/{rel}", 0, 16, 32)
+    frl_prop = lambda rel, idx, fw=16, fh=16: pool.strip_frame(FRL_Z, f"FarmRanchLife/05_Buildings_Machines/Ranch_Props/{rel}", idx, fw, fh)
     f16 = lambda n: pool.load_image(FREE16_Z, f"Free_pixel_food_16x16/Icons/{n}.png")
     yosh = lambda n: pool.load_image(YOSH_Z, f"yoshinos _bright_icons_16x16_v1.3/icons/{n}.png")
     food16 = lambda n: pool.load_image(FOOD16_Z, f"food/{n}.png")
@@ -359,11 +677,13 @@ def build_all(src_dir: Path) -> None:
     ocal = lambda rel: pool.load_image(OCAL_Z, f"32x32/{rel}.png")
     glitch = lambda rel: pool.load_image(GLITCH_Z, f"32x32/{rel}.png")
     bc = lambda rel: pool.load_image(BC_Z, f"24x24/{rel}.png")
-    dcss = lambda rel: pool.load_image(DCSS_Z, f"32x32/{rel}.png")
     lpc_fv = lambda r, c: pool.grid_tile(LPCFOOD_Z, LPC_FRUIT_FV, r, c, 32, 32)
     lpc_ap = lambda r, c: pool.grid_tile(LPCFOOD_Z, LPC_ANIMAL, r, c, 32, 32)
-    lpc_br = lambda r, c: pool.grid_tile(LPCFOOD_Z, LPC_BREAD, r, c, 32, 32)
     shik = lambda r, c: pool.grid_tile(SHIK_Z, SHIK_SHEET, r, c, 32, 32)
+
+    cat_sheet = Image.open(REPO_ROOT / "public" / "assets" / "pets" / "cat-orange-32px.png").convert("RGBA")
+    world_props_sheet = Image.open(REPO_ROOT / "public" / "assets" / "unified" / "world-props.png").convert("RGBA")
+    emote_star = Image.open(REPO_ROOT / "public" / "assets" / "ui" / "hybrid" / "emotes" / "star.png").convert("RGBA")
 
     bag_base = frl("seeds/seeds_parsnip.png")
 
@@ -372,36 +692,37 @@ def build_all(src_dir: Path) -> None:
     # ------------------------------------------------------------------
     items_16: dict[str, tuple[Image.Image, str]] = {}
     items_32: dict[str, tuple[Image.Image, str]] = {}
+    assigned_skus: set[str] = set()
 
     def put16(sku: str, img: Image.Image, donor: str) -> None:
-        items_32.pop(sku, None)
+        if sku in assigned_skus:
+            raise RuntimeError(f"Duplicate SKU assignment in pack-farming-atlases.py: {sku}")
+        assigned_skus.add(sku)
         items_16[sku] = (img, donor)
 
     def put32(sku: str, img: Image.Image, donor: str) -> None:
-        items_16.pop(sku, None)
+        if sku in assigned_skus:
+            raise RuntimeError(f"Duplicate SKU assignment in pack-farming-atlases.py: {sku}")
+        assigned_skus.add(sku)
         items_32[sku] = (img, donor)
 
-    # -- Starters & Tools & Fertilizers & Sprinklers
-    put32("pet_kibble_basic", f16("eggs_brown").resize((16, 16), Image.NEAREST) if False else ocal("meat/chicken_drumsticks"), "food-ocal (CC0)")
-    put16("gift_flower_bouquet", yosh("pink_rose"), "yoshinos_bright_16")
+    # -- Starters & Gifts & Forage & Bait
+    put16("pet_kibble_basic", frl_prop("pet_bowl_empty_food_water_3f.png", 1, 16, 16), "FarmRanchLife")
+    put32(
+        "gift_flower_bouquet",
+        compose_bouquet_32(yosh("pink_rose"), yosh("white_rose"), yosh("rose"), (246, 224, 232), (222, 86, 126)),
+        "yoshinos_bright_16+composite",
+    )
     put32("gift_strawberry_cake", ghost("90_strawberrycake"), "ghostpixxells (CC0)")
-    put16("gift_plush_cat", f16("onigiri_3"), "free_pixel_food_16 (CC BY 4.0)")
-    put32("gift_star_jar", shik(9, 7), "shikashi_v2")
+    put32("gift_plush_cat", make_plush_cat_icon(cat_sheet), "frakassets-cat-orange")
+    put16("gift_star_jar", compose_star_jar(frl("artisan/honey_jar.png"), emote_star), "FarmRanchLife+hybrid_star")
     put32("letter_stationery_pink", shik(13, 9), "shikashi_v2")
-    put32("wood_chair", frl("materials/wood_planks.png"), "FarmRanchLife")
-    put16("wild_herb", frl("crops/kale.png"), "FarmRanchLife")
+    put32("wood_chair", world_props_sheet.crop((172, 0, 188, 20)), "olw-world-props")
+    put32("wild_herb", glitch("herb/rookswort"), "food-glitch (CC0)")
     put16("wild_clover", yosh("sprout"), "yoshinos_bright_16")
-    put16("wood_branch", frl("materials/hardwood_log.png"), "FarmRanchLife")
+    put16("wood_branch", yosh("mahogany_log"), "yoshinos_bright_16")
     put32("bait_free_worm", shik(16, 2), "shikashi_v2")
-    put32("bait_shrimp", bc("seafood/shrimp_01") if False else glitch("condiment/dressing_oily"), "food-glitch (CC0)")
-
-    # Clear dead `if False` shortcuts
-    put32("pet_kibble_basic", shik(14, 15), "shikashi_v2")
     put16("bait_shrimp", food16("shrimp"), "food16")
-    put32("sea_salt", lpc_ap(0, 8), "lpc-food-v2")
-    put16("wheat", lpc_fv(10, 22), "lpc-food-v2") if False else put32("wheat", lpc_fv(10, 22), "lpc-food-v2")
-    put32("zucchini", ocal("vegetable/zucchini"), "food-ocal")
-    put32("grape_raisin", food16("raisins"), "food16") if False else put16("grape_raisin", food16("raisins"), "food16")
 
     # Fish
     put16("carp_pond", frl("fish/carp.png"), "FarmRanchLife")
@@ -409,16 +730,22 @@ def build_all(src_dir: Path) -> None:
     put16("lotus_trout", frl("fish/arctic_char.png"), "FarmRanchLife")
 
     # Tools (starter + 10 upgraded)
-    put16("tool_hoe", frl_tool("iron_tier_for_pack1_tools_scythe_hoe_watering_can_axe_pickaxe_fishing_rod.png", 1), "FarmRanchLife")
-    put16("tool_watering_can", frl_tool("iron_tier_for_pack1_tools_scythe_hoe_watering_can_axe_pickaxe_fishing_rod.png", 2), "FarmRanchLife")
+    copper_metal = ((132, 58, 34), (188, 92, 48), (235, 138, 82))
+    steel_metal = ((96, 118, 152), (156, 178, 206), (224, 236, 248))
+    gold_metal = ((176, 112, 24), (232, 162, 58), (247, 214, 90))
+    iron_hoe_icon = frl_tool("iron_tier_for_pack1_tools_scythe_hoe_watering_can_axe_pickaxe_fishing_rod.png", 1)
+    iron_can_icon = frl_tool("iron_tier_for_pack1_tools_scythe_hoe_watering_can_axe_pickaxe_fishing_rod.png", 2)
+
+    put16("tool_hoe", iron_hoe_icon, "FarmRanchLife")
+    put16("tool_watering_can", iron_can_icon, "FarmRanchLife")
     put32("water_pitcher", ocal("drink/water_mug"), "food-ocal (CC0)")
     put16("rod_basic", frl_tool("iron_tier_for_pack1_tools_scythe_hoe_watering_can_axe_pickaxe_fishing_rod.png", 5), "FarmRanchLife")
-    put16("tool_hoe_copper", frl_tool("trowel_copper_iron_gold_crystal_4f.png", 0), "FarmRanchLife")
-    put16("tool_hoe_iron", frl_tool("trowel_copper_iron_gold_crystal_4f.png", 1), "FarmRanchLife")
-    put16("tool_hoe_gold", frl_tool("trowel_copper_iron_gold_crystal_4f.png", 2), "FarmRanchLife")
-    put16("tool_can_copper", frl_tool("milk_pail_copper_iron_gold_crystal_4f.png", 0), "FarmRanchLife")
-    put16("tool_can_iron", frl_tool("milk_pail_copper_iron_gold_crystal_4f.png", 1), "FarmRanchLife")
-    put16("tool_can_gold", frl_tool("milk_pail_copper_iron_gold_crystal_4f.png", 2), "FarmRanchLife")
+    put16("tool_hoe_copper", recolor_tool_tier(iron_hoe_icon, copper_metal), "FarmRanchLife")
+    put16("tool_hoe_iron", recolor_tool_tier(iron_hoe_icon, steel_metal), "FarmRanchLife")
+    put16("tool_hoe_gold", recolor_tool_tier(iron_hoe_icon, gold_metal), "FarmRanchLife")
+    put16("tool_can_copper", recolor_tool_tier(iron_can_icon, copper_metal), "FarmRanchLife")
+    put16("tool_can_iron", recolor_tool_tier(iron_can_icon, steel_metal), "FarmRanchLife")
+    put16("tool_can_gold", recolor_tool_tier(iron_can_icon, gold_metal), "FarmRanchLife")
     put16("tool_sickle_wide", frl_tool("shears_copper_iron_gold_crystal_4f.png", 1), "FarmRanchLife")
     put16("tool_sickle_grand", frl_tool("shears_copper_iron_gold_crystal_4f.png", 2), "FarmRanchLife")
     put16("tool_seed_spreader", frl_tool("pitchfork_copper_iron_gold_crystal_4f.png", 2), "FarmRanchLife")
@@ -434,15 +761,12 @@ def build_all(src_dir: Path) -> None:
     put16("sprinkler_iridium", frl_spr(2), "FarmRanchLife")
 
     # -- 40 Field Crops & Products (16x16 crisp + 32x32 crisp)
-    put16("wheat", frl("seeds/seeds_rice.png").resize((16, 16), Image.NEAREST) if False else food16("bread_loaf_brown"), "food16")
-    # Actually let's use exact grain sheaves from lpc-food-v2!
     put32("wheat", lpc_fv(10, 22), "lpc-food-v2")
     put32("oats", lpc_fv(10, 24), "lpc-food-v2")
     put16("carrot", f16("vegetable_carrot"), "free_pixel_food_16")
     put16("tomato", f16("vegetable_tomato"), "free_pixel_food_16")
     put16("strawberry", f16("fruit_strawberry"), "free_pixel_food_16")
     put16("sunflower", yosh("sunflower"), "yoshinos_bright_16")
-    put16("cabbage", food16("lettuce") if False else frl("crops/lettuce.png"), "FarmRanchLife")
     put32("cabbage", ocal("vegetable/cabbage"), "food-ocal")
     put16("lettuce", frl("crops/lettuce.png"), "FarmRanchLife")
     put16("spinach", food16("spinach"), "food16")
@@ -460,7 +784,6 @@ def build_all(src_dir: Path) -> None:
     put16("hot_pepper", f16("vegetable_jalapeno"), "free_pixel_food_16")
     put16("bell_pepper", frl("crops/bell_pepper.png"), "FarmRanchLife")
     put16("cucumber", frl("crops/cucumber.png"), "FarmRanchLife")
-    put16("zucchini", ocal("vegetable/zucchini").resize((16, 16)) if False else food16("cucumber"), "food16")
     put32("zucchini", ocal("vegetable/zucchini"), "food-ocal")
     put32("broccoli", ocal("vegetable/broccoli"), "food-ocal")
     put32("basil", lpc_fv(5, 25), "lpc-food-v2")
@@ -477,7 +800,7 @@ def build_all(src_dir: Path) -> None:
     put16("winter_squash", frl("crops/butternut.png"), "FarmRanchLife")
     put16("frostberry", yosh("blackberry"), "yoshinos_bright_16")
     put16("green_bean", frl("crops/green_bean.png"), "FarmRanchLife")
-    put16("ancient_green", frl("artisan/farm_crystal.png"), "FarmRanchLife")
+    put16("ancient_green", recolor_ancient_sprout(frl("crops/amaranth.png")), "FarmRanchLife")
 
     # -- 12 Orchard Fruits + 12 Saplings
     put16("peach", frl("fruit/peach.png"), "FarmRanchLife")
@@ -489,9 +812,9 @@ def build_all(src_dir: Path) -> None:
     put16("pear", frl("fruit/pear.png"), "FarmRanchLife")
     put16("pomegranate", frl("fruit/pomegranate.png"), "FarmRanchLife")
     put16("fig", frl("fruit/fig.png"), "FarmRanchLife")
-    put16("walnut", yosh("acorn"), "yoshinos_bright_16")
+    put32("walnut", bc("nut/walnuts_01"), "food-bluecarrot16 (CC0)")
     put16("olive", food16("olives_green"), "food16")
-    put16("cocoa_bean", yosh("coconut"), "yoshinos_bright_16")
+    put32("cocoa_bean", bc("misc/coffee_beans_01"), "food-bluecarrot16 (CC0)")
 
     put16("sapling_peach", frl("saplings/peach_sapling.png"), "FarmRanchLife")
     put16("sapling_apple", frl("saplings/apple_sapling.png"), "FarmRanchLife")
@@ -566,7 +889,7 @@ def build_all(src_dir: Path) -> None:
 
     # -- Livestock Products (14) & Feeds (4)
     put16("egg", frl("animal_products/egg_small_white.png"), "FarmRanchLife")
-    put16("golden_egg", frl("animal_products/egg_large_brown.png"), "FarmRanchLife")
+    put16("golden_egg", recolor_golden_egg(frl("animal_products/egg_large_brown.png")), "FarmRanchLife")
     put16("duck_egg", frl("animal_products/egg_duck_green.png"), "FarmRanchLife")
     put16("duck_feather", frl("animal_products/goose_feather.png"), "FarmRanchLife")
     put16("milk", frl("animal_products/milk_bottle.png"), "FarmRanchLife")
@@ -583,15 +906,15 @@ def build_all(src_dir: Path) -> None:
     put16("feed_chicken", pool.load_image(FRL_Z, "FarmRanchLife/05_Buildings_Machines/Ranch_Props/sack_chicken_feed.png"), "FarmRanchLife")
     put16("feed_livestock", pool.load_image(FRL_Z, "FarmRanchLife/05_Buildings_Machines/Ranch_Props/sack_grain.png"), "FarmRanchLife")
     put16("feed_rabbit", frl("animal_care/hay_feed.png"), "FarmRanchLife")
-    put16("feed_deluxe", frl("animal_care/sugar_cube.png"), "FarmRanchLife")
+    put16("feed_deluxe", frl("animal_care/chicken_feed_scoop.png"), "FarmRanchLife")
 
-    # Pantry clean lookup (see also top clean assignment)
+    # Pantry clean lookup
     put16("sugar_pack", frl("animal_care/sugar_cube.png"), "FarmRanchLife")
-    put32("spice", shik(20, 4), "shikashi_v2")
-    put32("ribbon", shik(19, 4), "shikashi_v2")
+    put32("spice", glitch("spice/all_spice"), "food-glitch (CC0)")
+    put16("ribbon", make_satin_ribbon_icon(), "olw-custom-ribbon")
     put32("sea_salt", lpc_ap(0, 8), "lpc-food-v2")
     put32("yeast", lpc_fv(26, 2), "lpc-food-v2")
-    put16("vinegar", frl("artisan/grape_juice.png"), "FarmRanchLife")
+    put32("vinegar", glitch("condiment/dressing_oily"), "food-glitch (CC0)")
     put16("vanilla_bean", food16("vanilla"), "food16")
 
     put16("flour", frl("artisan/rice_flour.png"), "FarmRanchLife")
@@ -600,14 +923,14 @@ def build_all(src_dir: Path) -> None:
     put32("potato_starch", lpc_ap(2, 8), "lpc-food-v2")
     put32("beet_sugar", shik(20, 5), "shikashi_v2")
     put32("paprika_powder", shik(20, 4), "shikashi_v2")
-    put16("olive_oil", frl("artisan/truffle_oil.png"), "FarmRanchLife")
+    put32("olive_oil", glitch("condiment/oil_olive"), "food-glitch (CC0)")
     put16("sunflower_oil", frl("artisan/sunflower_oil.png"), "FarmRanchLife")
     put32("cocoa_powder", shik(20, 3), "shikashi_v2")
 
     put16("butter", frl("artisan/butter_block.png"), "FarmRanchLife")
     put32("cheese", ocal("dairy/cheese_wedge"), "food-ocal")
     put16("goat_cheese", frl("artisan/goat_cheese.png"), "FarmRanchLife")
-    put32("yogurt", glitch("dessert/flummery"), "food-glitch")
+    put32("yogurt", ocal("drink/strawberry_smoothie"), "food-ocal (CC0)")
     put16("whipped_cream", f16("coffee_foam"), "free_pixel_food_16")
     put32("herb_butter", lpc_ap(0, 11), "lpc-food-v2")
     put32("honey_ice_cream", ghost("57_icecream"), "ghostpixxells")
@@ -637,31 +960,45 @@ def build_all(src_dir: Path) -> None:
     put16("rose_petal_jelly", frl("artisan/cherry_jam.png"), "FarmRanchLife")
     put16("pickled_radish", frl("artisan/pickled_radish.png"), "FarmRanchLife")
     put16("pickled_cabbage", frl("artisan/pickled_cucumbers.png"), "FarmRanchLife")
-    put16("pickled_pepper", f16("canned_soup"), "free_pixel_food_16")
+    put16("pickled_pepper", compose_pickled_pepper(frl("artisan/pickled_radish.png"), food16("chili_pepper_red")), "FarmRanchLife+food16")
     put16("dried_tomato", frl("artisan/dried_fruit.png"), "FarmRanchLife")
-    put16("grape_raisin", dcss("sultana").resize((16, 16)) if False else food16("raisins"), "food16")
-    put16("lemon_marmalade", frl("artisan/honey_jar.png"), "FarmRanchLife")
+    put16("grape_raisin", food16("raisins"), "food16")
+    put16("lemon_marmalade", recolor_lemon_marmalade(yosh("orange_jelly")), "yoshinos_bright_16")
     put16("cranberry_sauce", yosh("raspberry_jelly"), "yoshinos_bright_16")
 
     # -- Loom (8) & Florist (10)
     put32("wool_yarn", shik(17, 6), "shikashi_v2")
-    put16("angora_yarn", frl("materials/rope_coil.png"), "FarmRanchLife")
+    put32("angora_yarn", recolor_angora_yarn(shik(17, 6)), "shikashi_v2")
     put16("wool_cloth", frl("artisan/linen_bolt.png"), "FarmRanchLife")
     put16("knit_scarf", frl("artisan/cloth_bolt.png"), "FarmRanchLife")
     put32("cozy_sweater", shik(7, 8), "shikashi_v2")
-    put32("wool_blanket", shik(7, 9), "shikashi_v2")
+    put32("wool_blanket", compose_patchwork_blanket(world_props_sheet.crop((546, 0, 594, 48))), "olw-world-props")
     put32("rabbit_mittens", shik(8, 0), "shikashi_v2")
     put16("feather_pillow", frl("artisan/cotton_cloth.png"), "FarmRanchLife")
 
     put16("sakura_bouquet", yosh("pink_poppy"), "yoshinos_bright_16")
-    put16("tulip_bouquet", yosh("tulip"), "yoshinos_bright_16")
+    put32(
+        "tulip_bouquet",
+        compose_bouquet_32(
+            recolor_flower_petals(yosh("tulip"), (224, 60, 74)),
+            recolor_flower_petals(yosh("tulip"), (245, 203, 54)),
+            yosh("tulip"),
+            (234, 198, 152),
+            (218, 92, 118),
+        ),
+        "yoshinos_bright_16+composite",
+    )
     put16("sunset_bouquet", recolor_flower_petals(yosh("hibiscus"), (245, 130, 48)), "yoshinos_bright_16")
     put16("starlight_bouquet", recolor_flower_petals(yosh("hibiscus"), (92, 134, 240)), "yoshinos_bright_16")
     put16("royal_gold_bouquet", yosh("yellow_flower"), "yoshinos_bright_16")
-    put16("bridal_rose_bouquet", yosh("white_rose"), "yoshinos_bright_16")
+    put32(
+        "bridal_rose_bouquet",
+        compose_bouquet_32(yosh("white_rose"), yosh("white_rose"), yosh("white_rose"), (244, 246, 252), (242, 158, 188)),
+        "yoshinos_bright_16+composite",
+    )
     put32("honey_candle", shik(10, 11), "shikashi_v2")
-    put16("lavender_candle", frl("artisan/lavender_honey.png"), "FarmRanchLife")
-    put16("rose_soap", frl("artisan/lavender_honey.png"), "FarmRanchLife")
+    put32("lavender_candle", recolor_lavender_candle(shik(10, 11)), "shikashi_v2")
+    put16("rose_soap", compose_rose_soap(frl("artisan/butter_block.png")), "FarmRanchLife+recolor")
     put16("flower_crown", yosh("purple_pansy"), "yoshinos_bright_16")
 
     # -- Kitchen Cooked Dishes (15)
@@ -839,7 +1176,137 @@ def build_all(src_dir: Path) -> None:
     )
 
     # ------------------------------------------------------------------
-    # 4. Write shared TS lookup index + CREDITS.md
+    # 4. Animated Ranch Livestock (7 species) -> livestock-ranch.png
+    # ------------------------------------------------------------------
+    livestock_specs = [
+        ("chicken", "chicken/chicken_speckled", "chicken_speckled", 16, 16),
+        ("duck", "duck/duck_mallard", "duck_mallard", 16, 16),
+        ("cow", "cow/cow_jersey", "cow_jersey", 32, 32),
+        ("goat", "goat/goat_alpine", "goat_alpine", 32, 32),
+        ("sheep", "sheep/sheep_brown_baby", "sheep_brown_baby", 32, 32),
+        ("rabbit", "rabbit/rabbit_angora", "rabbit_angora", 16, 16),
+    ]
+    livestock_actions = (
+        ("idle_down", 2),
+        ("idle_left", 2),
+        ("idle_right", 2),
+        ("walk_down", 4),
+        ("walk_left", 4),
+        ("walk_right", 4),
+        ("walk_up", 4),
+        ("eat_down", 2),
+        ("eat_left", 2),
+        ("eat_right", 2),
+        ("sleep_left", None),
+        ("sleep_right", None),
+    )
+
+    livestock_entries: list[tuple[str, Image.Image, dict]] = []
+    livestock_meta: dict[str, dict] = {}
+    frl_zip = pool._open(FRL_Z)
+    frl_names = set(frl_zip.namelist())
+
+    for sp_id, sub_dir, prefix, fw, fh in livestock_specs:
+        anims_meta: dict[str, list[str]] = {}
+        sources_meta: dict[str, str] = {}
+        for act_name, expected_frames in livestock_actions:
+            candidate_suffix = f"_{expected_frames}f.png" if expected_frames is not None else None
+            member = None
+            if candidate_suffix:
+                cand = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_{act_name}{candidate_suffix}"
+                if cand in frl_names:
+                    member = cand
+            else:
+                for n_f in (2, 1):
+                    cand = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_{act_name}_{n_f}f.png"
+                    if cand in frl_names:
+                        member = cand
+                        break
+            if member is None:
+                raise RuntimeError(f"Missing FarmRanchLife livestock strip for {sp_id}:{act_name}")
+            sheet = pool.load_image(FRL_Z, member)
+            frame_count = max(1, sheet.width // fw)
+            frame_keys: list[str] = []
+            for f_idx in range(frame_count):
+                frame_img = pool.strip_frame(FRL_Z, member, f_idx, fw, fh)
+                fkey = f"{sp_id}_{act_name}_{f_idx}"
+                livestock_entries.append((fkey, frame_img, {"donor": "FarmRanchLife", "species": sp_id, "action": act_name}))
+                frame_keys.append(fkey)
+            anims_meta[act_name] = frame_keys
+            sources_meta[act_name] = member
+
+        # Add water-specific swimming frames for Mallard duck (clipped waterline + pixel ripples)
+        if sp_id == "duck":
+            for swim_dir in ("left", "right"):
+                idle_member = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_idle_{swim_dir}_2f.png"
+                sleep_member = f"FarmRanchLife/04_Ranch_Animals/{sub_dir}/{prefix}_sleep_{swim_dir}_1f.png"
+                swim_keys: list[str] = []
+                for f_idx in range(2):
+                    src_im = pool.strip_frame(FRL_Z, idle_member, f_idx, fw, fh)
+                    fkey = f"duck_swim_{swim_dir}_{f_idx}"
+                    livestock_entries.append((fkey, make_swimming_duck_frame(src_im, False, f_idx), {"donor": "FarmRanchLife+waterline", "species": "duck", "action": f"swim_{swim_dir}"}))
+                    swim_keys.append(fkey)
+                anims_meta[f"swim_{swim_dir}"] = swim_keys
+                sources_meta[f"swim_{swim_dir}"] = idle_member
+
+                sleep_im = pool.strip_frame(FRL_Z, sleep_member, 0, fw, fh)
+                sleep_fkey = f"duck_swim_sleep_{swim_dir}_0"
+                livestock_entries.append((sleep_fkey, make_swimming_duck_frame(sleep_im, True, 0), {"donor": "FarmRanchLife+waterline", "species": "duck", "action": f"swim_sleep_{swim_dir}"}))
+                anims_meta[f"swim_sleep_{swim_dir}"] = [sleep_fkey]
+                sources_meta[f"swim_sleep_{swim_dir}"] = sleep_member
+
+        livestock_meta[sp_id] = {
+            "donor": "FarmRanchLife",
+            "variant": prefix,
+            "frameW": fw,
+            "frameH": fh,
+            "portraitFrame": anims_meta["idle_down"][0],
+            "animations": anims_meta,
+            "sources": sources_meta,
+        }
+
+    # Bee species: grounded beehive_super_stack (16x32) + animated bees_swarm_4f (4x 16x16)
+    bee_hive_member = "FarmRanchLife/05_Buildings_Machines/Ranch_Props/beehive_super_stack.png"
+    bee_swarm_member = "FarmRanchLife/10_Effects/bees_swarm_4f.png"
+    livestock_entries.append(("bee_hive_0", pool.load_image(FRL_Z, bee_hive_member), {"donor": "FarmRanchLife", "species": "bee", "action": "hive"}))
+    bee_swarm_keys: list[str] = []
+    for f_idx in range(4):
+        fkey = f"bee_swarm_{f_idx}"
+        livestock_entries.append((fkey, pool.strip_frame(FRL_Z, bee_swarm_member, f_idx, 16, 16), {"donor": "FarmRanchLife", "species": "bee", "action": "swarm"}))
+        bee_swarm_keys.append(fkey)
+    livestock_meta["bee"] = {
+        "donor": "FarmRanchLife",
+        "variant": "beehive_super_stack+bees_swarm_4f",
+        "frameW": 16,
+        "frameH": 32,
+        "swarmFrameW": 16,
+        "swarmFrameH": 16,
+        "portraitFrame": "bee_hive_0",
+        "animations": {
+            "hive": ["bee_hive_0"],
+            "swarm": bee_swarm_keys,
+        },
+        "sources": {
+            "hive": bee_hive_member,
+            "swarm": bee_swarm_member,
+        },
+    }
+
+    livestock_frames = pack_shelf_atlas(
+        livestock_entries,
+        512,
+        1,
+        OUT_PUBLIC / "livestock-ranch.png",
+        OUT_PUBLIC / "livestock-ranch.json",
+        "/assets/farming/livestock-ranch.png",
+    )
+
+    for sp_id, meta in livestock_meta.items():
+        pf = meta["portraitFrame"]
+        meta["portrait"] = livestock_frames[pf]["frame"]
+
+    # ------------------------------------------------------------------
+    # 5. Write shared TS lookup index + CREDITS.md
     # ------------------------------------------------------------------
     generated = {
         "version": 1,
@@ -866,11 +1333,17 @@ def build_all(src_dir: Path) -> None:
                 "w": Image.open(OUT_PUBLIC / "trees-orchard.png").width,
                 "h": Image.open(OUT_PUBLIC / "trees-orchard.png").height,
             },
+            "livestockRanch": {
+                "url": "/assets/farming/livestock-ranch.png",
+                "w": Image.open(OUT_PUBLIC / "livestock-ranch.png").width,
+                "h": Image.open(OUT_PUBLIC / "livestock-ranch.png").height,
+            },
         },
         "items": {},
         "workshops": {},
         "crops": {},
         "trees": {},
+        "livestock": livestock_meta,
     }
 
     for sku in all_skus:
@@ -935,9 +1408,9 @@ Original zip archives stay outside the repository and are not redistributed stan
 | **LPC Food V2** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel, thekingphoenix (`lpc-food-v2.zip`) | Grain sheaves, butter, sea salt, yeast, herbs, rhubarb | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Crops v2.1** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel (`crops-v2.1.zip`) | Multi-stage growth frames (`crops-stages.png`) for field crops | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Fruit Trees** (`lpc-fruit-trees.zip`) | Multi-stage perennial orchard tree frames (`trees-orchard.png`) | CC-BY-SA 3.0 / GPL 3.0 |
-| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops & machine icons | Perpetual commercial/personal game license (no standalone resale) |
+| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons & animated livestock sprites (`livestock-ranch.png`) | Perpetual commercial/personal game license (no standalone resale) |
 | **Shikashi's Fantasy Icons Pack v2** (`Shikashi's Fantasy Icons Pack v2.zip`) | Powders, spices, candles, yarn, wool knitwear, basket, scrolls | Personal & commercial project license |
-| **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-dcss_20201222.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, bait | CC0 / Public Domain (FGA/OCAL/Glitch/DCSS) |
+| **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-bluecarrot16_20201221.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, olive oil, vinegar, walnuts, cocoa beans, bait | CC0 / Public Domain (FGA/OCAL/Glitch/Bluecarrot16) |
 """
     (OUT_PUBLIC / "CREDITS.md").write_text(credits_md, encoding="utf-8")
 
@@ -945,7 +1418,8 @@ Original zip archives stay outside the repository and are not redistributed stan
         f"Packed OK: skus={len(generated['items'])}/{len(all_skus)}, "
         f"items16={len(frames16)}, items32={len(frames32)}, "
         f"crops={len(crop_defs_meta)} ({len(crop_frames)} frames), "
-        f"trees={len(orchard_map)} ({len(tree_frames)} frames)"
+        f"trees={len(orchard_map)} ({len(tree_frames)} frames), "
+        f"livestock={len(livestock_meta)} ({len(livestock_frames)} frames)"
     )
     pool.close()
 

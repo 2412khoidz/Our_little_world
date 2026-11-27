@@ -1,43 +1,51 @@
-# Subsystem Handover — Billiards V2 (`minigame_event` over `NET.1`)
+# Subsystem Handover — Billiards V4.1 (Integrated Canonical RC2)
 
-## 1. Current Canonical Implementation & Exact Source Paths
-- **Pure TS Physics & Protocol:**
-  - `src/shared/billiards/types.ts` (Zod schemas: `BallStateSchema`, `ShotParamsSchema`, `MatchSnapshot`, `BilliardsTransport`, `8ball` / `9ball`, `online` / `local_pvp` / `ai`)
-  - `src/shared/billiards/physicsEngine.ts` (deterministic fixed-timestep engine: `FIXED_STEP_DT = 1/120`, `FIXED_SUBSTEPS = 4`, table `1000×540`, `BALL_R = 13.5`)
-  - `src/shared/billiards/protocol.ts` (versioned state machine, turn/foul rules, late/stale packet rejection, snapshot resync)
-- **React UI, Audio & Lazy Shell:** `src/features/minigames/billiards/` (`BilliardsModal.tsx`, `LazyBilliardsModal.tsx`, `useBilliardsSync.ts`, `sound.ts`, `billiards.css`, `index.ts`), `src/features/home/MenuModal.tsx`.
-- **Overworld Suspension Bridge:** `src/game/eventBus.ts` & `src/game/scenes/WorldScene.ts` (`cmd:set-render-suspended`, cập nhật `data-render-suspended`), `src/app/App.tsx`, `src/features/study/ambientAudio.ts`.
-- **Backend / Server / SQL:** `scripts/devLanBilliardsHandlers.mjs`, `scripts/devLanServerPlugin.mjs`, `scripts/devLanWsHub.mjs` (`minigame_event`), `src/lib/backend/{types,devLanBackend,localPreviewBackend,supabaseBackend,unconfiguredBackend}.ts`, `supabase/migrations/20261126000100_v02_billiards_minigame.sql`, `supabase/tests/billiards_matches.sql`.
+## 1. Current Canonical Implementation & Exact Source Paths (`main` RC2)
+- **Pure TS Physics, AI & Protocol:**
+  - `src/shared/billiards/types.ts` (Zod schemas: `BilliardsEdition`, `BotDifficulty`, `Billiards3DQuality`, `BallStateSchema`, `ShotParamsSchema`, `MatchSnapshot`, `BilliardsLobbyState`, `LobbyConfirmedConfig`, `billiards:lobby_*` wire events)
+  - `src/shared/billiards/physicsEngine.ts` (deterministic 2D fixed-timestep engine: `FIXED_STEP_DT = 1/120`, `FIXED_SUBSTEPS = 4`, table `1000×540`, `BALL_R = 13.5`)
+  - `src/shared/billiards/physics3dEngine.ts` (deterministic 3D real-scale metric engine transplanted từ donor 3D: `FIXED_STEP_3D = 1/120`, `SUBSTEPS_3D = 6`, bàn 9ft `2.54m × 1.27m`, `BALL_R_3D = 0.028575`, hỗ trợ Massé elevation `0°..45°`)
+  - `src/shared/billiards/botAi.ts` (`computeBotShot2D`, `chooseBotBallInHand2D`, `computeBotShot3D`, `chooseBotBallInHand3D`)
+  - `src/shared/billiards/protocol.ts` & `src/shared/billiards/lobbyProtocol.ts` (versioned match state machine, chọn người khai cuộc công bằng + luân phiên tái đấu, shared lobby ready check, asset-readiness gating & countdown)
+- **React UI, Keyboard, Touch, Portrait & Lazy Modules:**
+  - `src/features/minigames/billiards/`: `BilliardsModal.tsx` (wrapper + `React.lazy` boundary), `LazyBilliardsModal.tsx`, `BilliardsEntryMenu.tsx`, `BilliardsOnlineLobby.tsx`, `Billiards2DGame.tsx`, `Billiards3DGame.tsx` (camera góc nghiêng điện ảnh V4.1 + trở về góc cơ khi ngắm, raycast chọn bi), `cameraController3d.ts`, `BilliardsAvatarPortrait.tsx`, `BilliardsTouchCameraSettings.tsx`, `viewportTransform.ts`, `touchControls.ts`, `touchPreferences.ts`, `useFocusMode.ts` (ủy quyền qua `useOptionalGlobalViewport` thuộc `GlobalViewportContext` giữ nguyên single `fullscreenOwner`), `useBilliardsKeyboard.ts`, `useBilliardsSync.ts`, `localStats.ts`, `sound.ts`, `billiards.css`, `billiards3d.css`, `billiardsGameProps.ts`.
+- **Overworld Suspension Bridge & Viewport Contract:** `src/game/eventBus.ts`, `src/game/scenes/WorldScene.ts`, `src/app/App.tsx` (kèm `handleOpenBilliards` dùng chung cho `MobileNavDrawer` & `MenuModal`, `billiards-invite-banner`, lưu DB khi `mode === 'online'`), `src/app/viewport/GlobalViewportContext.tsx`, [VIEWPORT_FULLSCREEN_CONTRACT.md](VIEWPORT_FULLSCREEN_CONTRACT.md).
+- **Backend / Server / SQL:** `scripts/devLanBilliardsLobby.mjs`, `scripts/devLanBilliardsHandlers.mjs`, `scripts/devLanWsHub.mjs` (`serverNowMs` trong `welcome`/`pong`, `SERVER_LOBBY_SESSION_ID`), `src/lib/backend/devLanRealtimeClient.ts` (EWMA server clock offset), `supabase/migrations/20261126000100_v02_billiards_minigame.sql`.
 
-## 2. Existing Architecture & Contracts
-- **Deterministic Fixed-Timestep Simulation:** `MICRO_DT = (1/120)/4` giây bảo đảm sai số vật lý `0.000000 px` giữa các thiết bị 30/60/120/144 FPS và chế độ `0.5x Slow-Mo Replay`.
-- **Network Budget & Sync:** Aim sync giới hạn `AIM_THROTTLE_MS = 100` (`<= 10 Hz`, giữ an toàn dưới ngưỡng Supabase `eventsPerSecond: 15`), kết nối qua `BilliardsTransport` chuyển tải `minigame_event` trên WebSocket `devLanWsHub.mjs` (hoặc Supabase Realtime private channel); đồng bộ phục hồi snapshot qua `billiards:state_request` + `RETRY_REQUEST_MS = 600`.
-- **Overworld Isolation:** Khi mở `BilliardsModal`, app phát `cmd:set-render-suspended` để tạm dừng vòng render Phaser overworld nhằm tiết kiệm pin/GPU trên iPhone, sau đó khôi phục hoàn toàn và giữ nguyên vị trí/input overworld khi đóng.
+## 2. Donor Sources & Architecture Notes
+- **Donor 2D V2 (Owner):** `C:\Users\admin\Downloads\our_little_world_billiards_pack_v2.zip` -> dùng đối chiếu hành vi phím `Space` nạp lực dao động, `ArrowLeft`/`ArrowRight` + `Shift`, `Z` soi cận cảnh và luồng điều khiển bàn 2D.
+- **Donor 3D Edition (Owner):** `C:\Users\admin\Downloads\our_little_billiards_3d_8_ball_pool_edition(1).html` -> nguồn chuyển ghép trực tiếp toàn bộ Three.js scene (bàn gỗ gụ/chrome, bóng procedural texture + quaternion spin, đèn overhead + accent, cơ bi-a có strike animation, dải ngắm 3D ribbon, 3 góc cam `follow`/`top`/`orbit`, Massé `0°..45°`, Web Audio metric foley) vào `physics3dEngine.ts` + `Billiards3DGame.tsx` + `billiards3d.css`.
+- **Two Separate Simulation Adapters:** Bản 2D (`1000×540` px) và 3D (`2.54×1.27` m) giữ 2 physics/render adapter tách biệt, đồng bộ qua giao thức `protocol.ts` chung và chuyển đổi tọa độ `wireToBalls3D` / `balls3DToWire` ở biên giới wire/snapshot.
+- **Overworld & Lifecycle:** Mở `BilliardsModal` tạm dừng render Phaser overworld (`cmd:set-render-suspended: true`); khi thoát sẽ dispose renderer WebGL/textures/geometries/materials, timer, RAF và listener, đồng thời khôi phục overworld & nhạc nền biome.
 
-## 3. Verified Donor Repositories & Imported Modules
-- Tự triển khai gốc (clean TypeScript + Canvas 2D / WebAudio + Zod schemas) gắn trực tiếp vào kiến trúc NET.1 WS & Backend Adapter của **Our Little World** ở commit `3a89a9e`. Không dùng thư viện vật lý hay binary bên thứ ba ngoài `zod` và WebAudio tổng hợp trong `sound.ts`.
+## 3. Supported Editions × Modes Matrix
+- **2D × Local 2P (8-Bi & 9-Bi):** Playable & E2E verified (desktop + 430×932 mobile touch).
+- **2D × Bot (Dễ / Vừa / Cao thủ, 8-Bi & 9-Bi):** Playable & unit/E2E verified, thống kê tách riêng ở `localStorage`.
+- **2D × Online (8-Bi & 9-Bi):** Playable & 2-client WS E2E verified (invite, ready check, asset gate, countdown, full match, reconnect, mutual rematch, idempotent DB stats, ghép được giữa PC màn ngang và mobile màn dọc).
+- **2D & 3D × Luyện tập tự do (`practice`):** Playable & E2E verified — không giới hạn lượt/đồng hồ, đặt lại bi cái tự do.
+- **3D × Local 2P (8-Bi & 9-Bi):** Playable & E2E verified (3 cameras, Massé slider, `Space` shoot, 3x open/close disposal).
+- **3D × Bot (Dễ / Vừa / Cao thủ, 8-Bi & 9-Bi):** Playable & unit/E2E verified.
+- **3D × Online (8-Bi & 9-Bi):** Playable & 2-client WS E2E verified (invite toast, 3D asset preload gate, synchronized countdown start, deterministic synced shot & reload recovery).
 
-## 4. Owner-Approved Behavior
-- Mini-game PvP thân thiện giữa 2 người (`online`, `local_pvp`, `ai`), lazy-load không làm phình chunk khởi động chính (`BilliardsModal-*.js` & `BilliardsModal-*.css` tách riêng).
-- Đóng/mở nhiều chu kỳ không rò rỉ DOM/heap và không khóa điều khiển nhân vật khi trở lại overworld (`data-render-suspended` chuyển `1` → `0`).
-- Có bàn bi-a đặt tại world/menu và lưu ván idempotent (`billiards_matches`).
+## 4. Known Bugs, Limits & Untested Scenarios
+- Chưa playtest thực tế trên iPhone 16 Pro Max (Safari/PWA) qua Cloudflare Quick Tunnel — FPS/nhiệt WebGL 3D hiện mới kiểm trên Chromium desktop (`430×932` emulation) chứ chưa kiểm phần cứng iPhone thật.
+- Migration SQL & RPC Bi-a trên Supabase Cloud thật chưa chạy xác nhận sau bản V3.
+- Trong chế độ `3D Online`, nếu `confirmedOnlineConfig` được cập nhật cho ván mới cùng lúc có rớt mạng kéo dài, client dựa vào cache `lastMatchSnapshot` + `billiards:state_request` từ server/peer để hồi phục.
 
-## 5. Known Bugs & Untested Scenarios
-- `supabase/migrations/20261126000100_v02_billiards_minigame.sql` & `supabase/tests/billiards_matches.sql` chưa chạy xác nhận trên Supabase Cloud project thật.
-- Chưa playtest 2 máy thật (Windows PC ↔ iPhone Safari qua Cloudflare Quick Tunnel) sau khi hợp nhất vào `v0.2.5`.
+## 5. Historical Regressions That Must Not Return
+- **Treo/mất điều khiển overworld sau khi thoát Bi-a:** Quên phát `cmd:set-render-suspended: false` khi đóng modal hoặc lỗi cleanup listener/keyboard capture.
+- **Phím `Space` mất tác dụng sau khi kéo `<input type="range">`:** Luôn loại trừ `range`/`button`/`checkbox`/`radio` trong `isEditableTarget()` của `useBilliardsKeyboard.ts`.
+- **Lệch kết quả giữa 60Hz PC và 120Hz ProMotion iPhone:** Cấm thay đổi hằng số `FIXED_STEP_DT` / `FIXED_STEP_3D` sang variable delta-time.
+- **Gói tin trễ ghi đè ván mới:** Luôn kiểm tra `matchId`, `matchSeq`, `shotSeq`, `configVersion` và `baseStateVersion` trong `protocol.ts` & `lobbyProtocol.ts`.
 
-## 6. Historical Regressions That Must Not Return
-- **Treo/mất điều khiển overworld sau khi thoát Bi-a:** Quên phát `cmd:set-render-suspended: false` khi đóng modal hoặc lỗi cleanup listener.
-- **Lệch kết quả giữa 60Hz PC và 120Hz ProMotion iPhone:** Cấm thay đổi hằng số `FIXED_STEP_DT` / `FIXED_SUBSTEPS` sang variable delta-time.
-- **Gói tin trễ ghi đè ván mới:** Luôn kiểm tra `matchId`, `shotIndex` và `baseStateVersion` trong `protocol.ts`.
-
-## 7. Focused Test Commands
+## 6. Focused Test Commands
 ```bash
-npx vitest run tests/unit/billiardsPhysicsDeterminism.test.ts tests/unit/billiardsProtocol.test.ts tests/unit/billiardsModalLifecycle.test.tsx tests/server/billiardsDevLan.test.ts
-npx playwright test tests/e2e/billiards-multiplayer.spec.ts --project=chromium-desktop
+npx vitest run tests/unit/billiardsTouchAndViewport.test.ts tests/unit/billiards3dPhysicsDeterminism.test.ts tests/unit/billiardsBotAi.test.ts tests/unit/billiardsControlsAndLifecycle.test.tsx tests/unit/billiardsLobbyProtocol.test.ts tests/unit/billiardsModalLifecycle.test.tsx tests/unit/billiardsPhysicsDeterminism.test.ts tests/unit/billiardsProtocol.test.ts tests/server/billiardsLobbyWs.test.ts tests/server/billiardsDevLan.test.ts
+npx playwright test tests/e2e/billiards-multiplayer.spec.ts tests/e2e/billiards-v3-modes.spec.ts --project=chromium-desktop
+npx playwright test tests/e2e/billiards-v3-modes.spec.ts -g "mobile touch controls" --project=chromium-iphone-16-pro-max
 ```
 
-## 8. Dependencies on Other Subsystems
-- **Multiplayer (`NET.1`):** Yêu cầu `minigame_event` qua `devLanWsHub.mjs` / `supabaseBackend.ts` và phiên 2 thành viên.
+## 7. Dependencies on Other Subsystems
+- **Multiplayer (`NET.1`):** Yêu cầu `minigame_event` qua `devLanWsHub.mjs` / `supabaseBackend.ts` và `serverNowMs` clock offset từ `devLanRealtimeClient.ts`.
 - **Phaser Overworld (`WorldScene.ts`):** Phụ thuộc `cmd:set-render-suspended` để nhường GPU khi chơi Bi-a và phục hồi input + presence ngay khi đóng.
 - **Audio:** Tương tác với `ambientAudio.ts` khi tạm dừng/phát âm thanh bàn bi-a.

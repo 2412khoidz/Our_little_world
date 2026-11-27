@@ -46,6 +46,12 @@ import {
   type AmbientSnailHandle,
 } from '../world/tiledZoneAccents';
 import {
+  spawnAmbientDonorAnimal,
+  syncAmbientChickenVisual,
+  syncAmbientDuckVisual,
+  syncAmbientSheepVisual,
+} from '../farming/ambientAnimalVisualAdapter';
+import {
   createChickenActorState,
   createDuckActorState,
   createSnailActorState,
@@ -1023,21 +1029,31 @@ export class WorldScene extends Phaser.Scene {
       frog.play('olw-frog');
       this.mapLayers.push(frog);
     }
-    if (this.anims.exists('olw-duck')) {
-      const duckConfigs = [
-        { id: 'garden_pond_duck_0', x: 168, y: 168, bounds: { minX: 146, maxX: 174, minY: 154, maxY: 174 }, phase: 1.1 },
-        { id: 'garden_pond_duck_1', x: 96, y: 160, bounds: { minX: 86, maxX: 108, minY: 150, maxY: 170 }, phase: 3.4 },
-      ];
-      for (const dc of duckConfigs) {
-        const duck = this.add.sprite(dc.x, dc.y, WORLD_PROPS_KEY, `${extIds.sheets.duck}:0`).setOrigin(0.5, 0.8).setDepth(dc.y + 2);
-        duck.play('olw-duck');
-        this.mapLayers.push(duck);
-        this.ambientDucks.push({
-          sprite: duck,
-          lastRippleAtMs: 0,
-          state: createDuckActorState(dc.id, dc.x, dc.y, dc.bounds, dc.phase),
-        });
-      }
+    const duckConfigs = [
+      { id: 'garden_pond_duck_0', x: 168, y: 168, bounds: { minX: 146, maxX: 174, minY: 154, maxY: 174 }, phase: 1.1 },
+      { id: 'garden_pond_duck_1', x: 96, y: 160, bounds: { minX: 86, maxX: 108, minY: 150, maxY: 170 }, phase: 3.4 },
+    ];
+    for (const dc of duckConfigs) {
+      const duckState = createDuckActorState(dc.id, dc.x, dc.y, dc.bounds, dc.phase);
+      const spawned = spawnAmbientDonorAnimal(this, {
+        kind: 'duck',
+        x: dc.x,
+        y: dc.y,
+        depth: dc.y + 2,
+        facing: duckState.facing,
+        waterMode: true,
+        legacyFrame: `${extIds.sheets.duck}:0`,
+        legacyAnimKey: 'olw-duck',
+      });
+      if (!spawned) continue;
+      this.mapLayers.push(spawned.sprite);
+      this.ambientDucks.push({
+        sprite: spawned.sprite,
+        lastRippleAtMs: 0,
+        state: duckState,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
     }
 
     // 3. Romantic Sakura Picnic Glade (`tx = 1..4, ty = 8..10`)
@@ -1070,23 +1086,32 @@ export class WorldScene extends Phaser.Scene {
     this.mapLayers.push(placeSoftShadow(this, 266, 137, 20, 6, 128, 0.45));
     this.placeProp(extIds.props.beehive, 266, 138, 0.5, 1, 138);
 
-    if (this.anims.exists('olw-chicken')) {
-      const chickSpecs = [
-        { id: 'garden_chicken_0', x: 184, y: 144, phase: 0.9 },
-        { id: 'garden_chicken_1', x: 48, y: 108, phase: 2.7 },
-      ];
-      for (const cs of chickSpecs) {
-        const chShadow = placeSoftShadow(this, cs.x, cs.y - 1, 11, 4, cs.y - 9, 0.45);
-        this.mapLayers.push(chShadow);
-        const ch = this.add.sprite(cs.x, cs.y, WORLD_PROPS_KEY, `${extIds.sheets.chicken}:0`).setOrigin(0.5, 0.85).setDepth(cs.y);
-        ch.play('olw-chicken');
-        this.mapLayers.push(ch);
-        this.ambientChickens.push({
-          sprite: ch,
-          shadow: chShadow,
-          state: createChickenActorState(cs.id, cs.x, cs.y, cs.phase),
-        });
-      }
+    const chickSpecs = [
+      { id: 'garden_chicken_0', x: 184, y: 144, phase: 0.9 },
+      { id: 'garden_chicken_1', x: 48, y: 108, phase: 2.7 },
+    ];
+    for (const cs of chickSpecs) {
+      const chState = createChickenActorState(cs.id, cs.x, cs.y, cs.phase);
+      const spawned = spawnAmbientDonorAnimal(this, {
+        kind: 'chicken',
+        x: cs.x,
+        y: cs.y,
+        depth: cs.y,
+        facing: chState.facing,
+        legacyFrame: `${extIds.sheets.chicken}:0`,
+        legacyAnimKey: 'olw-chicken',
+      });
+      if (!spawned) continue;
+      const chShadow = placeSoftShadow(this, cs.x, cs.y - 1, 11, 4, cs.y - 9, 0.45);
+      this.mapLayers.push(chShadow);
+      this.mapLayers.push(spawned.sprite);
+      this.ambientChickens.push({
+        sprite: spawned.sprite,
+        shadow: chShadow,
+        state: chState,
+        usesDonorAtlas: spawned.usesDonorAtlas,
+        currentAnimKey: spawned.currentAnimKey,
+      });
     }
 
     if (this.textures.exists(SNAIL_SHEET_KEY) && this.anims.exists('olw-snail')) {
@@ -2467,23 +2492,7 @@ export class WorldScene extends Phaser.Scene {
           weatherKind,
           isTileBlocked: isBlockedTile,
         });
-        ch.sprite
-          .setPosition(ch.state.x, ch.state.y + ch.state.hopOffsetY)
-          .setFlipX(ch.state.facing === 'left')
-          .setAlpha(ch.state.activity === 'roosting_sleep' ? 0.8 : 1)
-          .setDepth(Math.round(ch.state.y));
-        ch.sprite.anims.timeScale = ch.state.animRateScale;
-        ch.shadow.setPosition(ch.state.x, ch.state.y - 1);
-        if (ch.bubble) {
-          if (ch.state.bubbleText) {
-            ch.bubble
-              .setText(ch.state.bubbleText)
-              .setPosition(ch.state.x, ch.state.y + ch.state.hopOffsetY - 14)
-              .setVisible(true);
-          } else {
-            ch.bubble.setVisible(false);
-          }
-        }
+        syncAmbientChickenVisual(this, ch);
         if (this.petEntity) {
           const petPos = this.petEntity.getWorldPosition();
           nearestChickenDistPx = Math.min(nearestChickenDistPx, Math.hypot(petPos.x - ch.state.x, petPos.y - ch.state.y));
@@ -2501,12 +2510,7 @@ export class WorldScene extends Phaser.Scene {
           playerRunning: moved && running,
           isNight,
         });
-        dk.sprite
-          .setPosition(dk.state.x, dk.state.y + dk.state.bobOffsetY)
-          .setFlipX(dk.state.facing === 'left')
-          .setAlpha(dk.state.activity === 'sleeping' ? 0.82 : 1)
-          .setDepth(Math.round(dk.state.y));
-        dk.sprite.anims.timeScale = dk.state.animRateScale;
+        syncAmbientDuckVisual(this, dk);
         if (dk.state.ripplePulse && now - dk.lastRippleAtMs >= 880) {
           dk.lastRippleAtMs = now;
           const ripple = this.add
@@ -2545,23 +2549,7 @@ export class WorldScene extends Phaser.Scene {
               ? (tx, ty) => farmPlotIndexForTile(tx, ty) !== null
               : undefined,
         });
-        sp.sprite
-          .setPosition(sp.state.x, sp.state.y + sp.state.grazeBobY)
-          .setFlipX(sp.state.facing === 'left')
-          .setAlpha(sp.state.activity === 'sleeping' ? 0.82 : 1)
-          .setDepth(Math.round(sp.state.y));
-        sp.sprite.anims.timeScale = sp.state.animRateScale;
-        sp.shadow.setPosition(sp.state.x, sp.state.y - 1);
-        if (sp.bubble) {
-          if (sp.state.bubbleText) {
-            sp.bubble
-              .setText(sp.state.bubbleText)
-              .setPosition(sp.state.x, sp.state.y - 18)
-              .setVisible(true);
-          } else {
-            sp.bubble.setVisible(false);
-          }
-        }
+        syncAmbientSheepVisual(this, sp);
       }
     }
 
