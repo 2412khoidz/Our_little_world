@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ensureV015Db, grantPetCareStarterPack, handleV015Route } from './devLanV015Handlers.mjs';
+import { ensureV015Db, initializeDevLanWorldInventory, handleV015Route } from './devLanV015Handlers.mjs';
 import { createSharedPetCareSession, mergeSharedPetCareSession } from './devLanPetCareSession.mjs';
 import { handleBilliardsRoute } from './devLanBilliardsHandlers.mjs';
 import { createDevLanWsHub } from './devLanWsHub.mjs';
@@ -313,8 +313,18 @@ export function createDevLanHandler({
   }
 
   function saveDb() {
-    fs.writeFileSync(stateFilePath, JSON.stringify(db, null, 2), 'utf8');
+    const pendingPath = `${stateFilePath}.tmp`;
+    fs.writeFileSync(pendingPath, JSON.stringify(db, null, 2), 'utf8');
+    fs.renameSync(pendingPath, stateFilePath);
   }
+
+  const loadedV015 = ensureV015Db(db);
+  const startupTime = new Date().toISOString();
+  let migratedInventory = false;
+  for (const worldId of Object.keys(db.worlds)) {
+    if (initializeDevLanWorldInventory(loadedV015, worldId, startupTime)) migratedInventory = true;
+  }
+  if (migratedInventory) saveDb();
 
   function getWorldForUser(userId) {
     for (const [worldId, members] of Object.entries(db.memberships)) {
@@ -456,7 +466,7 @@ export function createDevLanHandler({
     ];
     db.placements[worldId] = buildStarterPlacements(worldId, may.userId, nowIso);
     const v015 = ensureV015Db(db);
-    grantPetCareStarterPack(v015, worldId, nowIso);
+    initializeDevLanWorldInventory(v015, worldId, nowIso, true);
     ensurePetCareSession(worldId);
     saveDb();
     return worldId;
@@ -500,10 +510,6 @@ export function createDevLanHandler({
         inv.redeemedBy = PARTNER_B_DEV_ID;
         inv.redeemedAt = nowIso;
       }
-    }
-    const v015 = ensureV015Db(db);
-    if (!v015.pets?.[existingId]) {
-      grantPetCareStarterPack(v015, existingId, nowIso);
     }
     ensurePetCareSession(existingId);
     saveDb();
@@ -782,6 +788,7 @@ export function createDevLanHandler({
         db.worlds[worldId] = { id: worldId, name: worldName, layoutVersion: 1, createdAt: nowIso };
         db.memberships[worldId] = [{ userId, role: 'owner', joinedAt: nowIso }];
         db.placements[worldId] = buildStarterPlacements(worldId, userId, nowIso);
+        initializeDevLanWorldInventory(ensureV015Db(db), worldId, nowIso, true);
         saveDb();
         sendJson(res, 200, { ok: true, data: buildSnapshot(worldId) });
         return;

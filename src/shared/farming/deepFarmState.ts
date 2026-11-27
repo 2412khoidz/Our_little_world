@@ -1,3 +1,4 @@
+import { creditInventoryQuantity, InventoryQuantityError } from '../inventory/inventoryLedger.mjs';
 /**
  * Authoritative Deep Farming World State (Checkpoint F).
  *
@@ -303,6 +304,7 @@ function debitSharedAnyQuality(
   items: InventoryEntry[],
   sku: string,
   qty: number,
+  reserved?: { sku: string; qty: number; quality: QualityTier }[],
 ): InventoryEntry[] | null {
   if (qty <= 0) return items.map((r) => ({ ...r }));
   if (sharedTotalQty(items, sku) < qty) return null;
@@ -321,6 +323,7 @@ function debitSharedAnyQuality(
     if (next[idx]!.qty === 0) {
       next.splice(idx, 1);
     }
+    reserved?.push({ sku, qty: take, quality: tier });
     remaining -= take;
   }
 
@@ -335,31 +338,14 @@ function creditSharedItem(
   qty: number,
   quality: QualityTier,
 ): InventoryEntry[] {
-  if (qty <= 0) return items;
-  const next = items.map((r) => ({ ...r }));
-  const idx = next.findIndex(
-    (r) => r.ownerScope === 'shared' && r.itemSku === sku && (r.quality ?? 'normal') === quality,
-  );
-  if (idx >= 0) {
-    next[idx] = { ...next[idx]!, qty: next[idx]!.qty + qty, updatedAt: new Date(nowMs).toISOString() };
-  } else {
-    next.push({
-      worldId,
-      ownerScope: 'shared',
-      itemSku: sku,
-      qty,
-      quality,
-      updatedAt: new Date(nowMs).toISOString(),
-    });
-  }
-  return next;
+  return creditInventoryQuantity(items, worldId, 'shared', sku, qty, new Date(nowMs).toISOString(), quality);
 }
 
 function itemLabelVi(sku: string): string {
   return getItem(sku)?.nameVi ?? sku;
 }
 
-export function applyDeepFarmMutation(input: {
+type DeepFarmMutationInput = {
   readonly worldId: string;
   readonly actorId: string;
   readonly state: DeepFarmState;
@@ -367,7 +353,18 @@ export function applyDeepFarmMutation(input: {
   readonly walletCoins: number;
   readonly nowMs: number;
   readonly params: DeepFarmActionParams;
-}): DeepFarmMutationResult {
+};
+
+export function applyDeepFarmMutation(input: DeepFarmMutationInput): DeepFarmMutationResult {
+  try {
+    return computeDeepFarmMutation(input);
+  } catch (error) {
+    if (!(error instanceof InventoryQuantityError)) throw error;
+    return { ok: false, code: error.code, messageVi: error.message };
+  }
+}
+
+function computeDeepFarmMutation(input: DeepFarmMutationInput): DeepFarmMutationResult {
   const { worldId, actorId, state, nowMs, params } = input;
   const cleanKey = params.idempotencyKey.trim();
 
@@ -609,8 +606,9 @@ export function applyDeepFarmMutation(input: {
       );
       if (!res.ok) return { ok: false, code: res.code, messageVi: res.messageVi };
       let workingItems = items;
+      const reservedInputs: { sku: string; qty: number; quality: QualityTier }[] = [];
       for (const req of res.consumedInputs) {
-        const debited = debitSharedAnyQuality(workingItems, req.sku, req.qty);
+        const debited = debitSharedAnyQuality(workingItems, req.sku, req.qty, reservedInputs);
         if (!debited) {
           return {
             ok: false,
@@ -621,8 +619,11 @@ export function applyDeepFarmMutation(input: {
         workingItems = debited;
       }
       items = workingItems;
+      const station = res.state.stations[params.workshopId];
+      const queue = [...station.queue.slice(0, -1), { ...res.job, reservedInputs }];
+      const stations = { ...res.state.stations, [params.workshopId]: { ...station, queue } };
       return commit(
-        { workshops: res.state },
+        { workshops: { ...res.state, stations } },
         `Đã đưa ${itemLabelVi(res.job.outputSku)} vào hàng đợi chế biến.`,
       );
     }
@@ -631,7 +632,7 @@ export function applyDeepFarmMutation(input: {
       const res = cancelWorkshopJob(state.workshops, params.workshopId, params.jobId, nowMs);
       if (!res.ok) return { ok: false, code: res.code, messageVi: res.messageVi };
       for (const refund of res.refundInputs) {
-        items = creditSharedItem(worldId, nowMs, items, refund.sku, refund.qty, 'normal');
+        items = creditSharedItem(worldId, nowMs, items, refund.sku, refund.qty, refund.quality ?? 'normal');
       }
       return commit(
         { workshops: res.state },

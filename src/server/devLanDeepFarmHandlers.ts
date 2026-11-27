@@ -94,6 +94,15 @@ export function executeDevLanDeepFarmMutation(input: {
   };
 }
 
+export interface DeepFarmIdempotency {
+  checkV015Idempotency?: (
+    v015: unknown, worldId: string, userId: string, action: string, key: string, reqHash: string,
+  ) => { conflict: boolean; response?: unknown } | null;
+  saveV015Idempotency?: (
+    v015: unknown, worldId: string, userId: string, action: string, key: string, reqHash: string, response: unknown,
+  ) => void;
+}
+
 export async function handleDeepFarmDevLanRoute(ctx: {
   req: { method?: string };
   res: unknown;
@@ -114,7 +123,7 @@ export async function handleDeepFarmDevLanRoute(ctx: {
     domain: string,
   ) => { stateVersion: number; domainVersions: Record<string, number> };
   nowMs: number;
-}): Promise<boolean> {
+} & DeepFarmIdempotency): Promise<boolean> {
   const { req, res, route, body, userId, worldId, v015, isWorldMember, sendJson } = ctx;
   if (route !== '/farm/deep' && route !== '/farm/deep/apply') {
     return false;
@@ -140,8 +149,29 @@ export async function handleDeepFarmDevLanRoute(ctx: {
 
   if (req.method === 'POST' && route === '/farm/deep/apply') {
     const rawParams = body as unknown as DeepFarmActionParams;
-    if (!rawParams || typeof rawParams.kind !== 'string') {
+    if (typeof rawParams.kind !== 'string' || typeof rawParams.idempotencyKey !== 'string') {
       sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thiếu thao tác nông trại.' });
+      return true;
+    }
+
+    const key = rawParams.idempotencyKey.trim();
+    const payload = { ...rawParams, worldId };
+    const reqHash = JSON.stringify(Object.entries(payload).sort(([a], [b]) => a.localeCompare(b)));
+    const prior = key && ctx.checkV015Idempotency?.(v015, worldId, userId, 'farm_deep', key, reqHash);
+    if (prior) {
+      if (prior.conflict) {
+        sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Khóa yêu cầu bị trùng khác thao tác.' });
+        return true;
+      }
+      const current = deepFarmRow(v015, worldId, ctx.seed, ctx.nowMs);
+      sendJson(res, 200, {
+        ok: true,
+        data: {
+          ...(prior.response as object),
+          snapshot: projectDeepFarmSnapshot(worldId, current, v015.wallets[worldId]?.coins ?? 0, ctx.nowMs),
+          idempotentReplay: true,
+        },
+      });
       return true;
     }
 
@@ -153,7 +183,7 @@ export async function handleDeepFarmDevLanRoute(ctx: {
       nowMs: ctx.nowMs,
       getInventoryList: ctx.getInventoryList,
       setInventoryList: ctx.setInventoryList,
-      params: { ...rawParams, worldId },
+      params: payload,
     });
 
     if (!result.ok) {
@@ -166,10 +196,18 @@ export async function handleDeepFarmDevLanRoute(ctx: {
       return true;
     }
 
+    const response = {
+      snapshot: result.snapshot,
+      messageVi: result.messageVi,
+      ...(result.idempotentReplay ? { idempotentReplay: true } : {}),
+      ...(result.harvestedItems ? { harvestedItems: result.harvestedItems } : {}),
+      ...(result.rewardCoins !== undefined ? { rewardCoins: result.rewardCoins } : {}),
+    };
     if (!result.idempotentReplay) {
-      ctx.saveDb();
+      if (key) ctx.saveV015Idempotency?.(v015, worldId, userId, 'farm_deep', key, reqHash, response);
       ctx.bumpWorldStateVersion?.(worldId, 'inventory');
       const meta = ctx.bumpWorldStateVersion?.(worldId, 'farm');
+      ctx.saveDb();
       ctx.broadcastEvent?.(
         worldId,
         'world_mutated',
@@ -177,16 +215,7 @@ export async function handleDeepFarmDevLanRoute(ctx: {
       );
     }
 
-    sendJson(res, 200, {
-      ok: true,
-      data: {
-        snapshot: result.snapshot,
-        messageVi: result.messageVi,
-        ...(result.idempotentReplay ? { idempotentReplay: true } : {}),
-        ...(result.harvestedItems ? { harvestedItems: result.harvestedItems } : {}),
-        ...(result.rewardCoins !== undefined ? { rewardCoins: result.rewardCoins } : {}),
-      },
-    });
+    sendJson(res, 200, { ok: true, data: response });
     return true;
   }
 

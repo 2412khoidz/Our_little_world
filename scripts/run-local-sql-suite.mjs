@@ -35,6 +35,8 @@ const migrationFiles = fs
 const sqlTestFiles = [
   'economy_integer_math.sql',
   'inventory_quality.sql',
+  'farming_authority.sql',
+  'pet_consume_hand_food.sql',
   'physical_pet_care.sql',
   'pet_consumption_authority.sql',
   'v015_inventory_debit_and_mailbox.sql',

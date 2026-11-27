@@ -6,6 +6,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDevLanHandler } from '../../scripts/devLanServerPlugin.mjs';
+import { tryHandleFarmDevLan } from '../../src/server/devLanFarmRoute';
 
 const MAY_ID = '11111111-1111-4111-8111-111111111111';
 const NANG_ID = '22222222-2222-4222-8222-222222222222';
@@ -119,9 +120,13 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
     expect(outsiderRes.status).toBe(403);
   });
 
-  it('backfills pet care starter rows on inventory GET when pet exists but toys missing', async () => {
+  it('migrates legacy saves once, preserves the wallet, and never restores spent resources', async () => {
     const db = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-    db.v015.inventory[worldId] = [];
+    delete db.v015.inventoryStarterVersions[worldId];
+    db.v015.inventory[worldId] = [1, 3].map((qty) => ({
+      worldId, ownerScope: 'shared', itemSku: 'apple', qty, updatedAt: new Date().toISOString(),
+    }));
+    db.v015.wallets[worldId] = { coins: 937 };
     db.v015.pets[worldId] = {
       id: 'pet-legacy',
       worldId,
@@ -142,15 +147,28 @@ describe('V0.1.5 Inventory Contract (OLW-015-01)', () => {
     };
     fs.writeFileSync(stateFile, JSON.stringify(db), 'utf8');
 
-    const h2 = createDevLanHandler({ stateFilePath: stateFile });
+    const h2 = createDevLanHandler({ stateFilePath: stateFile, getTryHandleFarmDevLan: () => tryHandleFarmDevLan });
     try {
       const inv = await callApi(h2, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
-      expect(inv.json.data.items).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ itemSku: 'toy_yarn', qty: 1 }),
-          expect.objectContaining({ itemSku: 'fish_salmon_bite', qty: 2 }),
-        ]),
-      );
+      expect(inv.json.data.items).toEqual(expect.arrayContaining([
+        expect.objectContaining({ itemSku: 'tool_hoe', qty: 1 }),
+        expect.objectContaining({ itemSku: 'apple', qty: 4 }),
+      ]));
+      const skus = inv.json.data.items.map((row: { itemSku: string }) => row.itemSku);
+      for (const spent of ['seed_wheat', 'fish_salmon_bite', 'toy_yarn']) expect(skus).not.toContain(spent);
+      const farm = await callApi(h2, 'GET', `/farm?worldId=${worldId}`, MAY_ID);
+      expect(farm.json.data.walletCoins).toBe(937);
+      const migrated = fs.readFileSync(stateFile, 'utf8');
+      expect(JSON.parse(migrated).v015.wallets[worldId].coins).toBe(937);
+      expect(JSON.parse(migrated).v015.inventoryStarterVersions[worldId]).toBe(1);
+      const h3 = createDevLanHandler({ stateFilePath: stateFile });
+      try {
+        const afterRestart = await callApi(h3, 'GET', `/inventory?worldId=${worldId}`, MAY_ID);
+        expect(afterRestart.json.data.items).toEqual(inv.json.data.items);
+        expect(fs.readFileSync(stateFile, 'utf8')).toBe(migrated);
+      } finally {
+        h3.closeAll();
+      }
     } finally {
       h2.closeAll();
     }

@@ -105,7 +105,7 @@ BEGIN
   VALUES (
     p_world_id, v_seed,
     jsonb_build_object('seed', v_seed, 'plots', public._farm_empty_plots()),
-    50, 'farm_main:0-119,farm_annex:0-63',
+    50, 'farm_main:0-119,farm_annex:0-63'
   )
   RETURNING * INTO v_row;
   PERFORM public._inventory_adjust_item(p_world_id, 'shared', 'tool_hoe', 1);

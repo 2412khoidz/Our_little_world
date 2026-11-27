@@ -9,14 +9,20 @@ import {
 import {
   applyDirectSlotDrop,
   assignStackToHotbar,
+  cancelInventoryCursor,
   clearHotbarBinding,
   splitBagSlotInPlace,
+  type InventoryPickedCursor,
 } from '../../shared/donor/nuvora/nuvoraSlotInteraction';
 import { getCropDefinition } from '../../shared/farming/crops';
 import { gameEventBus } from '../../game/eventBus';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
 import {
+  bagPageSize,
   HOTBAR_CAPACITY,
+  inventoryCellLimit,
+  normalizeQuality,
+  reconcileInventoryInteraction,
   sameStackRef,
   type InventoryBagCell,
   type InventoryLayoutState,
@@ -87,8 +93,8 @@ function resolveUnitSellCoins(sku: string, quality: ItemQualityTier): number | n
 
 export function InventoryModal({
   snapshot,
-  layout,
-  onChangeLayout,
+  layout: committedLayout,
+  onChangeLayout: onCommitLayout,
   localUserId,
   hotbarSlots,
   heldHotbarIndex,
@@ -100,7 +106,51 @@ export function InventoryModal({
 }: InventoryModalProps) {
   const [tab, setTab] = useState<'shared' | 'personal'>('shared');
   const [inspectedRef, setInspectedRef] = useState<InspectedSlotRef | null>(null);
-  const [pendingMoveBagIndex, setPendingMoveBagIndex] = useState<number | null>(null);
+  const [pendingMove, setPendingMove] = useState<{ index: number; cell: InventoryBagCell } | null>(null);
+  const [page, setPage] = useState(0);
+  const [draft, setDraft] = useState<{
+    snapshot: InventorySnapshot | null;
+    layout: InventoryLayoutState;
+    cursor: InventoryPickedCursor | null;
+  } | null>(null);
+
+  const interaction = draft && draft.snapshot !== snapshot
+    ? { snapshot, ...reconcileInventoryInteraction(draft.layout, draft.cursor, snapshot, localUserId) }
+    : draft;
+  if (interaction !== draft) setDraft(interaction);
+  const { layout, cursor } = interaction ?? { layout: committedLayout, cursor: null };
+  const activeBag = tab === 'shared' ? layout.sharedCells : layout.personalCells;
+  const pendingCell = pendingMove ? activeBag[pendingMove.index] : null;
+  const pendingMoveBagIndex = pendingMove && sameStackRef(pendingMove.cell, pendingCell)
+    && pendingMove.cell.qty === pendingCell?.qty ? pendingMove.index : null;
+  const pageSize = bagPageSize(tab);
+  const pageCount = Math.ceil(activeBag.length / pageSize);
+
+  function onChangeLayout(next: InventoryLayoutState, nextCursor = cursor) {
+    const result = reconcileInventoryInteraction(next, nextCursor, snapshot, localUserId);
+    if (result.cursor) {
+      setDraft({ snapshot, ...result });
+    } else {
+      setDraft(null);
+      onCommitLayout(result.layout);
+    }
+    return result;
+  }
+
+  function cancelCursor() {
+    if (!interaction) return;
+    const restored = cancelInventoryCursor(layout, cursor);
+    onChangeLayout(restored.layout, null);
+  }
+
+  function switchTab(next: 'shared' | 'personal') {
+    if (next === tab) return;
+    cancelCursor();
+    setTab(next);
+    setPage(0);
+    setInspectedRef(null);
+    setPendingMove(null);
+  }
 
   const catalogMap = useMemo(
     () => new Map((snapshot?.catalog ?? []).map((c) => [c.sku, c])),
@@ -118,9 +168,18 @@ export function InventoryModal({
   );
 
   const items = snapshot?.items ?? [];
+  function stackLimitForStack(stack: InventoryStackRef) {
+    const total = items.reduce((sum, row) => sum + (
+      row.itemSku === stack.itemSku && row.ownerScope === stack.ownerScope
+        && normalizeQuality(row.quality) === stack.quality ? row.qty : 0
+    ), 0);
+    return inventoryCellLimit(catalogMap.get(stack.itemSku)?.stackLimit, total, pageSize);
+  }
+  const catalogStackLimit = (sku: string) => catalogMap.get(sku)?.stackLimit ?? Infinity;
   const sharedItems = items.filter((i) => i.ownerScope === 'shared');
   const personalItems = items.filter((i) => i.ownerScope === `user:${localUserId}`);
   const shown = tab === 'shared' ? sharedItems : personalItems;
+  const firstOnPage = page * pageSize;
 
   const sharedQty = sharedItems.reduce((sum, i) => sum + i.qty, 0);
   const personalQty = personalItems.reduce((sum, i) => sum + i.qty, 0);
@@ -179,7 +238,8 @@ export function InventoryModal({
       }
     }
 
-    const firstIdx = activeBag.findIndex((c) => c && c.qty > 0);
+    const firstIdx = activeBag.findIndex((c, index) => index >= firstOnPage
+      && index < firstOnPage + pageSize && c && c.qty > 0);
     if (firstIdx >= 0) {
       const cell = activeBag[firstIdx]!;
       const boundIdx = layout.hotbarBindings.findIndex((b) => sameStackRef(b, cell));
@@ -197,7 +257,7 @@ export function InventoryModal({
     }
 
     return null;
-  }, [tab, layout, inspectedRef, hotbarSlots, heldHotbarIndex]);
+  }, [tab, layout, inspectedRef, hotbarSlots, heldHotbarIndex, firstOnPage, pageSize]);
 
   const inspectorDetails = useMemo(() => {
     if (!resolvedInspect) return null;
@@ -243,7 +303,7 @@ export function InventoryModal({
             <Backpack size={18} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
             Túi đồ ngôi nhà
           </h2>
-          <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => { cancelCursor(); onClose(); }} aria-label="Đóng">
             <X size={16} />
           </button>
         </div>
@@ -254,11 +314,7 @@ export function InventoryModal({
             className={`btn btn--sm ${tab === 'shared' ? 'btn--primary' : 'btn--secondary'}`}
             style={{ flex: 1 }}
             data-testid="tab-inventory-shared"
-            onClick={() => {
-              setTab('shared');
-              setInspectedRef(null);
-              setPendingMoveBagIndex(null);
-            }}
+            onClick={() => switchTab('shared')}
           >
             Túi chung ({sharedQty})
           </button>
@@ -267,11 +323,7 @@ export function InventoryModal({
             className={`btn btn--sm ${tab === 'personal' ? 'btn--primary' : 'btn--secondary'}`}
             style={{ flex: 1 }}
             data-testid="tab-inventory-personal"
-            onClick={() => {
-              setTab('personal');
-              setInspectedRef(null);
-              setPendingMoveBagIndex(null);
-            }}
+            onClick={() => switchTab('personal')}
           >
             <Gift size={14} /> Ngăn riêng ({personalQty})
           </button>
@@ -318,7 +370,12 @@ export function InventoryModal({
 
         <div className="nuvora-desk__body">
           <NuvoraInteractiveTray
+            key={tab}
             scope={tab}
+            page={page}
+            cursor={cursor}
+            stackLimitForStack={stackLimitForStack}
+            catalogStackLimit={catalogStackLimit}
             layout={layout}
             onChangeLayout={onChangeLayout}
             hotbarSlots={hotbarSlots}
@@ -335,16 +392,29 @@ export function InventoryModal({
                 layout,
                 { kind: 'bag', scope: tab, index: pendingMoveBagIndex },
                 { kind: destKind, scope: tab, index: destIndex },
-                { labelForSku, heldHotbarIndex },
+                { labelForSku, heldHotbarIndex, stackLimitForStack },
               );
               onChangeLayout(res.layout);
               if (res.selectHotbarIndex !== undefined) {
                 gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.selectHotbarIndex });
               }
-              setPendingMoveBagIndex(null);
+              setPendingMove(null);
               setInspectedRef({ kind: destKind, scope: tab, index: destIndex });
             }}
           />
+          {pageCount > 1 && (
+            <nav className="nuvora-inventory-pages" aria-label="Trang túi đồ">
+              <button type="button" className="btn btn--secondary btn--sm" disabled={page === 0}
+                onClick={() => { setPage(page - 1); setInspectedRef(null); }}>
+                Trang trước
+              </button>
+              <span aria-live="polite">Trang {page + 1} / {pageCount}</span>
+              <button type="button" className="btn btn--secondary btn--sm" disabled={page + 1 >= pageCount}
+                onClick={() => { setPage(page + 1); setInspectedRef(null); }}>
+                Trang sau
+              </button>
+            </nav>
+          )}
 
           {inspectorDetails && resolvedInspect && (
             <div className="nuvora-inspector" data-testid="inventory-inspector">
@@ -390,7 +460,7 @@ export function InventoryModal({
                       className={`nuvora-hotbar-num-btn ${isAssignedHere ? 'nuvora-hotbar-num-btn--active' : ''}`}
                       data-testid={`btn-assign-hotbar-${slotIdx + 1}`}
                       onClick={() => {
-                        setPendingMoveBagIndex(null);
+                        setPendingMove(null);
                         const res = assignStackToHotbar(layout, resolvedInspect.stack, slotIdx);
                         onChangeLayout(res.layout);
                         gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.slotIndex });
@@ -406,15 +476,16 @@ export function InventoryModal({
                   className="btn btn--primary btn--sm"
                   data-testid="btn-equip-inspected-item"
                   onClick={() => {
-                    setPendingMoveBagIndex(null);
+                    setPendingMove(null);
                     const preferred =
                       inspectorDetails.hotbarIndex !== null
                         ? inspectorDetails.hotbarIndex
                         : heldHotbarIndex !== null && heldHotbarIndex >= 0
                           ? heldHotbarIndex
                           : undefined;
-                    const res = assignStackToHotbar(layout, resolvedInspect.stack, preferred);
-                    onChangeLayout(res.layout);
+                    const restored = cancelInventoryCursor(layout, cursor);
+                    const res = assignStackToHotbar(restored.layout, resolvedInspect.stack, preferred);
+                    onChangeLayout(res.layout, null);
                     gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.slotIndex });
                     onClose();
                   }}
@@ -427,9 +498,9 @@ export function InventoryModal({
                     className={`btn btn--sm ${pendingMoveBagIndex === inspectorDetails.bagIndex ? 'btn--primary' : 'btn--secondary'}`}
                     data-testid="btn-touch-move-slot"
                     onClick={() => {
-                      setPendingMoveBagIndex((cur) =>
-                        cur === inspectorDetails.bagIndex ? null : inspectorDetails.bagIndex!,
-                      );
+                      const index = inspectorDetails.bagIndex!;
+                      const cell = activeBag[index];
+                      setPendingMove(cell && pendingMoveBagIndex !== index ? { index, cell } : null);
                     }}
                   >
                     {pendingMoveBagIndex === inspectorDetails.bagIndex ? 'Chạm ô đích…' : 'Đổi ô'}
@@ -441,9 +512,15 @@ export function InventoryModal({
                     className="btn btn--secondary btn--sm"
                     data-testid="btn-split-stack"
                     onClick={() => {
-                      setPendingMoveBagIndex(null);
+                      setPendingMove(null);
                       const next = splitBagSlotInPlace(layout, tab, inspectorDetails.bagIndex!);
+                      const after = tab === 'shared' ? next.sharedCells : next.personalCells;
+                      const added = after.findIndex((cell, index) => cell && !activeBag[index]);
                       onChangeLayout(next);
+                      if (added >= 0 && Math.floor(added / pageSize) !== page) {
+                        setPage(Math.floor(added / pageSize));
+                        setInspectedRef({ kind: 'bag', scope: tab, index: added });
+                      }
                     }}
                   >
                     Tách đôi

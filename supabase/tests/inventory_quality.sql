@@ -17,11 +17,10 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.owner'), true);
   ASSERT public._inventory_adjust_item(w, 'shared', 'gift_flower_bouquet', 2) = 2;
   ASSERT public._inventory_adjust_quality(w, 'shared', 'gift_flower_bouquet', 3, 'gold') = 3;
-  BEGIN
-    PERFORM public._inventory_adjust_quality(w, 'shared', 'gift_flower_bouquet', 1, 'silver');
-    RAISE EXCEPTION 'Exceeded combined stack';
-  EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'STACK_FULL' THEN RAISE; END IF;
-  END;
+  ASSERT public._inventory_adjust_quality(w, 'shared', 'gift_flower_bouquet', 6, 'silver') = 6;
+  ASSERT public._inventory_adjust_quality(w, 'shared', 'seed_wheat', -5, 'normal') = 0;
+  PERFORM public._farm_ensure_row(w);
+  ASSERT NOT EXISTS (SELECT 1 FROM public.inventory_items WHERE world_id = w AND item_sku = 'seed_wheat');
   ASSERT public._inventory_adjust_quality(w, 'shared', 'gift_flower_bouquet', -3, 'gold') = 0;
   ASSERT public._inventory_adjust_item(w, 'shared', 'gift_flower_bouquet', -1) = 1;
   ASSERT NOT has_function_privilege('authenticated', 'public._inventory_adjust_quality(uuid,text,text,integer,text)', 'EXECUTE');

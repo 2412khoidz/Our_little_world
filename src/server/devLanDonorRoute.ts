@@ -405,14 +405,15 @@ export async function tryHandleDonorDevLan(ctx: {
           }
         : undefined;
     const resolved = donorFishingResolve(session.seed, nowMs, hour, progress, session.spotId, lockedEncounter);
+    const items = !resolved.escaped && resolved.itemSku
+      ? creditSharedSku(worldId, getInventoryList(worldId), resolved.itemSku, resolved.qtyGranted, nowMs)
+      : null;
     session.phase = resolved.escaped ? 'escaped' : 'landed';
     session.progressPermille = progress;
     session.updatedAtMs = nowMs;
     session.resolved = true;
     session.resolvedResult = resolved;
-    let items = getInventoryList(worldId);
-    if (!resolved.escaped && resolved.itemSku) {
-      items = creditSharedSku(worldId, items, resolved.itemSku, resolved.qtyGranted, nowMs);
+    if (items) {
       setInventoryList(worldId, items);
       emitDonorInventoryMutated();
     }

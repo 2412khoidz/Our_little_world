@@ -17,6 +17,8 @@ BEGIN
 
   ASSERT (SELECT count(*) FROM public.world_members WHERE world_id = v_world) = 2;
   ASSERT (SELECT gift_quality FROM public.letters_and_gifts WHERE world_id = v_world LIMIT 1) = 'normal';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.inventory_items WHERE world_id = v_world AND item_sku = 'seed_wheat');
+  ASSERT EXISTS (SELECT 1 FROM public.inventory_items WHERE world_id = v_world AND item_sku = 'tool_hoe' AND qty = 1);
 
   SET LOCAL ROLE authenticated;
   PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);

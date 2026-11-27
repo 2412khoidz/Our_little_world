@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { MAX_INVENTORY_QUANTITY } from '../../src/shared/inventory/inventoryLedger.mjs';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -168,7 +169,7 @@ describe('V0.1.5 Mailbox & Surprise Gifts (OLW-015-02)', () => {
     expect(personal?.qty).toBe(2);
   });
 
-  it('rolls back without setting openedAt when recipient stack is full and succeeds on retry after space frees', async () => {
+  it('rolls back without setting openedAt when recipient reaches the storage ceiling and succeeds on retry after space frees', async () => {
     await callApi(handler, 'POST', '/inventory/claim-free-kibble', MAY_ID, {
       worldId,
       idempotencyKey: 'claim-1',
@@ -188,19 +189,19 @@ describe('V0.1.5 Mailbox & Surprise Gifts (OLW-015-02)', () => {
     expect(sendRes.status).toBe(200);
     const letterId = sendRes.json.data.mailbox.items[0].id as string;
 
-    // Fill Nắng's personal stack to 9/10 directly in the persisted state, then reload handler
+    // Put the destination one below the storage ceiling.
     const db = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
     db.v015.inventory[worldId].push({
       worldId,
       ownerScope: `user:${NANG_ID}`,
       itemSku: 'pet_kibble_basic',
-      qty: 9,
+      qty: MAX_INVENTORY_QUANTITY - 1,
       updatedAt: new Date().toISOString(),
     });
     fs.writeFileSync(stateFile, JSON.stringify(db, null, 2), 'utf8');
     handler = createDevLanHandler({ stateFilePath: stateFile });
 
-    // 9 + 3 = 12 > stackLimit (10) -> must rollback with 409 STACK_FULL and leave openedAt === null
+    // Adding all three would exceed the integer storage ceiling.
     const fullAttempt = await callApi(handler, 'POST', '/mailbox/open', NANG_ID, {
       worldId,
       letterId,
@@ -218,13 +219,13 @@ describe('V0.1.5 Mailbox & Surprise Gifts (OLW-015-02)', () => {
     expect(stillUnread.json.data.unreadCount).toBe(1);
     expect(stillUnread.json.data.items[0].openedAt).toBeNull();
 
-    // Free space down to 5/10, reload handler, retry open -> 5 + 3 = 8 <= 10 succeeds cleanly
+    // An ordinary stack can cross its cell size when receiving a gift.
     const dbRetry = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
     const entry = dbRetry.v015.inventory[worldId].find(
       (i: { ownerScope: string; itemSku: string }) =>
         i.ownerScope === `user:${NANG_ID}` && i.itemSku === 'pet_kibble_basic',
     );
-    entry.qty = 5;
+    entry.qty = 9;
     fs.writeFileSync(stateFile, JSON.stringify(dbRetry, null, 2), 'utf8');
     handler = createDevLanHandler({ stateFilePath: stateFile });
 
@@ -239,6 +240,6 @@ describe('V0.1.5 Mailbox & Surprise Gifts (OLW-015-02)', () => {
       (i: { ownerScope: string; itemSku: string }) =>
         i.ownerScope === `user:${NANG_ID}` && i.itemSku === 'pet_kibble_basic',
     );
-    expect(updatedPersonal?.qty).toBe(8);
+    expect(updatedPersonal?.qty).toBe(12);
   });
 });

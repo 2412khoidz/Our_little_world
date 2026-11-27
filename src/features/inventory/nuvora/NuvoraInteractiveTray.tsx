@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   applyDirectSlotDrop,
   applyInventorySlotInteraction,
@@ -10,9 +10,11 @@ import { nuvoraHotbarIndexFromHeld } from '../../../shared/donor/nuvora/nuvoraPr
 import type { HotbarSlot } from '../../../shared/interaction/interactionTypes';
 import type { ItemQualityTier } from '../../../shared/interaction/hotbarContract';
 import {
+  bagPageSize,
   HOTBAR_CAPACITY,
   sameStackRef,
   type InventoryLayoutState,
+  type InventoryStackRef,
 } from '../../../shared/inventory/inventoryLayoutStore';
 import { gameEventBus } from '../../../game/eventBus';
 import { CatalogSkuIcon } from '../../../ui/components/CatalogSkuIcon';
@@ -26,7 +28,12 @@ export type InspectedSlotRef = {
 interface NuvoraInteractiveTrayProps {
   scope: BagScopeTab;
   layout: InventoryLayoutState;
-  onChangeLayout: (next: InventoryLayoutState) => void;
+  page: number;
+  cursor: InventoryPickedCursor | null;
+  stackLimitForStack: (stack: InventoryStackRef) => number;
+  catalogStackLimit: (sku: string) => number;
+  onChangeLayout: (next: InventoryLayoutState, cursor: InventoryPickedCursor | null) =>
+    { layout: InventoryLayoutState; cursor: InventoryPickedCursor | null };
   hotbarSlots: readonly HotbarSlot[];
   heldHotbarIndex: number | null;
   labelForSku: (sku: string) => string;
@@ -67,6 +74,10 @@ function qualityBadgeText(quality: ItemQualityTier): string | null {
 export function NuvoraInteractiveTray({
   scope,
   layout,
+  page,
+  cursor,
+  stackLimitForStack,
+  catalogStackLimit,
   onChangeLayout,
   hotbarSlots,
   heldHotbarIndex,
@@ -79,13 +90,15 @@ export function NuvoraInteractiveTray({
   pendingMoveBagIndex = null,
   onCompleteTouchMove,
 }: NuvoraInteractiveTrayProps) {
-  const [cursor, setCursor] = useState<InventoryPickedCursor | null>(null);
   const [pointerPos, setPointerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [activeDrag, setActiveDrag] = useState<ActiveDragState | null>(null);
   const [dropHover, setDropHover] = useState<{ kind: 'bag' | 'hotbar'; index: number } | null>(null);
   const [tip, setTip] = useState<{ html: string; x: number; y: number } | null>(null);
 
+  const trayRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{
+    pointerId: number;
+    page: number;
     kind: 'bag' | 'hotbar';
     index: number;
     startX: number;
@@ -93,64 +106,26 @@ export function NuvoraInteractiveTray({
     rightClick: boolean;
     shiftKey: boolean;
     cell: TrayDisplayCell;
+    stack: InventoryStackRef | null;
   } | null>(null);
   const activeDragRef = useRef<ActiveDragState | null>(null);
-  const skipClickUntilRef = useRef(0);
+  const latest = useRef({
+    cursor, layout, scope, page, stackLimitForStack, onChangeLayout, labelForSku, heldHotbarIndex,
+    onInspect, touchMode, pendingMoveBagIndex, onCompleteTouchMove,
+  });
 
-  const latestCursorRef = useRef<InventoryPickedCursor | null>(null);
-  const latestLayoutRef = useRef(layout);
-  const onChangeLayoutRef = useRef(onChangeLayout);
-  const scopeRef = useRef(scope);
-  const labelForSkuRef = useRef(labelForSku);
-  const heldHotbarIndexRef = useRef(heldHotbarIndex);
-  const onInspectRef = useRef(onInspect);
-  const touchModeRef = useRef(touchMode);
-  const pendingMoveBagIndexRef = useRef(pendingMoveBagIndex);
-  const onCompleteTouchMoveRef = useRef(onCompleteTouchMove);
+  useLayoutEffect(() => {
+    latest.current = {
+      cursor, layout, scope, page, stackLimitForStack, onChangeLayout, labelForSku, heldHotbarIndex,
+      onInspect, touchMode, pendingMoveBagIndex, onCompleteTouchMove,
+    };
+  });
 
-  useEffect(() => {
-    touchModeRef.current = touchMode;
-  }, [touchMode]);
-
-  useEffect(() => {
-    pendingMoveBagIndexRef.current = pendingMoveBagIndex;
-  }, [pendingMoveBagIndex]);
-
-  useEffect(() => {
-    onCompleteTouchMoveRef.current = onCompleteTouchMove;
-  }, [onCompleteTouchMove]);
-
-  useEffect(() => {
-    latestCursorRef.current = cursor;
-  }, [cursor]);
-
-  useEffect(() => {
-    latestLayoutRef.current = layout;
-  }, [layout]);
-
-  useEffect(() => {
-    onChangeLayoutRef.current = onChangeLayout;
-  }, [onChangeLayout]);
-
-  useEffect(() => {
-    scopeRef.current = scope;
-  }, [scope]);
-
-  useEffect(() => {
-    labelForSkuRef.current = labelForSku;
-  }, [labelForSku]);
-
-  useEffect(() => {
-    heldHotbarIndexRef.current = heldHotbarIndex;
-  }, [heldHotbarIndex]);
-
-  useEffect(() => {
-    onInspectRef.current = onInspect;
-  }, [onInspect]);
-
+  const pageSize = bagPageSize(scope);
+  const firstOnPage = page * pageSize;
   const bagCells: TrayDisplayCell[] = (
     scope === 'shared' ? layout.sharedCells : layout.personalCells
-  ).map((cell) => {
+  ).slice(firstOnPage, firstOnPage + pageSize).map((cell) => {
     if (!cell || cell.qty <= 0) {
       return { sku: null, qty: 0, quality: 'normal', labelVi: '' };
     }
@@ -178,185 +153,141 @@ export function NuvoraInteractiveTray({
 
   const selectedHb = nuvoraHotbarIndexFromHeld(heldHotbarIndex);
 
-  const commitTransition = useCallback(
-    (res: ReturnType<typeof applyInventorySlotInteraction>) => {
-      onChangeLayoutRef.current(res.layout);
-      latestCursorRef.current = res.cursor;
-      setCursor(res.cursor);
-      if (res.cursor) {
-        setTip(null);
-      }
-      if (res.selectHotbarIndex !== undefined) {
-        gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.selectHotbarIndex });
-      }
-      if (res.inspectRef) {
-        onInspectRef.current?.(res.inspectRef);
-      }
-    },
-    [],
-  );
+  const commitTransition = useCallback((res: ReturnType<typeof applyInventorySlotInteraction>) => {
+    const current = latest.current;
+    if (res.layout !== current.layout || res.cursor !== current.cursor) {
+      const next = current.onChangeLayout(res.layout, res.cursor);
+      latest.current = { ...current, ...next };
+    }
+    if (res.cursor) setTip(null);
+    if (res.selectHotbarIndex !== undefined) {
+      gameEventBus.emit('cmd:select-hotbar-slot', { slotIndex: res.selectHotbarIndex });
+    }
+    if (res.inspectRef) current.onInspect?.(res.inspectRef);
+  }, []);
 
   const handleSlotAction = useCallback(
     (kind: 'bag' | 'hotbar', index: number, rightClick: boolean, shiftKey: boolean) => {
-      if (touchModeRef.current && !rightClick && !shiftKey && !latestCursorRef.current) {
-        if (pendingMoveBagIndexRef.current !== null) {
-          onCompleteTouchMoveRef.current?.(kind, index);
+      const current = latest.current;
+      if (!rightClick && !shiftKey && !current.cursor) {
+        if (current.pendingMoveBagIndex !== null) {
+          current.onCompleteTouchMove?.(kind, index);
           return;
         }
-        if (kind === 'bag') {
-          onInspectRef.current?.({ kind: 'bag', scope: scopeRef.current, index });
+        if (current.touchMode && kind === 'bag') {
+          current.onInspect?.({ kind: 'bag', scope: current.scope, index });
           return;
         }
       }
-      const res = applyInventorySlotInteraction(
-        latestLayoutRef.current,
-        latestCursorRef.current,
-        { kind, scope: scopeRef.current, index },
-        {
-          rightClick,
-          shiftKey,
-          labelForSku: labelForSkuRef.current,
-          heldHotbarIndex: heldHotbarIndexRef.current,
-        },
-      );
-      commitTransition(res);
+      commitTransition(applyInventorySlotInteraction(
+        current.layout, current.cursor, { kind, scope: current.scope, index },
+        { ...current, rightClick, shiftKey },
+      ));
     },
     [commitTransition],
   );
 
-  // Cancel held cursor cleanly on Escape (in capture phase before modal-close fires)
   useEffect(() => {
-    if (!cursor) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && latestCursorRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        const restored = cancelInventoryCursor(latestLayoutRef.current, latestCursorRef.current);
-        latestCursorRef.current = null;
-        onChangeLayoutRef.current(restored.layout);
-        setCursor(null);
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [cursor]);
-
-  // Restore any held cursor safely on tab change or unmount
-  useEffect(() => {
-    return () => {
-      const held = latestCursorRef.current;
-      if (held) {
-        const restored = cancelInventoryCursor(latestLayoutRef.current, held);
-        latestCursorRef.current = null;
-        onChangeLayoutRef.current(restored.layout);
-      }
-    };
-  }, [scope]);
-
-  useEffect(() => {
-    const onPointerMove = (e: PointerEvent) => {
-      if (latestCursorRef.current || dragStartRef.current) {
-        setPointerPos({ x: e.clientX, y: e.clientY });
-      }
-      const pending = dragStartRef.current;
-      if (!pending || pending.rightClick || pending.shiftKey || latestCursorRef.current) return;
-
-      if (!activeDragRef.current) {
-        const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
-        const dragThreshold = touchModeRef.current ? 12 : 6;
-        if (dist >= dragThreshold && pending.cell.sku) {
-          const started: ActiveDragState = {
-            sourceKind: pending.kind,
-            sourceIndex: pending.index,
-            sku: pending.cell.sku,
-            qty: pending.cell.qty,
-            quality: pending.cell.quality,
-            labelVi: pending.cell.labelVi,
-          };
-          activeDragRef.current = started;
-          setActiveDrag(started);
-          setTip(null);
-        }
-      }
-
-      if (activeDragRef.current) {
-        const hit =
-          typeof document !== 'undefined'
-            ? document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot-kind][data-slot-index]')
-            : null;
-        if (hit) {
-          const hk = hit.getAttribute('data-slot-kind');
-          const hi = Number(hit.getAttribute('data-slot-index'));
-          if ((hk === 'bag' || hk === 'hotbar') && Number.isInteger(hi)) {
-            setDropHover({ kind: hk, index: hi });
-            return;
-          }
-        }
-        setDropHover(null);
-      }
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      const pending = dragStartRef.current;
-      const dragging = activeDragRef.current;
+    function clearPointer() {
       dragStartRef.current = null;
       activeDragRef.current = null;
       setActiveDrag(null);
       setDropHover(null);
+    }
 
-      if (!pending) return;
+    function hitSlot(e: PointerEvent) {
+      const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot-kind][data-slot-index]');
+      if (!hit || !trayRef.current?.contains(hit)) return null;
+      const kind = hit.getAttribute('data-slot-kind');
+      const index = Number(hit.getAttribute('data-slot-index'));
+      return (kind === 'bag' || kind === 'hotbar') && Number.isInteger(index) ? { kind, index } as const : null;
+    }
 
-      const hit =
-        typeof document !== 'undefined'
-          ? document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot-kind][data-slot-index]')
-          : null;
-      const hitKindAttr = hit?.getAttribute('data-slot-kind');
-      const hitIdxNum = Number(hit?.getAttribute('data-slot-index'));
-      const hitValid =
-        (hitKindAttr === 'bag' || hitKindAttr === 'hotbar') && Number.isInteger(hitIdxNum);
+    function onPointerMove(e: PointerEvent) {
+      if (!e.isPrimary) return;
+      const pending = dragStartRef.current;
+      const current = latest.current;
+      if (current.cursor || pending?.pointerId === e.pointerId) setPointerPos({ x: e.clientX, y: e.clientY });
+      if (pending?.pointerId !== e.pointerId || pending.rightClick || pending.shiftKey || current.cursor) return;
+
+      if (!activeDragRef.current && pending.cell.sku
+        && Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY) >= (e.pointerType === 'touch' ? 12 : 6)) {
+        const started = {
+          sourceKind: pending.kind,
+          sourceIndex: pending.index,
+          sku: pending.cell.sku,
+          qty: pending.cell.qty,
+          quality: pending.cell.quality,
+          labelVi: pending.cell.labelVi,
+        };
+        activeDragRef.current = started;
+        setActiveDrag(started);
+        setTip(null);
+      }
+      if (activeDragRef.current) setDropHover(hitSlot(e));
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      const pending = dragStartRef.current;
+      if (pending?.pointerId !== e.pointerId) return;
+      const dragging = activeDragRef.current;
+      clearPointer();
+      const current = latest.current;
+      const hit = hitSlot(e);
+      if (!hit || current.page !== pending.page) return;
+      const bag = current.scope === 'shared' ? current.layout.sharedCells : current.layout.personalCells;
+      const source = pending.kind === 'bag' ? bag[pending.index] : current.layout.hotbarBindings[pending.index];
+      if (pending.stack ? !sameStackRef(source, pending.stack) : source != null) return;
+      if (pending.kind === 'bag' && (bag[pending.index]?.qty ?? 0) !== pending.cell.qty) return;
 
       if (dragging) {
-        skipClickUntilRef.current = performance.now() + 90;
-        if (hitValid) {
-          const res = applyDirectSlotDrop(
-            latestLayoutRef.current,
-            { kind: dragging.sourceKind, scope: scopeRef.current, index: dragging.sourceIndex },
-            { kind: hitKindAttr, scope: scopeRef.current, index: hitIdxNum },
-            {
-              labelForSku: labelForSkuRef.current,
-              heldHotbarIndex: heldHotbarIndexRef.current,
-            },
-          );
-          commitTransition(res);
-        }
-        return;
+        commitTransition(applyDirectSlotDrop(
+          current.layout,
+          { kind: dragging.sourceKind, scope: current.scope, index: dragging.sourceIndex },
+          { ...hit, scope: current.scope },
+          current,
+        ));
+      } else if (hit.kind === pending.kind && hit.index === pending.index
+        && Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY) < (e.pointerType === 'touch' ? 12 : 6)) {
+        handleSlotAction(hit.kind, hit.index, pending.rightClick, pending.shiftKey);
       }
+    }
 
-      const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
-      const tapThreshold = touchModeRef.current ? 12 : 6;
-      if (dist < tapThreshold) {
-        skipClickUntilRef.current = performance.now() + 90;
-        const targetKind = hitValid ? hitKindAttr : pending.kind;
-        const targetIdx = hitValid ? hitIdxNum : pending.index;
-        handleSlotAction(targetKind, targetIdx, pending.rightClick, pending.shiftKey);
-      }
-    };
+    function onPointerCancel(e: PointerEvent) {
+      if (dragStartRef.current?.pointerId === e.pointerId) clearPointer();
+    }
+
+    function onKey(e: KeyboardEvent) {
+      const current = latest.current;
+      if (e.key !== 'Escape' || (!dragStartRef.current && !current.cursor)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      clearPointer();
+      if (current.cursor) commitTransition(cancelInventoryCursor(current.layout, current.cursor));
+    }
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('blur', clearPointer);
+    window.addEventListener('keydown', onKey, true);
     return () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      window.removeEventListener('blur', clearPointer);
+      window.removeEventListener('keydown', onKey, true);
     };
   }, [commitTransition, handleSlotAction]);
 
-  const floatingVisual = activeDrag
-    ? { sku: activeDrag.sku, qty: activeDrag.qty, quality: activeDrag.quality }
-    : cursor
-      ? { sku: cursor.itemSku, qty: cursor.qty, quality: cursor.quality }
-      : null;
+  const dragCell = activeDrag?.sourceKind === 'bag'
+    ? bagCells[activeDrag.sourceIndex - firstOnPage]
+    : activeDrag ? hbCells[activeDrag.sourceIndex] : null;
+  const preview = activeDrag && dragCell?.sku === activeDrag.sku
+    && dragCell.quality === activeDrag.quality && dragCell.qty === activeDrag.qty ? activeDrag : null;
+  const floatingVisual = cursor
+    ? { sku: cursor.itemSku, qty: cursor.qty }
+    : preview ? { sku: preview.sku, qty: null } : null;
 
   const boundKeys = layout.hotbarBindings.filter(Boolean);
 
@@ -381,12 +312,13 @@ export function NuvoraInteractiveTray({
         sameStackRef(b, {
           itemSku: cell.sku!,
           quality: cell.quality,
-          ownerScope: scope === 'shared' ? 'shared' : b!.ownerScope,
+          ownerScope: (scope === 'shared' ? layout.sharedCells : layout.personalCells)[idx]!.ownerScope,
         }),
       );
+    const bulk = !isHot && cell.sku && cell.qty > catalogStackLimit(cell.sku);
     const tipText = cell.sku
       ? `${cell.labelVi}${qBadge ? ` (${qBadge})` : ''}${cell.qty > 1 ? ` ×${cell.qty}` : ''}${
-          isHot ? ' — Chuột phải gỡ ô nhanh' : ' — Kéo/click xếp ô · Shift: gán nhanh'
+          bulk ? ' — Ô chứa số lượng lớn' : isHot ? ' — Chuột phải gỡ ô nhanh' : ' — Kéo/click xếp ô · Shift: gán nhanh'
         }`
       : '';
     const isWaterCarrier =
@@ -401,6 +333,8 @@ export function NuvoraInteractiveTray({
         } ${isDropTarget ? 'nuvora-sl--drop-target' : ''} ${isMoveSource ? 'nuvora-sl--move-source' : ''}`}
         data-slot-kind={kind}
         data-slot-index={idx}
+        data-item-qty={cell.qty}
+        data-item-quality={cell.sku ? cell.quality : undefined}
         data-testid={
           cell.sku
             ? isHot
@@ -408,15 +342,17 @@ export function NuvoraInteractiveTray({
               : `nuvora-cell-${cell.sku}`
             : `nuvora-cell-empty-${legacyKind}-${idx}`
         }
-        aria-label={cell.labelVi || (isHot ? `Ô nhanh ${idx + 1} trống` : 'Ô trống')}
+        aria-label={bulk ? `${cell.labelVi}, ô chứa ${cell.qty} món` : cell.labelVi || (isHot ? `Ô nhanh ${idx + 1} trống` : 'Ô trống')}
         data-tip={tipText || undefined}
         style={isDragOrigin ? { opacity: 0.35 } : undefined}
         onPointerDown={(e) => {
-          if (!touchModeRef.current || e.pointerType === 'mouse') {
-            e.preventDefault();
-          }
+          if (!e.isPrimary || dragStartRef.current || (e.button !== 0 && e.button !== 2)) return;
+          const current = latest.current;
+          const bag = current.scope === 'shared' ? current.layout.sharedCells : current.layout.personalCells;
           setPointerPos({ x: e.clientX, y: e.clientY });
           dragStartRef.current = {
+            pointerId: e.pointerId,
+            page: current.page,
             kind,
             index: idx,
             startX: e.clientX,
@@ -424,11 +360,12 @@ export function NuvoraInteractiveTray({
             rightClick: e.button === 2,
             shiftKey: e.shiftKey,
             cell,
+            stack: (isHot ? current.layout.hotbarBindings[idx] : bag[idx]) ?? null,
           };
         }}
         onClick={(e) => {
-          if (performance.now() <= skipClickUntilRef.current) return;
-          handleSlotAction(kind, idx, false, e.shiftKey);
+          // Pointer actions are committed by pointerup. Keyboard activation has no pointer.
+          if (e.detail === 0) handleSlotAction(kind, idx, false, e.shiftKey);
         }}
         onContextMenu={(e) => e.preventDefault()}
         onPointerEnter={(e) => {
@@ -506,9 +443,9 @@ export function NuvoraInteractiveTray({
   };
 
   return (
-    <div className="nuvora-tray" data-testid="nuvora-inventory-grid">
+    <div ref={trayRef} className="nuvora-tray" data-testid="nuvora-inventory-grid">
       <div className="nuvora-g9">
-        {bagCells.map((cell, idx) => renderSlot(cell, idx, 'bag'))}
+        {bagCells.map((cell, idx) => renderSlot(cell, firstOnPage + idx, 'bag'))}
       </div>
       {showHotbarStrip && (
         <div className="nuvora-g9 nuvora-g9--hot" data-testid="nuvora-hotbar-strip">
@@ -520,13 +457,14 @@ export function NuvoraInteractiveTray({
         <div
           className="nuvora-cur"
           data-testid="nuvora-inventory-cursor"
+          data-item-qty={floatingVisual.qty}
           aria-hidden
           style={{ left: pointerPos.x, top: pointerPos.y }}
         >
           <span className="nuvora-sl__icon">
             <CatalogSkuIcon sku={floatingVisual.sku} size={28} />
           </span>
-          {floatingVisual.qty > 1 ? <b className="nuvora-sl__qty">{floatingVisual.qty}</b> : null}
+          {floatingVisual.qty !== null && floatingVisual.qty > 1 ? <b className="nuvora-sl__qty">{floatingVisual.qty}</b> : null}
         </div>
       )}
       {tip && !floatingVisual && (

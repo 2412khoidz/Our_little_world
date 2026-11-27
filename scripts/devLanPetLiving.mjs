@@ -46,26 +46,26 @@ function recoverStaleActions(living, nowMs) {
   }
 }
 
+function refundReservedOffer(v015, worldId, offer, nowMs, adjustInventoryItem) {
+  if (!offer.inventoryReserved) return { ok: true };
+  const result = adjustInventoryItem(
+    v015, worldId, offer.reservedOwnerScope, offer.itemSku, 1, new Date(nowMs).toISOString(), offer.quality,
+  );
+  if (result.ok) offer.inventoryReserved = false;
+  return result;
+}
+
 function expireDueOffers({ v015, worldId, nowMs, adjustInventoryItem }) {
   const living = ensureLivingWorld(v015, worldId);
+  let changed = false;
   for (const offer of living.offers) {
-    if (!['pending', 'accepted', 'deferred'].includes(offer.status)) continue;
-    if (nowMs <= offer.expiresAtMs) continue;
-    if (offer.inventoryReserved) {
-      adjustInventoryItem(
-        v015,
-        worldId,
-        offer.reservedOwnerScope,
-        offer.itemSku,
-        1,
-        new Date(nowMs).toISOString(),
-        offer.quality,
-      );
-      offer.inventoryReserved = false;
-    }
+    if (!['pending', 'accepted', 'deferred'].includes(offer.status) || nowMs <= offer.expiresAtMs) continue;
+    if (!refundReservedOffer(v015, worldId, offer, nowMs, adjustInventoryItem).ok) continue;
     offer.status = 'expired';
     offer.respondedAtMs = nowMs;
+    changed = true;
   }
+  return changed;
 }
 
 export function finalizeAcceptedOfferForFill(v015, worldId, userId, scope, sku, quality, nowMs = Date.now()) {
@@ -172,13 +172,10 @@ function authorityConsumeWater({ v015, worldId, petId, caregiverId, ensurePetBow
   return { ok: true };
 }
 
-export function buildLivingSnapshot(v015, worldId, { projectPet, projectPetCareBowl, adjustInventoryItem }) {
+function buildLivingSnapshot(v015, worldId, { projectPet, projectPetCareBowl }) {
   const nowMs = Date.now();
   const pet = v015.pets[worldId] ?? null;
   const living = ensureLivingWorld(v015, worldId);
-  if (adjustInventoryItem) {
-    expireDueOffers({ v015, worldId, nowMs, adjustInventoryItem });
-  }
   recoverStaleActions(living, nowMs);
   if (pet) ensurePetLivingVersion(pet);
   const bowl = projectPetCareBowl(v015, worldId);
@@ -273,8 +270,15 @@ export function tryHandlePetLivingRoute(ctx) {
     getWorldInventoryList,
   } = ctx;
 
-  const deps = { projectPet, projectPetCareBowl, adjustInventoryItem };
-  const snap = (worldId) => buildLivingSnapshot(v015, worldId, deps);
+  const deps = { projectPet, projectPetCareBowl };
+  function inventoryChanged(worldId) {
+    broadcastEvent(worldId, 'world_mutated', { reason: 'inventory' });
+    saveDb();
+  }
+  const snap = (worldId) => {
+    if (expireDueOffers({ v015, worldId, nowMs: Date.now(), adjustInventoryItem })) inventoryChanged(worldId);
+    return buildLivingSnapshot(v015, worldId, deps);
+  };
 
   if (req.method === 'GET' && route === '/pet/living') {
     const worldId = String(reqUrl.searchParams.get('worldId') ?? '').trim();
@@ -561,7 +565,7 @@ export function tryHandlePetLivingRoute(ctx) {
     });
     const payload = { offerId, snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_create', key, reqHash, payload);
-    saveDb();
+    inventoryChanged(worldId);
     sendJson(res, 200, { ok: true, data: payload });
     return true;
   }
@@ -604,44 +608,27 @@ export function tryHandlePetLivingRoute(ctx) {
       sendJson(res, 409, { ok: false, code: 'VALIDATION_ERROR', message: 'Lời mời không còn chờ phản hồi.' });
       return true;
     }
-    if (nowMs > offer.expiresAtMs) {
-      if (offer.inventoryReserved) {
-        adjustInventoryItem(
-          v015,
-          worldId,
-          offer.reservedOwnerScope,
-          offer.itemSku,
-          1,
-          new Date(nowMs).toISOString(),
-          offer.quality,
-        );
-        offer.inventoryReserved = false;
-      }
-      offer.status = 'expired';
-      sendJson(res, 409, { ok: false, code: 'OFFER_EXPIRED', message: 'Lời mời đã hết hạn.' });
-      return true;
-    }
     if (offer.caregiverId !== userId) {
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Chỉ người đưa lời mời mới hủy được.' });
       return true;
     }
-    if (offer.inventoryReserved) {
-      adjustInventoryItem(
-        v015,
-        worldId,
-        offer.reservedOwnerScope,
-        offer.itemSku,
-        1,
-        new Date(nowMs).toISOString(),
-        offer.quality,
-      );
-      offer.inventoryReserved = false;
+    const refund = refundReservedOffer(v015, worldId, offer, nowMs, adjustInventoryItem);
+    if (!refund.ok) {
+      sendJson(res, 409, refund);
+      return true;
+    }
+    if (nowMs > offer.expiresAtMs) {
+      offer.status = 'expired';
+      offer.respondedAtMs = nowMs;
+      inventoryChanged(worldId);
+      sendJson(res, 409, { ok: false, code: 'OFFER_EXPIRED', message: 'Lời mời đã hết hạn.' });
+      return true;
     }
     offer.status = 'cancelled';
     offer.respondedAtMs = nowMs;
     const payload = { snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_respond', key, reqHash, payload);
-    saveDb();
+    inventoryChanged(worldId);
     sendJson(res, 200, { ok: true, data: payload });
     return true;
   }
@@ -689,17 +676,12 @@ export function tryHandlePetLivingRoute(ctx) {
     if (vitals.hunger >= 88) outcome = 'refused';
     else if (vitals.hunger <= 55 && offer.itemSku === 'pet_kibble_basic') outcome = 'accepted';
     else outcome = 'deferred';
-    if (outcome === 'refused' && offer.inventoryReserved) {
-      adjustInventoryItem(
-        v015,
-        worldId,
-        offer.reservedOwnerScope,
-        offer.itemSku,
-        1,
-        new Date(nowMs).toISOString(),
-        offer.quality,
-      );
-      offer.inventoryReserved = false;
+    if (outcome === 'refused') {
+      const refund = refundReservedOffer(v015, worldId, offer, nowMs, adjustInventoryItem);
+      if (!refund.ok) {
+        sendJson(res, 409, refund);
+        return true;
+      }
     }
     offer.status = outcome;
     offer.respondedAtMs = nowMs;
@@ -714,7 +696,8 @@ export function tryHandlePetLivingRoute(ctx) {
     });
     const payload = { outcome, offerId: offer.id, snapshot: snap(worldId) };
     saveV015Idempotency(v015, worldId, userId, 'pet_food_offer_evaluate', key, reqHash, payload);
-    saveDb();
+    if (outcome === 'refused') inventoryChanged(worldId);
+    else saveDb();
     sendJson(res, 200, { ok: true, data: payload });
     return true;
   }

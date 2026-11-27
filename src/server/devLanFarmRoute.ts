@@ -9,15 +9,12 @@ import {
   buySeed,
   emptyFarm,
   FARM_STARTER_COINS,
-  FARM_STARTER_BAIT_QTY,
-  FARM_STARTER_SEED_QTY,
-  FARM_STARTER_TOOLS,
   sellCropLine,
 } from '../shared/farming/serverApply';
 import type { FarmApplyParams } from '../shared/farming/farmSnapshotTypes';
 import { isFarmPlotIndexOnContractSoil, isValidFarmPlotIndex } from '../shared/farming/farmPlotIndex';
-import type { InventoryOwnerScope, InventorySnapshot } from '../shared/inventory/inventoryTypes';
-import { handleDeepFarmDevLanRoute, type DevLanDeepFarmDb } from './devLanDeepFarmHandlers';
+import type { InventorySnapshot } from '../shared/inventory/inventoryTypes';
+import { handleDeepFarmDevLanRoute, type DeepFarmIdempotency, type DevLanDeepFarmDb } from './devLanDeepFarmHandlers';
 
 export interface DevLanFarmDb extends DevLanDeepFarmDb {
   farms: Record<string, { seed: number; version: number; farm: ReturnType<typeof emptyFarm> }>;
@@ -32,23 +29,6 @@ export function ensureFarmDb(v015: DevLanFarmDb): DevLanFarmDb {
   return v015;
 }
 
-export function seedStarterFarmPack(
-  v015: DevLanFarmDb,
-  worldId: string,
-  inventoryAdjust: (scope: string, sku: string, delta: number, quality?: string) => void,
-): void {
-  ensureFarmDb(v015);
-  v015.shippingBin ??= {};
-  if (v015.farms[worldId]) return;
-  const seed = Math.floor(Math.random() * 0xffff_ffff);
-  v015.farms[worldId] = { seed, version: 1, farm: emptyFarm(seed) };
-  v015.wallets[worldId] = { coins: FARM_STARTER_COINS };
-  for (const sku of FARM_STARTER_TOOLS) inventoryAdjust('shared', sku, 1, 'normal');
-  inventoryAdjust('shared', 'seed_wheat', FARM_STARTER_SEED_QTY, 'normal');
-  inventoryAdjust('shared', 'seed_carrot', 2, 'normal');
-  inventoryAdjust('shared', 'bait_free_worm', FARM_STARTER_BAIT_QTY, 'normal');
-}
-
 function shippingMeta(v015: DevLanFarmDb, worldId: string, nowMs: number): FarmShippingMeta {
   v015.shippingBin ??= {};
   const row = v015.shippingBin[worldId] ?? { soldByGroup: {}, dayIndex: vietnamDayIndex(nowMs) };
@@ -61,7 +41,7 @@ function farmRow(v015: DevLanFarmDb, worldId: string) {
   if (!v015.farms[worldId]) {
     const seed = Math.floor(Math.random() * 0xffff_ffff);
     v015.farms[worldId] = { seed, version: 1, farm: emptyFarm(seed) };
-    v015.wallets[worldId] ??= { coins: 0 };
+    v015.wallets[worldId] ??= { coins: FARM_STARTER_COINS };
   }
   return v015.farms[worldId]!;
 }
@@ -84,24 +64,7 @@ export async function tryHandleFarmDevLan(ctx: {
     worldId: string,
     domain: string,
   ) => { stateVersion: number; domainVersions: Record<string, number> };
-  checkV015Idempotency?: (
-    v015: unknown,
-    worldId: string,
-    userId: string,
-    action: string,
-    key: string,
-    reqHash: string,
-  ) => { conflict: boolean; response?: unknown } | null;
-  saveV015Idempotency?: (
-    v015: unknown,
-    worldId: string,
-    userId: string,
-    action: string,
-    key: string,
-    reqHash: string,
-    response: unknown,
-  ) => void;
-}): Promise<boolean> {
+} & DeepFarmIdempotency): Promise<boolean> {
   const {
     req,
     res,
@@ -162,33 +125,16 @@ export async function tryHandleFarmDevLan(ctx: {
       saveDb,
       broadcastEvent,
       bumpWorldStateVersion,
+      checkV015Idempotency,
+      saveV015Idempotency,
       nowMs,
     });
   }
 
   if (req.method === 'GET' && route === '/farm') {
-    if (!v015.farms?.[worldId]) {
-      seedStarterFarmPack(v015, worldId, (scope, sku, delta) => {
-        const list = getInventoryList(worldId);
-        const ownerScope: InventoryOwnerScope = scope === 'shared' ? 'shared' : `user:${scope}`;
-        const idx = list.findIndex(
-          (r) => r.ownerScope === ownerScope && r.itemSku === sku && (r.quality ?? 'normal') === 'normal',
-        );
-        if (idx >= 0) list[idx] = { ...list[idx]!, qty: list[idx]!.qty + delta };
-        else {
-          list.push({
-            worldId,
-            ownerScope,
-            itemSku: sku,
-            qty: delta,
-            quality: 'normal',
-            updatedAt: new Date(nowMs).toISOString(),
-          });
-        }
-        setInventoryList(worldId, list);
-      });
-    }
+    const newFarm = !v015.farms[worldId];
     const row = farmRow(v015, worldId);
+    if (newFarm) saveDb();
     const coins = v015.wallets[worldId]?.coins ?? 0;
     sendJson(res, 200, {
       ok: true,

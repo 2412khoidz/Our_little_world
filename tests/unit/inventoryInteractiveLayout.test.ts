@@ -5,14 +5,18 @@ import {
   assignStackToHotbar,
   cancelInventoryCursor,
   clearHotbarBinding,
+  type InventoryPickedCursor,
   splitBagSlotInPlace,
 } from '../../src/shared/donor/nuvora/nuvoraSlotInteraction';
 import { buildHotbarSlotsFromInventory } from '../../src/shared/interaction/inventoryHotbarAdapter';
 import {
   emptyInventoryLayout,
   reconcileInventoryLayout,
+  reconcileInventoryInteraction,
+  stackKeyId,
   sameStackRef,
 } from '../../src/shared/inventory/inventoryLayoutStore';
+import { createRng } from '../../src/shared/rng';
 import type { InventorySnapshot } from '../../src/shared/inventory/inventoryTypes';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -143,4 +147,73 @@ describe('Nuvora Interactive Inventory Layout (A1)', () => {
     expect(unbound.hotbarBindings[5]).toBeNull();
     expect(sumSharedSku(unbound, 'koi_pastel', 'silver')).toBe(4);
   });
+});
+
+it('conserves every scope and tier across randomized placement and changing snapshots', () => {
+  const rng = createRng(83045);
+  const amount = (upper: number) => Math.floor(rng.next() * upper);
+  const personal = `user:${USER_ID}` as const;
+  let snapshot = makeSnapshot();
+  snapshot = {
+    ...snapshot,
+    items: [...snapshot.items, ...Array.from({ length: 63 }, (_, index) => ({
+      worldId: snapshot.worldId,
+      ownerScope: index < 40 ? 'shared' as const : personal,
+      itemSku: `extra_${index}`,
+      quality: 'silver' as const,
+      qty: 1 + amount(7),
+      updatedAt: '',
+    }))],
+  };
+  let layout = reconcileInventoryLayout(null, snapshot, USER_ID);
+  expect(layout.sharedCells.length).toBeGreaterThan(36);
+  expect(layout.personalCells.length).toBeGreaterThan(18);
+  let cursor: InventoryPickedCursor | null = null;
+  const opts = { labelForSku: (sku: string) => sku };
+  for (let index = 0; index < 800; index += 1) {
+    const scope = amount(2) === 0 ? 'shared' : 'personal';
+    const all = scope === 'shared' ? layout.sharedCells : layout.personalCells;
+    const source = { kind: 'bag', scope, index: amount(all.length) } as const;
+    const dest = { kind: 'bag', scope, index: amount(all.length) } as const;
+    if (index % 11 === 0) {
+      const chosen = amount(snapshot.items.length);
+      snapshot = { ...snapshot, items: snapshot.items.map((row, i) =>
+        i === chosen ? { ...row, qty: amount(13) } : row,
+      ) };
+    } else if (index % 7 === 0) {
+      ({ layout, cursor } = cancelInventoryCursor(layout, cursor));
+    } else if (!cursor && index % 5 === 0) {
+      ({ layout, cursor } = applyDirectSlotDrop(layout, source, dest, opts));
+    } else {
+      const target = index % 3 === 0 ? { ...dest, kind: 'hotbar' as const, index: amount(8) } : dest;
+      ({ layout, cursor } = applyInventorySlotInteraction(layout, cursor, target, { ...opts, rightClick: amount(2) === 0 }));
+    }
+    ({ layout, cursor } = reconcileInventoryInteraction(layout, cursor, snapshot, USER_ID));
+    const totals = new Map<string, number>();
+    for (const cell of [...layout.sharedCells, ...layout.personalCells, cursor]) {
+      if (!cell) continue;
+      const key = stackKeyId(cell);
+      totals.set(key, (totals.get(key) ?? 0) + cell.qty);
+    }
+    const expected = new Map(snapshot.items.filter((row) => row.qty > 0).map((row) =>
+      [stackKeyId({ ...row, quality: row.quality ?? 'normal' }), row.qty],
+    ));
+    expect(totals).toEqual(expected);
+  }
+});
+
+it('keeps a filled page splittable and represents large holdings without allocating millions of cells', () => {
+  const snapshot = makeSnapshot();
+  const full = { ...snapshot, items: Array.from({ length: 36 }, (_, i) => ({
+    ...snapshot.items[2]!, itemSku: `owned_${i}`, qty: 4,
+  })) };
+  const layout = reconcileInventoryLayout(null, full, USER_ID);
+  const split = splitBagSlotInPlace(layout, 'shared', 0);
+  expect(split.sharedCells[0]?.qty).toBe(2);
+  expect(split.sharedCells[36]?.qty).toBe(2);
+  const huge = reconcileInventoryLayout(null, { ...snapshot, items: [
+    { ...snapshot.items[2]!, qty: 2_147_483_647 },
+  ] }, USER_ID);
+  expect(huge.sharedCells).toHaveLength(36);
+  expect(sumSharedSku(huge, 'wheat', 'normal')).toBe(2_147_483_647);
 });

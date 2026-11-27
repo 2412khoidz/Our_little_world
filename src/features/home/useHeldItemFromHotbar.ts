@@ -19,6 +19,12 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
     DEFAULT_WATER_FILL_BY_SKU,
   );
 
+  const [requestedSlot, setRequestedSlot] = useState<number | null>(null);
+  if (requestedSlot !== null) {
+    setRequestedSlot(null);
+    setHeldAnchor(selectHotbarSlot(slots, heldAnchor, requestedSlot));
+  }
+
   const heldItem = useMemo(
     () => reconcileHeldItemWithHotbar(heldAnchor, slots),
     [heldAnchor, slots],
@@ -57,9 +63,9 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
 
   useEffect(() => {
     return gameEventBus.on('cmd:select-hotbar-slot', ({ slotIndex }) => {
-      setHeldAnchor((cur) => selectHotbarSlot(slots, cur, slotIndex));
+      setRequestedSlot(slotIndex);
     });
-  }, [slots]);
+  }, []);
 
   const selectSlot = (index: number) => {
     void gameAudio.unlock();

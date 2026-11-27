@@ -1,6 +1,7 @@
 /**
  * Single adapter: donor rules → OLW shared inventory (no second ledger).
  */
+import { adjustInventoryQuantity, creditInventoryQuantity, InventoryQuantityError } from '../../inventory/inventoryLedger.mjs';
 import type { InventoryEntry, InventoryOwnerScope } from '../../inventory/inventoryTypes';
 import {
   collectFinishedCrafts,
@@ -60,23 +61,14 @@ function applyMapToSharedInventory(
   map: InventoryLike,
   nowMs: number,
 ): InventoryEntry[] {
-  const next = items.filter((r) => r.ownerScope !== 'shared' || (r.quality ?? 'normal') !== 'normal');
-  for (const [sku, rawQty] of Object.entries(map)) {
-    const qty = rawQty ?? 0;
-    if (qty <= 0) continue;
-    const idx = next.findIndex(
-      (r) => r.ownerScope === 'shared' && r.itemSku === sku && (r.quality ?? 'normal') === 'normal',
-    );
-    const row: InventoryEntry = {
-      worldId,
-      ownerScope: 'shared',
-      itemSku: sku,
-      qty,
-      quality: 'normal',
-      updatedAt: new Date(nowMs).toISOString(),
-    };
-    if (idx >= 0) next[idx] = row;
-    else next.push(row);
+  const next = items.slice();
+  const previous = inventoryToMap(items);
+  const nowIso = new Date(nowMs).toISOString();
+  for (const sku of new Set([...Object.keys(previous), ...Object.keys(map)])) {
+    const delta = (map[sku] ?? 0) - (previous[sku] ?? 0);
+    if (delta === 0) continue;
+    const result = adjustInventoryQuantity(next, worldId, 'shared', sku, delta, nowIso);
+    if (!result.ok) throw new InventoryQuantityError(result.code);
   }
   return next;
 }
@@ -300,20 +292,5 @@ export function creditSharedSku(
   nowMs: number,
   ownerScope: InventoryOwnerScope = 'shared',
 ): InventoryEntry[] {
-  const next = items.map((r) => ({ ...r }));
-  const idx = next.findIndex(
-    (r) => r.ownerScope === ownerScope && r.itemSku === sku && (r.quality ?? 'normal') === 'normal',
-  );
-  if (idx >= 0) next[idx] = { ...next[idx]!, qty: next[idx]!.qty + qty };
-  else {
-    next.push({
-      worldId,
-      ownerScope,
-      itemSku: sku,
-      qty,
-      quality: 'normal',
-      updatedAt: new Date(nowMs).toISOString(),
-    });
-  }
-  return next;
+  return creditInventoryQuantity(items, worldId, ownerScope, sku, qty, new Date(nowMs).toISOString());
 }

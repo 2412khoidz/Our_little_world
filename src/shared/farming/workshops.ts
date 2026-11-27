@@ -273,6 +273,7 @@ export interface WorkshopJob {
   readonly startMs: number;
   readonly endMs: number;
   readonly startedBy: string;
+  readonly reservedInputs?: ReadonlyArray<{ sku: string; qty: number; quality: QualityTier }>;
 }
 
 export interface WorkshopInstanceState {
@@ -382,7 +383,7 @@ export function cancelWorkshopJob(
   | {
       ok: true;
       state: WorkshopsWorldState;
-      refundInputs: ReadonlyArray<{ sku: string; qty: number }>;
+      refundInputs: ReadonlyArray<{ sku: string; qty: number; quality?: QualityTier }>;
     }
   | { ok: false; code: string; messageVi: string } {
   const station = state.stations[workshopId];
@@ -397,7 +398,7 @@ export function cancelWorkshopJob(
     };
   }
   const recipe = WORKSHOP_RECIPES_BY_ID.get(target.recipeId);
-  const refundInputs = recipe?.inputs ?? [];
+  const refundInputs = target.reservedInputs ?? recipe?.inputs ?? [];
 
   // Rebuild timestamps cleanly for queued jobs downstream of the cancelled slot
   const remaining = station.queue.filter((_, i) => i !== idx);

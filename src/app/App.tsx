@@ -400,7 +400,7 @@ function MainCoupleApp({
     | 'v03_proto'
     | 'remote_share'
   >(null);
-  const [inventorySnapshot, setInventorySnapshot] = useState<InventorySnapshot | null>(null);
+  const [inventoryEntry, setInventoryEntry] = useState<{ key: string; snapshot: InventorySnapshot } | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
   const [heldItemSku, setHeldItemSku] = useState<string | null>(null);
@@ -416,33 +416,30 @@ function MainCoupleApp({
   const layoutUserId = currentUser?.userId;
   const layoutScopeKey =
     layoutWorldId && layoutUserId ? `${layoutWorldId}:${layoutUserId}` : null;
-  const inventoryLayout = useMemo(() => {
-    const rawBase =
-      savedLayoutEntry && savedLayoutEntry.key === layoutScopeKey
-        ? savedLayoutEntry.layout
-        : layoutWorldId && layoutUserId
-          ? loadInventoryLayout(layoutWorldId, layoutUserId)
-          : null;
-    return reconcileInventoryLayout(
-      rawBase,
+  const inventorySnapshot = inventoryEntry?.key === layoutScopeKey ? inventoryEntry?.snapshot ?? null : null;
+  const inventoryLayout = useMemo(
+    () => reconcileInventoryLayout(
+      savedLayoutEntry?.key === layoutScopeKey ? savedLayoutEntry?.layout ?? null : null,
       inventorySnapshot,
       layoutUserId ?? '',
-    );
-  }, [savedLayoutEntry, layoutScopeKey, layoutWorldId, layoutUserId, inventorySnapshot]);
+    ),
+    [savedLayoutEntry, layoutScopeKey, inventorySnapshot, layoutUserId],
+  );
 
   const handleChangeInventoryLayout = useCallback(
     (next: InventoryLayoutState) => {
-      if (!layoutUserId) return;
-      const reconciled = reconcileInventoryLayout(next, inventorySnapshot, layoutUserId);
-      if (layoutScopeKey) {
-        setSavedLayoutEntry({ key: layoutScopeKey, layout: reconciled });
-      }
-      if (layoutWorldId) {
-        saveInventoryLayout(layoutWorldId, layoutUserId, reconciled);
+      if (layoutScopeKey && inventorySnapshot) {
+        setSavedLayoutEntry({ key: layoutScopeKey, layout: next });
       }
     },
-    [layoutUserId, inventorySnapshot, layoutScopeKey, layoutWorldId],
+    [inventorySnapshot, layoutScopeKey],
   );
+
+  useEffect(() => {
+    if (layoutWorldId && layoutUserId && savedLayoutEntry?.key === layoutScopeKey) {
+      saveInventoryLayout(layoutWorldId, layoutUserId, savedLayoutEntry.layout);
+    }
+  }, [layoutScopeKey, layoutUserId, layoutWorldId, savedLayoutEntry]);
 
   const inventoryHotbarSlots = useMemo(
     () =>
@@ -761,18 +758,32 @@ function MainCoupleApp({
 
   const refreshInventorySnapshot = useCallback(
     async (explicitWorldId?: string) => {
-      const targetWorldId = explicitWorldId ?? snapshotRef.current?.world.id;
-      if (!targetWorldId || !backend.inventory) return;
+      const currentWorldId = snapshotRef.current?.world.id;
+      const targetWorldId = explicitWorldId ?? currentWorldId;
+      const userId = currentUserRef.current?.userId;
+      if (!targetWorldId || targetWorldId !== currentWorldId || !userId || !backend.inventory) return;
+      const key = `${targetWorldId}:${userId}`;
       const reqSeq = ++inventoryReqSeqRef.current;
       setInventoryLoading(true);
       const res = await backend.inventory.getInventory(targetWorldId);
-      setInventoryLoading(false);
       if (reqSeq !== inventoryReqSeqRef.current) return;
+      setInventoryLoading(false);
+      if (snapshotRef.current?.world.id !== targetWorldId || currentUserRef.current?.userId !== userId) return;
       if (!res.ok) {
         showToast(res.message, true);
         return;
       }
-      setInventorySnapshot(res.data);
+      if (res.data.worldId !== targetWorldId) return;
+      const next = res.data;
+      setSavedLayoutEntry((prev) => ({
+        key,
+        layout: reconcileInventoryLayout(
+          prev?.key === key ? prev.layout : loadInventoryLayout(targetWorldId, userId),
+          next,
+          userId,
+        ),
+      }));
+      setInventoryEntry({ key, snapshot: next });
     },
     [backend, showToast],
   );
@@ -861,20 +872,18 @@ function MainCoupleApp({
   const handleClaimFreeKibble = useCallback(async () => {
     const targetWorldId = snapshotRef.current?.world.id;
     if (!targetWorldId || !backend.inventory) return;
-    setInventoryLoading(true);
     const res = await backend.inventory.claimFreeKibble(
       targetWorldId,
       makeIdempotencyKey('claim-kibble'),
     );
-    setInventoryLoading(false);
     if (!res.ok) {
       showToast(res.message, true);
       return;
     }
-    setInventorySnapshot(res.data);
+    await refreshInventorySnapshot(targetWorldId);
     realtimeRef.current?.notifyWorldMutated('inventory');
     showToast('Đã thêm 3 phần hạt mèo miễn phí vào túi chung!');
-  }, [backend, showToast]);
+  }, [backend, refreshInventorySnapshot, showToast]);
 
   const refreshPetCareBowl = useCallback(
     async (explicitWorldId?: string) => {
@@ -1067,14 +1076,14 @@ function MainCoupleApp({
         return false;
       }
       setMailboxSnapshot(res.data.mailbox);
-      setInventorySnapshot(res.data.inventory);
+      void refreshInventorySnapshot(targetWorldId);
       gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.mailbox.unreadCount });
       realtimeRef.current?.notifyWorldMutated('mailbox');
       if (params.giftItemSku) realtimeRef.current?.notifyWorldMutated('inventory');
       showToast(params.giftItemSku ? 'Đã gửi quà bất ngờ vào hòm thư!' : 'Đã thả thư vào hòm thư chung!');
       return true;
     },
-    [backend, showToast],
+    [backend, refreshInventorySnapshot, showToast],
   );
 
   const handleOpenMailboxItem = useCallback(
@@ -1093,12 +1102,12 @@ function MainCoupleApp({
         return;
       }
       setMailboxSnapshot(res.data.mailbox);
-      setInventorySnapshot(res.data.inventory);
+      void refreshInventorySnapshot(targetWorldId);
       gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.mailbox.unreadCount });
       realtimeRef.current?.notifyWorldMutated('mailbox');
       showToast('Đã mở thư! Kiểm tra ngăn riêng trong túi nếu có quà kèm nhé.');
     },
-    [backend, showToast],
+    [backend, refreshInventorySnapshot, showToast],
   );
 
   const handleStartStudy = useCallback(
@@ -3556,6 +3565,7 @@ function MainCoupleApp({
 
       {activeModal === 'inventory' && backend.inventory && currentUser && (
         <InventoryModal
+          key={layoutScopeKey}
           snapshot={inventorySnapshot}
           layout={inventoryLayout}
           onChangeLayout={handleChangeInventoryLayout}
