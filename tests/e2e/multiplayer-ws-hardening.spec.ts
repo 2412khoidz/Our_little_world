@@ -5,6 +5,14 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${pwPort}`;
 const DEV_LAN = `${BASE}/api/dev-lan`;
 const MAY_ID = '11111111-1111-4111-8111-111111111111';
 
+async function openDiagnostics(page: import('@playwright/test').Page) {
+  await page.getByTestId('connection-pill').click();
+  const mobileDiagBtn = page.getByTestId('btn-mobile-diagnostics');
+  if (await mobileDiagBtn.isVisible().catch(() => false)) {
+    await mobileDiagBtn.click();
+  }
+}
+
 test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics & recovery', () => {
   test.beforeEach(async ({ request }) => {
     const res = await request.post(`${DEV_LAN}/reset`, { data: {} });
@@ -35,8 +43,8 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
       await expect(pageB.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'home');
 
       // Open diagnostics overlay on both clients
-      await pageA.getByTestId('connection-pill').click();
-      await pageB.getByTestId('connection-pill').click();
+      await openDiagnostics(pageA);
+      await openDiagnostics(pageB);
 
       await expect(pageA.getByTestId('network-diagnostics-overlay')).toBeVisible();
       await expect(pageB.getByTestId('network-diagnostics-overlay')).toBeVisible();
@@ -55,10 +63,14 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
       // Map transition sync: Mây moves to garden, Nắng sees update and follows
       await pageA.getByTestId('nav-garden').click();
       await expect(pageA.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'garden');
-      await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Ngoài vườn');
+      await expect(pageB.getByTestId('partner-presence-pill')).toContainText('Mây');
       await expect(pageB.getByTestId('diag-remote')).toContainText('garden (Other)');
 
-      await pageB.getByTestId('nav-garden').click();
+      const navGardenB = pageB.getByTestId('nav-garden');
+      if (!(await navGardenB.isVisible().catch(() => false))) {
+        await pageB.getByTestId('nav-menu').click();
+      }
+      await navGardenB.click();
       await expect(pageB.getByTestId('diag-remote')).toContainText('garden (On map)');
       await expect(pageA.getByTestId('diag-remote')).toContainText('garden (On map)');
 
@@ -172,8 +184,8 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
       expect(resetStatus).toBe(403);
 
       // 4. Both players see each other over WebSocket and phone displays live diagnostics
-      await pageHost.getByTestId('connection-pill').click();
-      await pagePhone.getByTestId('connection-pill').click();
+      await openDiagnostics(pageHost);
+      await openDiagnostics(pagePhone);
       await expect(pagePhone.getByTestId('diag-status')).toHaveText('Connected');
       await expect(pagePhone.getByTestId('diag-transport')).toHaveText(/WS|WSS/);
       await expect(pagePhone.getByTestId('diag-players')).toHaveText('2/2');
@@ -187,7 +199,7 @@ test.describe('MISSION NET.1 — Two-client WebSocket multiplayer, diagnostics &
       await expect(pagePhone.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'home', {
         timeout: 15_000,
       });
-      await pagePhone.getByTestId('connection-pill').click();
+      await openDiagnostics(pagePhone);
       await expect(pagePhone.getByTestId('diag-players')).toHaveText('2/2');
 
       expect(errors).toEqual([]);

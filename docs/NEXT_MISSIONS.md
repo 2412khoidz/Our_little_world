@@ -11,11 +11,11 @@
 [M3a: Asset Library Audit] (COMPLETED & OWNER APPROVED on main)
          │
          ▼ (Feeds curated icons, animal sheets, VFX, fishing & cooking art into M2..M10)
-[M0: Mobile-first HUD, Touch Controls & Global Fullscreen] (IN PROGRESS in OLW-Mobile-HUD) ──┐
-[M1: Billiards V3 Mobile Usability & Visual Recovery] (IN PROGRESS in OLW-Billiards-V3) ─────┼─▶ Merge vào main (V0.2.x)
+[M0: Mobile-first HUD Phase 1, Touch & Fullscreen] (OWNER APPROVED on main; aux menu opt pending)
+[M1: Billiards V3/V4.1] (V4 NOT APPROVED — V4.1 pending in OLW-Billiards-V4; V2 preserved on main)
 [M2: Natural Couple Animations (P1 Kiss & Poses)] ─────────────────────────────────────────┤
-[M3b: Correct All 32 Inaccurate SKU Sprite Mappings] ──▶ [M3c: Animated Livestock Transplant] ──┐
-[M3d: Animated Processing Machines & Env VFX] ──▶ [M3e: Fishing Artwork & Anim Transplant] ─────┘
+[M3b: Correct 32 SKU Mappings] & [M3c: Livestock Transplant] (NOT APPROVED — runtime investigation pending) ──┐
+[M3d: Animated Processing Machines & Env VFX] ──▶ [M3e: Fishing Artwork & Anim Transplant] ────────────────┘
                                                                                                 │
                                                                                                 ▼
                                                                                [M4: Home Progression & Shop (V0.2.4)]
@@ -43,10 +43,10 @@
 
 ---
 
-## Mission 0 — Mobile-first HUD, Touch Controls & Global Fullscreen (`V0.2.x` · `IN PROGRESS`)
-- **Phạm vi & Trải nghiệm người chơi:** Tái thiết kế HUD mobile-first với khung gỗ 9-slice **Kiln Harvest** (`TouchJoystick`, `MobileTopHud`, `MobileNavDrawer`, `MainGameInteractionLayer`, `CoupleEmoteDock`, `GameHotbar`), joystick Pointer Events (`fixed`/`floating` thumb anchor + radial deadzone), và bộ điều phối toàn màn hình/hướng màn hình dùng chung (`GlobalViewportContext`, `--olw-vvh`, `viewportPolicy.ts`) với **quy tắc 1 chủ sở hữu (`fullscreenOwner`)** để thoát Bi-a/Câu cá/Pet Care không làm rớt fullscreen toàn app và hỗ trợ safe-area/Add-to-Home-Screen trên iPhone Safari (không xoay CSS gốc).
-- **Dependencies:** Hợp đồng phối hợp viewport với **M1** (`OLW-Billiards-V3`) theo mô hình `VIEWPORT_FULLSCREEN_CONTRACT.md` trong worktree M0 (`GlobalViewportContext` + `useSharedFocusMode`). Cần hoàn tất phát triển, test & reconcile lên `main` mới nhất trước khi merge.
-- **Branch / Worktree đề xuất:** Tiếp tục `feat/mobile-first-hud` tại `C:\Users\admin\Downloads\OLW-Mobile-HUD`.
+## Mission 0 — Mobile-first HUD, Touch Controls & Global Fullscreen (`V0.2.x` · `Phase 1 OWNER APPROVED & INTEGRATED`)
+- **Trạng thái hiện tại:** **Phase 1 đã được chủ dự án phê duyệt và hợp nhất vào `main`** (`feat/mobile-first-hud` @ `cfd3099`). **Lưu ý:** Hạng mục **tối ưu menu phụ trợ (auxiliary menu optimization)** vẫn chưa hoàn thành (`PLANNED` cho đợt polish tiếp theo) và không được đánh dấu hoàn tất.
+- **Phạm vi đã tích hợp (Phase 1):** Tái thiết kế HUD mobile-first với khung gỗ 9-slice **Kiln Harvest** (`TouchJoystick`, `MobileTopHud`, `MobileNavDrawer`, `MainGameInteractionLayer`, `CoupleEmoteDock`, `GameHotbar`), joystick Pointer Events (`fixed`/`floating` thumb anchor + radial deadzone), và bộ điều phối toàn màn hình/hướng màn hình dùng chung (`GlobalViewportContext`, `--olw-vvh`, `viewportPolicy.ts`) với **quy tắc 1 chủ sở hữu (`fullscreenOwner`)** theo [VIEWPORT_FULLSCREEN_CONTRACT.md](handovers/VIEWPORT_FULLSCREEN_CONTRACT.md) để bảo toàn fullscreen qua mở/đóng Bi-a/Câu cá/Pet Care và hỗ trợ iPhone Safari safe-area.
+- **Hợp đồng phối hợp tương lai:** Giữ nguyên `GlobalViewportContext` & `useSharedFocusMode` sẵn sàng cho nhánh sửa **Billiards V4.1** sau khi được phê duyệt riêng; trên `main` tiếp tục giữ **Billiards V2** ổn định.
 - **Hệ thống & File chồng chéo:** `src/app/App.tsx`, `src/app/viewport/GlobalViewportContext.tsx`, `src/shared/viewport/viewportPolicy.ts`, `src/shared/input/virtualJoystickController.ts`, `src/features/home/mobile/*`, `src/features/minigames/billiards/*` (đối chiếu contract fullscreen).
 - **Song song / Tuần tự:** **COORDINATED** với M1 (`App.tsx` & shared fullscreen lifecycle); **PARALLEL SAFE** với M2, M3b–M3e, M7.
 - **Focused Acceptance:** `mobileInteractablesAndHud.test.ts`, unit test cho `virtualJoystickController` & `viewportPolicy`, Playwright desktop + `430×932` portrait/landscape không che HUD và không kẹt joystick/fullscreen khi mở-đóng modal.

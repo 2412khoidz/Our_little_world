@@ -16,14 +16,15 @@
 | A6 | Billiards V2 (`BilliardsModal`, NET.1 WS sync) | `OWNER APPROVED` | Đã gộp `v0.2.5` + 3/3 E2E Chromium; bản nâng cấp Billiards V3 + 3D (`feat/billiards-v3`) đang `IN PROGRESS` |
 | A7 | Production Build & Guard (`dist/` + `sw.js`) | `OWNER APPROVED` | `npm run build && node scripts/verify-prod-guard.mjs` exit 0, zero dev/private leaks |
 | A8 | Kiểm kê Tài nguyên Donor `M3a` (`docs/art/ASSET_*`) | `OWNER APPROVED` | Kiểm kê `28` pack (`8,079` PNG duy nhất), 267 SKU & backlog tái sử dụng (`chore/m3a-asset-library-audit` @ `3134f1a` đã gộp `main`) |
+| A9 | `M0` Mobile-First HUD Phase 1 (`feat/mobile-first-hud` @ `cfd3099`) | `OWNER APPROVED` *(Phase 1)* | HUD 9-slice Kiln, joystick Pointer Events, `--olw-vvh` & single `fullscreenOwner` đã hợp nhất `main` (tối ưu menu phụ trợ còn mở) |
 
 ---
 
 ## Tier B — Tiêu chí Thoát cho Các Milestone Tiếp theo (`V0.2.x → V1.0`)
 
 - **`V0.2.x` (Gameplay Foundation Polish):**
-  - **Mobile-First HUD & Global Fullscreen (`M0`):** Khung HUD Kiln mobile-first gọn trên `430×932` & landscape, joystick đa chạm không kẹt, single `fullscreenOwner` giữ nguyên fullscreen khi mở/đóng Bi-a & tôn trọng iPhone Safari safe-area.
-  - **Billiards V3 + 3D (`M1`):** Chơi mượt 3 chế độ (Bot, Local 2P, Online Ready Lobby), bàn phím desktop & chạm mobile, giải phóng WebGL sạch khi thoát, owner playtest pass.
+  - **Mobile-First HUD (`M0` phần còn lại):** Hoàn thiện tối ưu menu phụ trợ (auxiliary menu optimization) ở đợt sau; Phase 1 HUD & Global Fullscreen đã nghiệm thu trên `main`.
+  - **Billiards V4.1 (`M1`):** Khắc phục 3D camera sau phản hồi V4 (`NOT APPROVED`), phối hợp contract `useSharedFocusMode` với `M0`, chơi mượt 3 chế độ (Bot, Local 2P, Online Ready Lobby) trước khi merge thay V2.
   - **Couple P1 (`M2`):** Hình ảnh cặp đôi hôn/tựa vai/tặng hoa bảo toàn 100% `AvatarConfig`, không giật vị trí hay trùng tay, owner duyệt hình ảnh trước khi bật `COUPLE_P1_ENABLED = true`.
   - **Polish, Icon Fixes & Livestock Transplant (`M3`):** Nút `J`/ngữ cảnh mobile rõ ràng; sửa SKU sai nghĩa & thay vẽ thú Canvas bằng spritesheet `FarmRanchLife` theo `ASSET_REUSE_BACKLOG.md`; `npm run lint` đạt 0 errors, 0 warnings.
 - **`V0.2.4` (Home Progression):**

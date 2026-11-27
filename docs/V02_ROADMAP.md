@@ -16,8 +16,9 @@
 
 ## 2. Việc còn lại của `V0.2.x` (Complete the Gameplay Foundation)
 
-### 2.0 `M0` — Mobile-First HUD, Touch Controls & Global Fullscreen — **`IN PROGRESS`** (`OLW-Mobile-HUD` / `feat/mobile-first-hud`)
-- **Phạm vi:** HUD gỗ 9-slice `Kiln Harvest`, joystick Pointer Events mượt (`src/shared/input/virtualJoystickController.ts`), chính sách viewport `--olw-vvh` (`src/shared/viewport/viewportPolicy.ts`), và `GlobalViewportContext` quản lý single `fullscreenOwner` phối hợp với `Billiards V3` (`M1`).
+### 2.0 `M0` — Mobile-First HUD, Touch Controls & Global Fullscreen — **`Phase 1 OWNER APPROVED` (`main`)**
+- **Đã hợp nhất & duyệt (Phase 1 từ `feat/mobile-first-hud` @ `cfd3099`):** HUD gỗ 9-slice `Kiln Harvest`, joystick Pointer Events mượt (`src/shared/input/virtualJoystickController.ts`), chính sách viewport `--olw-vvh` (`src/shared/viewport/viewportPolicy.ts`), và `GlobalViewportContext` quản lý single `fullscreenOwner` ([VIEWPORT_FULLSCREEN_CONTRACT.md](handovers/VIEWPORT_FULLSCREEN_CONTRACT.md)) sẵn sàng cho Billiards V4.1.
+- **Chưa hoàn thành (`PLANNED`):** Tối ưu menu phụ trợ (auxiliary menu optimization) chưa hoàn tất và chưa được đánh dấu xong.
 
 ### 2.1 `M1` — Billiards V3 & 3D Transplant — **`IN PROGRESS`** (`OLW-Billiards-V3` / `feat/billiards-v3`)
 - **Đã có trên worktree `feat/billiards-v3` (chưa merge / chưa owner verify):**

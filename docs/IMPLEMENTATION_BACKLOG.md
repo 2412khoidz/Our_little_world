@@ -6,8 +6,8 @@
 > [!IMPORTANT]
 > **Backlog V3 Hiện hành:** Phần lớn task trong `Phần A` lịch sử dưới đây (`V0.1-1..7`, `OLW-010-01..03`, `V0.1.5`, `V0.2.0`) đã được hợp nhất vào canonical `main` (`v0.2.5`). Danh sách **Mission hành động hiện tại (`M0`..`M10`)** nằm tại **[NEXT_MISSIONS.md](NEXT_MISSIONS.md)** cùng kết quả kiểm kê tài nguyên **`M3a` (`OWNER APPROVED`)** tại **[ASSET_REUSE_BACKLOG.md](art/ASSET_REUSE_BACKLOG.md)**:
 > - **M3a (`OWNER APPROVED`):** Kiểm kê 28 pack donor & backlog sửa icon / transplant thú nuôi (`ASSET_LIBRARY_INVENTORY.md`, `ASSET_REUSE_BACKLOG.md`, `asset-library-inventory.json`)
-> - **M0 (`IN PROGRESS`):** Mobile-First HUD, Touch Controls & Global Fullscreen (`feat/mobile-first-hud` tại `OLW-Mobile-HUD`)
-> - **M1 (`IN PROGRESS`):** Billiards V3 & 3D Transplant (`feat/billiards-v3` tại `OLW-Billiards-V3`)
+> - **M0 (`Phase 1 OWNER APPROVED`):** Mobile-First HUD, Touch Controls & Global Fullscreen đã gộp `main` (`cfd3099`); tối ưu menu phụ trợ vẫn còn mở
+> - **M1 (`IN PROGRESS` · V4 `NOT APPROVED`):** Billiards V3/V4.1 & 3D Transplant (chờ sửa camera V4.1; giữ Billiards V2 trên `main`)
 > - **M2 (`V0.2.x`):** Couple P1 Animations (`kiss`, `lean_shoulder`, `dance`, `give_flower`)
 > - **M3 (`V0.2.x`):** Farming, Fishing, Pet Polish + Sửa 32 SKU sai/trùng & Transplant Thú Nuôi (`FarmRanchLife`)
 > - **M4 (`V0.2.4`):** Home Progression (Shop nội thất 4 phong cách + mở rộng nhà giữ nguyên đồ cũ)
