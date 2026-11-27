@@ -22,9 +22,12 @@ BEGIN
   pet := public.pet_adopt_or_rename(w, 'Miu', null, 'adopt-1');
   pet_id := (pet->>'id')::uuid;
   v := (pet->>'version')::integer;
+  UPDATE public.pets
+  SET vitals_jsonb = jsonb_set(vitals_jsonb, '{hunger}', '70')
+  WHERE id = pet_id;
   PERFORM public._inventory_adjust_item(w, 'shared', 'pet_kibble_basic', 2);
   pet := public.pet_consume_hand_food(w, pet_id, v, 'shared', 'pet_kibble_basic', 'normal', 'hf-1');
-  ASSERT (pet->'pet'->'vitals'->>'hunger')::integer >= 20;
+  ASSERT (pet->'pet'->'vitals'->>'hunger')::integer = 96;
   BEGIN
     PERFORM public.pet_consume_hand_food(w, pet_id, (pet->'pet'->>'version')::integer, 'shared', 'pet_kibble_basic', 'normal', 'hf-dup');
     RAISE EXCEPTION 'Should be full';

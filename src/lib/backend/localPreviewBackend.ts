@@ -27,10 +27,7 @@ import {
 } from '../../shared/farming/deepFarmState';
 import { applyFarmShippingBinSale, type FarmShippingMeta } from '../../shared/farming/farmShipping';
 import {
-  FARM_STARTER_BAIT_QTY,
   FARM_STARTER_COINS,
-  FARM_STARTER_SEED_QTY,
-  FARM_STARTER_TOOLS,
   applyFarmAction,
   buildFarmSnapshot,
   buySeed,
@@ -38,6 +35,7 @@ import {
   sellCropLine,
 } from '../../shared/farming/serverApply';
 import type { Farm } from '../../shared/farming/types';
+import { initializeWorldInventory, INVENTORY_STARTER_VERSION } from '../../shared/inventory/inventoryStarter.mjs';
 import type { InventoryEntry } from '../../shared/inventory/inventoryTypes';
 import type {
   AuthSessionUser,
@@ -91,6 +89,7 @@ interface LocalPreviewDb {
   deepFarms?: Record<string, DeepFarmState>;
   wallets?: Record<string, { coins: number }>;
   inventories?: Record<string, InventoryEntry[]>;
+  inventoryStarterVersions?: Record<string, number>;
   shippingBin?: Record<string, FarmShippingMeta>;
 }
 
@@ -126,14 +125,33 @@ function createEmptyDb(): LocalPreviewDb {
   };
 }
 
+function initializePreviewInventory(db: LocalPreviewDb, worldId: string, nowIso: string, newWorld = false): boolean {
+  db.inventoryStarterVersions ??= {};
+  if ((db.inventoryStarterVersions[worldId] ?? 0) >= INVENTORY_STARTER_VERSION) return false;
+  db.inventories ??= {};
+  db.wallets ??= {};
+  db.inventories[worldId] = initializeWorldInventory(db.inventories[worldId] ?? [], worldId, nowIso, newWorld);
+  db.wallets[worldId] ??= { coins: FARM_STARTER_COINS };
+  db.inventoryStarterVersions[worldId] = INVENTORY_STARTER_VERSION;
+  return true;
+}
+
 function readDb(): LocalPreviewDb {
+  let db: LocalPreviewDb;
   try {
     const raw = window.localStorage.getItem(DB_STORAGE_KEY);
     if (!raw) return createEmptyDb();
-    return JSON.parse(raw) as LocalPreviewDb;
+    db = JSON.parse(raw) as LocalPreviewDb;
   } catch {
     return createEmptyDb();
   }
+  const nowIso = new Date().toISOString();
+  let migrated = false;
+  for (const worldId of Object.keys(db.worlds)) {
+    if (initializePreviewInventory(db, worldId, nowIso)) migrated = true;
+  }
+  if (migrated) writeDb(db);
+  return db;
 }
 
 function writeDb(db: LocalPreviewDb): void {
@@ -412,6 +430,7 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
       };
       db.memberships[worldId] = [{ userId: user.userId, role: 'owner', joinedAt: nowIso }];
       db.placements[worldId] = buildDefaultStarterPlacements(worldId, user.userId, nowIso);
+      initializePreviewInventory(db, worldId, nowIso, true);
       writeDb(db);
 
       const snapshot = buildSnapshot(db, worldId)!;
@@ -1019,33 +1038,6 @@ export function createLocalPreviewBackend(sessionStorageKey = 'olw:local-preview
         if (!db.farms[worldId]) {
           const seed = Math.floor(Math.random() * 0xffff_ffff);
           db.farms[worldId] = { seed, version: 1, farm: emptyFarm(seed) };
-          db.wallets[worldId] = { coins: FARM_STARTER_COINS };
-          db.inventories[worldId] = [
-            ...FARM_STARTER_TOOLS.map((sku) => ({
-              worldId,
-              ownerScope: 'shared' as const,
-              itemSku: sku,
-              qty: 1,
-              quality: 'normal' as const,
-              updatedAt: new Date(nowMs).toISOString(),
-            })),
-            {
-              worldId,
-              ownerScope: 'shared' as const,
-              itemSku: 'seed_wheat',
-              qty: FARM_STARTER_SEED_QTY,
-              quality: 'normal' as const,
-              updatedAt: new Date(nowMs).toISOString(),
-            },
-            {
-              worldId,
-              ownerScope: 'shared' as const,
-              itemSku: 'bait_free_worm',
-              qty: FARM_STARTER_BAIT_QTY,
-              quality: 'normal' as const,
-              updatedAt: new Date(nowMs).toISOString(),
-            },
-          ];
           writeDb(db);
         }
         const row = db.farms[worldId]!;

@@ -2,6 +2,12 @@
 
 *Cập nhật lần cuối: 27/11/2026*
 
+## Hotfix quyền sở hữu túi đồ sau RC2
+
+- Worktree `fix/inventory-integrity` tách từ `origin/main` tại `fe1937b`. Đã tái hiện hạt tự sinh khi nhà có mèo và táo hiển thị đồng thời trong túi lẫn trên con trỏ.
+- Đã chuyển gói khởi đầu sang lúc tạo nhà và nâng cấp save theo phiên bản. Túi chung và ngăn riêng tự thêm trang. Khi người chơi khác tiêu vật phẩm, túi và thanh nhanh cập nhật từ snapshot mới.
+- [Báo cáo tái hiện, kiểm thử và save nghiệm thu](reports/INVENTORY_INTEGRITY_HOTFIX.md). Nghiệm thu Safari trên iPhone thật và Supabase Cloud còn chờ.
+
 ## CANONICAL RC2 INTEGRATION (`integration/olw-canonical-rc2` → `main`)
 
 - **Hợp nhất thống nhất Canonical RC2 (`M0 Phase 1` + `M1 Billiards V4.1` + `M3a–M3c.2` + Multiplayer Maintenance):**

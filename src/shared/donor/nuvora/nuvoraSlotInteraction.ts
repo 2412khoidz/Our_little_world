@@ -1,12 +1,15 @@
 import type { ItemQualityTier } from '../../interaction/hotbarContract';
 import {
+  bagPageSize,
   cloneInventoryLayout,
+  findOpenBagCell,
   HOTBAR_CAPACITY,
   sameStackRef,
   type InventoryBagCell,
   type InventoryLayoutState,
   type InventoryStackRef,
 } from '../../inventory/inventoryLayoutStore';
+import { MAX_INVENTORY_QUANTITY } from '../../inventory/inventoryLedger.mjs';
 import type { InventoryOwnerScope } from '../../inventory/inventoryTypes';
 
 /**
@@ -96,7 +99,6 @@ export interface InventoryPickedCursor {
   readonly ownerScope: InventoryOwnerScope;
   readonly qty: number;
   readonly labelVi: string;
-  readonly sourceKind: 'bag' | 'hotbar';
   readonly sourceScope: BagScopeTab;
   readonly sourceIndex: number;
 }
@@ -155,9 +157,6 @@ export function cancelInventoryCursor(
   if (!cursor) {
     return { layout, cursor: null };
   }
-  if (cursor.sourceKind === 'hotbar') {
-    return { layout, cursor: null };
-  }
   const next = cloneInventoryLayout(layout);
   const bag = getBagArray(next, cursor.sourceScope);
   const origin = bag[cursor.sourceIndex];
@@ -171,16 +170,8 @@ export function cancelInventoryCursor(
   } else if (origin && sameStackRef(origin, ref)) {
     bag[cursor.sourceIndex] = { ...origin, qty: origin.qty + cursor.qty };
   } else {
-    const mergeIdx = bag.findIndex((c) => c && sameStackRef(c, ref));
-    if (mergeIdx >= 0) {
-      const m = bag[mergeIdx]!;
-      bag[mergeIdx] = { ...m, qty: m.qty + cursor.qty };
-    } else {
-      const emptyIdx = bag.findIndex((c) => c === null);
-      if (emptyIdx >= 0) {
-        bag[emptyIdx] = { ...ref, qty: cursor.qty };
-      }
-    }
+    const open = findOpenBagCell(bag, bagPageSize(cursor.sourceScope));
+    bag[open] = { ...ref, qty: cursor.qty };
   }
   return { layout: next, cursor: null };
 }
@@ -195,8 +186,8 @@ export function splitBagSlotInPlace(
   const bag = getBagArray(next, scope);
   const cell = bag[slotIndex];
   if (!cell || cell.qty < 2) return layout;
-  const emptyIdx = bag.findIndex((c, idx) => idx !== slotIndex && c === null);
-  if (emptyIdx < 0) return layout;
+  const pageSize = bagPageSize(scope);
+  const emptyIdx = findOpenBagCell(bag, pageSize, Math.floor(slotIndex / pageSize) * pageSize);
   const keepQty = Math.floor(cell.qty / 2);
   const splitQty = cell.qty - keepQty;
   bag[slotIndex] = { ...cell, qty: keepQty };
@@ -226,12 +217,11 @@ export function applyInventorySlotInteraction(
     readonly shiftKey?: boolean;
     readonly labelForSku: (sku: string) => string;
     readonly heldHotbarIndex?: number | null;
+    readonly stackLimitForStack?: (stack: InventoryStackRef) => number;
   },
 ): InventoryInteractionTransition {
+  if (!validSlotAddress(layout, target)) return { layout, cursor };
   if (target.kind === 'hotbar') {
-    if (target.index < 0 || target.index >= HOTBAR_CAPACITY) {
-      return { layout, cursor };
-    }
     if (!cursor) {
       if (opts.rightClick) {
         return {
@@ -240,31 +230,8 @@ export function applyInventorySlotInteraction(
           inspectRef: { kind: 'hotbar', scope: target.scope, index: target.index },
         };
       }
-      const bound = layout.hotbarBindings[target.index];
-      if (!bound) {
-        return {
-          layout,
-          cursor: null,
-          selectHotbarIndex: target.index,
-          inspectRef: { kind: 'hotbar', scope: target.scope, index: target.index },
-        };
-      }
       return {
         layout,
-        cursor: null,
-        selectHotbarIndex: target.index,
-        inspectRef: { kind: 'hotbar', scope: target.scope, index: target.index },
-      };
-    }
-
-    if (cursor.sourceKind === 'hotbar') {
-      const next = cloneInventoryLayout(layout);
-      const from = next.hotbarBindings[cursor.sourceIndex] ?? null;
-      const to = next.hotbarBindings[target.index] ?? null;
-      next.hotbarBindings[target.index] = from;
-      next.hotbarBindings[cursor.sourceIndex] = to;
-      return {
-        layout: { ...next, hotbarCustomized: true },
         cursor: null,
         selectHotbarIndex: target.index,
         inspectRef: { kind: 'hotbar', scope: target.scope, index: target.index },
@@ -292,9 +259,6 @@ export function applyInventorySlotInteraction(
 
   // Target is a bag slot (`shared` or `personal`)
   const bagRead = getBagArray(layout, target.scope);
-  if (target.index < 0 || target.index >= bagRead.length) {
-    return { layout, cursor };
-  }
   const cell = bagRead[target.index] ?? null;
 
   if (!cursor) {
@@ -340,7 +304,6 @@ export function applyInventorySlotInteraction(
           ownerScope: cell.ownerScope,
           qty: pickQty,
           labelVi: opts.labelForSku(cell.itemSku),
-          sourceKind: 'bag',
           sourceScope: target.scope,
           sourceIndex: target.index,
         },
@@ -356,7 +319,6 @@ export function applyInventorySlotInteraction(
         ownerScope: cell.ownerScope,
         qty: cell.qty,
         labelVi: opts.labelForSku(cell.itemSku),
-        sourceKind: 'bag',
         sourceScope: target.scope,
         sourceIndex: target.index,
       },
@@ -365,30 +327,13 @@ export function applyInventorySlotInteraction(
   }
 
   // Cross-tab drop not permitted client-side (server `/inventory/transfer-quality` owns scope transfers)
-  if (cursor.sourceKind === 'bag' && cursor.sourceScope !== target.scope) {
+  if (cursor.sourceScope !== target.scope) {
     const restored = cancelInventoryCursor(layout, cursor);
     return {
       layout: restored.layout,
       cursor: null,
       inspectRef: { kind: 'bag', scope: target.scope, index: target.index },
     };
-  }
-
-  if (cursor.sourceKind === 'hotbar') {
-    if (cell) {
-      const assigned = assignStackToHotbar(
-        layout,
-        { itemSku: cell.itemSku, quality: cell.quality, ownerScope: cell.ownerScope },
-        cursor.sourceIndex,
-      );
-      return {
-        layout: assigned.layout,
-        cursor: null,
-        selectHotbarIndex: assigned.slotIndex,
-        inspectRef: { kind: 'bag', scope: target.scope, index: target.index },
-      };
-    }
-    return { layout, cursor: null };
   }
 
   const next = cloneInventoryLayout(layout);
@@ -419,23 +364,20 @@ export function applyInventorySlotInteraction(
 
   // Compatible stack merge: identical SKU + quality + ownerScope ONLY
   if (sameStackRef(cell, cursorRef)) {
-    if (opts.rightClick && cursor.qty > 1) {
-      bag[target.index] = { ...cell, qty: cell.qty + 1 };
-      return {
-        layout: next,
-        cursor: { ...cursor, qty: cursor.qty - 1 },
-        inspectRef: { kind: 'bag', scope: target.scope, index: target.index },
-      };
-    }
-    bag[target.index] = { ...cell, qty: cell.qty + cursor.qty };
+    const limit = opts.stackLimitForStack?.(cell) ?? MAX_INVENTORY_QUANTITY;
+    const qty = Math.min(opts.rightClick ? 1 : cursor.qty, Math.max(0, limit - cell.qty));
+    if (qty === 0) return { layout, cursor };
+    bag[target.index] = { ...cell, qty: cell.qty + qty };
     return {
       layout: next,
-      cursor: null,
+      cursor: qty === cursor.qty ? null : { ...cursor, qty: cursor.qty - qty },
       inspectRef: { kind: 'bag', scope: target.scope, index: target.index },
     };
   }
 
-  // Incompatible stack (different SKU, quality, or ownerScope): swap!
+  if (opts.rightClick) return { layout, cursor };
+
+  // An incompatible stack swaps with the held stack.
   bag[target.index] = { ...cursorRef, qty: cursor.qty };
   return {
     layout: next,
@@ -445,7 +387,6 @@ export function applyInventorySlotInteraction(
       ownerScope: cell.ownerScope,
       qty: cell.qty,
       labelVi: opts.labelForSku(cell.itemSku),
-      sourceKind: 'bag',
       sourceScope: target.scope,
       sourceIndex: target.index,
     },
@@ -453,14 +394,26 @@ export function applyInventorySlotInteraction(
   };
 }
 
+type SlotAddress = { readonly kind: 'bag' | 'hotbar'; readonly scope: BagScopeTab; readonly index: number };
+
+function validSlotAddress(layout: InventoryLayoutState, slot: SlotAddress): boolean {
+  return Number.isInteger(slot.index) && slot.index >= 0
+    && slot.index < (slot.kind === 'hotbar' ? HOTBAR_CAPACITY : getBagArray(layout, slot.scope).length);
+}
+
 /** Completes drag-and-drop from one slot directly onto another slot cleanly without leaving a held cursor. */
 export function applyDirectSlotDrop(
   layout: InventoryLayoutState,
-  source: { readonly kind: 'bag' | 'hotbar'; readonly scope: BagScopeTab; readonly index: number },
-  dest: { readonly kind: 'bag' | 'hotbar'; readonly scope: BagScopeTab; readonly index: number },
-  opts: { readonly labelForSku: (sku: string) => string; readonly heldHotbarIndex?: number | null },
+  source: SlotAddress,
+  dest: SlotAddress,
+  opts: {
+    readonly labelForSku: (sku: string) => string;
+    readonly heldHotbarIndex?: number | null;
+    readonly stackLimitForStack?: (stack: InventoryStackRef) => number;
+  },
 ): InventoryInteractionTransition {
-  if (source.kind === dest.kind && source.scope === dest.scope && source.index === dest.index) {
+  if (!validSlotAddress(layout, source) || !validSlotAddress(layout, dest)
+    || (source.kind === dest.kind && source.scope === dest.scope && source.index === dest.index)) {
     return { layout, cursor: null };
   }
   if (source.kind === 'hotbar' && dest.kind === 'hotbar') {
@@ -494,6 +447,12 @@ export function applyDirectSlotDrop(
       };
     }
     return cancelInventoryCursor(placed.layout, placed.cursor);
+  }
+  // A quick-slot reference dropped onto its own bag tab removes the binding.
+  // The bag does not move or receive an item.
+  const binding = layout.hotbarBindings[source.index];
+  if (binding && (binding.ownerScope === 'shared') === (dest.scope === 'shared')) {
+    return { layout: clearHotbarBinding(layout, source.index), cursor: null };
   }
   return { layout, cursor: null };
 }

@@ -1,3 +1,4 @@
+import { adjustInventoryQuantity } from './inventoryLedger.mjs';
 import type {
   InventoryCatalogItem,
   InventoryEntry,
@@ -54,40 +55,9 @@ export function applyInventoryDeltaInPlace(
   itemSku: string,
   delta: number,
   nowIso: string,
-): { ok: true; qty: number } | { ok: false; code: 'NOT_FOUND' | 'INSUFFICIENT_ITEMS' | 'STACK_FULL' } {
-  const catalog = getV015CatalogItem(itemSku);
-  if (!catalog) {
-    return { ok: false, code: 'NOT_FOUND' };
+) {
+  if (!getV015CatalogItem(itemSku)) {
+    return { ok: false, code: 'NOT_FOUND' } as const;
   }
-  const idx = entries.findIndex(
-    (e) => e.worldId === worldId && e.ownerScope === ownerScope && e.itemSku === itemSku,
-  );
-  const currentQty = idx >= 0 ? entries[idx]!.qty : 0;
-  const nextQty = currentQty + delta;
-
-  if (nextQty < 0) {
-    return { ok: false, code: 'INSUFFICIENT_ITEMS' };
-  }
-  if (nextQty > catalog.stackLimit) {
-    return { ok: false, code: 'STACK_FULL' };
-  }
-
-  if (nextQty === 0) {
-    if (idx >= 0) entries.splice(idx, 1);
-    return { ok: true, qty: 0 };
-  }
-
-  const nextRow: InventoryEntry = {
-    worldId,
-    ownerScope,
-    itemSku,
-    qty: nextQty,
-    updatedAt: nowIso,
-  };
-  if (idx >= 0) {
-    entries[idx] = nextRow;
-  } else {
-    entries.push(nextRow);
-  }
-  return { ok: true, qty: nextQty };
+  return adjustInventoryQuantity(entries, worldId, ownerScope, itemSku, delta, nowIso);
 }

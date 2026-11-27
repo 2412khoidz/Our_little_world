@@ -1,5 +1,9 @@
 // Server-side Dev LAN parity handlers for V0.1.5 Living Home (OLW-015-01..08)
 import crypto from 'node:crypto';
+import { adjustInventoryQuantity, normalizeInventoryRows } from '../src/shared/inventory/inventoryLedger.mjs';
+import {
+  initializeWorldInventory, INVENTORY_STARTER_VERSION, STARTER_WALLET_COINS,
+} from '../src/shared/inventory/inventoryStarter.mjs';
 import { handleSharedLifeRoute } from './devLanSharedLifeHandlers.mjs';
 import { ensurePetLivingDb, finalizeAcceptedOfferForFill, tryHandlePetLivingRoute } from './devLanPetLiving.mjs';
 import canonicalCatalogGenerated from '../src/shared/catalog/canonicalCatalog.generated.json' with { type: 'json' };
@@ -122,64 +126,13 @@ export const V015_CATALOG = [
   ...DEV_LAN_LEGACY_EXTRAS.filter((item) => !CANONICAL_SKU_SET.has(item.sku)),
 ];
 
-/** Dev LAN starter rows — real inventory, không UI giả. */
-export function grantPetCareStarterPack(v015, worldId, nowIso) {
-  adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
-  adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'tool_hoe', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'tool_watering_can', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'seed_wheat', 5, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'seed_carrot', 2, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'rod_basic', 1, nowIso);
-  adjustInventoryItem(v015, worldId, 'shared', 'bait_free_worm', 10, nowIso);
-}
-
-/** Idempotent — nhà đã có mèo nhưng thiếu đồ chơi/đồ ăn (world cũ trước 04C). */
-export function ensurePetCareStarterPackIfMissing(v015, worldId, nowIso) {
-  const pet = v015.pets[worldId];
-  if (!pet) return false;
-  const list = getWorldInventoryList(v015, worldId);
-  const qty = (sku) => list.find((i) => i.ownerScope === 'shared' && i.itemSku === sku)?.qty ?? 0;
-  let changed = false;
-  if (qty('fish_salmon_bite') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'fish_salmon_bite', 2, nowIso, 'silver');
-    changed = true;
-  }
-  if (qty('toy_yarn') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'toy_yarn', 1, nowIso);
-    changed = true;
-  }
-  if (qty('toy_cardboard_box') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'toy_cardboard_box', 1, nowIso);
-    changed = true;
-  }
-  if (qty('water_pitcher') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'water_pitcher', 1, nowIso);
-    changed = true;
-  }
-  if (qty('tool_hoe') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'tool_hoe', 1, nowIso);
-    changed = true;
-  }
-  if (qty('tool_watering_can') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'tool_watering_can', 1, nowIso);
-    changed = true;
-  }
-  if (qty('seed_wheat') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'seed_wheat', 5, nowIso);
-    changed = true;
-  }
-  if (qty('rod_basic') < 1) {
-    adjustInventoryItem(v015, worldId, 'shared', 'rod_basic', 1, nowIso);
-    changed = true;
-  }
-  if (qty('bait_free_worm') < 3) {
-    adjustInventoryItem(v015, worldId, 'shared', 'bait_free_worm', 10, nowIso);
-    changed = true;
-  }
-  return changed;
+/** Versioned save initialization. Existing worlds recover essential tools once. */
+export function initializeDevLanWorldInventory(v015, worldId, nowIso, newWorld = false) {
+  if ((v015.inventoryStarterVersions[worldId] ?? 0) >= INVENTORY_STARTER_VERSION) return false;
+  v015.inventory[worldId] = initializeWorldInventory(v015.inventory[worldId] ?? [], worldId, nowIso, newWorld);
+  v015.wallets[worldId] ??= { coins: STARTER_WALLET_COINS };
+  v015.inventoryStarterVersions[worldId] = INVENTORY_STARTER_VERSION;
+  return true;
 }
 
 const CATALOG_BY_SKU = new Map(V015_CATALOG.map((c) => [c.sku, c]));
@@ -198,6 +151,8 @@ export function ensureV015Db(db) {
     };
   }
   db.v015.inventory ??= {};
+  db.v015.inventoryStarterVersions ??= {};
+  db.v015.wallets ??= {};
   db.v015.kibbleClaims ??= {};
   db.v015.pets ??= {};
   db.v015.petEvents ??= {};
@@ -256,47 +211,30 @@ export function getWorldInventoryList(v015, worldId) {
 }
 
 export function adjustInventoryItem(v015, worldId, ownerScope, itemSku, delta, nowIso, quality = 'normal') {
+  return adjustInventoryList(getWorldInventoryList(v015, worldId), worldId, ownerScope, itemSku, delta, nowIso, quality);
+}
+
+function adjustInventoryList(list, worldId, ownerScope, itemSku, delta, nowIso, quality) {
   if (ownerScope !== 'shared' && !/^user:[0-9a-f-]+$/i.test(ownerScope)) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'Phạm vi kho đồ không hợp lệ.' };
   }
-  if (!['normal', 'silver', 'gold'].includes(quality)) {
-    return { ok: false, code: 'VALIDATION_ERROR', message: 'Cấp chất lượng không hợp lệ.' };
-  }
-  const cat = CATALOG_BY_SKU.get(itemSku);
-  if (!cat) {
+  if (!CATALOG_BY_SKU.has(itemSku)) {
     return { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy vật phẩm.' };
   }
-  const list = getWorldInventoryList(v015, worldId);
-  const idx = list.findIndex(
-    (i) => i.ownerScope === ownerScope && i.itemSku === itemSku && (i.quality ?? 'normal') === quality,
-  );
-  const cur = idx >= 0 ? list[idx].qty : 0;
-  const next = cur + delta;
-  const totalSameSku = list
-    .filter((i) => i.ownerScope === ownerScope && i.itemSku === itemSku)
-    .reduce((sum, row) => sum + row.qty, 0);
-  if (next < 0) {
-    return { ok: false, code: 'INSUFFICIENT_ITEMS', message: 'Không đủ vật phẩm trong túi.' };
-  }
-  if (totalSameSku + delta > cat.stackLimit) {
-    return { ok: false, code: 'STACK_FULL', message: `Ngăn chứa ${cat.nameVi} đã đầy (${cat.stackLimit}).` };
-  }
-  if (next === 0) {
-    if (idx >= 0) list.splice(idx, 1);
-  } else {
-    const entry = { worldId, ownerScope, itemSku, quality, qty: next, updatedAt: nowIso };
-    if (idx >= 0) list[idx] = entry;
-    else list.push(entry);
-  }
-  return { ok: true, qty: next };
+  const result = adjustInventoryQuantity(list, worldId, ownerScope, itemSku, delta, nowIso, quality);
+  if (result.ok) return result;
+  const messages = {
+    INSUFFICIENT_ITEMS: 'Không đủ vật phẩm trong túi.',
+    STACK_FULL: 'Số lượng vật phẩm vượt giới hạn lưu trữ.',
+    VALIDATION_ERROR: 'Số lượng hoặc phẩm cấp vật phẩm không hợp lệ.',
+  };
+  return { ...result, message: messages[result.code] };
 }
 
 export function buildInventorySnapshot(v015, worldId, userId, nowMs = Date.now()) {
-  ensurePetCareStarterPackIfMissing(v015, worldId, new Date(nowMs).toISOString());
-  const list = getWorldInventoryList(v015, worldId);
+  const list = v015.inventory[worldId] ?? [];
   const utcDate = new Date(nowMs).toISOString().slice(0, 10);
-  const kibbleRow = list.find((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic');
-  const kibbleQty = kibbleRow ? kibbleRow.qty : 0;
+  const hasKibble = list.some((i) => i.ownerScope === 'shared' && i.itemSku === 'pet_kibble_basic' && i.qty > 0);
   const lastClaim = v015.kibbleClaims[worldId]?.date ?? null;
   const visibleItems = list
     .filter((i) => i.ownerScope === 'shared' || i.ownerScope === `user:${userId}`)
@@ -306,7 +244,7 @@ export function buildInventorySnapshot(v015, worldId, userId, nowMs = Date.now()
     worldId,
     serverNowMs: nowMs,
     serverDateUtc: utcDate,
-    canClaimFreeKibble: kibbleQty === 0 && lastClaim !== utcDate,
+    canClaimFreeKibble: !hasKibble && lastClaim !== utcDate,
     catalog: V015_CATALOG,
     items: visibleItems,
   };
@@ -582,7 +520,8 @@ export async function handleV015Route({
     const itemSku = String(body.itemSku ?? '').trim();
     const quality = String(body.quality ?? 'normal').trim();
     const qty = Number(body.qty);
-    if (!worldId || !key || !itemSku || !Number.isFinite(qty) || qty < 1) {
+    if (!worldId || !key || !itemSku || !Number.isSafeInteger(qty) || qty < 1
+        || !['shared', 'personal'].includes(fromUi) || !['shared', 'personal'].includes(toUi)) {
       sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thiếu thông tin chuyển vật phẩm.' });
       return true;
     }
@@ -607,17 +546,18 @@ export async function handleV015Route({
       return true;
     }
     const nowIso = new Date().toISOString();
-    const out = adjustInventoryItem(v015, worldId, fromScope, itemSku, -qty, nowIso, quality);
+    const next = getWorldInventoryList(v015, worldId).slice();
+    const out = adjustInventoryList(next, worldId, fromScope, itemSku, -qty, nowIso, quality);
     if (!out.ok) {
       sendJson(res, 400, { ok: false, code: out.code, message: out.message });
       return true;
     }
-    const inn = adjustInventoryItem(v015, worldId, toScope, itemSku, qty, nowIso, quality);
+    const inn = adjustInventoryList(next, worldId, toScope, itemSku, qty, nowIso, quality);
     if (!inn.ok) {
-      adjustInventoryItem(v015, worldId, fromScope, itemSku, qty, nowIso, quality);
       sendJson(res, 400, { ok: false, code: inn.code, message: inn.message });
       return true;
     }
+    v015.inventory[worldId] = next;
     const snap = buildInventorySnapshot(v015, worldId, userId);
     saveV015Idempotency(v015, worldId, userId, 'inventory_transfer', key, reqHash, snap);
     emitWorldMutated(worldId, 'inventory', 'inventory');
@@ -1480,11 +1420,22 @@ export async function handleV015Route({
       return true;
     }
 
+    let restoredInventory;
+    try {
+      restoredInventory = normalizeInventoryRows(snap.inventory, worldId);
+      if (restoredInventory.some((row) => row.ownerScope !== 'shared'
+        && !isWorldMember(worldId, row.ownerScope.slice('user:'.length)))) {
+        throw new Error('invalid owner scope');
+      }
+    } catch {
+      sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Dữ liệu túi đồ trong bản sao không hợp lệ.' });
+      return true;
+    }
     db.placements[worldId] = structuredClone(snap.placements);
     if (db.worlds?.[worldId]) {
       db.worlds[worldId].layoutVersion = (db.worlds[worldId].layoutVersion ?? 1) + 1;
     }
-    v015.inventory[worldId] = structuredClone(snap.inventory);
+    v015.inventory[worldId] = restoredInventory;
     if (snap.pet && typeof snap.pet === 'object' && snap.pet.worldId === worldId) {
       v015.pets[worldId] = structuredClone(snap.pet);
     } else if (snap.pet === null) {

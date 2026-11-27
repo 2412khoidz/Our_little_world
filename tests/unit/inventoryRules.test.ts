@@ -1,3 +1,4 @@
+import { MAX_INVENTORY_QUANTITY } from '../../src/shared/inventory/inventoryLedger.mjs';
 import { describe, expect, it } from 'vitest';
 import {
   applyInventoryDeltaInPlace,
@@ -37,7 +38,7 @@ describe('V0.1.5 Inventory Rules (K5)', () => {
     expect(r1).toEqual({ ok: true, qty: 3 });
     expect(getSharedKibbleQty(items)).toBe(3);
 
-    const overflow = applyInventoryDeltaInPlace(items, 'w1', 'shared', PET_KIBBLE_BASIC_SKU, 20, nowIso);
+    const overflow = applyInventoryDeltaInPlace(items, 'w1', 'shared', PET_KIBBLE_BASIC_SKU, MAX_INVENTORY_QUANTITY, nowIso);
     expect(overflow).toEqual({ ok: false, code: 'STACK_FULL' });
 
     const consumeAll = applyInventoryDeltaInPlace(items, 'w1', 'shared', PET_KIBBLE_BASIC_SKU, -3, nowIso);

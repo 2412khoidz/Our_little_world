@@ -33,7 +33,8 @@ BEGIN
   PERFORM public._inventory_adjust_quality(w, 'shared', 'sapling_peach', 1, 'normal');
   PERFORM public._inventory_adjust_quality(w, 'shared', 'fert_quality', 1, 'normal');
   PERFORM public._inventory_adjust_quality(w, 'shared', 'sprinkler_basic', 1, 'normal');
-  PERFORM public._inventory_adjust_quality(w, 'shared', 'wheat', 2, 'normal');
+  PERFORM public._inventory_adjust_quality(w, 'shared', 'wheat', 1, 'silver');
+  PERFORM public._inventory_adjust_quality(w, 'shared', 'wheat', 1, 'gold');
 
   -- Extended farm_apply (fertilizer & sprinkler)
   res := public.farm_apply(w, 0, 'till', NULL, (farm_snap->>'version')::integer, 'sql-till-0');
@@ -66,6 +67,8 @@ BEGIN
     'deep-mill-c-1'
   );
   ASSERT public._farm_shared_any_qty(w, 'wheat') = 2;
+  ASSERT public._farm_shared_qty(w, 'wheat', 'silver') = 1;
+  ASSERT public._farm_shared_qty(w, 'wheat', 'gold') = 1;
 
   -- Partner adopts bee concurrently & replays idempotency key safely
   PERFORM set_config('request.jwt.claim.sub', current_setting('olw.test.partner'), true);

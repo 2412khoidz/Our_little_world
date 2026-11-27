@@ -2,9 +2,9 @@
 -- Plot binding: farmPlotContract v1.0.0, indices 0..23 → farm_main_{n}.
 
 INSERT INTO public.item_catalog (sku, name_vi, description_vi, purpose, stack_limit, tradeable) VALUES
-  ('tool_hoe', 'Cuốc', '', 'tool', 1, false),
-  ('tool_watering_can', 'Bình tưới', '', 'tool', 1, false),
-  ('water_pitcher', 'Bình nước', '', 'tool', 1, false)
+  ('tool_hoe', 'Cuốc', '', 'ingredient', 1, false),
+  ('tool_watering_can', 'Bình tưới', '', 'ingredient', 1, false),
+  ('water_pitcher', 'Bình nước', '', 'ingredient', 1, false)
 ON CONFLICT (sku) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.world_farm_worlds (

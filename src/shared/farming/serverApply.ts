@@ -5,6 +5,8 @@ import { levelForGreensSkillXp } from '../donor/greens-3f32fd8/skillsData';
 import { weatherForWorldDay } from '../donor/webfarmville-c420bc2/weatherRules';
 import { resolveWorldCalendar } from '../world/worldCalendar';
 import { createRng } from '../rng';
+import { adjustInventoryQuantity, creditInventoryQuantity, InventoryQuantityError } from '../inventory/inventoryLedger.mjs';
+import { STARTER_WALLET_COINS } from '../inventory/inventoryStarter.mjs';
 import type { InventoryEntry } from '../inventory/inventoryTypes';
 import {
   createFarm,
@@ -31,10 +33,7 @@ import { growthClockMs, projectFarmPlots } from './farmGrowthClock';
 const TOOL_HOE = 'tool_hoe';
 const TOOL_WATERING_CAN = 'tool_watering_can';
 
-export const FARM_STARTER_TOOLS = [TOOL_HOE, TOOL_WATERING_CAN, 'water_pitcher', 'rod_basic'] as const;
-export const FARM_STARTER_SEED_QTY = 5;
-export const FARM_STARTER_BAIT_QTY = 10;
-export const FARM_STARTER_COINS = 50;
+export const FARM_STARTER_COINS = STARTER_WALLET_COINS;
 
 function cropSkuFromSeedSku(seedSku: string): CropSku | null {
   if (!seedSku.startsWith('seed_')) return null;
@@ -99,23 +98,7 @@ function creditSharedItem(
   qty: number,
   quality: QualityTier,
 ): InventoryEntry[] {
-  const next = items.map((r) => ({ ...r }));
-  const idx = next.findIndex(
-    (r) => r.ownerScope === 'shared' && r.itemSku === sku && (r.quality ?? 'normal') === quality,
-  );
-  if (idx >= 0) {
-    next[idx] = { ...next[idx]!, qty: next[idx]!.qty + qty };
-  } else {
-    next.push({
-      worldId,
-      ownerScope: 'shared',
-      itemSku: sku,
-      qty,
-      quality,
-      updatedAt: new Date(nowMs).toISOString(),
-    });
-  }
-  return next;
+  return creditInventoryQuantity(items, worldId, 'shared', sku, qty, new Date(nowMs).toISOString(), quality);
 }
 
 function resolveToolFootprint(
@@ -142,6 +125,15 @@ export interface ApplyFarmActionInput {
 }
 
 export function applyFarmAction(input: ApplyFarmActionInput): FarmServerMutation {
+  try {
+    return computeFarmAction(input);
+  } catch (error) {
+    if (!(error instanceof InventoryQuantityError)) throw error;
+    return { ok: false, code: error.code, messageVi: error.message };
+  }
+}
+
+function computeFarmAction(input: ApplyFarmActionInput): FarmServerMutation {
   const { params, nowMs } = input;
   const timeScale = input.timeScale ?? 1;
   let farm = input.farm;
@@ -365,7 +357,7 @@ export function sellCropLine(
   qty: number,
   quality: QualityTier = 'normal',
 ): { ok: true; walletCoins: number; items: InventoryEntry[] } | { ok: false; code: string; messageVi: string } {
-  if (qty < 1) return { ok: false, code: 'INVALID_QTY', messageVi: 'Số lượng không hợp lệ.' };
+  if (!Number.isSafeInteger(qty) || qty < 1) return { ok: false, code: 'INVALID_QTY', messageVi: 'Số lượng không hợp lệ.' };
   let unit: number;
   try {
     unit = computeSellPrice(sku, quality, 0);
@@ -402,7 +394,7 @@ export function buyStoreItem(
   qty: number,
   nowMs: number,
 ): { ok: true; walletCoins: number; items: InventoryEntry[] } | { ok: false; code: string; messageVi: string } {
-  if (qty < 1) return { ok: false, code: 'INVALID_QTY', messageVi: 'Số lượng không hợp lệ.' };
+  if (!Number.isSafeInteger(qty) || qty < 1) return { ok: false, code: 'INVALID_QTY', messageVi: 'Số lượng không hợp lệ.' };
   let def;
   try {
     def = requireItem(itemSku);
@@ -413,21 +405,9 @@ export function buyStoreItem(
   if (unit <= 0) return { ok: false, code: 'NOT_FOR_SALE', messageVi: 'Vật phẩm này chưa mở bán.' };
   const total = unit * qty;
   if (walletCoins < total) return { ok: false, code: 'INSUFFICIENT_FUNDS', messageVi: 'Không đủ xu.' };
-  const next = items.map((r) => ({ ...r }));
-  const idx = next.findIndex(
-    (r) => r.ownerScope === 'shared' && r.itemSku === itemSku && (r.quality ?? 'normal') === 'normal',
-  );
-  if (idx >= 0) next[idx] = { ...next[idx]!, qty: next[idx]!.qty + qty };
-  else {
-    next.push({
-      worldId,
-      ownerScope: 'shared',
-      itemSku,
-      qty,
-      quality: 'normal',
-      updatedAt: new Date(nowMs).toISOString(),
-    });
-  }
+  const next = items.slice();
+  const adjusted = adjustInventoryQuantity(next, worldId, 'shared', itemSku, qty, new Date(nowMs).toISOString());
+  if (!adjusted.ok) return { ok: false, code: adjusted.code, messageVi: 'Không thể thêm số lượng này vào túi đồ.' };
   return { ok: true, walletCoins: walletCoins - total, items: next };
 }
 

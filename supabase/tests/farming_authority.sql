@@ -22,7 +22,7 @@ BEGIN
   res := public.farm_apply(w, 0, 'plant', 'seed_wheat', (res->'snapshot'->>'version')::integer, 'plant-1');
   ASSERT res->'snapshot'->'farm'->'plots'->0->>'soil' = 'planted';
   res := public.farm_buy_seed(w, 'seed_carrot', 1, 'buy-1');
-  ASSERT (res->>'walletCoins')::integer = 46;
+  ASSERT (res->>'walletCoins')::integer = 50 - public._farm_seed_buy_price('seed_carrot');
 END;
 $$;
 ROLLBACK;

@@ -1,5 +1,6 @@
 import type { ItemQualityTier } from '../interaction/hotbarContract';
 import { MAIN_GAME_HOTBAR_SLOT_PRIORITY } from '../interaction/hotbarContract';
+import { MAX_INVENTORY_QUANTITY } from './inventoryLedger.mjs';
 import type { InventoryOwnerScope, InventorySnapshot } from './inventoryTypes';
 
 export const SHARED_BAG_CAPACITY = 36;
@@ -62,84 +63,116 @@ export function cloneInventoryLayout(layout: InventoryLayoutState): InventoryLay
   };
 }
 
+export function bagPageSize(scope: 'shared' | 'personal'): number {
+  return scope === 'shared' ? SHARED_BAG_CAPACITY : PERSONAL_BAG_CAPACITY;
+}
+
+/** Very large holdings use bulk cells to keep the number of slots bounded per stack key. */
+export function inventoryCellLimit(catalogLimit: number | undefined, total: number, pageSize: number): number {
+  const preferred = catalogLimit && Number.isSafeInteger(catalogLimit) && catalogLimit > 0
+    ? catalogLimit : MAX_INVENTORY_QUANTITY;
+  return Math.max(preferred, Math.ceil(total / pageSize));
+}
+
+export function findOpenBagCell(
+  cells: Array<InventoryBagCell | null>,
+  pageSize: number,
+  preferredStart = 0,
+): number {
+  const onPage = cells.findIndex((cell, index) =>
+    index >= preferredStart && index < preferredStart + pageSize && cell === null,
+  );
+  if (onPage >= 0) return onPage;
+  const otherPage = cells.indexOf(null);
+  if (otherPage >= 0) return otherPage;
+  const index = cells.length;
+  for (let i = 0; i < pageSize; i += 1) cells.push(null);
+  return index;
+}
+
 function reconcileBagCells(
   prevCells: ReadonlyArray<InventoryBagCell | null>,
-  capacity: number,
-  authoritativeStacks: ReadonlyMap<string, { ref: InventoryStackRef; qty: number }>,
+  pageSize: number,
+  authoritativeStacks: ReadonlyMap<string, InventoryBagCell>,
+  stackLimits: ReadonlyMap<string, number>,
+  reserved: InventoryBagCell | null,
 ): Array<InventoryBagCell | null> {
-  const cells: Array<InventoryBagCell | null> = Array.from({ length: capacity }, (_, i) => {
-    const existing = prevCells[i];
-    if (!existing || existing.qty <= 0) return null;
-    const key = stackKeyId(existing);
-    if (!authoritativeStacks.has(key)) return null;
-    return { ...existing };
-  });
-
-  // Track present totals per stack after pruning missing stacks
-  for (const [key, { ref, qty: authQty }] of authoritativeStacks.entries()) {
-    const indices: number[] = [];
-    let currentSum = 0;
-    for (let i = 0; i < cells.length; i += 1) {
-      const cell = cells[i];
-      if (cell && stackKeyId(cell) === key) {
-        indices.push(i);
-        currentSum += cell.qty;
-      }
-    }
-
-    if (currentSum > authQty) {
-      let excess = currentSum - authQty;
-      for (let k = indices.length - 1; k >= 0 && excess > 0; k -= 1) {
-        const idx = indices[k]!;
-        const cell = cells[idx]!;
-        if (cell.qty <= excess) {
-          excess -= cell.qty;
-          cells[idx] = null;
-        } else {
-          cells[idx] = { ...cell, qty: cell.qty - excess };
-          excess = 0;
-        }
-      }
-    } else if (currentSum < authQty) {
-      const delta = authQty - currentSum;
-      if (indices.length > 0) {
-        const firstIdx = indices[0]!;
-        const firstCell = cells[firstIdx]!;
-        cells[firstIdx] = { ...firstCell, qty: firstCell.qty + delta };
-      } else {
-        const emptyIdx = cells.findIndex((c) => c === null);
-        if (emptyIdx >= 0) {
-          cells[emptyIdx] = { ...ref, qty: authQty };
-        }
-      }
-    }
+  const remaining = new Map<string, number>();
+  const cellLimits = new Map<string, number>();
+  for (const [key, cell] of authoritativeStacks) {
+    remaining.set(key, cell.qty);
+    cellLimits.set(key, inventoryCellLimit(stackLimits.get(cell.itemSku), cell.qty, pageSize));
+  }
+  if (reserved) {
+    const key = stackKeyId(reserved);
+    if (remaining.has(key)) remaining.set(key, remaining.get(key)! - reserved.qty);
   }
 
+  const length = Math.max(pageSize, Math.ceil(prevCells.length / pageSize) * pageSize);
+  const cells: Array<InventoryBagCell | null> = Array.from({ length }, (_, index) => {
+    const cell = prevCells[index];
+    if (!cell || !Number.isSafeInteger(cell.qty) || cell.qty <= 0) return null;
+    const key = stackKeyId(cell);
+    const balance = remaining.get(key) ?? 0;
+    if (balance <= 0) return null;
+    const qty = Math.min(cell.qty, balance, cellLimits.get(key)!);
+    remaining.set(key, balance - qty);
+    return { ...authoritativeStacks.get(key)!, qty };
+  });
+
+  for (const [index, cell] of cells.entries()) {
+    if (!cell) continue;
+    const key = stackKeyId(cell);
+    const balance = remaining.get(key) ?? 0;
+    const limit = cellLimits.get(key)!;
+    const extra = Math.min(balance, limit - cell.qty);
+    if (extra <= 0) continue;
+    cells[index] = { ...cell, qty: cell.qty + extra };
+    remaining.set(key, balance - extra);
+  }
+
+  let openIndex = 0;
+  for (const [key, balance] of remaining) {
+    if (balance <= 0) continue;
+    const stack = authoritativeStacks.get(key)!;
+    const limit = cellLimits.get(key)!;
+    for (let qtyLeft = balance; qtyLeft > 0;) {
+      while (openIndex < cells.length && cells[openIndex] !== null) openIndex += 1;
+      if (openIndex === cells.length) {
+        for (let i = 0; i < pageSize; i += 1) cells.push(null);
+      }
+      const qty = Math.min(qtyLeft, limit);
+      cells[openIndex] = { ...stack, qty };
+      qtyLeft -= qty;
+    }
+  }
   return cells;
 }
 
-/**
- * Projects server `InventorySnapshot` onto persisted slot positions & hotbar bindings.
- * Guarantee: Server snapshot remains single quantity authority — sums across bag slots
- * always equal authoritative quantities without minting or dropping items.
- */
 export function reconcileInventoryLayout(
   prev: InventoryLayoutState | null,
   snapshot: InventorySnapshot | null,
   localUserId: string,
 ): InventoryLayoutState {
-  const base = prev ? cloneInventoryLayout(prev) : emptyInventoryLayout();
-  if (!snapshot) {
-    return base;
-  }
+  return reconcileInventoryInteraction<InventoryBagCell>(prev, null, snapshot, localUserId).layout;
+}
+
+export function reconcileInventoryInteraction<Cursor extends InventoryBagCell>(
+  prev: InventoryLayoutState | null,
+  cursor: Cursor | null,
+  snapshot: InventorySnapshot | null,
+  localUserId: string,
+): { layout: InventoryLayoutState; cursor: Cursor | null } {
+  const base = prev ?? emptyInventoryLayout();
+  if (!snapshot) return { layout: base, cursor: null };
 
   const personalScope: InventoryOwnerScope = `user:${localUserId}`;
-  const sharedTotals = new Map<string, { ref: InventoryStackRef; qty: number }>();
-  const personalTotals = new Map<string, { ref: InventoryStackRef; qty: number }>();
-  const allTotals = new Map<string, { ref: InventoryStackRef; qty: number }>();
+  const sharedTotals = new Map<string, InventoryBagCell>();
+  const personalTotals = new Map<string, InventoryBagCell>();
+  const allTotals = new Map<string, InventoryBagCell>();
 
   for (const row of snapshot.items) {
-    if (row.qty <= 0) continue;
+    if (row.worldId !== snapshot.worldId || !Number.isSafeInteger(row.qty) || row.qty <= 0) continue;
     if (row.ownerScope !== 'shared' && row.ownerScope !== personalScope) continue;
     const quality = normalizeQuality(row.quality);
     const ref: InventoryStackRef = {
@@ -151,12 +184,18 @@ export function reconcileInventoryLayout(
     const targetMap = row.ownerScope === 'shared' ? sharedTotals : personalTotals;
     const existing = targetMap.get(key);
     const nextQty = (existing?.qty ?? 0) + row.qty;
-    targetMap.set(key, { ref, qty: nextQty });
-    allTotals.set(key, { ref, qty: nextQty });
+    targetMap.set(key, { ...ref, qty: nextQty });
+    allTotals.set(key, { ...ref, qty: nextQty });
   }
 
-  const sharedCells = reconcileBagCells(base.sharedCells, SHARED_BAG_CAPACITY, sharedTotals);
-  const personalCells = reconcileBagCells(base.personalCells, PERSONAL_BAG_CAPACITY, personalTotals);
+  const stackLimits = new Map(snapshot.catalog.map((item) => [item.sku, item.stackLimit]));
+  const heldQty = cursor ? Math.min(
+    cursor.qty,
+    allTotals.get(stackKeyId(cursor))?.qty ?? 0,
+  ) : 0;
+  const held = cursor && heldQty > 0 ? { ...cursor, qty: heldQty } : null;
+  const sharedCells = reconcileBagCells(base.sharedCells, SHARED_BAG_CAPACITY, sharedTotals, stackLimits, held);
+  const personalCells = reconcileBagCells(base.personalCells, PERSONAL_BAG_CAPACITY, personalTotals, stackLimits, held);
 
   const hotbarBindings: Array<InventoryStackRef | null> = Array.from(
     { length: HOTBAR_CAPACITY },
@@ -164,7 +203,7 @@ export function reconcileInventoryLayout(
       const bound = base.hotbarBindings[i];
       if (!bound) return null;
       const entry = allTotals.get(stackKeyId(bound));
-      return entry && entry.qty > 0 ? { ...entry.ref } : null;
+      return entry && entry.qty > 0 ? bound : null;
     },
   );
 
@@ -173,34 +212,32 @@ export function reconcileInventoryLayout(
       MAIN_GAME_HOTBAR_SLOT_PRIORITY.map((sku, idx) => [sku, idx]),
     );
     const ordered = [...allTotals.values()]
-      .filter((entry) => priorityIdx.has(entry.ref.itemSku))
+      .filter((entry) => priorityIdx.has(entry.itemSku))
       .sort((a, b) => {
-        const pa = priorityIdx.get(a.ref.itemSku) ?? 999;
-        const pb = priorityIdx.get(b.ref.itemSku) ?? 999;
+        const pa = priorityIdx.get(a.itemSku) ?? 999;
+        const pb = priorityIdx.get(b.itemSku) ?? 999;
         if (pa !== pb) return pa - pb;
         return (
-          a.ref.ownerScope.localeCompare(b.ref.ownerScope) ||
-          a.ref.quality.localeCompare(b.ref.quality)
+          a.ownerScope.localeCompare(b.ownerScope) ||
+          a.quality.localeCompare(b.quality)
         );
       });
     const usedKeys = new Set<string>(
       hotbarBindings.filter((b): b is InventoryStackRef => b !== null).map(stackKeyId),
     );
     for (const entry of ordered) {
-      const k = stackKeyId(entry.ref);
+      const k = stackKeyId(entry);
       if (usedKeys.has(k)) continue;
       const freeSlot = hotbarBindings.findIndex((b) => b === null);
       if (freeSlot < 0) break;
-      hotbarBindings[freeSlot] = { ...entry.ref };
+      hotbarBindings[freeSlot] = { itemSku: entry.itemSku, quality: entry.quality, ownerScope: entry.ownerScope };
       usedKeys.add(k);
     }
   }
 
   return {
-    sharedCells,
-    personalCells,
-    hotbarBindings,
-    hotbarCustomized: base.hotbarCustomized,
+    layout: { sharedCells, personalCells, hotbarBindings, hotbarCustomized: base.hotbarCustomized },
+    cursor: held,
   };
 }
 
@@ -218,8 +255,8 @@ export function loadInventoryLayout(worldId: string, userId: string): InventoryL
       return null;
     }
     return {
-      sharedCells: parsed.sharedCells.slice(0, SHARED_BAG_CAPACITY),
-      personalCells: parsed.personalCells.slice(0, PERSONAL_BAG_CAPACITY),
+      sharedCells: parsed.sharedCells,
+      personalCells: parsed.personalCells,
       hotbarBindings: parsed.hotbarBindings.slice(0, HOTBAR_CAPACITY),
       hotbarCustomized: Boolean(parsed.hotbarCustomized),
     };
