@@ -13,15 +13,6 @@ import type { FarmShopKind } from '../../shared/shop/farmShopCatalog';
 const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
 
-export const PHYSICAL_ACTION_PENDING_VI = 'Tính năng này chưa nối với túi đồ INV.2.';
-const PHYSICAL_ACTIONS_PENDING = new Set<InteractionActionCode>([
-  'till_plot', 'plant_crop', 'water_crop', 'harvest_crop', 'fertilize_plot',
-  'place_sprinkler', 'remove_sprinkler', 'offer_food_pet', 'pet_cat', 'enter_pet_care',
-  'roll_toy', 'place_cardboard_box', 'fill_water_pitcher', 'pour_water_bowl', 'fill_food_bowl',
-  'open_farm_market', 'open_shipping_bin', 'open_donor_fishing',
-  'open_donor_stream_fishing', 'open_donor_workshop',
-]);
-
 export interface MainGameActionContext {
   physicalMode?: boolean;
   mapId: MapId;
@@ -32,6 +23,7 @@ export interface MainGameActionContext {
   onOpenHomeStorage?: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onWaterPetAuthoritative?: () => Promise<boolean>;
   onFarmApply?: (
     plotIndex: number,
     action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler',
@@ -85,11 +77,6 @@ export async function executeMainGameContextAction(
   action: ContextualAction,
   ctx: MainGameActionContext,
 ): Promise<void> {
-  if (ctx.physicalMode && PHYSICAL_ACTIONS_PENDING.has(action.code)) {
-    ctx.onNotice(PHYSICAL_ACTION_PENDING_VI, true);
-    return;
-  }
-
   if (!action.available) {
     ctx.onNotice(action.reasonVi ?? 'Hiện chưa thể thực hiện thao tác này.', true);
     return;
@@ -111,7 +98,7 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Hãy chọn thức ăn trên thanh đồ (1–8).');
       return;
     }
-    if (ctx.heldItem.itemSku !== PET_KIBBLE_BASIC_SKU || (ctx.heldItem.ownerScope ?? 'shared') !== 'shared' || ctx.heldItem.quality !== 'normal') {
+    if (ctx.heldItem.itemSku !== PET_KIBBLE_BASIC_SKU || (!ctx.physicalMode && (ctx.heldItem.ownerScope ?? 'shared') !== 'shared') || ctx.heldItem.quality !== 'normal') {
       ctx.onNotice(MISSION02_PENDING_VI, true);
       return;
     }
@@ -126,7 +113,7 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Bé ngửi món — đợi máy chủ xác nhận…');
       return;
     }
-    if (ctx.livingPetLocalSimulation) {
+    if (ctx.livingPetLocalSimulation && !ctx.physicalMode) {
       const sku = ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU;
       gameEventBus.emit('cmd:pet-local-food-offer', {
         offerId: `local-offer-${Date.now()}`,
@@ -231,14 +218,15 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Rót nước vào bát gần (mô phỏng, chưa RPC bát).');
       return;
     }
-    if (mainGameBowlPlayable) {
+    if (ctx.physicalMode && !(await ctx.onWaterPetAuthoritative?.())) return;
+    if (mainGameBowlPlayable || ctx.physicalMode) {
       const nextLevel = waterPitcherPourDelta(ctx.heldItem.waterFillLevel);
       gameEventBus.emit('evt:held-water-adjust', {
         level: nextLevel,
         iconId: nextLevel > 0 ? 'water_pitcher_full' : 'water_pitcher_empty',
         itemSku: 'water_pitcher',
       });
-      gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
+      if (!ctx.physicalMode) gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
       ctx.onNotice('Đã rót nước vào bát — bé có thể uống khi khát.');
       return;
     }
@@ -255,6 +243,10 @@ export async function executeMainGameContextAction(
         ownerScope: ctx.heldItem.ownerScope ?? 'shared',
       });
       ctx.onNotice('Đổ vào bát trong chế độ chăm sóc — dùng J khi cầm món.');
+      return;
+    }
+    if (ctx.physicalMode) {
+      await ctx.onFeedPetAuthoritative();
       return;
     }
     if (mainGameBowlPlayable) {

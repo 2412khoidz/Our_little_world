@@ -24,6 +24,7 @@ export interface HotbarSlot {
 export interface HeldItemState {
   ownerScope?: InventoryOwnerScope;
   slotIndex: number | null;
+  physicalSource?: { index: number; stackId: string };
   itemSku: string | null;
   itemKind: HeldItemKind;
   iconId: LivingItemIconId | null;

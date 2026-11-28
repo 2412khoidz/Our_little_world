@@ -3,6 +3,7 @@ import type { ContextualResolution } from '../../shared/interaction/interactionT
 interface ContextualPromptBadgeProps {
   resolution: ContextualResolution;
   unavailableToast?: string | null;
+  disabled?: boolean;
   onPrimary: () => void;
   onSecondary: () => void;
 }
@@ -10,6 +11,7 @@ interface ContextualPromptBadgeProps {
 export function ContextualPromptBadge({
   resolution,
   unavailableToast,
+  disabled,
   onPrimary,
   onSecondary,
 }: ContextualPromptBadgeProps) {
@@ -44,6 +46,7 @@ export function ContextualPromptBadge({
             type="button"
             className="olw-game-window"
             data-testid="btn-context-primary"
+            disabled={disabled}
             onClick={onPrimary}
             style={{
               padding: '7px 12px',
@@ -66,6 +69,7 @@ export function ContextualPromptBadge({
             type="button"
             className="olw-game-window"
             data-testid="btn-context-secondary"
+            disabled={disabled}
             onClick={onSecondary}
             style={{
               padding: '7px 12px',

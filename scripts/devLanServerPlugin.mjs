@@ -352,7 +352,7 @@ export function createDevLanHandler({
     };
   }
 
-  function ensureWorldVersionState(worldId) {
+  function ensureWorldVersionState(worldId, db = liveDb()) {
     db.worldStateVersions ??= {};
     db.domainVersions ??= {};
     if (typeof db.worldStateVersions[worldId] !== 'number') {
@@ -378,8 +378,8 @@ export function createDevLanHandler({
     };
   }
 
-  function bumpWorldStateVersion(worldId, domain) {
-    const cur = ensureWorldVersionState(worldId);
+  function bumpWorldStateVersion(worldId, domain, db = liveDb()) {
+    const cur = ensureWorldVersionState(worldId, db);
     db.worldStateVersions[worldId] = cur.stateVersion + 1;
     const dv = db.domainVersions[worldId];
     if (domain === 'furniture') dv.layoutVersion = db.worlds[worldId]?.layoutVersion ?? dv.layoutVersion + 1;
@@ -395,6 +395,8 @@ export function createDevLanHandler({
       domainVersions: { ...dv },
     };
   }
+
+  const liveDb = () => db;
 
   const wsHub = createDevLanWsHub({
     isWorldMember,
@@ -516,6 +518,145 @@ export function createDevLanHandler({
     saveDb();
     broadcastWorldMutated(existingId, 'member', 'member');
     return existingId;
+  }
+
+  let physicalQueue = Promise.resolve();
+
+  function runPhysicalRequest(module, context, worldId) {
+    const queued = physicalQueue.then(async () => {
+      const { req, res, reqUrl, route, userId, body } = context;
+      const physicalContext = {
+        ...context, db, worldId, catalog: V015_CATALOG,
+        broadcastInventory: (id) => broadcastWorldMutated(id, 'inventory'),
+        position: wsHub.getActivePlayerPosition(worldId, userId),
+      };
+      if (!module.isPhysicalGameplayRoute(route, req.method)) {
+        return module.handleDevLanPhysicalInventory(physicalContext);
+      }
+      if (!worldId || !isWorldMember(worldId, userId)
+        || (reqUrl.searchParams.has('worldId') && reqUrl.searchParams.get('worldId') !== worldId)) {
+        sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
+        return true;
+      }
+
+      try {
+        const state = module.loadPhysicalGameplayState(db, worldId, V015_CATALOG);
+        const transaction = module.preparePhysicalGameplay({
+          worldId, route, body, userId, state, catalog: V015_CATALOG,
+          receiverIsMember: (actor) => isWorldMember(worldId, actor),
+        });
+        // This route publishes the current animation state. It has no save or inventory effects.
+        if (route === '/donor/fishing/sync') return handleV015Route({ ...context, db, physicalGameplay: transaction });
+        const sourceDb = db;
+        const committed = sourceDb.v015;
+        // Copy mutable rows for this world. The existing idempotency responses are immutable.
+        const draft = Object.fromEntries(Object.entries(committed).map(([key, bucket]) => {
+          if (!bucket || typeof bucket !== 'object' || Array.isArray(bucket)) return [key, bucket];
+          if (!(worldId in bucket)) return [key, { ...bucket }];
+          const row = bucket[worldId];
+          const value = key === 'idem' ? { ...row }
+            : key === 'physicalInventory' || key === 'physicalReceipts' ? row : structuredClone(row);
+          return [key, { ...bucket, [worldId]: value }];
+        }));
+        draft.inventory[worldId] = transaction.rows.map((row) => ({ ...row }));
+        const baseline = ensureWorldVersionState(worldId);
+        const stage = {
+          ...sourceDb, v015: draft, worldStateVersions: { ...sourceDb.worldStateVersions },
+          domainVersions: { ...sourceDb.domainVersions, [worldId]: baseline.domainVersions },
+        };
+        const previousInventoryVersion = baseline.domainVersions.inventoryVersion;
+        const events = [];
+        let saved = false;
+        let reply;
+        const handled = await handleV015Route({
+          ...context, db: stage, physicalGameplay: transaction,
+          sendJson: (_res, status, payload) => { reply = { status, payload }; },
+          saveDb: () => { saved = true; },
+          broadcastEvent: (...args) => events.push(args),
+          bumpWorldStateVersion: (id, domain) => bumpWorldStateVersion(id, domain, stage),
+        });
+        if (!handled || !reply) return handled;
+        if (reply.status < 300) {
+          const originalLetters = committed.letters?.[worldId] ?? [];
+          const letters = draft.letters?.[worldId] ?? [];
+          const originalOffers = committed.petLiving?.[worldId]?.offers ?? [];
+          const offers = draft.petLiving?.[worldId]?.offers ?? [];
+          if (saved) {
+            const openedGift = route === '/mailbox/open' && letters.find((letter) =>
+              letter.id === body.letterId && letter.openedAt && !originalLetters.find((row) => row.id === letter.id)?.openedAt);
+            const received = openedGift?.physicalGift?.map((stack) => ({ stack, actor: userId })) ?? [];
+            for (const offer of originalOffers) {
+              if (!offer.inventoryReserved || !offer.physicalStack) continue;
+              const updated = offers.find(({ id }) => id === offer.id);
+              if (updated && !updated.inventoryReserved && ['expired', 'refused', 'cancelled'].includes(updated.status)) {
+                received.push({ stack: offer.physicalStack, actor: offer.caregiverId });
+                delete updated.physicalStack;
+              }
+            }
+            const workshopKind = route === '/farm/deep/apply' ? body.kind : null;
+            const originalJobs = committed.deepFarms?.[worldId]?.workshops?.stations?.[body.workshopId]?.queue ?? [];
+            const jobs = draft.deepFarms?.[worldId]?.workshops?.stations?.[body.workshopId]?.queue ?? [];
+            const reservedJob = workshopKind === 'cancel_workshop' && originalJobs.find((job) => job.jobId === body.jobId);
+            const payer = reservedJob?.physicalInputs?.actor;
+            if (payer) received.push(...reservedJob.physicalInputs.stacks.map((stack) => ({ stack, actor: payer })));
+            transaction.apply(draft.inventory[worldId], {
+              received, sharedRecipient: payer, consumedBait: route === '/donor/fishing/start',
+            });
+            if (workshopKind === 'queue_workshop' && transaction.consumed.length) {
+              const queuedJob = jobs.find((job) => !originalJobs.some(({ jobId }) => jobId === job.jobId));
+              if (!queuedJob) throw new Error('Không tìm thấy mẻ vừa giữ nguyên liệu.');
+              queuedJob.physicalInputs = { actor: userId, stacks: transaction.consumed };
+            }
+            if (openedGift) delete openedGift.physicalGift;
+            if (route === '/mailbox/send' && transaction.consumed.length) letters.at(-1).physicalGift = transaction.consumed;
+            if (route.startsWith('/pet/living') && transaction.consumed.length) {
+              const newOffer = offers.find((offer) => !originalOffers.some(({ id }) => id === offer.id));
+              if (!newOffer || transaction.consumed.length !== 1) throw new Error('Không xác định được phần thức ăn giữ cho mèo.');
+              newOffer.physicalStack = transaction.consumed[0];
+            }
+          }
+          const migrated = !committed.physicalInventory?.[worldId];
+          const changed = transaction.state !== state;
+          if (saved || migrated || route === '/farm/deep') {
+            delete draft.inventory[worldId];
+            (draft.physicalInventory ??= {})[worldId] = transaction.state;
+            if (changed && stage.domainVersions[worldId].inventoryVersion === previousInventoryVersion) {
+              bumpWorldStateVersion(worldId, 'inventory', stage);
+            }
+            if (db !== sourceDb || db.v015 !== committed) {
+              sendJson(res, 409, { ok: false, code: 'VERSION_CONFLICT', message: 'Ngôi nhà vừa đổi. Hãy thử lại.' });
+              return true;
+            }
+            const previousVersions = db.worldStateVersions;
+            const previousDomainVersions = db.domainVersions;
+            db.v015 = stage.v015;
+            db.worldStateVersions = stage.worldStateVersions;
+            db.domainVersions = stage.domainVersions;
+            try {
+              if (saved || migrated) saveDb();
+            } catch (error) {
+              db.v015 = committed;
+              db.worldStateVersions = previousVersions;
+              db.domainVersions = previousDomainVersions;
+              throw error;
+            }
+            for (const args of events) broadcastEvent(...args);
+            if (changed) {
+              const meta = ensureWorldVersionState(worldId);
+              broadcastEvent(worldId, 'world_mutated', { reason: 'inventory', ...meta });
+            }
+          }
+        }
+        sendJson(res, reply.status, reply.payload);
+        return true;
+      } catch (error) {
+        if (!(error instanceof module.PhysicalInventoryError)) throw error;
+        sendJson(res, error.code === 'FORBIDDEN' ? 403 : 409, { ok: false, code: error.code, message: error.message });
+        return true;
+      }
+    });
+    physicalQueue = queued.then(() => {}, () => {});
+    return queued;
   }
 
   async function middleware(req, res, next) {
@@ -1189,28 +1330,19 @@ export function createDevLanHandler({
       });
       if (handledBilliards) return;
 
-      const physicalWorldId = String(reqUrl.searchParams.get('worldId') ?? body.worldId ?? '');
+      const physicalWorldId = String(body.worldId ?? reqUrl.searchParams.get('worldId') ?? '').trim();
       const physicalRequest = /^\/(inventory|farm|donor|pet|mailbox|dev-console)(\/|$)/.test(route);
-      const physicalSaved = Boolean(db.v015?.physicalInventory?.[physicalWorldId]);
-      const physicalLoader = physicalRequest || physicalSaved ? getTryHandlePhysicalInventory() : null;
-      if (physicalLoader) {
-        const physicalHandler = await physicalLoader;
-        if (physicalHandler({
-          req, res, reqUrl, route, body, db, userId, worldId: physicalWorldId, catalog: V015_CATALOG,
-          isWorldMember, sendJson, saveDb, broadcastInventory: (worldId) => broadcastWorldMutated(worldId, 'inventory'),
-          position: wsHub.getActivePlayerPosition(physicalWorldId, userId),
-        })) return;
-      } else if (physicalSaved) {
+      const physicalModule = physicalRequest ? await getTryHandlePhysicalInventory() : null;
+      if (physicalRequest && db.v015?.physicalInventory?.[physicalWorldId] && !physicalModule) {
         sendJson(res, 409, { ok: false, code: 'VALIDATION_ERROR', message: 'Hãy mở save này bằng chế độ túi đồ INV.2.' });
         return;
       }
-
       const resolvedFarmDevLan =
         route.startsWith('/farm') ? await Promise.resolve(getTryHandleFarmDevLan()) : getTryHandleFarmDevLan();
       const resolvedDonorDevLan =
         route.startsWith('/donor/') ? await Promise.resolve(getTryHandleDonorDevLan()) : getTryHandleDonorDevLan();
 
-      const handledV015 = await handleV015Route({
+      const context = {
         req,
         res,
         route,
@@ -1225,7 +1357,10 @@ export function createDevLanHandler({
         bumpWorldStateVersion,
         tryHandleFarmDevLan: typeof resolvedFarmDevLan === 'function' ? resolvedFarmDevLan : null,
         tryHandleDonorDevLan: typeof resolvedDonorDevLan === 'function' ? resolvedDonorDevLan : null,
-      });
+      };
+      const handledV015 = physicalModule
+        ? await runPhysicalRequest(physicalModule, context, physicalWorldId)
+        : await handleV015Route(context);
       if (handledV015) return;
 
       sendJson(res, 404, { ok: false, code: 'NOT_FOUND', message: 'Không tìm thấy đường dẫn dev.' });
@@ -1323,7 +1458,7 @@ export function devLanServerPlugin(options = {}) {
         throw new Error('INV.2 cần save riêng .dev-lan-state-inv2-*.json.');
       }
       const physicalRoute = physicalEnabled
-        ? server.ssrLoadModule('/src/server/devLanPhysicalInventoryRoute.ts').then((mod) => mod.handleDevLanPhysicalInventory)
+        ? server.ssrLoadModule('/src/server/devLanPhysicalInventoryRoute.ts')
         : null;
       const handler = createDevLanHandler({
         stateFilePath,

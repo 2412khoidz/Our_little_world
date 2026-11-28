@@ -1,3 +1,4 @@
+import type { HeldItemState } from '../../shared/interaction/interactionTypes';
 import type { DonorFishSessionView } from '../../shared/donor/donorFishSessionTypes';
 import type { DonorFishingSpotId } from '../../shared/donor/donorFishingSpots';
 import type { TidefallFishingPhase } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
@@ -75,9 +76,11 @@ export function postDonorWorkshopCollect(worldId: string) {
   });
 }
 
-export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId) {
+export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotId,
+  physicalSource?: HeldItemState['physicalSource'], castId?: string) {
   return donorDevLanJson<{
     seed: number;
+    castId?: string;
     spotId: DonorFishingSpotId;
     preview: {
       name: string;
@@ -91,7 +94,7 @@ export function postDonorFishingStart(worldId: string, spotId: DonorFishingSpotI
     `/donor/fishing/start?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',
-      body: JSON.stringify({ worldId, spotId }),
+      body: JSON.stringify({ worldId, spotId, physicalSource, castId }),
     },
   );
 }
@@ -104,6 +107,7 @@ export function postDonorFishingSync(
   worldId: string,
   patch: {
     spotId: DonorFishingSpotId;
+    castId?: string;
     phase: TidefallFishingPhase;
     progressPermille: number;
     pointerNorm: number;
@@ -119,7 +123,7 @@ export function postDonorFishingSync(
   });
 }
 
-export function postDonorFishingResolve(worldId: string, reelProgressPermille: number) {
+export function postDonorFishingResolve(worldId: string, reelProgressPermille: number, castId?: string) {
   return donorDevLanJson<{
     escaped: boolean;
     itemSku: string | null;
@@ -134,7 +138,7 @@ export function postDonorFishingResolve(worldId: string, reelProgressPermille: n
     `/donor/fishing/resolve?worldId=${encodeURIComponent(worldId)}`,
     {
       method: 'POST',
-      body: JSON.stringify({ worldId, reelProgressPermille }),
+      body: JSON.stringify({ worldId, reelProgressPermille, castId }),
     },
   );
 }

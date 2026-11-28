@@ -18,7 +18,7 @@ import type { HudLayoutMode } from '../../shared/viewport/viewportPolicy';
 import { ContextualPromptBadge } from '../../ui/components/ContextualPromptBadge';
 import { GameHotbar } from '../../ui/components/GameHotbar';
 import { HeldItemChip } from '../../ui/components/HeldItemChip';
-import { executeMainGameContextAction, PHYSICAL_ACTION_PENDING_VI } from './executeMainGameContextAction';
+import { executeMainGameContextAction } from './executeMainGameContextAction';
 import { validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useWorldGamepad } from './useWorldGamepad';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
@@ -154,6 +154,7 @@ export interface MainGameInteractionLayerProps {
   onCloseTopModal: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onWaterPetAuthoritative?: () => Promise<boolean>;
   onFarmApply?: (
     plotIndex: number,
     action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler',
@@ -199,6 +200,7 @@ export function MainGameInteractionLayer({
   onCloseTopModal,
   onFeedPetAuthoritative,
   onPetPetAuthoritative,
+  onWaterPetAuthoritative,
   onFarmApply,
   onOpenFarmMarket,
   onOpenFarmShipping,
@@ -320,6 +322,7 @@ export function MainGameInteractionLayer({
       onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onWaterPetAuthoritative,
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
@@ -346,6 +349,7 @@ export function MainGameInteractionLayer({
       onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onWaterPetAuthoritative,
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
@@ -433,10 +437,6 @@ export function MainGameInteractionLayer({
   useEffect(() => {
     return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
       if (!showHud || !onFarmApply || interactionMutationBusy || actionInFlight.current) return;
-      if (physicalMode) {
-        onNotice(PHYSICAL_ACTION_PENDING_VI, true);
-        return;
-      }
       actionInFlight.current = true;
       setLocalActionBusy(true);
       void Promise.resolve(onFarmApply(plotId, action, seedSku)).finally(() => {
@@ -444,7 +444,7 @@ export function MainGameInteractionLayer({
         setLocalActionBusy(false);
       });
     });
-  }, [showHud, onFarmApply, interactionMutationBusy, onNotice, physicalMode]);
+  }, [showHud, onFarmApply, interactionMutationBusy]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -589,6 +589,7 @@ export function MainGameInteractionLayer({
         {!petCareHud && !touchActions ? (
           <ContextualPromptBadge
             resolution={resolution}
+            disabled={inputsLocked}
             unavailableToast={noticeText}
             onPrimary={() => void executePrimary()}
             onSecondary={() => void executeSecondary()}

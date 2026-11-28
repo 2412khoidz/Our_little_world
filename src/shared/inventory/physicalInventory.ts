@@ -1,4 +1,4 @@
-import type { InventoryOwnerScope, ItemQualityTier } from './inventoryTypes';
+import type { InventoryCatalogItem, InventoryOwnerScope, ItemQualityTier } from './inventoryTypes';
 
 export const BACKPACK_ROW_SIZE = 9;
 export const BACKPACK_TIERS = [18, 27, 36, 45, 54] as const;
@@ -70,6 +70,22 @@ export interface PhysicalDefinition {
 }
 export type PhysicalCatalog = ReadonlyMap<string, PhysicalDefinition>;
 
+const ESSENTIAL = new Set(['tool_hoe', 'tool_watering_can', 'water_pitcher', 'rod_basic']);
+const catalogCache = new WeakMap<readonly InventoryCatalogItem[], PhysicalCatalog>();
+export function getPhysicalCatalog(ref: readonly InventoryCatalogItem[]): PhysicalCatalog {
+  const cached = catalogCache.get(ref);
+  if (cached) return cached;
+  const catalog = new Map(ref.map((row) => [row.sku, {
+    name: row.nameVi,
+    category: row.category ?? row.purpose,
+    stackLimit: Math.max(1, row.stackLimit),
+    individual: ESSENTIAL.has(row.sku) || row.purpose === 'tool' || /^(rod_|tool_|accessory_)/.test(row.sku),
+    essential: ESSENTIAL.has(row.sku),
+  }]));
+  catalogCache.set(ref, catalog);
+  return catalog;
+}
+
 export interface LegacyPhysicalEntry {
   readonly worldId: string;
   readonly ownerScope: InventoryOwnerScope;
@@ -105,7 +121,11 @@ export type PhysicalErrorCode = 'FORBIDDEN' | 'NOT_FOUND' | 'VERSION_CONFLICT' |
   | 'INVALID' | 'INSUFFICIENT_FUNDS' | 'UNAVAILABLE';
 
 export class PhysicalInventoryError extends Error {
-  constructor(readonly code: PhysicalErrorCode, message: string) { super(message); }
+  readonly code: PhysicalErrorCode;
+  constructor(code: PhysicalErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
 }
 
 export function physicalError(code: PhysicalErrorCode, message: string): never {

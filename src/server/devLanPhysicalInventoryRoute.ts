@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { physicalHasKibble } from './devLanPhysicalGameplay';
+export { isPhysicalGameplayRoute, preparePhysicalGameplay } from './devLanPhysicalGameplay';
 import { canReachHomeStorage } from '../shared/interaction/mainGameWorldAnchors';
 import type { FarmShippingMeta } from '../shared/farming/farmShipping';
 import { editPhysicalEconomy, physicalSaleChannel } from '../shared/inventory/physicalInventoryEconomy';
 import {
-  migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
+  getPhysicalCatalog, migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
   physicalSlots, playerBackpack, readPhysicalContainer, STORAGE_PAGE_SIZE,
   type LegacyPhysicalEntry, type PhysicalCatalog, type PhysicalInventory,
 } from '../shared/inventory/physicalInventory';
@@ -55,6 +57,7 @@ const inputSchema = z.strictObject({
 export interface PhysicalDevLanDatabase {
   v015: {
     inventory: Record<string, LegacyPhysicalEntry[]>;
+    kibbleClaims?: Record<string, { date: string }>;
     wallets: Record<string, { coins: number }>;
     shippingBin?: Record<string, FarmShippingMeta>;
     physicalInventory?: Record<string, PhysicalInventory>;
@@ -78,22 +81,6 @@ interface Context {
   saveDb: () => void;
   broadcastInventory: (worldId: string) => void;
   position: { mapId: string; x?: number; y?: number } | null;
-}
-
-const ESSENTIAL = new Set(['tool_hoe', 'tool_watering_can', 'water_pitcher', 'rod_basic']);
-const catalogCache = new WeakMap<readonly InventoryCatalogItem[], PhysicalCatalog>();
-function getPhysicalCatalog(ref: readonly InventoryCatalogItem[]): PhysicalCatalog {
-  const cached = catalogCache.get(ref);
-  if (cached) return cached;
-  const catalog = new Map(ref.map((row) => [row.sku, {
-    name: row.nameVi,
-    category: row.category ?? row.purpose,
-    stackLimit: Math.max(1, row.stackLimit),
-    individual: ESSENTIAL.has(row.sku) || row.purpose === 'tool' || /^(rod_|tool_|accessory_)/.test(row.sku),
-    essential: ESSENTIAL.has(row.sku),
-  }]));
-  catalogCache.set(ref, catalog);
-  return catalog;
 }
 
 function fullSlot(container: ReturnType<typeof readPhysicalContainer>, slotIndex: number): PhysicalSlotView {
@@ -141,18 +128,33 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
   };
 }
 
+export function loadPhysicalGameplayState(db: PhysicalDevLanDatabase, worldId: string, entries: readonly InventoryCatalogItem[]) {
+  const state = db.v015.physicalInventory?.[worldId];
+  if (state) return state;
+  if (db.v015.petLiving?.[worldId]?.offers?.some((offer) => offer.inventoryReserved)) {
+    throw new PhysicalInventoryError('UNAVAILABLE', 'Hãy giải quyết lời mời ăn của mèo trên bản sao save trước khi chuyển túi đồ.');
+  }
+  return migratePhysicalInventory(undefined, worldId, db.v015.inventory[worldId] ?? [], getPhysicalCatalog(entries));
+}
+
+export { PhysicalInventoryError };
+
 function toLegacySnapshot(ctx: Context, state: PhysicalInventory): InventorySnapshot {
   const now = Date.now();
   const date = new Date(now).toISOString();
-  const items: InventoryEntry[] = physicalSlots(readPhysicalContainer(state, 'backpack', ctx.userId))
-    .map(({ stack }) => ({
-      worldId: ctx.worldId, ownerScope: 'user:' + ctx.userId as `user:${string}`,
-      itemSku: stack.itemSku, qty: stack.qty, quality: stack.quality, updatedAt: date,
-    }));
+  const totals = new Map<string, InventoryEntry>();
+  for (const { stack } of physicalSlots(readPhysicalContainer(state, 'backpack', ctx.userId))) {
+    const key = stack.itemSku + ':' + stack.quality;
+    totals.set(key, {
+      worldId: ctx.worldId, ownerScope: 'shared',
+      itemSku: stack.itemSku, qty: stack.qty + (totals.get(key)?.qty ?? 0), quality: stack.quality, updatedAt: date,
+    });
+  }
+  const items = [...totals.values()];
   const skus = new Set(items.map((item) => item.itemSku));
   return {
     worldId: ctx.worldId, serverNowMs: now, serverDateUtc: date.slice(0, 10), physicalVersion: state.version,
-    canClaimFreeKibble: false, catalog: ctx.catalog.filter((row) => skus.has(row.sku)), items,
+    canClaimFreeKibble: !physicalHasKibble(state) && ctx.db.v015.kibbleClaims?.[ctx.worldId]?.date !== date.slice(0, 10), catalog: ctx.catalog.filter((row) => skus.has(row.sku)), items,
   };
 }
 
@@ -185,12 +187,8 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
         fail(409, 'VERSION_CONFLICT', 'Hãy mở túi đồ trước khi thực hiện.');
         return true;
       }
-      if (v015.petLiving?.[worldId]?.offers?.some((offer) => offer.inventoryReserved)) {
-        fail(409, 'UNAVAILABLE', 'Hãy giải quyết lời mời ăn của mèo trên bản sao save trước khi chuyển túi đồ.');
-        return true;
-      }
       const legacy = v015.inventory[worldId];
-      state = migratePhysicalInventory(undefined, worldId, legacy ?? [], catalog);
+      state = loadPhysicalGameplayState(ctx.db, worldId, ctx.catalog);
       v015.physicalInventory[worldId] = state;
       delete v015.inventory[worldId];
       try { ctx.saveDb(); } catch (error) {

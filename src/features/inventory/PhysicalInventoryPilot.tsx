@@ -62,6 +62,7 @@ export default function PhysicalInventoryPilot({
   const [view, setView] = useState<PhysicalInventoryView | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [equipped, setEquipped] = useState<string | null>(null);
+  const [waterByStack, setWaterByStack] = useState<Record<string, number>>({});
   const open = mode !== null;
   const [storageQuery, setStorageQuery] = useState(INITIAL_HOME_STORAGE_QUERY);
   const query = mode === 'storage' ? storageQuery : INITIAL_PHYSICAL_QUERY;
@@ -154,19 +155,25 @@ export default function PhysicalInventoryPilot({
     const item: HeldItemState = visibleHeld ? {
       ...EMPTY_HELD_ITEM,
       slotIndex: equippedIndex,
+      physicalSource: { index: activeRow * BACKPACK_ROW_SIZE + equippedIndex, stackId: visibleHeld.id },
       itemSku: visibleHeld.itemSku,
       itemKind: hotbarSkuToHeldKind(visibleHeld.itemSku),
       ownerScope: `user:${userId}`,
       labelVi: equippedName,
       quality: visibleHeld.quality,
+      waterFillLevel: waterByStack[visibleHeld.id] ?? 100,
     } : EMPTY_HELD_ITEM;
     onHeldItemChange(item);
     gameEventBus.emit('cmd:sync-held-item', item);
-  }, [equippedIndex, equippedName, onHeldItemChange, userId, visibleHeld]);
+  }, [activeRow, equippedIndex, equippedName, onHeldItemChange, userId, visibleHeld, waterByStack]);
   useEffect(() => {
     const unsubscribe = gameEventBus.on('cmd:clear-physical-held-item', () => setEquipped(null));
     return () => { unsubscribe(); onHeldItemChange(null); };
   }, [onHeldItemChange]);
+  useEffect(() => gameEventBus.on('evt:held-water-adjust', ({ level, itemSku }) => {
+    if (!visibleHeld || (itemSku && itemSku !== visibleHeld.itemSku)) return;
+    setWaterByStack((old) => ({ ...old, [visibleHeld.id]: Math.max(0, Math.min(100, Math.round(level))) }));
+  }), [visibleHeld]);
   const source = selection && selectedSlot(view, selection.address);
   const held = selection && source?.stack?.id === selection.stackId && source.stack.qty >= selection.qty ? selection : null;
 

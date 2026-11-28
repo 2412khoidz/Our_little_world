@@ -56,6 +56,7 @@ import {
 
 interface ChillFishingModalProps {
   worldId: string;
+  physicalSource?: import('../../shared/interaction/interactionTypes').HeldItemState['physicalSource'];
   spotId?: DonorFishingSpotId;
   localUserId?: string;
   localAvatarConfig?: AvatarConfig;
@@ -274,6 +275,7 @@ function CatchRevealCard({
 
 export function ChillFishingModal({
   worldId,
+  physicalSource,
   spotId = 'meadow_pond',
   localUserId,
   localAvatarConfig,
@@ -308,6 +310,8 @@ export function ChillFishingModal({
   } | null>(null);
   const [muted, setMuted] = useState(() => isFishingAudioMuted());
 
+  const castIdRef = useRef<string | undefined>(undefined);
+  const pendingCastRef = useRef<string | undefined>(undefined);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const artRef = useRef<TidefallFishingArtBundle | null>(null);
   const frenzyArtRef = useRef<FishingFrenzyArtBundle | null>(null);
@@ -502,6 +506,7 @@ export function ChillFishingModal({
       if (!observeRef.current && fsmRef.current.phase !== 'idle') {
         void postDonorFishingSync(worldId, {
           spotId: spotId as SpotId,
+          castId: castIdRef.current,
           phase: 'idle',
           progressPermille: 0,
           pointerNorm: 0.5,
@@ -520,6 +525,7 @@ export function ChillFishingModal({
       syncInFlight.current = true;
       void postDonorFishingSync(worldId, {
         spotId: spotId as SpotId,
+        castId: castIdRef.current,
         phase: state.phase,
         progressPermille: tidefallProgressPermille(state),
         pointerNorm: state.pointerNorm,
@@ -543,7 +549,7 @@ export function ChillFishingModal({
       resolveGuard.current = true;
       setBusy(true);
       try {
-        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state));
+        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state), castIdRef.current);
         const fallbackLabel = activeCatalogFish
           ? tidefallFishNameVi(activeCatalogFish.id, activeCatalogFish.name)
           : 'Cá ao';
@@ -571,6 +577,7 @@ export function ChillFishingModal({
         await onInventoryRefresh();
         void postDonorFishingSync(worldId, {
           spotId: spotId as SpotId,
+          castId: castIdRef.current,
           phase: 'idle',
           progressPermille: 0,
           pointerNorm: 0.5,
@@ -659,7 +666,10 @@ export function ChillFishingModal({
     spectatorTargetRef.current = null;
     resolveGuard.current = false;
     try {
-      const data = await postDonorFishingStart(worldId, spotId as SpotId);
+      pendingCastRef.current ??= crypto.randomUUID();
+      const data = await postDonorFishingStart(worldId, spotId as SpotId, physicalSource, pendingCastRef.current);
+      pendingCastRef.current = undefined;
+      castIdRef.current = data.castId;
       setPreview(data.preview.name);
       const matched =
         matchTidefallCatalogByPreviewName(data.preview.critterId ?? data.preview.name) ??
@@ -704,13 +714,14 @@ export function ChillFishingModal({
       playCastWhoosh();
       syncSession(next, true);
     } catch (e) {
+      if (!(e instanceof TypeError)) pendingCastRef.current = undefined;
       const msg = e instanceof Error ? e.message : 'Không quăng được cần — kiểm tra mạng rồi thử lại.';
       setError(msg);
       setMessage(msg);
     } finally {
       setBusy(false);
     }
-  }, [worldId, spotId, syncSession]);
+  }, [worldId, spotId, syncSession, physicalSource]);
 
   const onCanvasTap = useCallback(() => {
     if (observeMode || busy) return;

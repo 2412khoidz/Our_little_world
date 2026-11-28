@@ -34,6 +34,8 @@ Nút **Lấy món từ ô nhanh cũ** dùng các liên kết còn trong cùng br
 
 ## Bàn giao tích hợp
 
+Xem [INV.2d — Gameplay và save thật](INV2D_GAMEPLAY_AND_OWNER_SAVE.md) để biết các tuyến đã nối trong Dev LAN. Phần dưới ghi lại tình trạng ở đợt nền tảng.
+
 | Điểm nối còn mở | Điều kiện để bật gameplay đầy đủ |
 | --- | --- |
 | **M3d/M3e** `feat/farming-fishing-visuals@ad39c19` | Giữ đường `App.tsx` → `WorldScene.ts` cho phiên bản và FX. Farm command cần địa chỉ ô và `stackId` của hạt/dụng cụ thực. Gieo và thu hoạch cần chung giao dịch với ruộng. Khi ba lô đầy, phần thưởng còn chờ phải giữ trong trạng thái domain hoặc luống. |

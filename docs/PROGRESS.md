@@ -8,6 +8,8 @@
 
 - Khôi phục J/K và tương tác cảm ứng ở bản bật INV.2. Ba lô mở bằng I ở mọi nơi, kho dùng tủ lạnh trong nhà và thanh nhanh có biểu tượng ba lô cùng nút đổi hàng. [Báo cáo tái hiện, giao diện và kiểm thử](reports/INV2_WORLD_CONTROLS_AND_UI.md)
 
+- INV.2d nối các tuyến gameplay Dev LAN vào giao dịch ô vật lý và đối soát bản sao save thật. Bản QA có ruộng, vật nuôi và xưởng để chơi thử riêng. [Bảng phạm vi, đối soát và lệnh chơi thử](reports/INV2D_GAMEPLAY_AND_OWNER_SAVE.md)
+
 ## Hotfix quyền sở hữu túi đồ sau RC2
 
 - Worktree `fix/inventory-integrity` tách từ `origin/main` tại `fe1937b`. Đã tái hiện hạt tự sinh khi nhà có mèo và táo hiển thị đồng thời trong túi lẫn trên con trỏ.

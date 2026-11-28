@@ -7,6 +7,7 @@ export type HandFeedConsumeParams = {
   worldId: string;
   petId: string;
   expectedVersion: number;
+  physicalSource?: { index: number; stackId: string };
   ownerScope: string;
   itemSku: string;
   quality: 'normal' | 'silver' | 'gold';

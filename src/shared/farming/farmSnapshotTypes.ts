@@ -53,6 +53,7 @@ export interface FarmApplyParams {
   fertilizerSku?: FertilizerSku | null;
   sprinklerSku?: SprinklerSku | null;
   toolSku?: string | null;
+  physicalSource?: { index: number; stackId: string };
   useEnvironment?: boolean;
   idempotencyKey: string;
   /** Optimistic concurrency — must match server farm row version. */

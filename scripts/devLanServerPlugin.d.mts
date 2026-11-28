@@ -14,6 +14,7 @@ export function createDevLanHandler(options?: {
   stateFilePath?: string;
   getTryHandleFarmDevLan?: () => unknown;
   getTryHandleDonorDevLan?: () => unknown;
+  getTryHandlePhysicalInventory?: () => unknown;
   wsOptions?: {
     heartbeatIntervalMs?: number;
     maxMissedPongs?: number;
