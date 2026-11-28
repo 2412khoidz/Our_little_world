@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Archive, ArrowLeftRight, Backpack, ChevronLeft, ChevronRight, MoreHorizontal, Search, X } from 'lucide-react';
 import type { PhysicalInventoryBackend } from '../../lib/backend/types';
 import { BACKPACK_ROW_SIZE, BACKPACK_TIERS, BACKPACK_UPGRADE_COSTS, physicalHotbarIndices, type PhysicalCommand, type PhysicalShortcut, type PhysicalSlotAddress } from '../../shared/inventory/physicalInventory';
@@ -185,7 +185,7 @@ export default function PhysicalInventoryPilot({
     if (!open && showHud) return gameEventBus.on('cmd:rotate-physical-hotbar', rotate);
   }, [open, rotate, showHud]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let shiftKey: string | null = null;
     let shiftPressedAt = 0;
     const pressedKeys = new Set<string>();

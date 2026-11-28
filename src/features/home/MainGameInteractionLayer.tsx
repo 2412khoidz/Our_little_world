@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DoorOpen, Hand, MessageCircle, PackageMinus, Sparkles, Store } from 'lucide-react';
 import '../../ui/designSystem/gameUiTokens.css';
 import { gameEventBus, type InteractionFramePayload } from '../../game/eventBus';
@@ -446,7 +446,7 @@ export function MainGameInteractionLayer({
     });
   }, [showHud, onFarmApply, interactionMutationBusy]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.code === 'Escape') {

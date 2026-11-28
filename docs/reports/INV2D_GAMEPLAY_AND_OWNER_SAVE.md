@@ -62,6 +62,8 @@ npm.cmd run dev -- --host 127.0.0.1 --port 4274 --strictPort
 
 Đã đối chiếu local `main@72270c5`, `origin/main@fe1937b`, art được duyệt ở `89bbfe5`, M3d/M3e `450765d` và M3g `167a732`. M3d/M3e có các file chung ở App, bộ tương tác, modal và tuyến câu. Khi tích hợp art, truyền `physicalSource` từ món đang cầm rồi giữ `castId` qua cả hai giao diện câu. Các nút vật nuôi và xưởng gọi cùng `/farm/deep/apply`. M3g cần đọc ô, `instanceId` và độ bền ở Phase B. Các nhánh vẫn tách riêng.
 
+Cuối đợt, local main đã lên `55db4aa` với bản sửa billiards. Dry-run cho thấy khác biệt cần hòa ở `docs/PROGRESS.md`. Dry-run với M3d/M3e báo xung đột ở modal/tuyến HTTP câu cá, client donor, bộ điều phối và cổng tương tác, skin Nuvora cũ, event bus và WorldScene. Dry-run M3g tự ghép được. Các dry-run không thay đổi nhánh hoặc worktree.
+
 - Local Preview cần adapter ô và lưu trạng thái nguyên tử.
 - Supabase cần bảng ô, ràng buộc duy nhất, RLS theo thành viên và kho, RPC domain, kiểm thử nhiều kết nối, migration và rollback. Đã kiểm tra bundle production không có endpoint và cờ pilot.
 - Chủ dự án còn nghiệm thu Safari iPhone/PWA và playtest bản save thật. Nhánh chưa hợp nhất vào main.
@@ -71,4 +73,4 @@ npm.cmd run dev -- --host 127.0.0.1 --port 4274 --strictPort
 - Cầu nối Dev LAN gồm `scripts/devLanServerPlugin.{mjs,d.mts}`, `scripts/devLanV015Handlers.mjs`, `src/server/devLan{PhysicalInventoryRoute,PhysicalGameplay,DonorRoute,FarmRoute}.ts`.
 - Đầu vào gameplay gồm `src/app/App.tsx`, `src/features/home/{MainGameInteractionLayer.tsx,executeMainGameContextAction.ts}`, `src/features/donor/ChillFishingModal.tsx`, `src/features/inventory/PhysicalInventoryPilot.tsx`, `src/features/petCare/petCareHandFeedAuthority.ts`, `src/features/mailbox/MailboxModal.tsx`, `src/ui/components/ContextualPromptBadge.tsx`, `src/lib/backend/{types,donorDevLanClient}.ts` và `src/shared/{farming/farmSnapshotTypes,interaction/interactionTypes,inventory/physicalInventory}.ts`.
 - Migration và kiểm thử gồm `scripts/migrate-inv2-save.mjs`, `tests/server/inv2GameplayTransactions.test.ts` và `tests/e2e/inv2-gameplay.spec.ts`.
-- 21 ca Vitest tập trung qua. Playwright bật cả hai cờ qua 13 ca. Bốn ca điều khiển khi tắt cờ qua khi chạy lại sau một lần timeout WASD. Typecheck và build production qua.
+- 21 ca Vitest tập trung qua. Playwright bật cả hai cờ qua 13 ca. Sau khi đồng bộ listener bàn phím với lần render, ca cuốc, gieo và quăng cần qua 4 lần liên tiếp. Bốn ca điều khiển khi tắt cờ qua khi chạy lại sau một lần timeout WASD. Typecheck và build production qua.
