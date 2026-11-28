@@ -343,7 +343,7 @@ it('rolls back fully blocked harvests, orchard, livestock, workshops and purchas
     ['/farm/buy-seed', { itemSku: 'seed_carrot', qty: 1 }],
   ] as const) {
     for (const res of await Promise.all([server.call(route, params), server.call(route, params)])) {
-      expect(res.body.code, JSON.stringify(res.body)).toBe('FULL');
+      expect(res.body).toMatchObject({ code: 'FULL', message: 'Ba lô đầy.' });
     }
     expect(await server.durable()).toEqual(before);
   }

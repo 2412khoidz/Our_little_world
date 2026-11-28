@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import qrcode from 'qrcode-generator';
 import { Check, Copy, Globe, RefreshCw, ShieldCheck, Smartphone, X } from 'lucide-react';
 
 interface RemoteShareStatus {
@@ -72,6 +73,17 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
     return () => window.clearInterval(timer);
   }, [loadStatus, status?.active, status?.tunnelStatus]);
 
+  const primaryUrl = status?.active && status.tunnelStatus !== 'starting'
+    ? status.publicShareUrl ?? (status.tunnelStatus === 'error' || status.tunnelStatus === 'idle' ? status.shareUrl : null)
+    : null;
+  const shareQr = useMemo(() => {
+    if (!primaryUrl) return null;
+    const qr = qrcode(0, 'M');
+    qr.addData(primaryUrl);
+    qr.make();
+    return qr.createDataURL(4);
+  }, [primaryUrl]);
+
   if (!import.meta.env.DEV) return null;
 
   const handleStart = async (refresh = false) => {
@@ -120,10 +132,6 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
       setError('Trình duyệt không cho phép sao chép tự động — hãy bôi đen link để copy.');
     }
   };
-
-  const primaryUrl =
-    status?.publicShareUrl ??
-    (status?.tunnelStatus === 'error' || status?.tunnelStatus === 'idle' ? (status?.shareUrl ?? null) : null);
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Chơi cùng người thương">
@@ -209,6 +217,7 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
                     onFocus={(e) => e.currentTarget.select()}
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       fontSize: 12.5,
                       padding: '8px 10px',
                       borderRadius: 10,
@@ -227,6 +236,16 @@ export function RemoteShareModal({ onClose }: RemoteShareModalProps) {
                     {copiedUrl === primaryUrl ? 'Đã chép' : 'Sao chép'}
                   </button>
                 </div>
+              )}
+
+              {shareQr && (
+                <figure style={{ margin: '4px 0 0', display: 'grid', justifyItems: 'center', gap: 4 }}>
+                  <img src={shareQr} alt="Mã QR để vào chơi cùng người thương" data-testid="remote-share-qr"
+                    style={{ display: 'block', maxWidth: '100%', height: 'auto', imageRendering: 'pixelated' }} />
+                  <figcaption style={{ fontSize: 12.5, color: 'var(--ink-muted)' }}>
+                    Quét mã QR bằng camera điện thoại.
+                  </figcaption>
+                </figure>
               )}
 
               {status.tunnelStatus === 'error' && primaryUrl && (

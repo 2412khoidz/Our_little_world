@@ -94,7 +94,7 @@ it('shows the confirmed minnow in Chill and never re-resolves it while the next 
 it('retries the same Tension catch after an interrupted response and returns to the normal cast state', async () => {
   const refresh = vi.fn().mockResolvedValue(undefined);
   api.start.mockResolvedValue(start(91));
-  api.resolve.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(result);
+  api.resolve.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ ...result, overflowUnits: 1 });
   render(<TensionFishingModal worldId="world" spotId="east_stream" titleVi="Suối" onClose={vi.fn()} onInventoryRefresh={refresh} />);
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Quăng cần' })); });
   await frame(100);
@@ -102,7 +102,10 @@ it('retries the same Tension catch after an interrupted response and returns to 
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Thử nhận kết quả' })); });
   expect(api.resolve).toHaveBeenNthCalledWith(1, 'world', 1000, 91, 'cast-for-91');
   expect(api.resolve).toHaveBeenNthCalledWith(2, 'world', 1000, 91, 'cast-for-91');
-  expect(screen.getByTestId('fishing-frenzy-catch-reveal')).toHaveTextContent(minnow.labelVi);
+  const overflowCard = screen.getByTestId('fishing-frenzy-catch-reveal');
+  expect(overflowCard).toHaveTextContent(minnow.labelVi);
+  expect(overflowCard).toHaveTextContent('Ba lô đầy, chuyển vào Đồ giữ hộ.');
+  expect(overflowCard).not.toHaveTextContent('Đã nhận vật phẩm');
   expect(refresh).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: /^Xong$/ }));
   expect(screen.getByRole('button', { name: 'Quăng cần' })).toBeEnabled();

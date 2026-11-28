@@ -2,6 +2,12 @@
 
 *Cập nhật lần cuối: 28/11/2026*
 
+## RC3.2 — Link mời, mã QR và thông báo ba lô
+
+- Hộp thoại Chơi cùng người thương hiển thị link và mã QR chứa cùng địa chỉ. QR được tạo trên thiết bị và cập nhật theo link khi đổi lời mời.
+- Giao dịch thiếu chỗ báo “Ba lô đầy.” Khi cá đã chuyển vào ngăn giữ hộ, cả hai chế độ câu báo “Ba lô đầy, chuyển vào Đồ giữ hộ.”
+- Vitest tập trung đạt 26/26, gồm đổi link và QR, thông báo cá đi giữ hộ và giao dịch khi đầy. Quét bằng camera điện thoại thật còn chờ nghiệm thu.
+
 ## RC3.1 — Nghiệm thu kho vật lý và trao đổi Dev LAN
 
 - Sau nghiệm thu RC3, tách giữ chỗ phần thưởng tự nguyện khỏi Đồ giữ hộ, tách vùng nút xã hội và thao tác mobile, sửa nhặt lại đồ và cấp dụng cụ theo từng người. Thêm trao đổi trực tiếp cùng bản đồ qua giao dịch nguyên tử.

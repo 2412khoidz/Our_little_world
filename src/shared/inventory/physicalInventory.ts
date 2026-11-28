@@ -426,7 +426,7 @@ export function editBasicPhysicalInventory(edit: PhysicalInventoryEdit, command:
     const dest = edit.edit(command.to);
     const qty = stack.legacyParcel ? Math.min(command.qty, physicalStackLimit(stack, edit.catalog)) : command.qty;
     const inserted = edit.insert(dest, edit.span(stack, qty, qty === stack.qty));
-    if (inserted === 0) physicalError('FULL', 'Túi đã đầy. Vật phẩm vẫn ở vị trí cũ.');
+    if (inserted === 0) physicalError('FULL', 'Ba lô đầy.');
     edit.take(source, command.from.index, stack, inserted);
     return;
   }

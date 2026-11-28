@@ -101,7 +101,8 @@ export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi, overflowU
       <FishingFishArt spriteUrl={spriteUrl} />
       <div>
         <strong>{escaped ? `${labelVi} tuột mất…` : `Bắt được ${labelVi}!`}</strong>
-        <small>{tidefallFishRarityLabelVi(rarity)} · {escaped ? 'Thử quăng lại nhé' : overflowUnits ? 'Đã chuyển vào Đồ giữ hộ' : 'Đã nhận vật phẩm'}</small>
+        <small>{tidefallFishRarityLabelVi(rarity)}{escaped ? ' · Thử quăng lại nhé' : !overflowUnits ? ' · Đã nhận vật phẩm' : ''}</small>
+        {!escaped && Boolean(overflowUnits) && <p>Ba lô đầy, chuyển vào Đồ giữ hộ.</p>}
       </div>
     </div>
   );

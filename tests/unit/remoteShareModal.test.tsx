@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import qrcode from 'qrcode-generator';
 import { RemoteShareModal } from '../../src/features/couple/RemoteShareModal';
 
 describe('RemoteShareModal single durable HTTPS share link', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('hides temporary LAN URLs while tunnel is starting and shows only the single durable HTTPS URL once ready', async () => {
@@ -32,6 +34,7 @@ describe('RemoteShareModal single durable HTTPS share link', () => {
     });
     expect(screen.queryByTestId('remote-share-url-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('remote-share-copy-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('remote-share-qr')).not.toBeInTheDocument();
     expect(document.body.textContent ?? '').not.toMatch(/192\.168\./);
     unmount();
 
@@ -57,5 +60,22 @@ describe('RemoteShareModal single durable HTTPS share link', () => {
       expect(screen.getByTestId('remote-share-url-input')).toHaveValue(readyUrl);
     });
     expect(document.body.textContent ?? '').not.toMatch(/Copy LAN|Cùng Wi-Fi:|192\.168\./);
+    const qrFor = (url: string) => {
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      return qr.createDataURL(4);
+    };
+    expect(screen.getByTestId('remote-share-qr')).toHaveAttribute('src', qrFor(readyUrl));
+
+    const rotatedUrl = readyUrl.replace('token-123', 'token-456');
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, data: {
+      active: true, tunnelStatus: 'ready', publicShareUrl: rotatedUrl,
+    } }) });
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi link mới' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('remote-share-url-input')).toHaveValue(rotatedUrl);
+      expect(screen.getByTestId('remote-share-qr')).toHaveAttribute('src', qrFor(rotatedUrl));
+    });
   });
 });

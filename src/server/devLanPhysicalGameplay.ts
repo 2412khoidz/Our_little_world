@@ -153,8 +153,7 @@ export function preparePhysicalGameplay(ctx: PhysicalGameplayContext) {
     function put(edit: PhysicalInventoryEdit, stack: PhysicalStack) {
       const overflow = creditPhysicalReward(edit, stack);
       if (!overflow) return;
-      if (requiresBackpack) physicalError('FULL', route === '/farm/buy-seed'
-        ? 'Ba lô đầy — chưa trừ xu.' : 'Ba lô đầy — vật phẩm vẫn ở đây.');
+      if (requiresBackpack) physicalError('FULL', 'Ba lô đầy.');
       if (edit.insert(edit.edit('overflow'), overflow) !== overflow.qty) {
         physicalError('FULL', 'Không còn chỗ giữ vật phẩm. Hãy dọn ba lô rồi thử lại.');
       }

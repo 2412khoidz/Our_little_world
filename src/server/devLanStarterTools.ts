@@ -27,7 +27,7 @@ export function claimStarterTools(state: PhysicalInventory, userId: string, cata
     const id = edit.newId();
     if (!edit.insert(edit.edit('backpack'), {
       id, itemSku: sku, qty: 1, quality: 'normal', metadata: { instanceId: 'starter-' + id, starterOwner: userId },
-    })) physicalError('FULL', 'Ba lô đầy — hãy chừa chỗ để nhận dụng cụ cơ bản.');
+    })) physicalError('FULL', 'Ba lô đầy.');
   }
   return { ...edit.finish(), starterClaims: { ...state.starterClaims, [userId]: [...(state.starterClaims?.[userId] ?? []), ...pending] } };
 }

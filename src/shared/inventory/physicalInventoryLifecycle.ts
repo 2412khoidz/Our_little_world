@@ -141,7 +141,7 @@ export function editPhysicalInventory(
         physicalError('UNAVAILABLE', 'Chờ món đồ chạm đất rồi nhặt nhé.');
       const bag = edit.edit('backpack');
       const inserted = edit.insert(bag, drop.stack);
-      if (inserted === 0) physicalError('FULL', 'Ba lô đầy — vật phẩm vẫn ở đây.');
+      if (inserted === 0) physicalError('FULL', 'Ba lô đầy.');
       edit.setDrop(drop.id, inserted === drop.stack.qty ? null : {
         ...drop, stack: { ...drop.stack, qty: drop.stack.qty - inserted },
       });
