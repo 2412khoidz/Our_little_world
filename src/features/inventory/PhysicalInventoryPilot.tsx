@@ -137,6 +137,7 @@ export default function PhysicalInventoryPilot({
         else if (command.kind !== 'pickup') clearSelection();
       } else {
         if (command.kind !== 'pickup' || open) setMessage(result.message);
+        if (command.kind === 'pickup' && ['NOT_FOUND', 'VERSION_CONFLICT', 'NETWORK_ERROR'].includes(result.code)) pickupAttempt.current.ids.delete(command.dropId);
         await refresh();
       }
     } finally {
@@ -154,9 +155,15 @@ export default function PhysicalInventoryPilot({
   }, [location, view]);
 
   const pickupAttempt = useRef({ mapId: '', version: -1, ids: new Set<string>(), nextAt: 0 });
-  useEffect(() => gameEventBus.on('evt:local-position-sync', (position) => {
-    if (!showHud || open || connection !== 'connected' || !view || applying.current) return;
+  const lastPickupPosition = useRef({ mapId: '', x: 0, y: 0, movingUntil: 0 });
+  useEffect(() => gameEventBus.on('evt:interaction-frame', ({ mapId, playerX: x, playerY: y }) => {
+    const position = { mapId, x, y };
     const now = Date.now();
+    const last = lastPickupPosition.current;
+    if (last.mapId !== mapId || Math.hypot(last.x - x, last.y - y) >= 1) {
+      lastPickupPosition.current = { ...position, movingUntil: showHud && !open ? now + 1500 : 0 };
+    }
+    if (!showHud || open || connection !== 'connected' || !view || applying.current) return;
     const attempt = pickupAttempt.current;
     if (now < attempt.nextAt) return;
     if (view.dropMapId !== position.mapId) {
@@ -173,6 +180,7 @@ export default function PhysicalInventoryPilot({
     for (const id of attempt.ids) {
       if (!nearby.some((drop) => drop.id === id)) attempt.ids.delete(id);
     }
+    if (now > lastPickupPosition.current.movingUntil) return;
     const drop = nearby.find((item) => !attempt.ids.has(item.id) &&
       (item.droppedBy !== userId || now >= (item.pickupAfterMs ?? 0)));
     if (!drop) return;

@@ -530,6 +530,7 @@ export function createDevLanHandler({
         broadcastInventory: (id) => broadcastWorldMutated(id, 'inventory'),
         position: wsHub.getActivePlayerPosition(worldId, userId),
         placements: db.placements[worldId] ?? [],
+        orchard: db.v015.deepFarms?.[worldId]?.orchard,
       };
       if (!module.isPhysicalGameplayRoute(route, req.method)) {
         return module.handleDevLanPhysicalInventory(physicalContext);

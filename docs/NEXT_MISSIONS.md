@@ -79,16 +79,28 @@
 ## Mission 3c / M3c.1 / M3c.2 — Animated Livestock & Ambient Animal Transplant (`V0.2.x` · `COMPLETED & OWNER APPROVED` in RC2)
 - **Trạng thái:** Đã đóng gói `public/assets/farming/livestock-ranch.{png,json}` từ `FarmRanchLife_v1.0.zip` cho đủ `7` loài vật nuôi, thêm chân dung UI (`LivestockPanelModal.tsx`), chuyển ghép ambient animals trên `farm`/`village`/`garden` (`ambientAnimalVisualAdapter.ts`), hoạt ảnh vịt bơi nước và chỉnh cừu sang `sheep_brown_baby` ở scale `1.00` (`0cf17fb`, `40f0504`, `469d3de`, `0018d10`); giữ nguyên mèo `Quýt` 2D/3D.
 
-## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x` · đã triển khai, chờ chủ dự án duyệt hình ảnh)
+## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x` · đã duyệt, có trong RC3 nghiệm thu)
 
 - Tám máy Farm & Ranch Life hoạt động cạnh mốc xưởng Meadowbrook. Khung nghỉ, vòng làm việc và khung có thành phẩm lấy từ trạng thái hàng đợi hiện có. Trong bảng xưởng, mỗi mẻ có tiến độ và hình nguyên liệu/thành phẩm.
 - Hiệu ứng cuốc, gieo, tưới, thu hoạch và báo chín bám ô đất. Vườn cây giữ hình cây LPC với chuyển động rung và quả rơi. Vật nuôi hiện trái tim tại vị trí thực sau khi vuốt ve thành công.
-- Worktree chung với M3e dựa trên Canonical RC2. Xem [Hướng dẫn playtest M3d/M3e](handovers/FARMING_FISHING_VISUALS.md).
+- Tích hợp chung với M3e vào RC3 nghiệm thu. Xem [Hướng dẫn playtest M3d/M3e](handovers/FARMING_FISHING_VISUALS.md).
 
-## Mission 3e — Fishing Artwork and Animation Transplant (`V0.2.x` · đã triển khai, chờ chủ dự án duyệt hình ảnh)
+## Mission 3e — Fishing Artwork and Animation Transplant (`V0.2.x` · có trong RC3, nghiệm thu câu cá thủ công chuyển sang M3g)
 
 - Phao, gợn nước, bọt, dây câu, cá cắn và cá vừa bắt hiển thị theo phiên câu hiện có. Chill vẫn mở mặc định. Suối Đông cho phép chọn thêm chế độ giữ lực Tension.
 - Hai bảng câu dùng chung khung Nuvora và cơ chế toàn màn hình của ứng dụng. Xem [Hướng dẫn playtest M3d/M3e](handovers/FARMING_FISHING_VISUALS.md).
+
+## Sau RC3 — Deep Fishing và Deep Farming
+
+- **M3g Deep Fishing:** Tiếp tục Phase A trong worktree hiện tại. Phase B nối artwork câu đã duyệt và nguồn ô, ID cá thể và độ bền trong kho vật lý Dev LAN.
+- **FARM.0 — Simulation Foundation:** Tích lũy tăng trưởng, thời gian và môi trường, quyền quyết định của máy chủ, đồng nhất backend, hiệu năng và mô phỏng xác định.
+- **FARM.1 — Soil & Farming Ecology:** Dinh dưỡng đất, ủ phân, luân canh và trồng xen hỗ trợ.
+- **FARM.2 — Crop Progression:** Chuyên hóa phân bón, phẩm cấp, nâng cấp dụng cụ/kỹ năng và cơ chế cây trồng nâng cao.
+- **FARM.3 — Genetics & Breeding:** Gene hoa, lai qua nhiều thế hệ, giống cây và metadata genotype lưu bền.
+- **FARM.4 — Economy & Production Balance:** Lợi nhuận cây trồng, xưởng, đơn hàng và tự động hóa.
+- **FARM.5 — Deep Livestock & Animal Behavior:** Sở thích theo loài (ưa thích, chấp nhận, không thích hoặc từ chối), phản ứng khi ăn, bị thu hút và đi theo thức ăn trên tay, cho ăn bằng thanh nhanh vật lý, dinh dưỡng, tình cảm, chất lượng sản phẩm, lai giống và tự động hóa cho ăn về sau. Không phạt đói khi offline.
+
+FARM.0–FARM.5 là kế hoạch. Xem [nghiên cứu R1/R1.1](research/farming/00_RESEARCH_SUMMARY.md) và [cổng nghiệm thu từng pha](research/farming/11_PHASES_ACCEPTANCE_AND_OPEN_QUESTIONS.md).
 
 ## Mission 4 — Home Progression: Furniture Shop & House Upgrades (`V0.2.4`)
 - **Phạm vi & Trải nghiệm người chơi:** Thêm cửa hàng nội thất 4 phong cách (`Pastel`, `Modern`, `Cottage`, `Rustic`) tiêu coin từ ví nông trại và hệ thống nâng cấp mở rộng nhà (`kitchen`, `bedroom`, `study`, `greenhouse`), **tự động giữ lại toàn bộ đồ đạc cũ và tương thích 100% file save `.dev-lan-state.json`**.

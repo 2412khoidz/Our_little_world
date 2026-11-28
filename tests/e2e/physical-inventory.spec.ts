@@ -60,6 +60,8 @@ test('real slots persist across row rotation and only one client withdraws the l
     await enter(other, 'partner-b');
     await stepToCabinet(page, request, worldId, may);
     await stepToCabinet(other, request, worldId, nang);
+    await page.getByRole('button', { name: 'Mở ba lô' }).click();
+    await other.getByRole('button', { name: 'Mở ba lô' }).click();
     const getA = () => getInventory(request, worldId, may, true);
     const getB = () => getInventory(request, worldId, nang, true);
     const modal = await openCabinet(page, info.project.name !== 'chromium-desktop');
@@ -138,6 +140,8 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
     await enter(other, 'partner-b');
     await stepToCabinet(page, request, worldId, may);
     await stepToCabinet(other, request, worldId, nang);
+    await page.getByRole('button', { name: 'Mở ba lô' }).click();
+    await other.getByRole('button', { name: 'Mở ba lô' }).click();
     const getA = () => getInventory(request, worldId, may, true);
     const getB = () => getInventory(request, worldId, nang, true);
     await expect.poll(async () => (await getA()).canDrop).toBe(true);
@@ -160,11 +164,16 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
       kind: 'drop', from: { container: 'backpack', index: stack.index }, qty: 5, stackId: stack.stack!.id,
     });
     expect(dropped.ok(), await dropped.text()).toBeTruthy();
+    const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+    const partnerCanvas = other.getByTestId('game-canvas-host').locator('canvas');
+    await expect(canvas).toHaveAttribute('data-physical-drop-count', '1');
+    await expect(partnerCanvas).toHaveAttribute('data-physical-drop-count', '1');
     const afterDrop = await getA();
     const observed = await getB();
     expect(afterDrop.nearbyDrops).toHaveLength(1);
     const dropId = afterDrop.nearbyDrops[0]!.id;
     expect(observed.nearbyDrops.some((drop) => drop.id === dropId)).toBe(true);
+    await expect.poll(() => Date.now()).toBeGreaterThanOrEqual(afterDrop.nearbyDrops[0]!.pickupAfterMs ?? 0);
     const [a, b] = await Promise.all([
       send(page, may, afterDrop.version, 'pickup-a', { kind: 'pickup', dropId }),
       send(other, nang, observed.version, 'pickup-b', { kind: 'pickup', dropId }),
@@ -173,6 +182,26 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
     const totals = [...(await getA()).backpack, ...(await getB()).backpack];
     expect(totals.filter(({ stack }) => stack?.itemSku === 'seed_wheat').map(({ stack }) => stack?.qty)).toEqual([5]);
     expect((await getA()).nearbyDrops).toHaveLength(0);
+    await expect(canvas).toHaveAttribute('data-physical-drop-count', '0');
+
+    const winner = a.ok() ? { actor: may, page } : { actor: nang, page: other };
+    const receiver = a.ok() ? { actor: nang, page: other } : { actor: may, page };
+    await receiver.page.keyboard.press('Escape');
+    const current = await getInventory(request, worldId, winner.actor);
+    const source = current.backpack.find((cell) => cell.stack?.itemSku === 'seed_wheat')!;
+    await emitVqgJump(receiver.page, 'garden', 8, 4);
+    await expect.poll(async () => (await getInventory(request, worldId, receiver.actor)).dropMapId).toBe('garden');
+    const again = await send(winner.page, winner.actor, current.version, 'drop-again', {
+      kind: 'drop', from: { container: 'backpack', index: source.index }, qty: 5, stackId: source.stack!.id,
+    });
+    expect(again.ok(), await again.text()).toBe(true);
+    const secondDrop = (await getInventory(request, worldId, winner.actor)).mapDrops[0]!;
+    expect((await getInventory(request, worldId, receiver.actor)).mapDrops).toHaveLength(0);
+    await emitVqgJump(receiver.page, 'home', 8, 9);
+    await expect(receiver.page.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-physical-drop-count', '1');
+    await emitVqgJump(receiver.page, 'home', Math.floor(secondDrop.x / 16), Math.floor(secondDrop.y / 16));
+    await expect.poll(async () => (await getInventory(request, worldId, receiver.actor)).backpack
+      .find((cell) => cell.stack?.itemSku === 'seed_wheat')?.stack?.qty).toBe(5);
   } finally {
     await ctx.close();
   }

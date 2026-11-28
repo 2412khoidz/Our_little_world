@@ -1904,6 +1904,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private bindEventBus(): void {
+    if (import.meta.env.DEV) {
+      this.unsubscribes.push(gameEventBus.on('cmd:sync-physical-drops', ({ mapId, drops }) => {
+        if (mapId !== this.currentMapId) return;
+        this.physicalDrops ??= new PhysicalDropVisuals(this);
+        this.physicalDrops.sync(drops);
+      }));
+    }
+
     this.unsubscribes.push(
       gameEventBus.on('cmd:sync-world', (payload: WorldSyncPayload) => {
         this.worldId = payload.worldId;
@@ -2097,11 +2105,6 @@ export class WorldScene extends Phaser.Scene {
         }
       }),
 
-      gameEventBus.on('cmd:sync-physical-drops', ({ mapId, drops }) => {
-        if (!import.meta.env.DEV || mapId !== this.currentMapId) return;
-        this.physicalDrops ??= new PhysicalDropVisuals(this);
-        this.physicalDrops.sync(drops);
-      }),
       gameEventBus.on('cmd:enable-physical-home-storage', (enabled) => {
         this.physicalHomeStorage = enabled;
         if (!this.buildingMap) this.syncStorageCabinet();
@@ -4005,8 +4008,8 @@ export class WorldScene extends Phaser.Scene {
       heldIconId: this.heldItem.iconId,
       heldPropsIconId: this.heldItem.propsIconId ?? null,
     };
-    this.emitLocalPositionSync();
     gameEventBus.emit('evt:local-movement', packet);
+    this.emitLocalPositionSync();
   }
 
   private ensureRemoteEntity(

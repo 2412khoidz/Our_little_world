@@ -65,7 +65,7 @@ async function frame(time: number) {
 }
 const minnow = resolveCanonicalFishByCritterId('minnow');
 const result = { itemSku: minnow.sku, spriteUrl: minnow.spriteUrl, labelVi: minnow.labelVi, rarity: minnow.rarity, escaped: false };
-const start = (seed: number) => ({ seed, preview: { name: 'Minnow', critterId: 'minnow', ...result } });
+const start = (seed: number) => ({ seed, castId: `cast-for-${seed}`, preview: { name: 'Minnow', critterId: 'minnow', ...result } });
 
 it('shows the confirmed minnow in Chill and never re-resolves it while the next cast is starting', async () => {
   const refresh = vi.fn().mockResolvedValue(undefined);
@@ -78,14 +78,14 @@ it('shows the confirmed minnow in Chill and never re-resolves it while the next 
   const card = screen.getByTestId('fishing-frenzy-catch-reveal');
   expect(card).toHaveTextContent(minnow.labelVi);
   expect(card.querySelector<HTMLElement>('.ranch-fishing__fish')?.style.backgroundImage).toContain(RANCH_FISHING_URL);
-  expect(api.resolve).toHaveBeenCalledExactlyOnceWith('world', 1000, 87);
+  expect(api.resolve).toHaveBeenCalledExactlyOnceWith('world', 1000, 87, 'cast-for-87');
   expect(refresh).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Quăng lại' }));
   await frame(200);
   expect(api.resolve).toHaveBeenCalledTimes(1);
   await act(async () => secondCast(start(88)));
   await frame(300);
-  expect(api.resolve).toHaveBeenNthCalledWith(2, 'world', 1000, 88);
+  expect(api.resolve).toHaveBeenNthCalledWith(2, 'world', 1000, 88, 'cast-for-88');
   fireEvent.click(screen.getByRole('button', { name: /^Xong$/ }));
   expect(screen.queryByTestId('fishing-frenzy-catch-reveal')).toBeNull();
   expect(screen.getByRole('button', { name: 'Quăng cần' })).toBeEnabled();
@@ -100,8 +100,8 @@ it('retries the same Tension catch after an interrupted response and returns to 
   await frame(100);
   expect(screen.queryByTestId('fishing-frenzy-catch-reveal')).toBeNull();
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Thử nhận kết quả' })); });
-  expect(api.resolve).toHaveBeenNthCalledWith(1, 'world', 1000, 91);
-  expect(api.resolve).toHaveBeenNthCalledWith(2, 'world', 1000, 91);
+  expect(api.resolve).toHaveBeenNthCalledWith(1, 'world', 1000, 91, 'cast-for-91');
+  expect(api.resolve).toHaveBeenNthCalledWith(2, 'world', 1000, 91, 'cast-for-91');
   expect(screen.getByTestId('fishing-frenzy-catch-reveal')).toHaveTextContent(minnow.labelVi);
   expect(refresh).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: /^Xong$/ }));

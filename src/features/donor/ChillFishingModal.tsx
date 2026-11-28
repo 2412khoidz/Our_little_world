@@ -558,7 +558,10 @@ function ChillFishingGame({
       pendingCastRef.current ??= crypto.randomUUID();
       const data = await postDonorFishingStart(worldId, spotId as SpotId, physicalSource, pendingCastRef.current);
       pendingCastRef.current = undefined;
+      if (!mounted.current) return;
       castIdRef.current = data.castId;
+      roundSeed.current = data.seed;
+      resolveGuard.current = false;
       setPreview(data.preview.name);
       const matched =
         matchTidefallCatalogByPreviewName(data.preview.critterId ?? data.preview.name) ??

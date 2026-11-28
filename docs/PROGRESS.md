@@ -2,6 +2,12 @@
 
 *Cập nhật lần cuối: 28/11/2026*
 
+## RC3 — Nghiệm thu hợp nhất Dev LAN
+
+- Tách từ `main@55db4aa`, đã có Inventory Integrity và Billiards Room Lifecycle. Hợp nhất M3d/M3e, INV.2/INV.2d và R1/R1.1. Đồ rơi dùng cùng kho vật lý và hiển thị theo bản đồ trên Phaser.
+- Giữ nguyên save chính. Có bản sao save thật đã đối soát và save QA riêng. Chờ nghiệm thu tích hợp trước khi đưa RC3 vào `main`.
+- [Hướng dẫn nghiệm thu RC3](handovers/CANONICAL_RC3.md) · [Thứ tự M3g và FARM.0–FARM.5](NEXT_MISSIONS.md#sau-rc3--deep-fishing-và-deep-farming).
+
 ## INV.2 — Thí điểm ba lô và kho vật lý
 
 - Có bản thử Dev LAN cô lập trên `feature/inv2-physical-inventory`. Ba lô, kho, vòng đời vật phẩm và giao dịch thử có dữ liệu máy chủ. Các điểm nối farming, fishing và backend production còn mở. [Báo cáo INV.2](reports/INV2_PHYSICAL_INVENTORY.md)

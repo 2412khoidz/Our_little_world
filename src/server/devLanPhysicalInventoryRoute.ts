@@ -1,3 +1,5 @@
+import type { OrchardState } from '../shared/farming/orchard';
+import { DEFAULT_ORCHARD_SLOT_TILES } from '../shared/farming/farmEntityTiles';
 import { getMapDefinition, getMapTilePixelSize, MAP_IDS } from '../shared/maps';
 import { buildMovementCollisionGrid } from '../shared/placement';
 import type { FurniturePlacement, MapId } from '../shared/types';
@@ -85,19 +87,26 @@ interface Context {
   broadcastInventory: (worldId: string) => void;
   position: { mapId: string; x?: number; y?: number; facing?: string } | null;
   placements?: readonly FurniturePlacement[];
+  orchard?: OrchardState;
 }
 
 /** Use the same collision and elevation rules as world movement. */
-export function dropLanding(position: PhysicalPosition & { facing?: string }, placements: readonly FurniturePlacement[]): PhysicalPosition | null {
+export function dropLanding(position: PhysicalPosition & { facing?: string }, placements: readonly FurniturePlacement[], orchard?: OrchardState): PhysicalPosition | null {
   if (!MAP_IDS.includes(position.mapId as MapId)) return null;
   const mapId = position.mapId as MapId;
   const map = getMapDefinition(mapId);
   const size = getMapTilePixelSize(mapId);
   const blocked = buildMovementCollisionGrid(mapId, placements);
+  if (mapId === 'farm') {
+    orchard?.slots.forEach((tree, slot) => {
+      const tile = DEFAULT_ORCHARD_SLOT_TILES[slot];
+      if (tree && tile) blocked.add(tile.join(','));
+    });
+  }
   const dx = position.facing?.includes('left') ? -1 : position.facing?.includes('right') ? 1 : 0;
   const dy = position.facing?.includes('up') ? -1 : position.facing?.includes('down') ? 1 : dx ? 0 : 1;
   const fromX = Math.floor(position.x / size);
-  const fromY = Math.floor(position.y / size);
+  const fromY = Math.floor((position.y - 2) / size);
   const clear = (x: number, y: number) => x >= 0 && y >= 0 && x < map.widthTiles && y < map.heightTiles
     && !blocked.has(`${x},${y}`) && (map.canStepElevation?.(fromX, fromY, x, y) ?? true);
   if (!clear(fromX, fromY)) return null;
@@ -276,7 +285,9 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       });
     } else {
       const position = positionIsUsable(ctx.position) ? ctx.position : null;
-      const landing = input.command.kind === 'drop' && position ? dropLanding({ ...position, facing: ctx.position?.facing }, ctx.placements ?? []) : position;
+      const landing = input.command.kind === 'drop' && position
+        ? dropLanding({ ...position, facing: ctx.position?.facing }, ctx.placements ?? [], ctx.orchard)
+        : position;
       editPhysicalInventory(edit, input.command, position, landing);
     }
     const next = edit.finish();

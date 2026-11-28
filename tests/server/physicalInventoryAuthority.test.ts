@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { handleDevLanPhysicalInventory, type PhysicalDevLanDatabase } from '../../src/server/devLanPhysicalInventoryRoute';
+import { dropLanding, handleDevLanPhysicalInventory, type PhysicalDevLanDatabase } from '../../src/server/devLanPhysicalInventoryRoute';
 import { HOME_STORAGE_ANCHOR } from '../../src/shared/interaction/mainGameWorldAnchors';
 import { computeSellPrice } from '../../src/shared/economy/catalogConfig';
 import { INITIAL_PHYSICAL_QUERY, preferPhysicalSnapshot, type PhysicalInventoryRequest, type PhysicalInventoryView } from '../../src/shared/inventory/physicalInventoryApi';
@@ -12,15 +12,15 @@ const catalog: InventoryCatalogItem[] = [
   { sku: 'wheat', nameVi: 'Lua', descriptionVi: '', stackLimit: 99, purpose: 'crop', tradeable: true },
 ];
 
-function fixture() {
-  const db: PhysicalDevLanDatabase = { v015: {
+function fixture(persisted?: string) {
+  const db: PhysicalDevLanDatabase = persisted ? JSON.parse(persisted) : { v015: {
     inventory: { [worldId]: [
       { worldId, ownerScope: 'user:may', itemSku: 'apple', quality: 'gold', qty: 5 },
       { worldId, ownerScope: 'user:may', itemSku: 'wheat', quality: 'normal', qty: 5 },
     ] },
     wallets: { [worldId]: { coins: 200 } },
   } };
-  const location: { value: { mapId: string; x?: number; y?: number } } = { value: { mapId: 'home' } };
+  const location: { value: { mapId: string; x?: number; y?: number; facing?: string } } = { value: { mapId: 'home' } };
   let durable = '';
   function call(request?: PhysicalInventoryRequest, actor = 'may', storage = false) {
     let status = 0;
@@ -97,6 +97,31 @@ describe('Physical wallet and save authority', () => {
     expect(host.mutate(start.version, 'apple-sale', sale).view?.coins).toBe(after.coins);
     const starred = host.mutate(after.version, 'star', { kind: 'favorite', at: from, stackId: apple.stack!.id }).view!;
     expect(host.mutate(starred.version, 'sell-favorite', sale).payload.code).toBe('PROTECTED');
+  });
+
+  it('persists a forward drop and its receipt across save reloads', () => {
+    const host = fixture();
+    host.location.value = { mapId: 'home', x: 136, y: 152, facing: 'right' };
+    expect(dropLanding({ mapId: 'home', x: -16, y: 152 }, [])).toBeNull();
+    const old = host.call().view!;
+    const apple = old.backpack.find(({ stack }) => stack?.itemSku === 'apple')!;
+    const command = { kind: 'drop', from: { container: 'backpack', index: apple.index },
+      qty: 3, stackId: apple.stack!.id } as const;
+    const dropped = host.mutate(old.version, 'drop-gold', command).view!;
+    const [entity] = dropped.mapDrops;
+    expect(entity).toMatchObject({ mapId: 'home', x: 152, y: 152, stack: { itemSku: 'apple', qty: 3, quality: 'gold' } });
+    expect(dropped.backpack[apple.index]?.stack?.qty).toBe(2);
+    expect(host.mutate(dropped.version, 'early-pickup', { kind: 'pickup', dropId: entity!.id }).status).toBe(409);
+
+    const restarted = fixture(host.durable);
+    restarted.location.value = { mapId: 'garden', x: 136, y: 152 };
+    expect(restarted.call().view?.mapDrops).toEqual([]);
+    restarted.location.value = { mapId: 'home', x: 136, y: 152 };
+    expect(restarted.mutate(old.version, 'drop-gold', command).view?.mapDrops).toEqual([entity]);
+    const picked = restarted.mutate(dropped.version, 'pickup-gold', { kind: 'pickup', dropId: entity!.id }, 'nang').view!;
+    expect(picked.mapDrops).toEqual([]);
+    expect(picked.backpack[0]?.stack).toMatchObject({ qty: 3, quality: 'gold' });
+    expect(restarted.mutate(dropped.version, 'pickup-again', { kind: 'pickup', dropId: entity!.id }, 'may').status).toBe(409);
   });
 
   it('ships a real stack near the farm bin and persists the original saturation counter', () => {
