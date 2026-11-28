@@ -60,14 +60,21 @@ export function createDevLanBilliardsLobby({
   getConnectedSlots,
   broadcastMinigameEvent,
 }) {
-  const lobbies = new Map();
+  const lobbiesByWorld = new Map();
+  const roomsById = new Map();
   let seqCounter = 1;
 
-  function ensureLobby(worldId) {
-    let rec = lobbies.get(worldId);
+  function ensureLobby(worldId, lobbyId = null) {
+    if (lobbyId && roomsById.has(lobbyId)) {
+      const r = roomsById.get(lobbyId);
+      syncConnectedFromRoom(r);
+      return r;
+    }
+    let rec = lobbiesByWorld.get(worldId);
     if (!rec) {
       rec = makeLobbyRecord(worldId, Date.now());
-      lobbies.set(worldId, rec);
+      lobbiesByWorld.set(worldId, rec);
+      roomsById.set(rec.lobbyId, rec);
     }
     syncConnectedFromRoom(rec);
     return rec;
@@ -153,8 +160,12 @@ export function createDevLanBilliardsLobby({
     }
   }
 
+  function clearCountdownToLobby(rec) {
+    cancelCountdownToLobby(rec);
+  }
+
   function handleConnectionChange(worldId) {
-    const rec = lobbies.get(worldId);
+    const rec = lobbiesByWorld.get(worldId);
     if (!rec) return;
     const prev0 = rec.players[0].connected;
     const prev1 = rec.players[1].connected;
@@ -188,23 +199,24 @@ export function createDevLanBilliardsLobby({
    * Returns `{ handled: true, relayToPeer: boolean }`.
    */
   function handleMinigameEvent(worldId, userId, sessionId, packet) {
-    if (!packet || packet.gameId !== 'billiards' || !packet.payload || typeof packet.payload !== 'object') {
-      return { handled: false, relayToPeer: true };
-    }
-    const actorSlot = slotFromUser(worldId, userId);
-    if (actorSlot === null) {
-      return { handled: true, relayToPeer: false };
-    }
+    try {
+      if (!packet || packet.gameId !== 'billiards' || !packet.payload || typeof packet.payload !== 'object') {
+        return { handled: false, relayToPeer: true };
+      }
+      const actorSlot = slotFromUser(worldId, userId);
+      if (actorSlot === null) {
+        return { handled: true, relayToPeer: false };
+      }
 
-    const evt = packet.payload;
-    const type = evt.type;
-    const p = evt.payload;
-    if (!type || !p || typeof p !== 'object') {
-      return { handled: false, relayToPeer: true };
-    }
+      const evt = packet.payload;
+      const type = evt.type;
+      const p = evt.payload;
+      if (!type || !p || typeof p !== 'object') {
+        return { handled: false, relayToPeer: true };
+      }
 
-    const rec = ensureLobby(worldId);
-    const nowMs = Date.now();
+      const rec = ensureLobby(worldId, typeof p.lobbyId === 'string' ? p.lobbyId : null);
+      const nowMs = Date.now();
 
     if (type === 'billiards:lobby_sync_request') {
       emitLobbyState(rec);
@@ -316,19 +328,20 @@ export function createDevLanBilliardsLobby({
 
     if (type === 'billiards:lobby_leave') {
       if (p.reason === 'new_lobby') {
-        clearCountdownToLobby(rec);
-        rec.status = 'lobby';
-        rec.confirmedConfig = null;
-        rec.activeMatchId = null;
-        rec.lastMatchSnapshot = null;
-        rec.startingPlayer = Math.random() < 0.5 ? 0 : 1;
-        rec.hasExplicitStartingPlayer = false;
-        rec.players[actorSlot].joined = true;
-        rec.players[actorSlot].connected = true;
-        for (const pl of rec.players) {
-          pl.ready = false;
-          pl.wantRematch = false;
-        }
+        cancelCountdownToLobby(rec);
+        const oldRec = rec;
+        const newRec = makeLobbyRecord(worldId, nowMs);
+        newRec.lobbyId = `lobby-${worldId}-${crypto.randomUUID().slice(0, 8)}`;
+        newRec.status = 'lobby';
+        newRec.scores = [0, 0];
+        newRec.matchSeq = 0;
+        newRec.players[actorSlot].joined = true;
+        newRec.players[actorSlot].connected = true;
+        newRec.players[actorSlot === 0 ? 1 : 0].connected = oldRec.players[actorSlot === 0 ? 1 : 0].connected;
+        lobbiesByWorld.set(worldId, newRec);
+        roomsById.set(newRec.lobbyId, newRec);
+        emitLobbyState(newRec);
+        return { handled: true, relayToPeer: false };
       } else if (p.reason === 'cancel') {
         rec.players[actorSlot].ready = false;
         rec.players[actorSlot].wantRematch = false;
@@ -352,14 +365,21 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:lobby_rematch') {
-      const matchId = String(p.matchId ?? '');
-      if (!matchId || (rec.activeMatchId !== matchId && rec.confirmedConfig?.matchId !== matchId)) {
-        emitLobbyState(rec);
+      const matchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const currentTargetMatchId = rec.activeMatchId ?? rec.confirmedConfig?.matchId ?? null;
+      if (!matchId || !currentTargetMatchId || matchId !== currentTargetMatchId || rec.status === 'idle') {
         return { handled: true, relayToPeer: false };
       }
-      rec.players[actorSlot].joined = true;
-      rec.players[actorSlot].connected = true;
-      rec.players[actorSlot].wantRematch = Boolean(p.wantRematch);
+
+      const wantRematch = Boolean(p.wantRematch);
+      const actor = rec.players[actorSlot];
+      if (actor.joined && actor.connected && actor.wantRematch === wantRematch) {
+        return { handled: true, relayToPeer: false };
+      }
+
+      actor.joined = true;
+      actor.connected = true;
+      actor.wantRematch = wantRematch;
       const p0 = rec.players[0];
       const p1 = rec.players[1];
       if (
@@ -385,6 +405,10 @@ export function createDevLanBilliardsLobby({
 
     // Track active match lifecycle & snapshot cache for reconnect recovery
     if (type === 'billiards:start') {
+      const startMatchId = typeof p.matchId === 'string' ? p.matchId : '';
+      if (startMatchId && rec.endedMatchIds.has(startMatchId)) {
+        return { handled: true, relayToPeer: false };
+      }
       clearCountdownTimer(rec);
       rec.status = 'in_match';
       rec.edition = p.edition === '3d' ? '3d' : '2d';
@@ -403,26 +427,94 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:settled') {
+      const matchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const matchSeq = Number(p.matchSeq) || 0;
+      if (matchId && rec.endedMatchIds.has(matchId)) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (matchSeq > 0 && rec.matchSeq > 0 && matchSeq < rec.matchSeq) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (matchId && rec.activeMatchId && rec.activeMatchId !== matchId) {
+        return { handled: true, relayToPeer: false };
+      }
+
       if (p.winner) {
-        rec.endedMatchIds.add(p.matchId);
+        if (
+          !matchId ||
+          rec.activeMatchId !== matchId ||
+          (rec.status !== 'in_match' && rec.status !== 'countdown')
+        ) {
+          return { handled: true, relayToPeer: false };
+        }
+        clearCountdownTimer(rec);
+        rec.endedMatchIds.add(matchId);
         if (Array.isArray(p.scores) && p.scores.length === 2) {
           rec.scores = [Number(p.scores[0]) || 0, Number(p.scores[1]) || 0];
+          if (rec.confirmedConfig && rec.confirmedConfig.matchId === matchId) {
+            rec.confirmedConfig.scores = [rec.scores[0], rec.scores[1]];
+          }
         }
+        rec.activeMatchId = null;
+        rec.status = 'lobby';
+        for (const pl of rec.players) {
+          pl.ready = false;
+          pl.wantRematch = false;
+        }
+        if (rec.lastMatchSnapshot && rec.lastMatchSnapshot.matchId === matchId) {
+          rec.lastMatchSnapshot.winner = p.winner;
+        }
+        emitLobbyState(rec);
       }
       return { handled: true, relayToPeer: true };
     }
 
     if (type === 'billiards:state_snapshot') {
+      const snapMatchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const snapMatchSeq = Number(p.matchSeq) || 0;
+      if (snapMatchSeq > 0 && rec.matchSeq > 0 && snapMatchSeq < rec.matchSeq) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (snapMatchId && rec.activeMatchId && rec.activeMatchId !== snapMatchId && rec.endedMatchIds.has(snapMatchId)) {
+        return { handled: true, relayToPeer: false };
+      }
       if (
         !rec.lastMatchSnapshot ||
-        (Number(p.matchSeq) || 0) > (Number(rec.lastMatchSnapshot.matchSeq) || 0) ||
+        snapMatchSeq > (Number(rec.lastMatchSnapshot.matchSeq) || 0) ||
         (p.matchId === rec.lastMatchSnapshot.matchId &&
           (Number(p.stateVersion) || 0) >= (Number(rec.lastMatchSnapshot.stateVersion) || 0))
       ) {
         rec.lastMatchSnapshot = p;
-        rec.activeMatchId = p.matchId ?? rec.activeMatchId;
         if (p.winner) {
-          rec.endedMatchIds.add(p.matchId);
+          if (
+            snapMatchId &&
+            !rec.endedMatchIds.has(snapMatchId) &&
+            rec.activeMatchId === snapMatchId &&
+            (rec.status === 'in_match' || rec.status === 'countdown')
+          ) {
+            clearCountdownTimer(rec);
+            rec.endedMatchIds.add(snapMatchId);
+            if (Array.isArray(p.scores) && p.scores.length === 2) {
+              rec.scores = [Number(p.scores[0]) || 0, Number(p.scores[1]) || 0];
+              if (rec.confirmedConfig && rec.confirmedConfig.matchId === snapMatchId) {
+                rec.confirmedConfig.scores = [rec.scores[0], rec.scores[1]];
+              }
+            }
+            rec.activeMatchId = null;
+            rec.status = 'lobby';
+            for (const pl of rec.players) {
+              pl.ready = false;
+              pl.wantRematch = false;
+            }
+            emitLobbyState(rec);
+          }
+        } else if (
+          snapMatchId &&
+          rec.status === 'in_match' &&
+          !rec.activeMatchId &&
+          !rec.endedMatchIds.has(snapMatchId)
+        ) {
+          rec.activeMatchId = snapMatchId;
         }
       }
       return { handled: true, relayToPeer: true };
@@ -462,22 +554,31 @@ export function createDevLanBilliardsLobby({
       return { handled: true, relayToPeer: true };
     }
 
-    return { handled: false, relayToPeer: true };
+      return { handled: false, relayToPeer: true };
+    } catch (err) {
+      console.error('[devLanBilliardsLobby] uncaught error in minigame event:', err);
+      return { handled: true, relayToPeer: false };
+    }
   }
 
   function resetWorld(worldId) {
-    const rec = lobbies.get(worldId);
+    const rec = lobbiesByWorld.get(worldId);
     if (rec) {
       clearCountdownTimer(rec);
-      lobbies.delete(worldId);
+      lobbiesByWorld.delete(worldId);
+      roomsById.delete(rec.lobbyId);
     }
   }
 
   function closeAll() {
-    for (const rec of lobbies.values()) {
+    for (const rec of roomsById.values()) {
       clearCountdownTimer(rec);
     }
-    lobbies.clear();
+    for (const rec of lobbiesByWorld.values()) {
+      clearCountdownTimer(rec);
+    }
+    roomsById.clear();
+    lobbiesByWorld.clear();
   }
 
   return {
@@ -486,7 +587,7 @@ export function createDevLanBilliardsLobby({
     resetWorld,
     closeAll,
     getLobbyDebugState(worldId) {
-      const rec = lobbies.get(worldId);
+      const rec = lobbiesByWorld.get(worldId);
       return rec ? toWireLobbyState(rec, Date.now()) : null;
     },
   };
