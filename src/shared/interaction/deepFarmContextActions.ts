@@ -1,4 +1,5 @@
 import type { DeepFarmActionParams, DeepFarmSnapshot } from '../farming/deepFarmState';
+import { getItem } from '../economy/catalogConfig';
 import { isAcceptableFeedForSpecies, type LivestockSpeciesDef } from '../farming/livestock';
 import { WORKSHOP_DEF_BY_ID, type WorkshopId } from '../farming/workshops';
 import type { InventoryEntry } from '../inventory/inventoryTypes';
@@ -36,8 +37,9 @@ export function resolveDeepFarmActions(
 ): ContextualAction[] {
   const farm = target.deepFarmTarget;
   if (!snapshot || !farm) return [];
-  const action = (labelVi: string, deepFarmIntent: DeepFarmIntent): ContextualAction => ({
-    code: 'apply_deep_farm', targetId: target.id, labelVi, available: true, keyHint: 'J', deepFarmIntent,
+  const action = (labelVi: string, deepFarmIntent: DeepFarmIntent, reasonVi?: string): ContextualAction => ({
+    code: 'apply_deep_farm', targetId: target.id, labelVi, available: !reasonVi,
+    keyHint: 'J', deepFarmIntent, reasonVi,
   });
 
   if (farm.kind === 'tree') {
@@ -63,15 +65,28 @@ export function resolveDeepFarmActions(
   if (!item) return [];
   const { animal, def } = item;
   const animalId = animal.animalId;
-  const actions: ContextualAction[] = [];
-  if (animal.petCalendarDay !== snapshot.calendar.totalDay || !animal.petByActors.includes(actorId)) {
-    actions.push(action('Vuốt ve', { kind: 'pet_livestock', animalId }));
-  }
-  if (animal.readyAtMs !== null && animal.readyAtMs <= nowMs) {
-    actions.push(action('Thu hoạch', { kind: 'collect_livestock', animalId }));
-  } else if (animal.fedAtMs === null) {
-    const feedSku = preferredLivestockFeed(def, stock);
-    if (feedSku) actions.push(action('Cho ăn', { kind: 'feed_livestock', animalId, feedSku }));
-  }
-  return actions;
+  const readyAtMs = animal.fedAtMs === null ? null : animal.readyAtMs;
+  const productReady = readyAtMs !== null && readyAtMs <= nowMs;
+  const petted = animal.petCalendarDay === snapshot.calendar.totalDay && animal.petByActors.includes(actorId);
+  const feedSku = preferredLivestockFeed(def, stock);
+  const feedReason = !def.feedSku
+    ? 'Ong tự kiếm mật.'
+    : productReady
+      ? 'Thu sản phẩm trước khi cho ăn tiếp.'
+      : animal.fedAtMs !== null
+        ? 'Đã cho ăn, đang tạo sản phẩm.'
+        : !feedSku
+          ? `Túi chung cần ${getItem(def.feedSku)?.nameVi.toLowerCase() ?? 'thức ăn phù hợp'}.`
+          : undefined;
+  const harvestReason = productReady
+    ? undefined
+    : readyAtMs === null && def.feedSku
+      ? 'Cần cho ăn trước.'
+      : 'Sản phẩm chưa sẵn sàng.';
+
+  return [
+    action('Vuốt ve', { kind: 'pet_livestock', animalId }, petted ? 'Bạn đã vuốt ve hôm nay.' : undefined),
+    action('Cho ăn', { kind: 'feed_livestock', animalId, feedSku: feedSku ?? def.feedSku ?? '' }, feedReason),
+    action('Thu hoạch', { kind: 'collect_livestock', animalId }, harvestReason),
+  ];
 }

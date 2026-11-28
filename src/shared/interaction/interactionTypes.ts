@@ -56,6 +56,7 @@ export type InteractableDomainKind =
   | 'crop_plot'
   | 'fishing_spot'
   | 'deep_farm'
+  | 'ambient_livestock'
   | 'workshop_building'
   | 'kitchen'
   | 'shop_npc'
@@ -86,6 +87,7 @@ export type InteractionActionCode =
   | 'pour_water_bowl'
   | 'fill_water_pitcher'
   | 'pet_cat'
+  | 'pet_ambient_livestock'
   | 'enter_pet_care'
   | 'roll_toy'
   | 'place_cardboard_box'
@@ -131,10 +133,16 @@ export interface ContextualAction {
   deepFarmIntent?: DeepFarmIntent;
 }
 
+export interface LivestockContext {
+  labelVi: string;
+  detailsVi: string[];
+}
+
 export interface ContextualResolution {
   targetId: string | null;
   primary: ContextualAction | null;
   secondary: ContextualAction | null;
+  livestock?: LivestockContext;
 }
 
 export interface KeybindingConfig {

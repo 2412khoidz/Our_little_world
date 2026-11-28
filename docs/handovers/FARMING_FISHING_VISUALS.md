@@ -1,6 +1,6 @@
 # M3d + M3e — Playtest hình ảnh trang trại và câu cá
 
-**Đã triển khai trên `feat/farming-fishing-visuals` từ Canonical RC2 `fe1937b`, chờ chủ dự án duyệt hình ảnh.**
+**Chủ dự án đã duyệt hình máy và ba trạng thái trên `89bbfe5`. Save QA bên dưới dùng để nghiệm thu các thao tác còn lại.**
 
 ## Máy chế biến và hiệu ứng trang trại
 
@@ -29,30 +29,49 @@ Mỗi strip có 6 ô 24×32. Frame 0 là nghỉ, frame 1–4 chạy ở 6 fps v�
 - Cả hai bảng câu dùng `GlobalViewportProvider`. Đóng bảng trả lại focus do mini-game sở hữu và giữ toàn màn hình nếu vào từ HUD.
 - Cá bống nhỏ dùng sprite minnow 16×16 từ donor. Các cá khác dùng ảnh đã khớp với registry hiện có.
 
-## Mở save DEV cô lập
+## Mở bản QA dành cho chủ dự án
+
+Mở PowerShell và chạy nguyên khối lệnh này. Mỗi lần chạy tạo một save mới, giữ nguyên các save đã có. Vào [bản QA ở cổng 4222](http://127.0.0.1:4222/), chọn **Mây** hoặc **Nắng**, rồi chọn **Trang trại**.
 
 ```powershell
 Set-Location 'C:\Users\admin\Downloads\OLW-feat-farming-fishing-visuals'
-$env:OLW_DEV_LAN_STATE_FILE = Join-Path (Get-Location) '.dev-lan-state-m3-acceptance.json'
+$qaSave = '.dev-lan-state-m3-acceptance-owner-' + [Guid]::NewGuid().ToString('N') + '.json'
+node scripts/seed-farming-visual-playtest.mjs $qaSave
+if ($LASTEXITCODE -ne 0) { throw 'Không tạo được save QA' }
+$env:OLW_DEV_LAN_STATE_FILE = Join-Path (Get-Location).Path $qaSave
+$env:OLW_FARM_DEV_FAST_GROW = '0'
 $env:VITE_OLW_DONOR_ECONOMY = '1'
-$env:VITE_OLW_PRIVATE_ART = '1'
-npm run dev -- --host 127.0.0.1 --port 4216 --strictPort
+npm run dev -- --host 127.0.0.1 --port 4222 --strictPort
 ```
 
-Mở [localhost cổng 4216](http://127.0.0.1:4216), chọn Mây hoặc Nắng. Save lúc tạo có 3.152 xu, bộ công cụ và cần câu, mồi, thức ăn cho vật nuôi, nguyên liệu xưởng, 4 luống chín, 3 cây sẵn quả và 7 loài vật nuôi. Cối bột có mẻ đã xong. Bếp và tiệm hoa bắt đầu với mẻ đang chạy. Khi để lâu, các mẻ này chín theo thời gian của game.
+Save mới có 6.297 xu, bộ cuốc và bình tưới, phân bón, vòi tưới, hạt giống, cần câu cơ bản, mồi giun và mồi tép. Túi chung có nguyên liệu cho mọi công thức đã đăng ký của tám xưởng, cùng nông sản, cá, thức ăn vật nuôi, đồ chế biến, quà, giấy viết thư và đồ cho Quýt. Trên máy tính bấm **I** để mở túi. Trên điện thoại chạm biểu tượng túi.
 
-Để chạy lại đủ ba trạng thái ngay khi mở, tạo bản mới bằng DEV API có sẵn và trỏ biến môi trường sang bản đó trước khi chạy server. Trình tạo dùng thời gian mô phỏng trong tiến trình seeding riêng để có cây chín.
+| Nơi cần đến | Thử ngay |
+|---|---|
+| Luống chính, hàng phía bắc | Bốn luống chín từ trái sang phải có lúa mì, cà rốt, khoai tây và cà chua. Các ô liền bên phải có đất đã cuốc, hạt vừa gieo và cây đang lớn. Còn một luống lúa chín ở ruộng phụ phía đông nam. Chọn dụng cụ, hạt hoặc phân trên thanh nhanh, đứng sát ô rồi bấm phím hiện trên nút. |
+| Vườn cây phía tây nam | Hái hai cây anh đào và một cây mận ở hàng trên. Đứng sát gốc rồi bấm **Hái quả**. |
+| Đồng cỏ phía đông | Hàng đầu có **Bông**, **Bèo**, **Sữa**, **Mơ**, **Mây Bông**. **Bắp** và tổ ong **Mật** ở đầu hàng kế tiếp. Cả bảy đều có sản phẩm. **Tấm**, **Sen**, **Kem**, **Mận**, **Len**, **Cốm** ở các ô tiếp theo về phía đông và nam, đã sẵn sàng cho ăn. |
+| Dãy xưởng phía tây, trên lối đất ngang ở giữa bản đồ | Đứng ngay trước máy. Bấm tên máy để mở đúng xưởng. Khi có mẻ xong, **J** nhận thành phẩm, **K** mở bảng xưởng. |
+| Ao phía đông bắc Trang trại và suối phía đông trong Rừng thông | Cầm cần câu cơ bản, đứng cạnh điểm câu và bấm **Câu cá**. Ở suối chọn **Tension · Giữ rồi thả** để thử chế độ còn lại. |
 
-```powershell
-$playtestSave = '.dev-lan-state-m3-acceptance-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json'
-node scripts/seed-farming-visual-playtest.mjs $playtestSave
-$env:OLW_DEV_LAN_STATE_FILE = Join-Path (Get-Location) $playtestSave
-npm run dev -- --host 127.0.0.1 --port 4216 --strictPort
-```
+Đứng cạnh con vật và xem tên loài cùng tên riêng nếu có. Bấm **J** hoặc **K** theo nút đang hiện, hoặc chạm nút trên điện thoại. Thử **Thu hoạch** ở gà **Bông** và **Cho ăn** ở gà **Tấm**. Nếu một thao tác chưa dùng được, lý do nằm ngay dưới tên. Có thể vuốt ve gà, vịt và cừu đi quanh đồng, kể cả khi đang nghỉ. Muốn xem cả đàn hoạt động ban ngày, mở **Ánh sáng** (trên điện thoại chạm ô đồng hồ), rồi chọn **Luôn ban ngày**.
 
-Trong **Trang trại**, đi sát gốc cây ở vườn phía tây nam. Khi hiện **Hái quả**, bấm phím ghi trên nút hoặc chạm nút. Đi sát vật nuôi đã đón ở đồng cỏ phía đông để thấy **Vuốt ve**, **Cho ăn** nếu có thức ăn phù hợp trong túi chung, hoặc **Thu hoạch** khi có sản phẩm. Đứng trên lối đất phía trước dãy máy, ngay dưới máy cần dùng. Bấm tên máy để mở đúng xưởng. Khi có mẻ xong, **J / Nhận thành phẩm** lấy mẻ và **K / tên máy** mở bảng xưởng. Trên mobile chạm nút tương ứng. Menu vẫn có bảng cây, vật nuôi và xưởng.
+### Thử một công thức tại mỗi xưởng
 
-Chọn ô vật phẩm trên thanh nhanh rồi mở **Công dụng**, hoặc chọn ô trong **Túi đồ** để xem thông tin. Trong công thức xưởng, tên nguyên liệu hiện cạnh hình và có mục **Công dụng**.
+Mở bảng xưởng, tìm món trong bảng này rồi bấm **Chế biến**. Hai mẻ **Đang chạy** bắt đầu vào lúc tạo save và chín sau khoảng 4 phút. Có thể nhận ngay ở ba máy đã có mẻ xong.
+
+| Máy từ trái sang phải | Lúc mở save mới | Công thức có thể thử | Nguyên liệu |
+|---|---|---|---|
+| Cối xay bột & ép dầu | Xong | Bột mì | 2 lúa mì |
+| Xưởng sữa & phô mai | Xong | Bơ tươi | 1 sữa |
+| Tiệm bánh nông trại | Đang chạy | Bánh mì ổ | 1 bột mì, 1 men bánh |
+| Xưởng mứt & đồ muối | Xong | Mứt dâu tây | 2 dâu tây, 1 gói đường |
+| Cối trộn thức ăn & phân bón | Nghỉ | Cám gà vịt | 2 lúa mì, 1 bắp ngô |
+| Xưởng dệt len thủ công | Đang chạy | Cuộn len cừu | 1 len cừu |
+| Tiệm hoa & nến thơm | Nghỉ | Bó hoa anh đào | 2 hồng phấn, 1 hướng dương, 1 ruy băng |
+| Bếp hợp tác gia đình | Nghỉ | Súp cà rốt | 2 cà rốt, 1 thảo mộc dại |
+
+Save đã tạo trên máy là `.dev-lan-state-m3-acceptance-owner-qa-ready.json`. Dùng khối lệnh ở trên khi cần trạng thái ban đầu, vì thời gian sản xuất trong các save đã tạo vẫn tiếp tục.
 
 ## Môi trường kiểm tra
 
@@ -82,3 +101,9 @@ M3g Phase A ở nhánh `feat/deep-fishing-progression` có engine và authority 
 - 21 bài Vitest tập trung qua. API Dev LAN trả đúng tên, ảnh và vật phẩm của cá ở ao và suối, phát thưởng một lần, bỏ qua đồng bộ muộn và từ chối yêu cầu lệch lượt. Bài kiểm tra bảng câu xác nhận xem được ảnh cá, quăng lại và quay về màn chờ.
 - Chromium tự động xác nhận hái quả, vuốt ve, cho ăn và nhận thành phẩm qua API chạy thật, mở đúng trạm Cối xay bột, đọc được tên nguyên liệu và dùng được nút chạm trên viewport 430 × 932.
 - Typecheck, build và production guard qua. ESLint có 0 lỗi và 3 cảnh báo sẵn có ở GlobalViewportContext. Kiểm tra đủ 8 dải máy có khung nghỉ, chạy và sẵn sàng riêng. Đợt này chưa chạy lại toàn bộ bộ kiểm thử, chưa duyệt hình trên iPhone thật.
+
+### Kiểm tra save QA và tương tác vật nuôi
+
+- Save preview 50 xu được kiểm tra có 0 bản ghi vật nuôi. Gà, vịt và cừu đi quanh đồng vốn dùng hệ thống chuyển động riêng, gồm dấu ZZZ, và chưa có đường tương tác ở `89bbfe5`. Đêm không khóa các thao tác của vật nuôi đã nhận. Mỗi vật nuôi đã nhận dùng cùng mã cho sprite, điểm tương tác di chuyển và giao dịch.
+- Trình tạo xác minh save đã ghi với snapshot Dev LAN, SKU và giới hạn kho, nguyên liệu mọi công thức, trạng thái 8 xưởng, dữ liệu từng con và lối tiếp cận trên bản đồ. Tính sẵn sàng lặp lại khi tạo, với mốc thời gian tính từ lúc chạy và mã thế giới mới do Dev LAN cấp.
+- 14 bài Vitest tập trung qua. Chromium desktop xác nhận K nhận trứng và J vuốt đúng gà Bông. Gà Tấm ở viewport chạm 430 × 932 nhận đúng một phần cám. Cừu trên đồng có nút vuốt ve ban đêm và thao tác chỉ phát hiệu ứng tại chỗ. API Dev LAN nhận một mẻ mới ở mỗi xưởng và nhận lượt quăng tại ao. Chưa kiểm trên iPhone thật.

@@ -1,4 +1,5 @@
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
+import { DEFAULT_ORCHARD_SLOT_TILES } from '../../shared/farming/farmEntityTiles';
 /**
  * Procedural perennial fruit tree textures & world sprites (`OrchardVisualController`).
  *
@@ -11,21 +12,6 @@ import type { OrchardTreeStage, OrchardTreeView } from '../../shared/farming/orc
 import type { CalendarSeason } from '../../shared/world/worldCalendar';
 import { TILE_SIZE } from '../../shared/maps';
 import { FARMING_TREES_ATLAS_KEY, getFarmingTreeFrame } from '../../shared/art/farmingSpriteAtlas';
-
-export const DEFAULT_ORCHARD_SLOT_TILES: ReadonlyArray<readonly [number, number]> = [
-  [8, 26],
-  [12, 26],
-  [16, 26],
-  [20, 26],
-  [8, 30],
-  [12, 30],
-  [16, 30],
-  [20, 30],
-  [8, 34],
-  [12, 34],
-  [16, 34],
-  [20, 34],
-];
 
 export function computeOrchardTreeDisplayScale(
   frameH: number,

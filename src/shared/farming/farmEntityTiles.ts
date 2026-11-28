@@ -1,0 +1,31 @@
+export const DEFAULT_LIVESTOCK_TILES: ReadonlyArray<readonly [number, number]> = [
+  [44, 15],
+  [47, 15],
+  [50, 15],
+  [53, 15],
+  [56, 15],
+  [44, 18],
+  [47, 18],
+  [50, 18],
+  [53, 18],
+  [56, 18],
+  [49, 26],
+  [52, 26],
+  [55, 26],
+  [52, 29],
+];
+
+export const DEFAULT_ORCHARD_SLOT_TILES: ReadonlyArray<readonly [number, number]> = [
+  [8, 26],
+  [12, 26],
+  [16, 26],
+  [20, 26],
+  [8, 30],
+  [12, 30],
+  [16, 30],
+  [20, 30],
+  [8, 34],
+  [12, 34],
+  [16, 34],
+  [20, 34],
+];

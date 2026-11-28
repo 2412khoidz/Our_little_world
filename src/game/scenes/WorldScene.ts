@@ -158,7 +158,8 @@ import { gameAudio } from '../audio/gameAudioManager';
 import { resolveFootstepSurface } from '../../shared/audio/surfaceFootsteps';
 import { farmPlotIndexForTile } from '../../shared/farming/farmPlotIndex';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
-import { DEFAULT_ORCHARD_SLOT_TILES, OrchardVisualController } from '../farming/OrchardVisualController';
+import { OrchardVisualController } from '../farming/OrchardVisualController';
+import { DEFAULT_ORCHARD_SLOT_TILES } from '../../shared/farming/farmEntityTiles';
 import { LivestockVisualController } from '../farming/LivestockVisualController';
 import { FarmActionEffects, WorkshopMachineVisuals } from '../farming/RanchActionVisuals';
 import { RanchFishingVisuals } from '../farming/RanchFishingVisuals';
@@ -1985,6 +1986,13 @@ export class WorldScene extends Phaser.Scene {
         }, true);
       }),
 
+      gameEventBus.on('cmd:pet-field-animal', ({ targetId }) => {
+        if (!this.localSprite || !this.ranchEffects) return;
+        const target = this.collectFieldAnimalTargets().find((entry) => entry.id === targetId);
+        if (!target || Math.hypot(target.x - this.localSprite.x, target.y - this.localSprite.y) > target.maxRadiusPx) return;
+        const scale = this.tilePx() / 16;
+        this.ranchEffects.play('fx_pet', target.x, target.y - 15 * scale, Math.round(target.y) + 1, scale);
+      }),
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
         if (this.currentMapId === 'farm' && this.hoveredFarmTile) {
@@ -4301,6 +4309,23 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
+  private collectFieldAnimalTargets(): InteractableTarget[] {
+    const maxRadiusPx = this.tilePx() * 1.5;
+    const target = ({ state, sprite }: AmbientChickenHandle | AmbientDuckHandle | AmbientSheepHandle, labelVi: string): InteractableTarget => ({
+      id: `field-livestock:${state.id}`,
+      kind: 'ambient_livestock',
+      labelVi,
+      x: sprite.x,
+      y: sprite.y,
+      maxRadiusPx,
+    });
+    return [
+      ...this.ambientChickens.map((animal) => target(animal, 'Gà')),
+      ...this.ambientDucks.map((animal) => target(animal, 'Vịt')),
+      ...this.ambientSheep.map((animal) => target(animal, 'Cừu')),
+    ];
+  }
+
   private collectSceneInteractableTargets(): InteractableTarget[] {
     const petPos = this.petEntity?.isOnMapVisible() ? this.petEntity.getWorldPosition() : null;
     const interactables = buildMainGameInteractables({
@@ -4328,6 +4353,7 @@ export class WorldScene extends Phaser.Scene {
       interactables.push(
         ...(this.orchardVisual?.interactionTargets() ?? []),
         ...(this.livestockVisual?.interactionTargets() ?? []),
+        ...this.collectFieldAnimalTargets(),
         ...(this.workshopMachines?.interactionTargets() ?? []),
       );
     }

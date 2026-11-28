@@ -466,12 +466,28 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
       return isFarmPlotPixelAdjacent(playerX, playerY, Math.floor(t.x / 16), Math.floor(t.y / 16), 16);
     });
 
+  type NearbyAnimal = {
+    target: InteractableTarget;
+    actions: readonly ContextualAction[];
+    distance: number;
+  };
+  let nearbyAnimal: NearbyAnimal | undefined;
   const scored: Array<{ target: InteractableTarget; action: ContextualAction; alternate?: ContextualAction; score: number }> = [];
   for (const t of interactables) {
     const dx = t.x - playerX;
     const dy = t.y - playerY;
     const dist = Math.hypot(dx, dy);
     if (dist > t.maxRadiusPx) continue;
+    const isAmbient = t.kind === 'ambient_livestock';
+    if (isAmbient || t.deepFarmTarget?.kind === 'animal') {
+      if (!nearbyAnimal || dist < nearbyAnimal.distance) {
+        const actions: readonly ContextualAction[] = isAmbient
+          ? [{ code: 'pet_ambient_livestock', targetId: t.id, labelVi: 'Vuốt ve', keyHint: 'J', available: true }]
+          : input.deepFarmActions?.(t, serverNowMs) ?? [];
+        nearbyAnimal = { target: t, distance: dist, actions };
+      }
+      continue;
+    }
     if (t.kind === 'crop_plot') {
       const plotTileX = Math.floor(t.x / 16);
       const plotTileY = Math.floor(t.y / 16);
@@ -512,7 +528,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
           code: 'roll_toy',
           keyHint: 'K',
           labelVi: heldItem.itemSku === 'toy_cardboard_box' ? 'Đặt hộp giấy xuống sàn' : `Lăn ${heldItem.labelVi}`,
-          targetId: best?.target.id ?? 'floor',
+          targetId: nearbyAnimal?.target.id ?? best?.target.id ?? 'floor',
           available: true,
         }
       : heldItem.itemKind !== 'none'
@@ -525,6 +541,21 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
           }
         : null;
 
+  if (nearbyAnimal) {
+    const { target, actions } = nearbyAnimal;
+    const [primary, alternate] = actions.filter((action) => action.available);
+    return {
+      targetId: target.id,
+      primary: primary ?? null,
+      secondary: alternate ? { ...alternate, keyHint: 'K' } : secondary,
+      livestock: {
+        labelVi: target.labelVi,
+        detailsVi: actions.length
+          ? actions.flatMap((action) => action.reasonVi ? [`${action.labelVi} · ${action.reasonVi}`] : [])
+          : ['Đang tải thông tin chăm sóc.'],
+      },
+    };
+  }
   if (!best) {
     return { targetId: null, primary: null, secondary };
   }

@@ -561,6 +561,15 @@
   }
 }
 
+.olw-livestock-context {
+  display: grid;
+  gap: 3px;
+  padding: 6px 10px;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
 .main-game-interaction-stack .olw-hotbar-tray,
 .main-game-interaction-stack button {
   pointer-events: auto;

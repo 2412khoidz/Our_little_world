@@ -53,6 +53,7 @@ function shortMobileActionLabel(action: ContextualAction): string {
     case 'offer_food_pet':
       return 'Đưa ăn';
     case 'pet_cat':
+    case 'pet_ambient_livestock':
       return 'Vuốt ve';
     case 'roll_toy':
       return 'Chơi';
@@ -421,6 +422,8 @@ export function MainGameInteractionLayer({
       });
       setResolution((cur) =>
         cur.targetId === next.targetId &&
+        cur.livestock?.labelVi === next.livestock?.labelVi &&
+        cur.livestock?.detailsVi.join('\n') === next.livestock?.detailsVi.join('\n') &&
         (cur.primary === next.primary || isSameContextualAction(cur.primary, next.primary)) &&
         (cur.secondary === next.secondary || isSameContextualAction(cur.secondary, next.secondary))
           ? cur
@@ -573,6 +576,12 @@ export function MainGameInteractionLayer({
         data-testid="main-game-interaction-hud"
         onPointerDown={(e) => e.stopPropagation()}
       >
+        {!petCareHud && resolution.livestock && (
+          <div className="olw-game-window olw-livestock-context" data-testid="livestock-context" role="status">
+            <strong>{resolution.livestock.labelVi}</strong>
+            {resolution.livestock.detailsVi.map((detail) => <span key={detail}>{detail}</span>)}
+          </div>
+        )}
         {!petCareHud && !touchActions ? (
           <ContextualPromptBadge
             resolution={resolution}

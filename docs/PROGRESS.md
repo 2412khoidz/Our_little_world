@@ -16,6 +16,7 @@
 - **Đã triển khai, chờ chủ dự án duyệt hình ảnh.** Tám máy có ba trạng thái ở trang trại và bảng xưởng. Hiệu ứng trang trại dựa trên dữ liệu đã xác nhận. Chill và Tension dùng chung artwork mặt nước, phao và khung fullscreen.
 - [Hướng dẫn playtest, ca kiểm tra và giới hạn](handovers/FARMING_FISHING_VISUALS.md).
 - **Phản hồi nghiệm thu của chủ dự án.** Nối thao tác ngay tại cây, vật nuôi và máy, làm rõ công dụng vật phẩm và hai chế độ câu, đồng thời sửa chốt lượt câu cũ khi quăng lại. Hình máy mới chờ chủ dự án xem lại.
+- **Save QA dành cho chủ dự án.** Tám máy và trạng thái hình ảnh đã được duyệt. Save riêng có đồ thử toàn bộ xưởng, 13 vật nuôi và các luống, cây sẵn thu. Đứng cạnh con vật để vuốt ve hoặc xem thao tác chăm sóc đang có và lý do nếu chưa dùng được.
 
 ## DOCS RECONCILIATION — ROADMAP V3, APPROVED `M3a`, `M0` & MULTIPLAYER MAINTENANCE (`main`)
 

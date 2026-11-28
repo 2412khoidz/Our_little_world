@@ -1,4 +1,5 @@
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
+import { DEFAULT_LIVESTOCK_TILES } from '../../shared/farming/farmEntityTiles';
 /**
  * Phaser world presentation for shared cooperative livestock.
  * Uses real animated donor sprites from `FarmRanchLife` (`livestock-ranch.png`),
@@ -18,23 +19,6 @@ import {
 } from '../../shared/art/farmingSpriteAtlas';
 import { TILE_SIZE } from '../../shared/maps';
 import { ensureLivestockTextures, livestockTextureKey } from './proceduralAnimalTextures';
-
-export const DEFAULT_LIVESTOCK_TILES: ReadonlyArray<readonly [number, number]> = [
-  [44, 15],
-  [47, 15],
-  [50, 15],
-  [53, 15],
-  [56, 15],
-  [44, 18],
-  [47, 18],
-  [50, 18],
-  [53, 18],
-  [56, 18],
-  [49, 26],
-  [52, 26],
-  [55, 26],
-  [52, 29],
-];
 
 export function computeLivestockDisplayScale(tilePixelSize = TILE_SIZE): number {
   return 0.75 * (tilePixelSize / 16);
@@ -82,6 +66,7 @@ type FacingDir = 'down' | 'left' | 'right' | 'up';
 
 type AtlasAnimalEntry = {
   kind: 'atlas';
+  labelVi: string;
   sprite: Phaser.GameObjects.Sprite;
   swarmSprite?: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Ellipse;
@@ -105,6 +90,7 @@ type AtlasAnimalEntry = {
 
 type FallbackAnimalEntry = {
   kind: 'fallback';
+  labelVi: string;
   sprite: Phaser.GameObjects.Image;
   badge?: Phaser.GameObjects.Text;
   speciesId: LivestockSpeciesId;
@@ -312,8 +298,8 @@ export class LivestockVisualController {
   }
 
   interactionTargets(): InteractableTarget[] {
-    return Array.from(this.sprites, ([animalId, { sprite }]) => ({
-      id: `livestock:${animalId}`, kind: 'deep_farm', labelVi: 'Vật nuôi',
+    return Array.from(this.sprites, ([animalId, { sprite, labelVi }]) => ({
+      id: `livestock:${animalId}`, kind: 'deep_farm', labelVi,
       x: sprite.x, y: sprite.y, maxRadiusPx: 24 * this.tilePixelSize / 16,
       deepFarmTarget: { kind: 'animal', animalId },
     }));
@@ -347,6 +333,7 @@ export class LivestockVisualController {
       if (!tile) return;
       active.add(item.animal.animalId);
       const speciesId = item.def.speciesId;
+      const labelVi = `${item.def.nameVi} · ${item.animal.nickname}`;
       const atlasSpec = useAtlas ? getLivestockAtlasSpec(speciesId) : null;
 
       if (useAtlas && atlasSpec) {
@@ -356,6 +343,7 @@ export class LivestockVisualController {
           existing.speciesId === speciesId &&
           existing.slotIndex === index
         ) {
+          existing.labelVi = labelVi;
           if (existing.status !== item.status) {
             existing.status = item.status;
             existing.badge?.destroy();
@@ -405,6 +393,7 @@ export class LivestockVisualController {
         const seed = hashSeed(item.animal.animalId, index);
         const entry: AtlasAnimalEntry = {
           kind: 'atlas',
+          labelVi,
           sprite,
           swarmSprite,
           shadow,
@@ -435,7 +424,10 @@ export class LivestockVisualController {
       // Procedural fallback if livestock atlas failed to load
       const cacheKey = `${speciesId}:${item.status}:${index}`;
       const existing = this.sprites.get(item.animal.animalId);
-      if (existing?.kind === 'fallback' && existing.cacheKey === cacheKey) return;
+      if (existing?.kind === 'fallback' && existing.cacheKey === cacheKey) {
+        existing.labelVi = labelVi;
+        return;
+      }
       if (existing) this.destroyEntry(existing);
 
       ensureLivestockTextures(this.scene, speciesId);
@@ -461,6 +453,7 @@ export class LivestockVisualController {
 
       this.sprites.set(item.animal.animalId, {
         kind: 'fallback',
+        labelVi,
         sprite,
         badge,
         speciesId,

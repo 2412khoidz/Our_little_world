@@ -359,6 +359,11 @@ export async function executeMainGameContextAction(
     ctx.onOpenDonorFishing('east_stream');
     return;
   }
+  if (code === 'pet_ambient_livestock') {
+    gameEventBus.emit('cmd:pet-field-animal', { targetId: action.targetId });
+    return;
+  }
+
   if (code === 'apply_deep_farm' && action.deepFarmIntent && ctx.onApplyDeepFarm) {
     await ctx.onApplyDeepFarm(action.deepFarmIntent);
     return;
