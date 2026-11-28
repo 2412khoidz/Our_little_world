@@ -57,6 +57,7 @@ import {
 
 interface ChillFishingModalProps {
   worldId: string;
+  physicalSource?: import('../../shared/interaction/interactionTypes').HeldItemState['physicalSource'];
   spotId?: DonorFishingSpotId;
   localUserId?: string;
   localAvatarConfig?: AvatarConfig;
@@ -135,6 +136,7 @@ export function ChillFishingModal(props: ChillFishingModalProps) {
   return tension && props.spotId === 'east_stream' ? (
     <TensionFishingModal
       worldId={props.worldId}
+      physicalSource={props.physicalSource}
       spotId="east_stream"
       titleVi={DONOR_FISHING_SPOTS.east_stream.labelVi}
       localAvatarConfig={props.localAvatarConfig}
@@ -147,6 +149,7 @@ export function ChillFishingModal(props: ChillFishingModalProps) {
 
 function ChillFishingGame({
   worldId,
+  physicalSource,
   spotId = 'meadow_pond',
   localUserId,
   localAvatarConfig,
@@ -177,6 +180,8 @@ function ChillFishingGame({
   const [catchOutcome, setCatchOutcome] = useState<FishingCatchPresentation | null>(null);
   const [muted, setMuted] = useState(() => isFishingAudioMuted());
 
+  const castIdRef = useRef<string | undefined>(undefined);
+  const pendingCastRef = useRef<string | undefined>(undefined);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const artRef = useRef<RanchFishingUiArt | null>(null);
   const frenzyArtRef = useRef<FishingFrenzyArtBundle | null>(null);
@@ -382,6 +387,7 @@ function ChillFishingGame({
       if (roundSeed.current !== null && !observeRef.current) {
         void postDonorFishingSync(worldId, {
           spotId: spotId as SpotId,
+          castId: castIdRef.current,
           phase: 'idle',
           roundSeed: roundSeed.current,
           progressPermille: 0,
@@ -402,6 +408,7 @@ function ChillFishingGame({
       syncInFlight.current = true;
       void postDonorFishingSync(worldId, {
         spotId: spotId as SpotId,
+        castId: castIdRef.current,
         phase: state.phase,
         roundSeed: roundSeed.current,
         progressPermille: tidefallProgressPermille(state),
@@ -428,7 +435,7 @@ function ChillFishingGame({
       setError(null);
       setBusy(true);
       try {
-        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state), roundSeed.current);
+        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state), roundSeed.current, castIdRef.current);
         if (!mounted.current) return;
         roundSeed.current = null;
         fsmRef.current = createTidefallFishingIdle();
@@ -548,10 +555,10 @@ function ChillFishingGame({
     setObserveMode(false);
     spectatorTargetRef.current = null;
     try {
-      const data = await postDonorFishingStart(worldId, spotId as SpotId);
-      if (!mounted.current) return;
-      roundSeed.current = data.seed;
-      resolveGuard.current = false;
+      pendingCastRef.current ??= crypto.randomUUID();
+      const data = await postDonorFishingStart(worldId, spotId as SpotId, physicalSource, pendingCastRef.current);
+      pendingCastRef.current = undefined;
+      castIdRef.current = data.castId;
       setPreview(data.preview.name);
       const matched =
         matchTidefallCatalogByPreviewName(data.preview.critterId ?? data.preview.name) ??
@@ -596,6 +603,7 @@ function ChillFishingGame({
       playCastWhoosh();
       syncSession(next, true);
     } catch (e) {
+      if (!(e instanceof TypeError)) pendingCastRef.current = undefined;
       const msg = e instanceof Error ? e.message : 'Không quăng được cần — kiểm tra mạng rồi thử lại.';
       setError(msg);
       setMessage(msg);
@@ -603,7 +611,7 @@ function ChillFishingGame({
       castPending.current = false;
       if (mounted.current) setBusy(false);
     }
-  }, [worldId, spotId, syncSession]);
+  }, [worldId, spotId, syncSession, physicalSource]);
 
   const onCanvasTap = useCallback(() => {
     if (observeMode || busy) return;

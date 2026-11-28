@@ -27,6 +27,7 @@ export function validateActionAgainstLatestFrame(
   farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>,
   serverNowMs?: number,
   deepFarmActions?: InteractionResolveInput['deepFarmActions'],
+  canUseHeldToy?: boolean,
 ): boolean {
   if (!frame || frame.mapId !== expectedMapId) return false;
   const fresh = resolveContextualActions({
@@ -39,6 +40,7 @@ export function validateActionAgainstLatestFrame(
     farmPlotByIndex,
     serverNowMs,
     deepFarmActions,
+    canUseHeldToy,
   });
   const intendedAction = which === 'primary' ? intended.primary : intended.secondary;
   const freshAction = which === 'primary' ? fresh.primary : fresh.secondary;

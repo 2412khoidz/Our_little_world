@@ -39,7 +39,7 @@ export async function expectCanvasMapId(canvas: Locator, mapId: string, timeoutM
   await expect.poll(async () => canvas.getAttribute('data-map-id'), { timeout: timeoutMs }).toBe(mapId);
 }
 
-async function emitVqgJump(page: Page, mapId: string, tileX: number, tileY: number): Promise<void> {
+export async function emitVqgJump(page: Page, mapId: string, tileX: number, tileY: number): Promise<void> {
   await waitForVqgJump(page);
   await page.evaluate(
     ({ mapId: mid, tileX: tx, tileY: ty }) => {

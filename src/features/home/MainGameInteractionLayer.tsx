@@ -3,16 +3,17 @@ import { resolveDeepFarmActions, sharedFeedStock, type DeepFarmIntent } from '..
 import type { DeepFarmSnapshot } from '../../shared/farming/deepFarmState';
 import type { WorkshopId } from '../../shared/farming/workshops';
 import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DoorOpen, Hand, MessageCircle, PackageMinus, Sparkles, Store } from 'lucide-react';
 import '../../ui/designSystem/gameUiTokens.css';
 import { gameEventBus, type InteractionFramePayload } from '../../game/eventBus';
 import {
+  EMPTY_HELD_ITEM,
   isEditableInputTarget,
   resolveContextualActions,
 } from '../../shared/interaction/interactionResolver';
 import { buildHotbarSlotsFromInventory } from '../../shared/interaction/inventoryHotbarAdapter';
-import type { ContextualAction, ContextualResolution } from '../../shared/interaction/interactionTypes';
+import type { ContextualAction, ContextualResolution, HeldItemState } from '../../shared/interaction/interactionTypes';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
 import type { InventoryStackRef } from '../../shared/inventory/inventoryLayoutStore';
 import type { InventorySnapshot } from '../../shared/inventory/inventoryTypes';
@@ -24,6 +25,7 @@ import { GameHotbar } from '../../ui/components/GameHotbar';
 import { HeldItemChip } from '../../ui/components/HeldItemChip';
 import { executeMainGameContextAction } from './executeMainGameContextAction';
 import { isSameContextualAction, validateActionAgainstLatestFrame } from './interactionActionGate';
+import { useWorldGamepad } from './useWorldGamepad';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
@@ -86,6 +88,8 @@ function shortMobileActionLabel(action: ContextualAction): string {
       return 'Ngoại hình';
     case 'open_study':
       return 'Học bài';
+    case 'open_home_storage':
+      return 'Kho nhà';
     case 'open_mailbox':
       return 'Hộp thư';
     case 'open_photo_frame':
@@ -139,6 +143,8 @@ function MobileActionPixelIcon({ action }: { action: ContextualAction }) {
 
 export interface MainGameInteractionLayerProps {
   enabled: boolean;
+  physicalMode?: boolean;
+  physicalHeldItem?: HeldItemState | null;
   currentMapId: MapId;
   localUserId: string;
   inventorySnapshot: InventorySnapshot | null;
@@ -152,9 +158,11 @@ export interface MainGameInteractionLayerProps {
   /** True while authoritative pet/inventory mutation is in flight (blocks duplicate J/K). */
   interactionMutationBusy: boolean;
   onOpenInventory: () => void;
+  onOpenHomeStorage?: () => void;
   onCloseTopModal: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onWaterPetAuthoritative?: () => Promise<boolean>;
   onFarmApply?: (
     plotIndex: number,
     action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler',
@@ -184,6 +192,8 @@ export interface MainGameInteractionLayerProps {
 
 export function MainGameInteractionLayer({
   enabled,
+  physicalMode = false,
+  physicalHeldItem,
   currentMapId,
   localUserId,
   inventorySnapshot,
@@ -196,9 +206,11 @@ export function MainGameInteractionLayer({
   petCanFeed,
   interactionMutationBusy,
   onOpenInventory,
+  onOpenHomeStorage,
   onCloseTopModal,
   onFeedPetAuthoritative,
   onPetPetAuthoritative,
+  onWaterPetAuthoritative,
   onFarmApply,
   onOpenFarmMarket,
   onOpenFarmShipping,
@@ -215,19 +227,25 @@ export function MainGameInteractionLayer({
   hotbarBindings,
 }: MainGameInteractionLayerProps) {
   const {
-    heldItem,
+    heldItem: legacyHeldItem,
     waterFillBySku,
     selectSlot,
-    clearHeld,
+    clearHeld: clearLegacyHeld,
   } = useHeldItemFromHotbar(
     useMemo(
-      () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
-      [inventorySnapshot, localUserId, hotbarBindings],
+      () => physicalMode ? [] : buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
+      [inventorySnapshot, localUserId, hotbarBindings, physicalMode],
     ),
+    !physicalMode,
   );
+  const heldItem = physicalMode ? physicalHeldItem ?? EMPTY_HELD_ITEM : legacyHeldItem;
+  const clearHeld = useCallback(() => {
+    if (physicalMode) gameEventBus.emit('cmd:clear-physical-held-item');
+    else clearLegacyHeld();
+  }, [clearLegacyHeld, physicalMode]);
   const hotbarSlots = useMemo(
-    () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
-    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku],
+    () => physicalMode ? [] : buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
+    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku, physicalMode],
   );
 
   const [resolution, setResolution] = useState<ContextualResolution>({
@@ -294,13 +312,9 @@ export function MainGameInteractionLayer({
   }, [currentMapId]);
 
   useEffect(() => {
-    resolutionRef.current = resolution;
-  }, [resolution]);
-
-  useEffect(() => {
     heldRef.current = heldItem;
-    gameEventBus.emit('cmd:sync-held-item', heldItem);
-  }, [heldItem]);
+    if (!physicalMode) gameEventBus.emit('cmd:sync-held-item', heldItem);
+  }, [heldItem, physicalMode]);
 
   const petCareHud = petCareOverlayActive || isPetCareModeActive();
   const showHud = enabled && !decorateActive && !modalOpen;
@@ -317,12 +331,15 @@ export function MainGameInteractionLayer({
     () => ({
       mapId: currentMapId,
       heldItem,
+      physicalMode,
       hasPet: Boolean(petSnapshot),
       petCanFeed,
       livingPetLocalSimulation: livingPetSim,
       onOpenInventory,
+      onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onWaterPetAuthoritative,
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
@@ -342,12 +359,15 @@ export function MainGameInteractionLayer({
     [
       currentMapId,
       heldItem,
+      physicalMode,
       petSnapshot,
       petCanFeed,
       livingPetSim,
       onOpenInventory,
+      onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
+      onWaterPetAuthoritative,
       onFarmApply,
       onOpenFarmMarket,
       onOpenFarmShipping,
@@ -378,6 +398,7 @@ export function MainGameInteractionLayer({
           farmPlotByIndex,
           farmServerNowMs,
           deepFarmActions,
+          !physicalMode,
         )
       ) {
         return;
@@ -396,7 +417,7 @@ export function MainGameInteractionLayer({
         setLocalActionBusy(false);
       }
     },
-    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs, deepFarmActions],
+    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs, deepFarmActions, physicalMode],
   );
 
   const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
@@ -406,7 +427,8 @@ export function MainGameInteractionLayer({
     const onFrame = (frame: InteractionFramePayload) => {
       lastFrameRef.current = frame;
       if (frame.mapId !== mapIdRef.current) {
-        setResolution({ targetId: null, primary: null, secondary: null });
+        resolutionRef.current = { targetId: null, primary: null, secondary: null };
+        setResolution(resolutionRef.current);
         return;
       }
       const next = resolveContextualActions({
@@ -419,19 +441,22 @@ export function MainGameInteractionLayer({
         farmPlotByIndex,
         serverNowMs: farmServerNowMs,
         deepFarmActions,
+        canUseHeldToy: !physicalMode,
       });
-      setResolution((cur) =>
+      const cur = resolutionRef.current;
+      if (!(
         cur.targetId === next.targetId &&
         cur.livestock?.labelVi === next.livestock?.labelVi &&
         cur.livestock?.detailsVi.join('\n') === next.livestock?.detailsVi.join('\n') &&
         (cur.primary === next.primary || isSameContextualAction(cur.primary, next.primary)) &&
         (cur.secondary === next.secondary || isSameContextualAction(cur.secondary, next.secondary))
-          ? cur
-          : next,
-      );
+      )) {
+        resolutionRef.current = next;
+        setResolution(next);
+      }
     };
     return gameEventBus.on('evt:interaction-frame', onFrame);
-  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs, deepFarmActions]);
+  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs, deepFarmActions, physicalMode]);
 
   useEffect(() => {
     return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
@@ -445,7 +470,7 @@ export function MainGameInteractionLayer({
     });
   }, [showHud, onFarmApply, interactionMutationBusy]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.code === 'Escape') {
@@ -455,13 +480,13 @@ export function MainGameInteractionLayer({
         }
         return;
       }
-      if (!showHud || isEditableInputTarget(e.target)) return;
+      if (e.defaultPrevented || !showHud || isEditableInputTarget(e.target)) return;
       if (e.code === 'KeyI') {
         e.preventDefault();
         onOpenInventory();
         return;
       }
-      if (e.code === 'KeyH') {
+      if (!physicalMode && e.code === 'KeyH') {
         e.preventDefault();
         toggleHotbarCompact();
         return;
@@ -476,6 +501,7 @@ export function MainGameInteractionLayer({
         void executeSecondary();
         return;
       }
+      if (physicalMode) return;
       const num = Number(e.key);
       if (Number.isInteger(num) && num >= 1 && num <= 8) {
         e.preventDefault();
@@ -486,7 +512,16 @@ export function MainGameInteractionLayer({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld, toggleHotbarCompact, noteHotbarActivity]);
+  }, [showHud, modalOpen, executePrimary, executeSecondary, selectSlot, onOpenInventory, onCloseTopModal, clearHeld, toggleHotbarCompact, noteHotbarActivity, physicalMode]);
+
+  useWorldGamepad(enabled && !decorateActive, {
+    primary: executePrimary,
+    secondary: executeSecondary,
+    inventory: () => { if (showHud) onOpenInventory(); },
+    back: () => { if (modalOpen) onCloseTopModal(); else if (showHud) clearHeld(); },
+    previousRow: () => { if (showHud && physicalMode) gameEventBus.emit('cmd:rotate-physical-hotbar', -1); },
+    nextRow: () => { if (showHud && physicalMode) gameEventBus.emit('cmd:rotate-physical-hotbar', 1); },
+  });
 
   if (!showHud) return null;
 
@@ -574,6 +609,7 @@ export function MainGameInteractionLayer({
       <div
         className={`main-game-interaction-stack ${petCareHud ? 'main-game-interaction-stack--pet-care' : ''}`}
         data-testid="main-game-interaction-hud"
+        data-physical-inventory={physicalMode || undefined}
         onPointerDown={(e) => e.stopPropagation()}
       >
         {!petCareHud && resolution.livestock && (
@@ -585,6 +621,7 @@ export function MainGameInteractionLayer({
         {!petCareHud && !touchActions ? (
           <ContextualPromptBadge
             resolution={resolution}
+            disabled={inputsLocked}
             unavailableToast={noticeText}
             onPrimary={() => void executePrimary()}
             onSecondary={() => void executeSecondary()}
@@ -622,7 +659,7 @@ export function MainGameInteractionLayer({
             description={inventorySnapshot?.catalog.find((item) => item.sku === heldItem.itemSku)?.descriptionVi}
           />
         </div>}
-        <GameHotbar
+        {!physicalMode && <GameHotbar
           slots={hotbarSlots}
           heldItem={heldItem}
           onSelectSlot={selectSlot}
@@ -636,7 +673,7 @@ export function MainGameInteractionLayer({
           mobileMode={mobileModeProp}
           slotsPerPage={isMobileHud ? hotbarSlotsPerPage : 8}
           hideKeycaps={isMobileHud}
-        />
+        />}
       </div>
     </>
   );

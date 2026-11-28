@@ -19,6 +19,7 @@ import { playCastWhoosh, playCatchFanfare, playEscapeSplash } from './fishingAud
 
 interface TensionFishingModalProps {
   worldId: string;
+  physicalSource?: import('../../shared/interaction/interactionTypes').HeldItemState['physicalSource'];
   spotId: DonorFishingSpotId;
   titleVi: string;
   localAvatarConfig?: AvatarConfig;
@@ -28,7 +29,7 @@ interface TensionFishingModalProps {
 }
 
 export function TensionFishingModal({
-  worldId, spotId, titleVi, localAvatarConfig, onClose, onInventoryRefresh, onSwitchMode,
+  worldId, physicalSource, spotId, titleVi, localAvatarConfig, onClose, onInventoryRefresh, onSwitchMode,
 }: TensionFishingModalProps) {
   const [phase, setPhase] = useState<'idle' | 'reeling' | 'done'>('idle');
   const [casting, setCasting] = useState(false);
@@ -38,6 +39,8 @@ export function TensionFishingModal({
   const [pulling, setPulling] = useState(false);
   const active = useRef(false);
   const roundSeed = useRef<number | null>(null);
+  const castId = useRef<string | undefined>(undefined);
+  const pendingCastId = useRef<string | undefined>(undefined);
   const resolving = useRef(false);
   const castPending = useRef(false);
   const [retryCatch, setRetryCatch] = useState(false);
@@ -69,7 +72,7 @@ export function TensionFishingModal({
       if (roundSeed.current !== null) {
         const seed = roundSeed.current;
         roundSeed.current = null;
-        void postDonorFishingSync(worldId, { spotId, phase: 'idle', roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
+        void postDonorFishingSync(worldId, { spotId, phase: 'idle', castId: castId.current, roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
           .catch(() => undefined);
       }
     };
@@ -97,7 +100,11 @@ export function TensionFishingModal({
     setError('');
     setOutcome(null);
     try {
-      const { seed, preview } = await postDonorFishingStart(worldId, spotId);
+      pendingCastId.current ??= crypto.randomUUID();
+      const data = await postDonorFishingStart(worldId, spotId, physicalSource, pendingCastId.current);
+      pendingCastId.current = undefined;
+      const { seed, preview } = data;
+      castId.current = data.castId;
       if (!active.current) return;
       roundSeed.current = seed;
       const fallback = resolveCanonicalFishByCritterId(preview.critterId ?? preview.name);
@@ -123,7 +130,7 @@ export function TensionFishingModal({
     setCasting(true);
     hold(false);
     try {
-      const result = await postDonorFishingResolve(worldId, tensionProgressPermille(reel.current), roundSeed.current);
+      const result = await postDonorFishingResolve(worldId, tensionProgressPermille(reel.current), roundSeed.current, castId.current);
       if (!active.current) return;
       roundSeed.current = null;
       const fallback = resolveCanonicalFishByCritterId(result.critterId ?? '');
@@ -155,7 +162,7 @@ export function TensionFishingModal({
     const seed = roundSeed.current;
     roundSeed.current = null;
     if (seed !== null) {
-      void postDonorFishingSync(worldId, { spotId, phase: 'idle', roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
+      void postDonorFishingSync(worldId, { spotId, phase: 'idle', castId: castId.current, roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
         .catch(() => undefined);
     }
     setRetryCatch(false);

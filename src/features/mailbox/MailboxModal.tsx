@@ -68,7 +68,9 @@ export function MailboxModal({
       .filter((item) => item.qty > 0)
       .map((item) => {
         const meta = catalogBySku.get(item.itemSku);
-        const sourceScope: MailboxGiftSourceScope = item.ownerScope === 'shared' ? 'shared' : 'personal';
+        const physicalInventory = inventory?.physicalVersion !== undefined;
+        const sourceScope: MailboxGiftSourceScope = !physicalInventory && item.ownerScope === 'shared' ? 'shared' : 'personal';
+        const sourceLabel = physicalInventory ? 'Ba lô' : sourceScope === 'shared' ? 'Túi chung' : 'Ngăn riêng';
         const quality = item.quality ?? 'normal';
         return {
           key: `${sourceScope}:${quality}:${item.itemSku}`,
@@ -76,7 +78,7 @@ export function MailboxModal({
           sku: item.itemSku,
           quality,
           qty: item.qty,
-          label: `${meta?.nameVi ?? item.itemSku} (${quality}, ${sourceScope === 'shared' ? 'Túi chung' : 'Ngăn riêng'}, còn ${item.qty})`,
+          label: `${meta?.nameVi ?? item.itemSku} (${quality}, ${sourceLabel}, còn ${item.qty})`,
         };
       });
   }, [catalogBySku, inventory]);

@@ -16,13 +16,16 @@ const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
 
 export interface MainGameActionContext {
+  physicalMode?: boolean;
   mapId: MapId;
   heldItem: HeldItemState;
   hasPet: boolean;
   petCanFeed: boolean;
   onOpenInventory: () => void;
+  onOpenHomeStorage?: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
+  onWaterPetAuthoritative?: () => Promise<boolean>;
   onFarmApply?: (
     plotIndex: number,
     action: 'till' | 'plant' | 'water' | 'harvest' | 'fertilize' | 'place_sprinkler' | 'remove_sprinkler',
@@ -98,7 +101,7 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Hãy chọn thức ăn trên thanh đồ (1–8).');
       return;
     }
-    if (ctx.heldItem.itemSku !== PET_KIBBLE_BASIC_SKU || (ctx.heldItem.ownerScope ?? 'shared') !== 'shared' || ctx.heldItem.quality !== 'normal') {
+    if (ctx.heldItem.itemSku !== PET_KIBBLE_BASIC_SKU || (!ctx.physicalMode && (ctx.heldItem.ownerScope ?? 'shared') !== 'shared') || ctx.heldItem.quality !== 'normal') {
       ctx.onNotice(MISSION02_PENDING_VI, true);
       return;
     }
@@ -113,7 +116,7 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Bé ngửi món — đợi máy chủ xác nhận…');
       return;
     }
-    if (ctx.livingPetLocalSimulation) {
+    if (ctx.livingPetLocalSimulation && !ctx.physicalMode) {
       const sku = ctx.heldItem.itemSku ?? PET_KIBBLE_BASIC_SKU;
       gameEventBus.emit('cmd:pet-local-food-offer', {
         offerId: `local-offer-${Date.now()}`,
@@ -218,14 +221,15 @@ export async function executeMainGameContextAction(
       ctx.onNotice('Rót nước vào bát gần (mô phỏng, chưa RPC bát).');
       return;
     }
-    if (mainGameBowlPlayable) {
+    if (ctx.physicalMode && !(await ctx.onWaterPetAuthoritative?.())) return;
+    if (mainGameBowlPlayable || ctx.physicalMode) {
       const nextLevel = waterPitcherPourDelta(ctx.heldItem.waterFillLevel);
       gameEventBus.emit('evt:held-water-adjust', {
         level: nextLevel,
         iconId: nextLevel > 0 ? 'water_pitcher_full' : 'water_pitcher_empty',
         itemSku: 'water_pitcher',
       });
-      gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
+      if (!ctx.physicalMode) gameEventBus.emit('cmd:apply-home-bowl', { kind: 'water' });
       ctx.onNotice('Đã rót nước vào bát — bé có thể uống khi khát.');
       return;
     }
@@ -242,6 +246,10 @@ export async function executeMainGameContextAction(
         ownerScope: ctx.heldItem.ownerScope ?? 'shared',
       });
       ctx.onNotice('Đổ vào bát trong chế độ chăm sóc — dùng J khi cầm món.');
+      return;
+    }
+    if (ctx.physicalMode) {
+      await ctx.onFeedPetAuthoritative();
       return;
     }
     if (mainGameBowlPlayable) {
@@ -288,6 +296,10 @@ export async function executeMainGameContextAction(
     return;
   }
 
+  if (code === 'open_home_storage') {
+    ctx.onOpenHomeStorage?.();
+    return;
+  }
   if (emitDiegeticOpen(code, action.targetId)) return;
 
   const plotId = plotIdFromInteractableId(action.targetId);

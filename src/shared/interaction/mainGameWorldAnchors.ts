@@ -1,6 +1,13 @@
 import { TILE_SIZE } from '../maps';
 import type { MapId } from '../types';
 
+export const HOME_STORAGE_ANCHOR = { x: 18, y: 176, maxRadiusPx: 26 } as const;
+
+export function canReachHomeStorage(position: { mapId: string; x?: number; y?: number } | null): boolean {
+  return position?.mapId === 'home' && typeof position.x === 'number' && typeof position.y === 'number'
+    && Math.hypot(position.x - HOME_STORAGE_ANCHOR.x, position.y - HOME_STORAGE_ANCHOR.y) <= HOME_STORAGE_ANCHOR.maxRadiusPx;
+}
+
 /** Pixel anchors for diegetic interactables (kept in sync with WorldScene Demo E accents). */
 export const MAIN_GAME_WORLD_ANCHORS = {
   home: {

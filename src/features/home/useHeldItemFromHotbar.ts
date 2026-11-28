@@ -13,7 +13,7 @@ const DEFAULT_WATER_FILL_BY_SKU: Record<string, number> = {
 /**
  * Holds player intent (anchor); displayed/synced held item is always reconciled by SKU+quality.
  */
-export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
+export function useHeldItemFromHotbar(slots: readonly HotbarSlot[], enabled = true) {
   const [heldAnchor, setHeldAnchor] = useState<HeldItemState>(EMPTY_HELD_ITEM);
   const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>(
     DEFAULT_WATER_FILL_BY_SKU,
@@ -39,6 +39,7 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
   }, [heldAnchor.itemSku, heldItem.itemKind]);
 
   useEffect(() => {
+    if (!enabled) return;
     return gameEventBus.on('evt:held-water-adjust', ({ level, iconId, itemSku }) => {
       const clamped = Math.max(0, Math.min(100, Math.round(level)));
       setWaterFillBySku((prev) => {
@@ -59,13 +60,14 @@ export function useHeldItemFromHotbar(slots: readonly HotbarSlot[]) {
         };
       });
     });
-  }, [heldAnchor.itemSku]);
+  }, [enabled, heldAnchor.itemSku]);
 
   useEffect(() => {
+    if (!enabled) return;
     return gameEventBus.on('cmd:select-hotbar-slot', ({ slotIndex }) => {
       setRequestedSlot(slotIndex);
     });
-  }, []);
+  }, [enabled]);
 
   const selectSlot = (index: number) => {
     void gameAudio.unlock();

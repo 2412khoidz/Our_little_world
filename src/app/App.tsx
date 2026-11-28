@@ -148,6 +148,10 @@ import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
 import { getIslandZoneMeta } from '../shared/world/worldGraph';
 
+const PhysicalInventoryPilot = import.meta.env.DEV
+  ? lazy(() => import('../features/inventory/PhysicalInventoryPilot'))
+  : null;
+
 const DevSpikeLabModal = import.meta.env.DEV
   ? lazy(() =>
       import('../features/spike/SpikeLabModal').then((m) => ({
@@ -384,6 +388,7 @@ function MainCoupleApp({
     | 'pwa'
     | 'spike'
     | 'inventory'
+    | 'home_storage'
     | 'pet'
     | 'study'
     | 'photo'
@@ -402,6 +407,7 @@ function MainCoupleApp({
   >(null);
   const [inventoryEntry, setInventoryEntry] = useState<{ key: string; snapshot: InventorySnapshot } | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [physicalHeldItem, setPhysicalHeldItem] = useState<HeldItemState | null>(null);
   const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
   const [heldItemSku, setHeldItemSku] = useState<string | null>(null);
   const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>({
@@ -778,14 +784,16 @@ function MainCoupleApp({
       }
       if (res.data.worldId !== targetWorldId) return;
       const next = res.data;
-      setSavedLayoutEntry((prev) => ({
-        key,
-        layout: reconcileInventoryLayout(
-          prev?.key === key ? prev.layout : loadInventoryLayout(targetWorldId, userId),
-          next,
-          userId,
-        ),
-      }));
+      if (next.physicalVersion === undefined) {
+        setSavedLayoutEntry((prev) => ({
+          key,
+          layout: reconcileInventoryLayout(
+            prev?.key === key ? prev.layout : loadInventoryLayout(targetWorldId, userId),
+            next,
+            userId,
+          ),
+        }));
+      }
       setInventoryEntry({ key, snapshot: next });
     },
     [backend, showToast],
@@ -959,7 +967,9 @@ function MainCoupleApp({
           petId: petSnapshot.id,
           action: careAction,
           expectedBowlVersion: petCareBowlVersion,
-          ownerScope: 'shared',
+          ownerScope: backend.inventory?.physical && currentUser ? 'user:' + currentUser.userId : 'shared',
+          physicalSource: action === 'feed' && physicalHeldItem?.itemSku === PET_KIBBLE_BASIC_SKU
+            ? physicalHeldItem.physicalSource : undefined,
           itemSku: PET_KIBBLE_BASIC_SKU,
           quality: 'normal',
           idempotencyKey: makeIdempotencyKey(`pet-care-${careAction}`),
@@ -971,7 +981,7 @@ function MainCoupleApp({
             void refreshPetSnapshot(targetWorldId);
             void refreshInventorySnapshot(targetWorldId);
           }
-          return;
+          return false;
         }
         setPetCareBowlVersion(res.data.bowl.version);
         if (res.data.pet) {
@@ -989,7 +999,7 @@ function MainCoupleApp({
         );
         const studyActiveNow = Boolean(studySnapshot?.sharedSession || studySnapshot?.soloSession);
         if (!studyActiveNow) playPetFeedbackChime(action);
-        return;
+        return true;
       }
 
       const res = await backend.pet.interactPet({
@@ -1019,6 +1029,8 @@ function MainCoupleApp({
     [
       backend,
       petCareBowlVersion,
+      physicalHeldItem,
+      currentUser,
       petSnapshot,
       refreshInventorySnapshot,
       refreshPetSnapshot,
@@ -1108,7 +1120,9 @@ function MainCoupleApp({
       void refreshInventorySnapshot(targetWorldId);
       gameEventBus.emit('cmd:sync-mailbox-unread', { unreadCount: res.data.mailbox.unreadCount });
       realtimeRef.current?.notifyWorldMutated('mailbox');
-      showToast('Đã mở thư! Kiểm tra ngăn riêng trong túi nếu có quà kèm nhé.');
+      showToast(backend.inventory?.physical
+        ? 'Đã mở thư! Quà kèm nằm trong ba lô hoặc ngăn Đồ giữ hộ tại tủ.'
+        : 'Đã mở thư! Kiểm tra ngăn riêng trong túi nếu có quà kèm nhé.');
     },
     [backend, refreshInventorySnapshot, showToast],
   );
@@ -1246,6 +1260,7 @@ function MainCoupleApp({
             petId: petSnapshot.id,
             expectedVersion: petSnapshot.version,
             ownerScope,
+            physicalSource: physicalHeldItem?.itemSku === sku ? physicalHeldItem.physicalSource : undefined,
             itemSku: sku,
             quality,
             idempotencyKey: makeIdempotencyKey(`pet-care-consume-${sku}`),
@@ -1273,7 +1288,7 @@ function MainCoupleApp({
           playPetFeedbackChime('feed');
         })();
       }),
-    [backend, petSnapshot, refreshInventorySnapshot, refreshPetSnapshot, showToast],
+    [backend, petSnapshot, physicalHeldItem, refreshInventorySnapshot, refreshPetSnapshot, showToast],
   );
 
   useEffect(() => {
@@ -3058,10 +3073,13 @@ function MainCoupleApp({
           activeModal === 'deep_flowers' || activeModal === 'deep_livestock'
         }
         contextualInteractionHud
+        physicalHomeStorage={Boolean(backend.inventory?.physical)}
         toast={toast}
       />
 
       <MainGameInteractionLayer
+        physicalMode={Boolean(backend.inventory?.physical)}
+        physicalHeldItem={physicalHeldItem}
         localUserId={currentUser.userId}
         key={currentMapId}
         petCareOverlayActive={petCareMode}
@@ -3088,8 +3106,9 @@ function MainCoupleApp({
         } : undefined}
         onOpenInventory={() => {
           setActiveModal('inventory');
-          void refreshInventorySnapshot();
+          if (!backend.inventory?.physical) void refreshInventorySnapshot();
         }}
+        onOpenHomeStorage={backend.inventory?.physical ? () => setActiveModal('home_storage') : undefined}
         onCloseTopModal={() => {
           if (activeNpcDialogue) setActiveNpcDialogue(null);
           else if (activeModal) setActiveModal(null);
@@ -3101,6 +3120,7 @@ function MainCoupleApp({
         onPetPetAuthoritative={async () => {
           await handleInteractPet('pet');
         }}
+        onWaterPetAuthoritative={async () => (await handleInteractPet('water')) === true}
         onFarmApply={backend.farm ? async (plotIndex, action, seedSku, opts) => {
           const targetWorldId = snapshotRef.current?.world.id;
           if (!targetWorldId) return;
@@ -3113,7 +3133,8 @@ function MainCoupleApp({
               seedSku,
               fertilizerSku: opts?.fertilizerSku,
               sprinklerSku: opts?.sprinklerSku,
-              toolSku: opts?.toolSku,
+              toolSku: opts?.toolSku ?? (physicalHeldItem?.itemSku?.startsWith('tool_') ? physicalHeldItem.itemSku : undefined),
+              physicalSource: physicalHeldItem?.physicalSource,
               useEnvironment: true,
               farmVersion: farmVersionRef.current,
               idempotencyKey: makeIdempotencyKey(`farm-${action}-${plotIndex}`),
@@ -3583,7 +3604,27 @@ function MainCoupleApp({
 
       {activeModal === 'pwa' && <IosInstallModal onClose={() => setActiveModal(null)} />}
 
-      {activeModal === 'inventory' && backend.inventory && currentUser && (
+      {import.meta.env.DEV && PhysicalInventoryPilot && backend.inventory?.physical && worldId && currentUser && (
+        <Suspense fallback={null}>
+          <PhysicalInventoryPilot
+            key={`${worldId}:${currentUser.userId}`}
+            backend={backend.inventory.physical}
+            worldId={worldId}
+            userId={currentUser.userId}
+            revision={inventorySnapshot?.physicalVersion}
+            location={currentMapId}
+            connection={connectionStatus}
+            showHud={!isAnyModalOpen && !decorateActive}
+            onHeldItemChange={setPhysicalHeldItem}
+            mode={activeModal === 'home_storage' ? 'storage' : activeModal === 'inventory' ? 'backpack' : null}
+            touch={layoutMode !== 'desktop'}
+            onOpen={() => setActiveModal('inventory')}
+            onClose={() => setActiveModal(null)}
+          />
+        </Suspense>
+      )}
+
+      {activeModal === 'inventory' && backend.inventory && !backend.inventory.physical && currentUser && (
         <InventoryModal
           key={layoutScopeKey}
           snapshot={inventorySnapshot}
@@ -3613,7 +3654,7 @@ function MainCoupleApp({
             setPetSoundMutedState(next);
           }}
           onAdoptOrRename={handleAdoptOrRenamePet}
-          onInteract={handleInteractPet}
+          onInteract={async (action) => { await handleInteractPet(action); }}
           onClaimFreeKibble={handleClaimFreeKibble}
           onClose={() => setActiveModal(null)}
         />
@@ -3883,6 +3924,7 @@ function MainCoupleApp({
         <ChillFishingModal
           worldId={worldId}
           spotId={donorChillFishingSpot}
+          physicalSource={physicalHeldItem?.physicalSource}
           localUserId={currentUser.userId}
           localAvatarConfig={localMember?.avatarConfig}
           partnerAvatarConfig={partnerMember?.avatarConfig}

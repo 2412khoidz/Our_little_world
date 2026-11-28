@@ -947,6 +947,16 @@ export function createDevLanWsHub({
     getBilliardsLobbyState(worldId) {
       return billiardsLobby.getLobbyDebugState(worldId);
     },
+    getActivePlayerPosition(worldId, userId) {
+      const room = rooms.get(worldId);
+      if (!room || !Array.from(room.slots.values()).some((slot) => slot.userId === userId && !slot.closing)) return null;
+      const present = buildAuthoritativePresences(worldId).find((entry) => entry.userId === userId);
+      if (!present) return null;
+      const packet = room.lastMovementByUser.get(userId);
+      return packet?.mapId === present.mapId && packet.sessionId === present.sessionId
+        ? { mapId: present.mapId, x: packet.x, y: packet.y, facing: packet.facing }
+        : { mapId: present.mapId };
+    },
     getRoomDebugStats(worldId) {
       const room = rooms.get(worldId);
       if (!room) return null;

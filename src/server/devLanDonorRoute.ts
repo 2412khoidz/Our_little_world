@@ -40,6 +40,8 @@ export interface DonorFishSessionRecord {
   pointerDir?: number;
   pointerSpeed?: number;
   anglerUserId: string;
+  castId?: string;
+  rodInstanceId?: string;
   updatedAtMs: number;
 }
 
@@ -121,6 +123,7 @@ export async function tryHandleDonorDevLan(ctx: {
   ) => void;
   isWorldMember: (worldId: string, userId: string) => boolean;
   userId: string;
+  physicalGameplay?: { validateRod: () => string } | null;
 }): Promise<boolean> {
   const {
     req,
@@ -312,7 +315,8 @@ export async function tryHandleDonorDevLan(ctx: {
       sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa có phiên câu — hãy quăng cần trước.' });
       return true;
     }
-    if (row.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== row.seed)) {
+    if (row.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== row.seed) ||
+        (ctx.physicalGameplay && (!row.castId || row.castId !== body.castId))) {
       sendJson(res, 409, { ok: false, code: 'FISHING_ROUND_CHANGED', message: 'Lượt câu đã thay đổi. Hãy quăng cần lại.' });
       return true;
     }
@@ -346,6 +350,28 @@ export async function tryHandleDonorDevLan(ctx: {
   if (req.method === 'POST' && route === '/donor/fishing/start') {
     v015.donorFishSession ??= {};
     const spotId = parseDonorFishingSpot(body.spotId);
+    const castId = ctx.physicalGameplay && typeof body.castId === 'string' ? body.castId : undefined;
+    const reqHash = JSON.stringify([spotId, body.physicalSource]);
+    let rodInstanceId: string | undefined;
+    if (ctx.physicalGameplay) {
+      if (!castId || !/^[a-zA-Z0-9_-]{8,120}$/.test(castId)) {
+        sendJson(res, 400, { ok: false, code: 'VALIDATION_ERROR', message: 'Thiếu mã lượt câu. Hãy quăng cần lại.' });
+        return true;
+      }
+      const prior = ctx.checkV015Idempotency?.(v015, worldId, userId, 'physical_fishing_cast', castId, reqHash);
+      if (prior) {
+        if (prior.conflict) sendJson(res, 409, { ok: false, code: 'IDEMPOTENCY_CONFLICT', message: 'Mã lượt câu đã được dùng.' });
+        else sendJson(res, 200, { ok: true, data: prior.response });
+        return true;
+      }
+      const current = v015.donorFishSession[worldId];
+      if (current?.castId && !current.resolved && current.anglerUserId !== userId
+        && current.phase !== 'idle' && nowMs - current.updatedAtMs < 60_000) {
+        sendJson(res, 409, { ok: false, code: 'BUSY', message: 'Người thương đang câu. Hãy chờ lượt này kết thúc.' });
+        return true;
+      }
+      rodInstanceId = ctx.physicalGameplay.validateRod();
+    }
     const seed = Math.floor(Math.random() * 0xffff_ffff);
     const hour = new Date(nowMs).getHours();
     const preview = donorFishingPreview(seed, nowMs, hour, spotId);
@@ -365,25 +391,25 @@ export async function tryHandleDonorDevLan(ctx: {
       progressPermille: 0,
       pointerNorm: 0.12,
       anglerUserId: userId,
+      ...(castId ? { castId, rodInstanceId } : {}),
       updatedAtMs: nowMs,
     };
+    const data = {
+      seed, ...(castId ? { castId } : {}),
+      spotId: preview.spotId,
+      preview: {
+        name: preview.name,
+        critterId: preview.critterId,
+        itemSku: preview.itemSku,
+        labelVi: preview.labelVi,
+        rarity: preview.rarity,
+        spriteUrl: preview.spriteUrl,
+      },
+    };
+    if (castId) ctx.saveV015Idempotency?.(v015, worldId, userId, 'physical_fishing_cast', castId, reqHash, data);
     saveDb();
     broadcastEvent?.(worldId, 'donor_fishing_sync', donorFishSessionView(v015.donorFishSession[worldId]!));
-    sendJson(res, 200, {
-      ok: true,
-      data: {
-        seed,
-        spotId: preview.spotId,
-        preview: {
-          name: preview.name,
-          critterId: preview.critterId,
-          itemSku: preview.itemSku,
-          labelVi: preview.labelVi,
-          rarity: preview.rarity,
-          spriteUrl: preview.spriteUrl,
-        },
-      },
-    });
+    sendJson(res, 200, { ok: true, data });
     return true;
   }
 
@@ -394,7 +420,8 @@ export async function tryHandleDonorDevLan(ctx: {
       sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa câu — hãy quăng cần trước.' });
       return true;
     }
-    if (session.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== session.seed)) {
+    if (session.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== session.seed) ||
+        (ctx.physicalGameplay && (!session.castId || session.castId !== body.castId))) {
       sendJson(res, 409, { ok: false, code: 'FISHING_ROUND_CHANGED', message: 'Lượt câu đã thay đổi. Hãy quăng cần lại.' });
       return true;
     }

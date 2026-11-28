@@ -152,7 +152,9 @@ export async function tryHandleFarmDevLan(ctx: {
     const toolSku = body.toolSku ? String(body.toolSku) : null;
     const useEnvironment = typeof body.useEnvironment === 'boolean' ? body.useEnvironment : true;
     const idempotencyKey = String(body.idempotencyKey ?? '').trim();
-    const reqHash = JSON.stringify([plotIndex, action, seedSku, fertilizerSku, sprinklerSku, toolSku, useEnvironment]);
+    const reqHash = JSON.stringify([plotIndex, action, seedSku, fertilizerSku, sprinklerSku, toolSku, useEnvironment,
+      ...(body.physicalSource ? [body.physicalSource] : []),
+    ]);
     if (idempotencyKey && checkV015Idempotency) {
       const prior = checkV015Idempotency(v015, worldId, userId, 'farm_apply', idempotencyKey, reqHash);
       if (prior) {

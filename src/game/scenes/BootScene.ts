@@ -208,6 +208,10 @@ export class BootScene extends Phaser.Scene {
       this.load.image(key, url);
     }
 
+    if (import.meta.env.DEV) {
+      this.load.image('olw-drop-items16', '/assets/farming/items-16.png');
+      this.load.image('olw-drop-items32', '/assets/farming/items-32.png');
+    }
     this.load.atlas(RANCH_ACTIONS_ATLAS, RANCH_ACTIONS_URL, RANCH_ACTIONS_URL.replace('.png', '.json'));
     this.load.atlas(RANCH_FISHING_ATLAS, RANCH_FISHING_URL, RANCH_FISHING_URL.replace('.png', '.json'));
     this.load.atlas(FARMING_CROPS_ATLAS_KEY, FARMING_CROPS_ATLAS_PNG, FARMING_CROPS_ATLAS_JSON);

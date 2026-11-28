@@ -128,6 +128,7 @@ export const V015_CATALOG = [
 
 /** Versioned save initialization. Existing worlds recover essential tools once. */
 export function initializeDevLanWorldInventory(v015, worldId, nowIso, newWorld = false) {
+  if (v015.physicalInventory?.[worldId]) return false;
   if ((v015.inventoryStarterVersions[worldId] ?? 0) >= INVENTORY_STARTER_VERSION) return false;
   v015.inventory[worldId] = initializeWorldInventory(v015.inventory[worldId] ?? [], worldId, nowIso, newWorld);
   v015.wallets[worldId] ??= { coins: STARTER_WALLET_COINS };
@@ -366,6 +367,7 @@ export async function handleV015Route({
   bumpWorldStateVersion = null,
   tryHandleFarmDevLan = null,
   tryHandleDonorDevLan = null,
+  physicalGameplay = null,
 }) {
   const v015 = ensureV015Db(db);
 
@@ -392,6 +394,7 @@ export async function handleV015Route({
       isWorldMember,
       sendJson,
       getInventoryList: (worldId) => getWorldInventoryList(v015, worldId),
+      physicalGameplay,
       setInventoryList: (worldId, items) => {
         v015.inventory[worldId] = items;
       },
@@ -753,7 +756,7 @@ export async function handleV015Route({
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
       return true;
     }
-    const reqHash = JSON.stringify([petId, action, expectedVersion, scope, sku, quality]);
+    const reqHash = JSON.stringify([petId, action, expectedVersion, scope, sku, quality, ...(body.physicalSource ? [body.physicalSource] : [])]);
     const prior = checkV015Idempotency(v015, worldId, userId, 'pet_care_apply', key, reqHash);
     if (prior) {
       if (prior.conflict) {
@@ -863,7 +866,8 @@ export async function handleV015Route({
       sendJson(res, 403, { ok: false, code: 'FORBIDDEN', message: 'Bạn không thuộc ngôi nhà này.' });
       return true;
     }
-    const reqHash = `consume_hand:${petId}:${sku}:${quality}:${expectedVersion}`;
+    const reqHashBase = `consume_hand:${petId}:${sku}:${quality}:${expectedVersion}`;
+    const reqHash = body.physicalSource ? reqHashBase + ':' + JSON.stringify(body.physicalSource) : reqHashBase;
     const prior = checkV015Idempotency(v015, worldId, userId, 'consume_hand_food', key, reqHash);
     if (prior) {
       if (prior.conflict) {

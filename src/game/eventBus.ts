@@ -1,3 +1,4 @@
+import type { PhysicalDrop } from '../shared/inventory/physicalInventory';
 import type { HeldItemState, InteractableTarget } from '../shared/interaction/interactionTypes';
 import type { CoupleEmoteId, CouplePostureKind } from '../shared/couple/coupleTypes';
 import type { PetActionType, PetSnapshot } from '../shared/pet/petTypes';
@@ -79,6 +80,8 @@ export interface GameEventMap {
   'cmd:trigger-interact': undefined;
   'cmd:interact-npc': undefined;
   'cmd:set-active-npc-dialogue': { npcId: string | null };
+  'cmd:sync-physical-drops': { mapId: string; drops: readonly PhysicalDrop[] };
+  'cmd:enable-physical-home-storage': boolean;
   'cmd:set-paused': { paused: boolean; keepAnimating?: boolean };
   'cmd:set-render-suspended': { suspended: boolean };
   'cmd:sync-pet': PetSnapshot | null;
@@ -116,6 +119,8 @@ export interface GameEventMap {
   'cmd:sync-mailbox-unread': { unreadCount: number };
   'cmd:sync-held-item': HeldItemState;
   'cmd:pet-field-animal': { targetId: string };
+  'cmd:clear-physical-held-item': void;
+  'cmd:rotate-physical-hotbar': 1 | -1;
   'cmd:set-network-metrics': { rttMs: number | null; jitterMs: number | null };
   /** Inventory desk → gameplay hotbar (inventoryHotbarAdapter slots). */
   'cmd:select-hotbar-slot': { slotIndex: number };

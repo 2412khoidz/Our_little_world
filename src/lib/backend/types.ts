@@ -1,3 +1,4 @@
+import type { PhysicalInventoryRequest, PhysicalInventoryView, PhysicalStorageQuery } from '../../shared/inventory/physicalInventoryApi';
 import type { CoupleEventPacket } from '../../shared/couple/coupleTypes';
 import type { BilliardsMatchRecordInput, BilliardsWinTally } from '../../shared/billiards/types';
 import type { NetworkDiagnosticsState } from '../../shared/netcode/diagnostics';
@@ -92,7 +93,13 @@ export interface RealtimeHandle {
   disconnect: () => Promise<void>;
 }
 
+export interface PhysicalInventoryBackend {
+  read(worldId: string, query: PhysicalStorageQuery): Promise<MutationResult<PhysicalInventoryView>>;
+  apply(request: PhysicalInventoryRequest): Promise<MutationResult<PhysicalInventoryView>>;
+}
+
 export interface InventoryBackend {
+  physical?: PhysicalInventoryBackend;
   getInventory(worldId: string): Promise<MutationResult<InventorySnapshot>>;
   claimFreeKibble(worldId: string, idempotencyKey: string): Promise<MutationResult<InventorySnapshot>>;
   transferInventoryQuality(params: {
@@ -127,6 +134,7 @@ export interface PetBackend {
     petId: string;
     action: 'fill_food' | 'fill_water';
     expectedBowlVersion: number;
+    physicalSource?: { index: number; stackId: string };
     ownerScope: string;
     itemSku: string;
     quality: 'normal' | 'silver' | 'gold';
@@ -137,6 +145,7 @@ export interface PetBackend {
     worldId: string;
     petId: string;
     expectedVersion: number;
+    physicalSource?: { index: number; stackId: string };
     ownerScope: string;
     itemSku: string;
     quality: 'normal' | 'silver' | 'gold';
@@ -241,6 +250,7 @@ export interface FarmBackend {
     fertilizerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['fertilizerSku'];
     sprinklerSku?: import('../../shared/farming/farmSnapshotTypes').FarmApplyParams['sprinklerSku'];
     toolSku?: string | null;
+    physicalSource?: { index: number; stackId: string };
     useEnvironment?: boolean;
     farmVersion?: number;
     idempotencyKey: string;
