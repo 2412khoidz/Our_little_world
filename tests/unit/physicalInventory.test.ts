@@ -63,7 +63,7 @@ describe('Physical inventory foundation', () => {
   it('imports a legacy shortcut once using a real transfer and enforces home access', () => {
     const original = create(wheat(10));
     const command = { kind: 'import_shortcuts', shortcuts: [{ index: 3, itemSku: 'seed_wheat', quality: 'normal', ownerScope: 'shared' }] } as const;
-    expect(() => apply(original, command, 'may', false)).toThrow('về nhà');
+    expect(() => apply(original, command, 'may', false)).toThrow('đến gần tủ kho');
     const state = apply(original, command);
     expect(read(state).slots[3]?.qty).toBe(1);
     expect(read(state, 'home').slots[0]?.qty).toBe(9);

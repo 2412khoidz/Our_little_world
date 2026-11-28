@@ -46,6 +46,7 @@ export type InteractableDomainKind =
   | 'study_desk'
   | 'mailbox'
   | 'photo_frame'
+  | 'home_storage'
   | 'sofa'
   | 'bed'
   | 'bench'
@@ -90,6 +91,7 @@ export type InteractionActionCode =
   | 'open_study'
   | 'open_mailbox'
   | 'open_photo_frame'
+  | 'open_home_storage'
   | 'sit_sofa'
   | 'lie_bed'
   | 'sit_bench'
@@ -152,6 +154,7 @@ export interface InteractionResolveInput {
   interactables: readonly InteractableTarget[];
   /** Donor-reuse / dev-lan economy preview — false hides dead economy J prompts. */
   economyPlayable?: boolean;
+  canUseHeldToy?: boolean;
   /** Live farm authority projection for crop plot inspect + ready gating. */
   farmPlotByIndex?: ReadonlyMap<number, import('../farming/farmSnapshotTypes').FarmPlotView>;
   serverNowMs?: number;

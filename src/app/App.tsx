@@ -388,6 +388,7 @@ function MainCoupleApp({
     | 'pwa'
     | 'spike'
     | 'inventory'
+    | 'home_storage'
     | 'pet'
     | 'study'
     | 'photo'
@@ -3057,6 +3058,7 @@ function MainCoupleApp({
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
         contextualInteractionHud
+        physicalHomeStorage={Boolean(backend.inventory?.physical)}
         toast={toast}
       />
 
@@ -3082,6 +3084,7 @@ function MainCoupleApp({
           setActiveModal('inventory');
           if (!backend.inventory?.physical) void refreshInventorySnapshot();
         }}
+        onOpenHomeStorage={backend.inventory?.physical ? () => setActiveModal('home_storage') : undefined}
         onCloseTopModal={() => {
           if (activeNpcDialogue) setActiveNpcDialogue(null);
           else if (activeModal) setActiveModal(null);
@@ -3584,7 +3587,8 @@ function MainCoupleApp({
             connection={connectionStatus}
             showHud={!isAnyModalOpen && !decorateActive}
             onHeldItemChange={setPhysicalHeldItem}
-            open={activeModal === 'inventory'}
+            mode={activeModal === 'home_storage' ? 'storage' : activeModal === 'inventory' ? 'backpack' : null}
+            touch={layoutMode !== 'desktop'}
             onOpen={() => setActiveModal('inventory')}
             onClose={() => setActiveModal(null)}
           />

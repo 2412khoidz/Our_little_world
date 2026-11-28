@@ -1,70 +1,518 @@
-.physical-inventory-panel {
-  width: min(92vw, 590px);
-  max-height: min(90dvh, 820px);
-  overflow-y: auto;
+/* Physical inventory uses the same pixel slot frames as the overworld HUD. */
+.physical-inventory-backdrop {
+  --physical-ink: #412b24;
+  --physical-cream: #f4dcb1;
+  --physical-light: #fff0cf;
+  padding: 12px;
+  color: var(--physical-ink);
+  background: rgb(28 22 20 / 62%);
+  overscroll-behavior: contain;
 }
 
-.physical-slot-grid {
-  --nuvora-slot: min(44px, calc((92vw - 100px) / 9));
+.physical-inventory-panel {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 482px);
+  max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  padding: 13px;
+  gap: 10px;
+  border-width: 12px;
+  border-image-width: 12px;
+  min-width: 0;
+}
+
+.physical-inventory-panel[data-mode='storage'] {
+  width: min(100%, 882px);
+}
+
+.physical-panel-header,
+.physical-tray__heading,
+.physical-shelf-footer,
+.physical-pages,
+.physical-item-actions,
+.physical-storage-switch,
+.physical-inventory-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.physical-panel-header,
+.physical-tray__heading,
+.physical-shelf-footer {
+  justify-content: space-between;
+}
+
+.physical-panel-header {
+  padding: 0 2px 7px;
+  border-bottom: 2px solid #a5744e;
+}
+
+.physical-panel-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.1;
+  font-size: 20px;
+  font-weight: 850;
+  color: var(--physical-ink);
+}
+
+.physical-panel-header h2 svg {
+  color: #52674f;
+}
+
+.physical-panel-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #9a6d4c #dfbe90;
+  scrollbar-width: thin;
+}
+
+.physical-inventory-trays {
   display: grid;
-  grid-template-columns: repeat(9, var(--nuvora-slot));
-  gap: 4px;
-  padding: 6px 0;
+  gap: 9px;
+}
+
+.physical-inventory-panel[data-mode='storage'] .physical-inventory-trays {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  align-items: start;
+}
+
+.physical-tray {
+  min-width: 0;
+  color: var(--physical-ink);
+  padding: 9px;
+  border: 2px solid #a57550;
+  box-shadow: inset 0 0 0 1px #edc99a;
+  background: #d2a77d;
+}
+
+.physical-tray--shelf {
+  background: #d0b486;
+}
+
+.physical-tray__heading {
+  min-height: 30px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+
+.physical-tray h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.physical-tray h3 small {
+  margin-left: 3px;
+  color: #5a412e;
+  font: 700 11px ui-monospace, monospace;
 }
 
 .physical-inventory-actions {
-  display: flex;
   flex-wrap: wrap;
+}
+
+.physical-bag-options,
+.physical-shelf-footer {
+  margin-top: 8px;
+}
+
+.physical-shelf-footer {
+  flex-wrap: wrap;
+}
+
+.physical-pages {
+  margin-left: auto;
+  white-space: nowrap;
+  font: 700 11px ui-monospace, monospace;
+}
+
+.physical-control,
+.physical-search input,
+.physical-search select,
+.physical-item-menu input {
+  min-width: 0;
+  min-height: 30px;
+  border: 2px solid #946343;
+  border-radius: 4px;
+  background: var(--physical-cream);
+  color: var(--physical-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.physical-control {
+  display: inline-flex;
   align-items: center;
-  gap: 6px 10px;
-  margin-block: 5px;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: inset 0 1px #fff0cf, 0 2px #996945;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.physical-control--icon {
+  padding: 0 5px;
+  aspect-ratio: 1;
+}
+
+.physical-control:hover:not(:disabled) {
+  background: var(--physical-light);
+}
+
+.physical-control:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.physical-control--accent,
+.physical-storage-switch button[aria-pressed='true'] {
+  background: #657b58;
+  border-color: #4e5b40;
+  color: #fff2cf;
+  box-shadow: inset 0 1px #97a77a, 0 2px #536247;
+}
+
+.physical-control--accent:hover:not(:disabled),
+.physical-storage-switch button[aria-pressed='true']:hover {
+  background: #53694b;
+}
+
+.physical-control--danger {
+  background: #a4493b;
+  border-color: #753329;
+  color: #fff2cf;
+  box-shadow: inset 0 1px #d27c68, 0 2px #753329;
+}
+
+.physical-control--danger:hover:not(:disabled) {
+  background: #8b392b;
+}
+
+.physical-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) auto;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+
+.physical-search__field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 2px solid #946343;
+  border-radius: 4px;
+  background: #ead1a5;
+}
+
+.physical-search input {
+  width: 100%;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-weight: 550;
+}
+
+.physical-search input::placeholder {
+  color: #6f503b;
+}
+
+.physical-search select {
+  width: 100%;
+  padding: 0 4px;
+}
+
+.physical-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
+
+.physical-slot-grid--shelf {
+  min-height: 132px;
+}
+
+.physical-slot-grid > p {
+  grid-column: 1 / -1;
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.physical-slot-grid .nuvora-sl {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.physical-slot-grid .nuvora-sl > :is(img, span[role='img']) {
+  max-width: 72%;
+  max-height: 72%;
+}
+
+.physical-hotbar .nuvora-sl[aria-pressed='true'],
+.physical-slot-grid .nuvora-sl[aria-pressed='true'] {
+  background-image: url('/assets/ui/hybrid/slot_selected.png');
+  outline: 2px solid #a15136;
+  outline-offset: -2px;
+}
+
+.physical-slot-mark,
+.physical-slot-lock {
+  position: absolute;
+  pointer-events: none;
+  color: #704918;
+  font-size: 10px;
 }
 
 .physical-slot-mark {
-  position: absolute;
   top: 0;
   right: 3px;
-  color: #704918;
+}
+
+.physical-slot-lock {
+  bottom: 0;
+  left: 3px;
+  color: #8c392d;
+}
+
+.physical-item-actions {
+  flex: 0 0 auto;
+  block-size: 56px;
+  padding: 6px 8px;
+  border: 2px solid #9d6d4d;
+  background: #edd2a6;
+  justify-content: space-between;
+}
+
+.physical-item-status {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.physical-item-actions .physical-inventory-actions {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.physical-item-menu {
+  position: absolute;
+  right: 12px;
+  bottom: 79px;
+  z-index: 2;
+  max-width: min(295px, calc(100% - 24px));
+  padding: 9px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #7a4f37;
+  border-radius: 5px;
+  background: #eacb9f;
+  box-shadow: 0 4px 0 #77492d, 0 6px 12px #512e2766;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.physical-item-menu input {
+  width: 4.2em;
+  padding-inline: 4px;
 }
 
 .physical-hotbar {
+  --nuvora-slot: 43px;
   position: fixed;
-  bottom: calc(70px + env(safe-area-inset-bottom));
+  z-index: var(--z-game-hud);
+  bottom: calc(73px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9;
-  width: max-content;
-  max-width: calc(100vw - 20px);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
-  padding: 5px;
-  background: #dec096;
-  border: 2px solid #805635;
-  border-radius: 8px;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  pointer-events: none;
 }
 
-.physical-hotbar .nuvora-sl[aria-pressed='true'] {
-  outline: 2px solid #b34e30;
-  outline-offset: -2px;
+.physical-hotbar__slots,
+.physical-hotbar__controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.physical-hotbar__slots {
+  padding: 4px;
+  border: 2px solid #805635;
+  border-radius: 5px;
+  background: #b8865e;
+  box-shadow: inset 0 0 0 1px #dfb98a, 0 3px 0 #593a2d70;
+}
+
+.physical-hotbar button {
+  pointer-events: auto;
+}
+
+.physical-hotbar .nuvora-sl {
+  flex: 0 0 var(--nuvora-slot);
+  cursor: pointer;
 }
 
 .physical-hotbar small {
   position: absolute;
+  top: 2px;
   left: 3px;
-  top: 1px;
-  font-size: 9px;
+  color: #503625;
+  font: 700 9px ui-monospace, monospace;
 }
 
-.physical-slot-lock {
+.physical-icon-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0 0 4px;
+  border: 2px solid #745035;
+  border-radius: 5px;
+  color: #3e4938;
+  background: #e5c899;
+  box-shadow: inset 0 0 0 1px #f2d9b0, 0 2px 0 #593a2d80;
+  cursor: pointer;
+}
+
+.physical-icon-button:hover:not(:disabled) {
+  background: #ffe0a9;
+}
+
+.physical-icon-button:disabled {
+  opacity: 0.55;
+}
+
+.physical-icon-button kbd {
   position: absolute;
-  bottom: 1px;
-  left: 4px;
-  color: #9c3d25;
-  font-size: 10px;
+  bottom: -4px;
+  right: -1px;
+  min-width: 14px;
+  padding: 1px 2px;
+  border: 1px solid #69462c;
+  border-radius: 2px;
+  background: #ffdf9d;
+  color: #3b281e;
+  text-align: center;
+  font: 750 9px ui-monospace, monospace;
 }
 
-.physical-inventory-actions input[type='number'] {
-  width: 4.5em;
+.physical-row-marks {
+  display: grid;
+  gap: 2px;
+}
+
+.physical-row-marks i {
+  width: 15px;
+  height: 3px;
+  border: 1px solid #8f7151;
+  background: #bc976b;
+}
+
+.physical-row-marks i[data-current='true'] {
+  background: #5d764c;
+  border-color: #394d33;
+}
+
+.physical-hotbar__drop {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  background: #c26145;
+  box-shadow: 0 0 0 1px #783b34;
+}
+
+.physical-inventory-panel :is(button, input, select):focus-visible,
+.physical-hotbar button:focus-visible {
+  outline: 2px solid #41553f;
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.app-shell[data-hud-mode='desktop'] .main-game-interaction-stack[data-physical-inventory='true'] {
+  bottom: calc(130px + var(--safe-bottom));
+}
+
+.app-shell[data-hud-mode='mobile-portrait'] .physical-hotbar {
+  --nuvora-slot: clamp(24px, calc((100vw - 52px - var(--safe-left) - var(--safe-right)) / 9), 42px);
+  bottom: calc(10px + var(--safe-bottom));
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+.app-shell[data-hud-mode='mobile-portrait']:has(.physical-hotbar) .main-game-touch-actions {
+  bottom: calc(118px + var(--safe-bottom));
+}
+
+.app-shell[data-hud-mode='mobile-landscape'] .physical-hotbar {
+  --nuvora-slot: clamp(24px, calc((100vw - 340px - var(--safe-left) - var(--safe-right)) / 9), 43px);
+  bottom: calc(10px + var(--safe-bottom));
+}
+
+.physical-hotbar[data-touch='true'] .physical-icon-button {
+  padding: 0;
+}
+
+@media (max-width: 730px) {
+  .physical-inventory-panel[data-mode='storage'] .physical-inventory-trays {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .physical-inventory-panel {
+    padding: 7px;
+  }
+
+  .physical-tray {
+    padding: 6px;
+  }
+
+  .physical-item-actions {
+    block-size: 76px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .physical-item-status {
+    width: 100%;
+  }
+
+  .physical-item-menu {
+    right: 7px;
+    bottom: 91px;
+  }
+
+  .physical-search input,
+  .physical-search select,
+  .physical-item-menu input {
+    font-size: 16px;
+  }
+}
+
+@media (pointer: coarse) {
+  .physical-control {
+    min-height: 36px;
+  }
 }

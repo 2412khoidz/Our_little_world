@@ -189,7 +189,7 @@ export class PhysicalInventoryEdit {
   }
 
   edit(kind: ContainerKind): PhysicalContainer {
-    if (kind !== 'backpack' && !this.atHome) physicalError('FORBIDDEN', 'Hãy về nhà để mở kho đồ.');
+    if (kind !== 'backpack' && !this.atHome) physicalError('FORBIDDEN', 'Hãy đến gần tủ kho trong nhà.');
     const id = containerId(kind, this.userId);
     if (!this.touched.has(id)) {
       const existing = this.read(kind);

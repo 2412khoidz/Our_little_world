@@ -29,6 +29,7 @@ export interface MainGameActionContext {
   hasPet: boolean;
   petCanFeed: boolean;
   onOpenInventory: () => void;
+  onOpenHomeStorage?: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
   onFarmApply?: (
@@ -300,6 +301,10 @@ export async function executeMainGameContextAction(
     return;
   }
 
+  if (code === 'open_home_storage') {
+    ctx.onOpenHomeStorage?.();
+    return;
+  }
   if (emitDiegeticOpen(code, action.targetId)) return;
 
   const plotId = plotIdFromInteractableId(action.targetId);

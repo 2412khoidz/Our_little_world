@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { canReachHomeStorage } from '../shared/interaction/mainGameWorldAnchors';
 import type { FarmShippingMeta } from '../shared/farming/farmShipping';
 import { editPhysicalEconomy, physicalSaleChannel } from '../shared/inventory/physicalInventoryEconomy';
 import {
@@ -21,7 +22,7 @@ const identifier = z.string().min(1).max(128);
 const slot = z.strictObject({ container: kind, index });
 const stackSource = { from: slot, qty: amount, stackId: identifier };
 const querySchema = z.strictObject({
-  storage: shelf,
+  storage: shelf.nullable(),
   page: index,
   search: z.string().trim().max(80),
   category: z.string().max(40).optional(),
@@ -105,7 +106,7 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
   const backpack = Array.from({ length: bag.capacity! }, (_, i) => fullSlot(bag, i));
   let storage: PhysicalInventoryView['storage'] = null;
   let categories: string[] = [];
-  if (atHome) {
+  if (query.storage && canReachHomeStorage(ctx.position)) {
     const shelf = readPhysicalContainer(state, query.storage, ctx.userId);
     const items = physicalSlots(shelf);
     categories = [...new Set(items.map(({ stack }) => catalog.get(stack.itemSku)?.category ?? 'other'))].sort();
@@ -205,7 +206,7 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       }
       const search = ctx.reqUrl.searchParams;
       const query = querySchema.parse({
-        storage: search.get('storage') ?? 'home', page: Number(search.get('page') ?? 0),
+        storage: search.get('storage'), page: Number(search.get('page') ?? 0),
         search: search.get('search') ?? '', category: search.get('category') || undefined,
       });
       send(200, { ok: true, data: createView(ctx, state, query, catalog) });
@@ -237,7 +238,7 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       fail(409, 'VERSION_CONFLICT', 'Túi đồ vừa thay đổi. Hãy thử lại.');
       return true;
     }
-    const edit = new PhysicalInventoryEdit(state, ctx.userId, catalog, ctx.position?.mapId === 'home');
+    const edit = new PhysicalInventoryEdit(state, ctx.userId, catalog, canReachHomeStorage(ctx.position));
     const wallet = v015.wallets[worldId];
     const shipping = v015.shippingBin?.[worldId];
     let economy: ReturnType<typeof editPhysicalEconomy> | undefined;

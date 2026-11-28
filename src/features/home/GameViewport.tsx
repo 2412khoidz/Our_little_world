@@ -34,6 +34,7 @@ interface GameViewportProps {
   isModalOpen: boolean;
   /** When true, legacy E/nearby button is hidden (main game J/K HUD). */
   contextualInteractionHud?: boolean;
+  physicalHomeStorage?: boolean;
   movementConnection: number | null;
   toast: { message: string; isError?: boolean } | null;
 }
@@ -57,6 +58,7 @@ export function GameViewport({
   petCareActive = false,
   isModalOpen,
   contextualInteractionHud = false,
+  physicalHomeStorage = false,
   movementConnection,
   toast,
 }: GameViewportProps) {
@@ -164,6 +166,10 @@ export function GameViewport({
       devSandbox: decorateDevSandbox,
     });
   }, [sceneReady, decorateActive, activeSku, selectedPlacementId, decoratePreviewRotated, decorateDevSandbox]);
+
+  useEffect(() => {
+    if (sceneReady) gameEventBus.emit('cmd:enable-physical-home-storage', physicalHomeStorage);
+  }, [sceneReady, physicalHomeStorage]);
 
   useEffect(() => {
     if (!sceneReady) return;

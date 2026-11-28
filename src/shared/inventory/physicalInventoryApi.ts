@@ -1,13 +1,14 @@
 import type { ContainerKind, PhysicalBackpack, PhysicalCommand, PhysicalStack, PhysicalDefinition, PhysicalDrop } from './physicalInventory';
 
 export interface PhysicalStorageQuery {
-  readonly storage: 'home' | 'overflow';
+  readonly storage: 'home' | 'overflow' | null;
   readonly page: number;
   readonly search: string;
   readonly category?: string;
 }
 
-export const INITIAL_PHYSICAL_QUERY: PhysicalStorageQuery = { storage: 'home', page: 0, search: '' };
+export const INITIAL_PHYSICAL_QUERY: PhysicalStorageQuery = { storage: null, page: 0, search: '' };
+export const INITIAL_HOME_STORAGE_QUERY: PhysicalStorageQuery = { ...INITIAL_PHYSICAL_QUERY, storage: 'home' };
 
 export interface PhysicalSlotView {
   readonly index: number;

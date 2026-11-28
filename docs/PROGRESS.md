@@ -1,10 +1,12 @@
 # Progress Tracker — Our Little World
 
-*Cập nhật lần cuối: 27/11/2026*
+*Cập nhật lần cuối: 28/11/2026*
 
 ## INV.2 — Thí điểm ba lô và kho vật lý
 
 - Có bản thử Dev LAN cô lập trên `feature/inv2-physical-inventory`. Ba lô, kho, vòng đời vật phẩm và giao dịch thử có dữ liệu máy chủ. Các điểm nối farming, fishing và backend production còn mở. [Báo cáo INV.2](reports/INV2_PHYSICAL_INVENTORY.md)
+
+- Khôi phục J/K và tương tác cảm ứng ở bản bật INV.2. Ba lô mở bằng I ở mọi nơi, kho dùng tủ lạnh trong nhà và thanh nhanh có biểu tượng ba lô cùng nút đổi hàng. [Báo cáo tái hiện, giao diện và kiểm thử](reports/INV2_WORLD_CONTROLS_AND_UI.md)
 
 ## Hotfix quyền sở hữu túi đồ sau RC2
 

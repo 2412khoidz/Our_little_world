@@ -36,7 +36,7 @@ export function editPhysicalEconomy(
   ctx: EconomyContext,
 ): { coins: number; shipping?: FarmShippingMeta } {
   if (command.kind === 'upgrade_backpack') {
-    if (!edit.atHome) physicalError('FORBIDDEN', 'Về nhà để nâng cấp ba lô.');
+    if (ctx.position?.mapId !== 'home') physicalError('FORBIDDEN', 'Về nhà để nâng cấp ba lô.');
     const player = edit.player();
     const next = player.tier + 1;
     const price = BACKPACK_UPGRADE_COSTS[player.tier as keyof typeof BACKPACK_UPGRADE_COSTS];

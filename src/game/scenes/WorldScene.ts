@@ -182,7 +182,7 @@ import { enterPetCareRuntime, exitPetCareRuntime } from '../pet/care/PetCareRunt
 import { getPersistedPetCareV2State } from '../pet/care/petCareBridgeState';
 import { setPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
 import { playAvatarPostureAnim, resetAvatarSpriteOrigin } from '../avatar/avatarPostureVisual';
-import { MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
+import { HOME_STORAGE_ANCHOR, MAIN_GAME_WORLD_ANCHORS } from '../../shared/interaction/mainGameWorldAnchors';
 import {
   cardinalFromFacing8,
   resolveFacing8,
@@ -340,6 +340,9 @@ export class WorldScene extends Phaser.Scene {
   private lastInteractionFrameAtMs = 0;
   private contextLost = false;
   private paused = false;
+  private physicalHomeStorage = false;
+  private homeHasDemoE = false;
+  private storageCabinet: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics | null = null;
   private renderSuspended = false;
   private mapDebugOverlay: MapDebugOverlay | null = null;
   private movementConnection: number | null = null;
@@ -759,6 +762,8 @@ export class WorldScene extends Phaser.Scene {
       artIds.background[mapId === 'outdoor' ? 'garden' : (mapId as keyof typeof artIds.background)];
     const demoEHomeGarden = preferDemoEHomeGarden(this, mapId, background);
 
+    this.homeHasDemoE = mapId === 'home' && demoEHomeGarden;
+    this.storageCabinet = null;
     if (demoEHomeGarden && art?.has(background)) {
       this.mapLayers.push(this.add.image(0, 0, WORLD_ART_KEY, background).setOrigin(0, 0).setDepth(1));
       if (mapId === 'home') {
@@ -872,6 +877,7 @@ export class WorldScene extends Phaser.Scene {
     this.handleResize(true);
     this.cameras?.main?.fadeIn(160, 26, 20, 24);
     this.syncCameraDataset();
+    this.syncStorageCabinet();
     this.refreshDiscoverabilityMarkers();
 
     this.lastPortalAtMs = Date.now();
@@ -958,9 +964,32 @@ export class WorldScene extends Phaser.Scene {
     this.placeProp(extIds.props.pet_bowl_water, 210, 162, 0.5, 1, 3);
 
     // Kitchen & Living Cinema perimeter edge accents safely along bottom border wall (`y = 178`)
-    this.placeProp(extIds.props.kitchen_fridge, 18, 176, 0.5, 1, 176);
+    this.placeProp(extIds.props.kitchen_fridge, HOME_STORAGE_ANCHOR.x, HOME_STORAGE_ANCHOR.y);
     this.placeProp(extIds.props.kitchen_counter_fruit, 44, 176, 0.5, 1, 176);
     this.placeProp(extIds.props.tv_cinema_unit, 88, 176, 0.5, 1, 176);
+  }
+
+  private syncStorageCabinet(): void {
+    const shouldDraw = this.physicalHomeStorage && this.currentMapId === 'home' && !this.homeHasDemoE;
+    if (!shouldDraw && this.storageCabinet) {
+      const cabinet = this.storageCabinet;
+      this.mapLayers = this.mapLayers.filter((layer) => layer !== cabinet);
+      cabinet.destroy();
+      this.storageCabinet = null;
+    }
+    if (!shouldDraw || this.storageCabinet) return;
+    const { x, y } = HOME_STORAGE_ANCHOR;
+    this.storageCabinet = this.placeProp(extIds.props.kitchen_fridge, x, y);
+    if (this.storageCabinet) return;
+
+    const cabinet = this.add.graphics().setDepth(y);
+    cabinet.fillStyle(0x553a32).fillRect(x - 8, y - 17, 16, 17);
+    cabinet.fillStyle(0xa76b43).fillRect(x - 7, y - 15, 14, 12);
+    cabinet.fillStyle(0xd4a56e).fillRect(x - 7, y - 15, 14, 3);
+    cabinet.fillStyle(0x75503a).fillRect(x - 7, y - 8, 14, 2);
+    cabinet.fillStyle(0xffdb91).fillRect(x - 2, y - 7, 4, 2);
+    this.mapLayers.push(cabinet);
+    this.storageCabinet = cabinet;
   }
 
   private buildGardenDemoEAccents(art: Phaser.Textures.Texture): void {
@@ -2014,6 +2043,11 @@ export class WorldScene extends Phaser.Scene {
           this.livestockVisual?.sync(deep.projectedLivestock);
           this.refreshBlockedGrid();
         }
+      }),
+
+      gameEventBus.on('cmd:enable-physical-home-storage', (enabled) => {
+        this.physicalHomeStorage = enabled;
+        if (!this.buildingMap) this.syncStorageCabinet();
       }),
 
       gameEventBus.on('cmd:set-paused', ({ paused }) => {
@@ -4254,6 +4288,7 @@ export class WorldScene extends Phaser.Scene {
       mailboxUnread: this.mailboxUnreadCount,
       bowlPresentation: { ...this.homeBowls },
       donorEconomyDev: isDonorEconomyUiEnabled(),
+      physicalHomeStorage: this.physicalHomeStorage,
     });
     for (const npc of this.tiledNpcs) {
       interactables.push({

@@ -2,6 +2,8 @@
 
 Bản thử Dev LAN nằm trên `feature/inv2-physical-inventory`, dựa trên local main `72270c5c375d819b3aa7b4baff1928dc03610c88`. Local main đã hợp nhất hotfix `5be8de5` qua `c6df885`. Lần fetch cuối vẫn thấy `origin/main` ở RC2 `fe1937b`. INV.2 có cổng bật riêng và yêu cầu tên save `.dev-lan-state-inv2-*.json`.
 
+Bản cập nhật điều khiển, thiết kế và ảnh nghiệm thu nằm trong [báo cáo tương tác và giao diện](INV2_WORLD_CONTROLS_AND_UI.md).
+
 ## Nghiên cứu nguồn
 
 Hai repository dưới đây được clone nông ra thư mục tạm ngoài OLW. Mã TypeScript và giao diện dùng thiết kế, art và hợp đồng OLW.
@@ -19,9 +21,9 @@ Hai repository dưới đây được clone nông ra thư mục tạm ngoài OLW
 
 ## Mô hình và hành vi đã chạy
 
-- Một save giữ các ô vật lý theo `home`, `backpack:<userId>` và `overflow:<userId>`. Chủ sở hữu và địa chỉ ô quyết định thao tác hợp lệ. Thanh nhanh đọc 9 ô của hàng đang hoạt động. Không có bản ghi kho thứ hai cho thanh nhanh. Ba lô có 18 ô ban đầu. Phím 1–9 chọn vật phẩm, Tab đổi hàng khi đang điều khiển nhân vật và nút **Hàng** phục vụ cảm ứng.
-- Kho chỉ mở khi vị trí phiên Dev LAN đang ở bản đồ nhà. Hiển thị tối đa 36 ô kho mỗi trang. Tìm và lọc giữ nguyên địa chỉ ô. Desktop dùng kéo thả hoặc Shift+click, mobile dùng chọn món rồi chọn ô, tách đôi, chuyển nhanh và đổi hàng bằng nút. Chọn món chỉ tạo trạng thái tạm ở trình duyệt. Server ghi nguyên tử khi nhận thao tác cùng `version`, `stackId` và khóa phát lại. Có GET tương thích được chiếu từ ba lô cho thông báo WebSocket.
-- Sắp xếp giữ nguyên hàng đang dùng, ô khóa và món yêu thích. Cất nhanh bỏ qua món khóa, yêu thích, giữ chỗ và trang bị. Thả tạo thực thể thuộc save, có bản đồ, tọa độ và người thả. Hai thành viên trong tầm có thể nhặt; món dư ở lại khi ba lô đã đầy. Một thế giới giữ tối đa 64 món rơi, kể cả qua tải lại. Món không tự hết hạn. UI liệt kê món gần trong ba lô và nút ba lô báo số món gần.
+- Một save giữ các ô vật lý theo `home`, `backpack:<userId>` và `overflow:<userId>`. Chủ sở hữu và địa chỉ ô quyết định thao tác hợp lệ. Thanh nhanh đọc 9 ô của hàng đang hoạt động. Không có bản ghi kho thứ hai cho thanh nhanh. Ba lô có 18 ô ban đầu. Phím 1–9 chọn vật phẩm. Nhấn ngắn Shift hoặc chạm biểu tượng hàng để đổi hàng.
+- Mở kho bằng tương tác với tủ lạnh trong nhà. Dev LAN chỉ trả dữ liệu và nhận giao dịch kho khi người chơi ở cạnh tủ. Hiển thị tối đa 36 ô kho mỗi trang. Tìm và lọc giữ nguyên địa chỉ ô. Desktop dùng kéo thả hoặc Shift+click, mobile dùng chọn món rồi chọn ô, tách đôi, chuyển nhanh và đổi hàng bằng nút. Chọn món chỉ tạo trạng thái tạm ở trình duyệt. Server ghi nguyên tử khi nhận thao tác cùng `version`, `stackId` và khóa phát lại. Có GET tương thích được chiếu từ ba lô cho thông báo WebSocket.
+- Sắp xếp giữ nguyên hàng đang dùng, ô khóa và món yêu thích. Cất nhanh bỏ qua món khóa, yêu thích, giữ chỗ và trang bị. Thả tạo thực thể thuộc save, có bản đồ, tọa độ và người thả. Hai thành viên trong tầm có thể nhặt; món dư ở lại khi ba lô đã đầy. Một thế giới giữ tối đa 64 món rơi, kể cả qua tải lại. Món không tự hết hạn. UI liệt kê món gần trong ba lô và nút ba lô đánh dấu khi có món gần.
 - Ba lô mở lên 27, 36, 45 và 54 ô với giá thử 100, 250, 500 và 850 xu. Tham chiếu RC2 là ví khởi đầu 50 xu, hạt lúa 4 xu, lúa thường 8 xu và táo thường 22 xu. Giá này dành cho playtest, còn chờ vòng cân bằng kết hợp. Bán tại chợ hoặc gửi ở gần thùng hàng dùng duy nhất số lượng của ô được chọn và ví chung hiện có. Gửi hàng dùng bộ đếm bão hòa hiện tại. Các thao tác trả về lỗi khi món được bảo vệ, tồn kho đổi hoặc save ghi thất bại.
 
 ## Chuyển save
@@ -62,4 +64,4 @@ $env:OLW_DEV_LAN_STATE_FILE = '.dev-lan-state-inv2-playtest.json'
 npm run dev -- --host 127.0.0.1 --port 4230 --strictPort
 ```
 
-Mở [bản thí điểm](http://127.0.0.1:4230/?extended-world=1), tạo nhà thử, vào vai Mây hoặc Nắng, rồi mở **Ba lô** ở nhà để lấy đồ. Để thử migration, đặt một bản sao save dưới tên file thí điểm trước khi chạy server.
+Mở [bản thí điểm](http://127.0.0.1:4230/?extended-world=1), tạo nhà thử, vào vai Mây hoặc Nắng, rồi tương tác với tủ lạnh ở góc dưới bên trái nhà để lấy đồ. I mở ba lô ở mọi bản đồ. Để thử migration, đặt một bản sao save dưới tên file thí điểm trước khi chạy server.

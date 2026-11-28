@@ -23,6 +23,7 @@ export function validateActionAgainstLatestFrame(
   which: 'primary' | 'secondary',
   farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>,
   serverNowMs?: number,
+  canUseHeldToy?: boolean,
 ): boolean {
   if (!frame || frame.mapId !== expectedMapId) return false;
   const fresh = resolveContextualActions({
@@ -34,6 +35,7 @@ export function validateActionAgainstLatestFrame(
     economyPlayable: frame.economyPlayable ?? true,
     farmPlotByIndex,
     serverNowMs,
+    canUseHeldToy,
   });
   const intendedAction = which === 'primary' ? intended.primary : intended.secondary;
   const freshAction = which === 'primary' ? fresh.primary : fresh.secondary;

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 /** Standard Gamepad API button mappings. Actions share the keyboard/touch dispatch gate. */
-const buttons = { primary: 0, back: 1, secondary: 2, inventory: 3 } as const;
+const buttons = { primary: 0, back: 1, secondary: 2, inventory: 3, previousRow: 4, nextRow: 5 } as const;
 type WorldGamepadActions = Record<keyof typeof buttons, () => void>;
 
 export function useWorldGamepad(enabled: boolean, actions: WorldGamepadActions): void {

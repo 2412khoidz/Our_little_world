@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { handleDevLanPhysicalInventory, type PhysicalDevLanDatabase } from '../../src/server/devLanPhysicalInventoryRoute';
+import { HOME_STORAGE_ANCHOR } from '../../src/shared/interaction/mainGameWorldAnchors';
 import { computeSellPrice } from '../../src/shared/economy/catalogConfig';
 import { INITIAL_PHYSICAL_QUERY, preferPhysicalSnapshot, type PhysicalInventoryRequest, type PhysicalInventoryView } from '../../src/shared/inventory/physicalInventoryApi';
 import type { InventoryCatalogItem } from '../../src/shared/inventory/inventoryTypes';
@@ -21,12 +22,12 @@ function fixture() {
   } };
   const location: { value: { mapId: string; x?: number; y?: number } } = { value: { mapId: 'home' } };
   let durable = '';
-  function call(request?: PhysicalInventoryRequest, actor = 'may') {
+  function call(request?: PhysicalInventoryRequest, actor = 'may', storage = false) {
     let status = 0;
     let payload: { ok: boolean; data?: PhysicalInventoryView; code?: string } = { ok: false };
     handleDevLanPhysicalInventory({
       req: { method: request ? 'POST' : 'GET' }, route: '/inventory/physical',
-      reqUrl: new URL('http://127.0.0.1/?worldId=' + worldId), body: request, userId: actor,
+      reqUrl: new URL('http://127.0.0.1/?worldId=' + worldId + (storage ? '&storage=home' : '')), body: request, userId: actor,
       db, worldId, catalog, isWorldMember: (_world, user) => ['may', 'nang'].includes(user),
       res: null, sendJson: (_res, code, body) => { status = code; payload = body as typeof payload; },
       broadcastInventory: () => {},
@@ -41,6 +42,30 @@ function fixture() {
 }
 
 describe('Physical wallet and save authority', () => {
+  it('includes shelves only on explicit nearby reads and gates authoritative writes by position', () => {
+    const host = fixture();
+    const start = host.call().view!;
+    const stack = start.backpack.find(({ stack }) => stack?.itemSku === 'wheat')!;
+    const deposit = { kind: 'transfer', from: { container: 'backpack', index: stack.index },
+      to: 'home', qty: 1, stackId: stack.stack!.id } as const;
+
+    expect(host.call(undefined, 'may', true).view?.storage).toBeNull();
+    host.location.value = { mapId: 'home', x: 150, y: 150 };
+    expect(host.call(undefined, 'may', true).view?.storage).toBeNull();
+    expect(host.mutate(start.version, 'too-far', deposit).payload.code).toBe('FORBIDDEN');
+    expect(host.call().view?.version).toBe(start.version);
+
+    host.location.value = { mapId: 'home', x: HOME_STORAGE_ANCHOR.x, y: HOME_STORAGE_ANCHOR.y };
+    expect(host.call().view?.storage).toBeNull();
+    expect(host.call(undefined, 'may', true).view?.storage?.kind).toBe('home');
+    expect(host.mutate(start.version, 'nearby', deposit).status).toBe(200);
+    expect(host.call(undefined, 'may', true).view?.storage?.slots[0]?.stack).toMatchObject({ itemSku: 'wheat', qty: 1 });
+
+    host.location.value = { ...host.location.value, mapId: 'garden' };
+    expect(host.call(undefined, 'may', true).view?.storage).toBeNull();
+    expect(host.mutate(start.version, 'nearby', deposit).view?.storage).toBeNull();
+  });
+
   it('charges an upgrade once, preserves existing slots and rejects a stale command', () => {
     const host = fixture();
     const old = host.call().view!;

@@ -7,7 +7,7 @@ import {
   PRIMARY_FARM_MAP_ID,
 } from '../farming/farmPlayableBridge';
 import { FARM_ZONE_MAP_ID } from '../world/farmPlotContract';
-import { MAIN_GAME_WORLD_ANCHORS, portalCenterPx } from './mainGameWorldAnchors';
+import { HOME_STORAGE_ANCHOR, MAIN_GAME_WORLD_ANCHORS, portalCenterPx } from './mainGameWorldAnchors';
 import type { InteractableTarget } from './interactionTypes';
 
 export interface MainGameInteractableInput {
@@ -19,6 +19,7 @@ export interface MainGameInteractableInput {
   /** Presentation-only bowl hints until Mission 02 authoritative state. */
   bowlPresentation?: { foodEmpty: boolean; foodFull: boolean; waterEmpty: boolean; waterFull: boolean };
   donorEconomyDev?: boolean;
+  physicalHomeStorage?: boolean;
 }
 
 export function buildMainGameInteractables(input: MainGameInteractableInput): InteractableTarget[] {
@@ -40,6 +41,14 @@ export function buildMainGameInteractables(input: MainGameInteractableInput): In
 
   if (mapId === 'home') {
     const anchors = MAIN_GAME_WORLD_ANCHORS.home;
+    if (input.physicalHomeStorage) {
+      targets.push({
+        ...HOME_STORAGE_ANCHOR,
+        id: 'home_storage',
+        kind: 'home_storage',
+        labelVi: 'Mở kho nhà',
+      });
+    }
     targets.push({
       id: 'food_bowl',
       kind: 'food_bowl',

@@ -343,7 +343,7 @@ export function createDevLanBackend(): WorldBackend {
         physical: {
           read(worldId, query) {
             const queryString = new URLSearchParams({
-              worldId, storage: query.storage, page: String(query.page), search: query.search, category: query.category ?? '',
+              worldId, ...(query.storage ? { storage: query.storage } : {}), page: String(query.page), search: query.search, category: query.category ?? '',
             });
             return apiJson('/inventory/physical?' + queryString);
           },

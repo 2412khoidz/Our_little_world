@@ -1,15 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { enterExtendedWorldGame, seedDevCouple } from './helpers/extendedWorldVqg';
+import { emitVqgJump, enterExtendedWorldGame, seedDevCouple } from './helpers/extendedWorldVqg';
 
 const physicalInventory = process.env.OLW_DEV_LAN_PHYSICAL_INVENTORY === '1';
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 
 async function jump(page: Page, canvas: Locator, map: string, x: number, y: number) {
-  await page.evaluate(([mapId, tileX, tileY]) => {
-    const dev = window as unknown as { __OLW_VQG: { jump: (map: string, x: number, y: number) => void } };
-    dev.__OLW_VQG.jump(mapId, tileX, tileY);
-  }, [map, x, y] as const);
+  await emitVqgJump(page, map, x, y);
   await expect(canvas).toHaveAttribute('data-map-id', map);
   await expect(canvas).toHaveAttribute('data-player-tile-x', String(x));
   await expect(canvas).toHaveAttribute('data-player-tile-y', String(y));
@@ -25,12 +22,12 @@ test('J dispatches doors, furniture, world objects and NPC dialogue before and a
   const context = page.getByTestId('btn-context-primary');
   const bag = page.getByTestId(physicalInventory ? 'physical-inventory-modal' : 'inventory-modal');
 
-  await jump(page, canvas, 'home', 8, 13);
+  await jump(page, canvas, 'home', 8, 10);
   await expect(context).toContainText('Ra khu vườn');
   await page.keyboard.press('j');
   await expect(canvas).toHaveAttribute('data-map-id', 'garden');
 
-  await jump(page, canvas, 'home', 8, 13);
+  await jump(page, canvas, 'home', 8, 10);
   await page.keyboard.press('i');
   await expect(bag).toBeVisible();
   await page.keyboard.press('j');
@@ -108,7 +105,7 @@ test('WASD resumes after backpack and digit shortcuts address the active hotbar'
 test('touch interaction button dispatches the nearby world action', async ({ page, baseURL }, info) => {
   test.skip(info.project.name === 'chromium-desktop', 'Touch viewport');
   const canvas = await enterExtendedWorldGame(page, baseURL!);
-  await jump(page, canvas, 'home', 8, 13);
+  await jump(page, canvas, 'home', 8, 10);
   const button = page.getByTestId('main-game-touch-actions').getByTestId('btn-context-primary');
   await expect(button).toHaveAccessibleName('Ra khu vườn');
   await button.tap();
@@ -133,8 +130,17 @@ test('standard gamepad opens and closes the backpack, then dispatches the door o
     dev.pressWorldTestButton(idx, isPressed);
   }, [index, pressed] as const);
   const canvas = await enterExtendedWorldGame(page, baseURL!);
-  await jump(page, canvas, 'home', 8, 13);
+  await jump(page, canvas, 'home', 8, 10);
   const bag = page.getByTestId(physicalInventory ? 'physical-inventory-modal' : 'inventory-modal');
+  if (physicalInventory) {
+    const hotbar = page.getByTestId('physical-hotbar');
+    await setButton(5, true);
+    await expect(hotbar).toHaveAttribute('data-active-row', '2');
+    await setButton(5, false);
+    await setButton(4, true);
+    await expect(hotbar).toHaveAttribute('data-active-row', '1');
+    await setButton(4, false);
+  }
   await setButton(3, true);
   await expect(bag).toBeVisible();
   await setButton(3, false);

@@ -207,6 +207,8 @@ function actionForTarget(
       return { code: 'open_study', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'mailbox':
       return { code: 'open_mailbox', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
+    case 'home_storage':
+      return { code: 'open_home_storage', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'photo_frame':
       return { code: 'open_photo_frame', keyHint: 'J', labelVi: target.labelVi, targetId: target.id, available: true };
     case 'sofa':
@@ -504,7 +506,7 @@ export function resolveContextualActions(input: InteractionResolveInput): Contex
   const best = scored[0];
 
   const secondary: ContextualAction | null =
-    heldItem.itemKind === 'toy'
+    heldItem.itemKind === 'toy' && input.canUseHeldToy !== false
       ? {
           code: 'roll_toy',
           keyHint: 'K',

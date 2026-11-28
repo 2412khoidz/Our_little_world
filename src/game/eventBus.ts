@@ -79,6 +79,7 @@ export interface GameEventMap {
   'cmd:trigger-interact': undefined;
   'cmd:interact-npc': undefined;
   'cmd:set-active-npc-dialogue': { npcId: string | null };
+  'cmd:enable-physical-home-storage': boolean;
   'cmd:set-paused': { paused: boolean };
   'cmd:set-render-suspended': { suspended: boolean };
   'cmd:sync-pet': PetSnapshot | null;
@@ -116,6 +117,7 @@ export interface GameEventMap {
   'cmd:sync-mailbox-unread': { unreadCount: number };
   'cmd:sync-held-item': HeldItemState;
   'cmd:clear-physical-held-item': void;
+  'cmd:rotate-physical-hotbar': 1 | -1;
   'cmd:set-network-metrics': { rttMs: number | null; jitterMs: number | null };
   /** Inventory desk → gameplay hotbar (inventoryHotbarAdapter slots). */
   'cmd:select-hotbar-slot': { slotIndex: number };

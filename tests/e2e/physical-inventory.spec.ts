@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import type { PhysicalInventoryRequest, PhysicalInventoryView } from '../../src/shared/inventory/physicalInventoryApi';
-import { INITIAL_PHYSICAL_QUERY } from '../../src/shared/inventory/physicalInventoryApi';
+import { INITIAL_HOME_STORAGE_QUERY, INITIAL_PHYSICAL_QUERY } from '../../src/shared/inventory/physicalInventoryApi';
+import { emitVqgJump } from './helpers/extendedWorldVqg';
 
 const api = '/api/dev-lan';
 const may = '11111111-1111-4111-8111-111111111111';
@@ -10,16 +11,40 @@ const headers = (id: string) => ({ 'x-dev-user-id': id });
 test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 test.skip(process.env.OLW_DEV_LAN_PHYSICAL_INVENTORY !== '1', 'Requires the isolated INV.2 save mode');
 
-async function getInventory(request: APIRequestContext, worldId: string, actor: string) {
-  const response = await request.get(`${api}/inventory/physical?worldId=${worldId}`, { headers: headers(actor) });
+async function getInventory(request: APIRequestContext, worldId: string, actor: string, storage = false) {
+  const response = await request.get(api + '/inventory/physical', {
+    headers: headers(actor), params: storage ? { worldId, storage: 'home' } : { worldId },
+  });
   expect(response.ok(), await response.text()).toBeTruthy();
   return (await response.json()).data as PhysicalInventoryView;
 }
 
 async function enter(page: Page, preset: 'partner-a' | 'partner-b') {
-  await page.goto('/?extended-world=1');
+  await page.goto('/?extended-world=1&vqg-capture=1');
   await page.getByTestId('preset-' + preset).click();
   await expect(page.getByTestId('physical-hotbar')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('game-canvas-host').locator('canvas')).toHaveAttribute('data-map-id', 'home');
+}
+
+async function stepToCabinet(page: Page, request: APIRequestContext, worldId: string, actor: string) {
+  await expect.poll(async () => {
+    const inventory = await getInventory(request, worldId, actor);
+    if (!inventory.canDrop) await page.keyboard.press('ArrowRight', { delay: 150 });
+    return inventory.canDrop;
+  }).toBe(true);
+  await emitVqgJump(page, 'home', 1, 10);
+  await expect.poll(async () => (await getInventory(request, worldId, actor, true)).storage?.kind).toBe('home');
+}
+
+async function openCabinet(page: Page, touch: boolean) {
+  const controls = touch ? page.getByTestId('main-game-touch-actions') : page.getByTestId('main-game-interaction-hud');
+  const prompt = controls.getByTestId('btn-context-primary');
+  await expect(prompt).toContainText(touch ? 'Kho nhà' : 'Mở kho nhà');
+  if (touch) await prompt.tap();
+  else await page.keyboard.press('j');
+  const modal = page.getByTestId('physical-home-storage-modal');
+  await expect(modal).toBeVisible();
+  return modal;
 }
 
 test('real slots persist across row rotation and only one client withdraws the last shared stack', async ({ page, request, browser, baseURL }, info) => {
@@ -33,13 +58,11 @@ test('real slots persist across row rotation and only one client withdraws the l
   try {
     const other = await secondContext.newPage();
     await enter(other, 'partner-b');
-    const getA = () => getInventory(request, worldId, may);
-    const getB = () => getInventory(request, worldId, nang);
-    await expect.poll(async () => (await getA()).atHome).toBe(true);
-    await expect.poll(async () => (await getB()).atHome).toBe(true);
-    await page.getByRole('button', { name: 'Ba lô', exact: true }).click();
-    const modal = page.getByTestId('physical-inventory-modal');
-    await expect(modal).toBeVisible();
+    await stepToCabinet(page, request, worldId, may);
+    await stepToCabinet(other, request, worldId, nang);
+    const getA = () => getInventory(request, worldId, may, true);
+    const getB = () => getInventory(request, worldId, nang, true);
+    const modal = await openCabinet(page, info.project.name !== 'chromium-desktop');
     const initial = await getA();
     const seeds = initial.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat');
     expect(seeds?.stack?.qty).toBe(5);
@@ -58,10 +81,18 @@ test('real slots persist across row rotation and only one client withdraws the l
       await adjacent.dragTo(rowStart);
       await expect(rowStart).toHaveAttribute('data-qty', '1');
     }
-    await modal.getByRole('button', { name: 'Đổi hàng' }).click();
-    await expect(modal.getByText('Ba lô · Hàng đang dùng 2')).toBeVisible();
     await modal.getByRole('button', { name: 'Đóng' }).click();
-    await expect(page.getByTestId('physical-hotbar').locator('[data-testid^="physical-hotbar-"]')).toHaveCount(9);
+    const bar = page.getByTestId('physical-hotbar');
+    await expect(bar).toHaveAttribute('data-active-row', '1');
+    if (info.project.name === 'chromium-desktop') {
+      await page.keyboard.press('Shift+Tab');
+      await expect(bar).toHaveAttribute('data-active-row', '1');
+      await page.keyboard.press('Shift');
+    } else {
+      await bar.getByRole('button', { name: /Đổi hàng vật phẩm/ }).tap();
+    }
+    await expect(bar).toHaveAttribute('data-active-row', '2');
+    await expect(bar.locator('[data-testid^="physical-hotbar-"]')).toHaveCount(9);
     await expect(page.getByTestId('physical-hotbar-1')).toHaveAttribute('data-qty', '1');
     if (info.project.name === 'chromium-desktop') {
       await page.locator('body').click({ position: { x: 20, y: 220 } });
@@ -71,7 +102,7 @@ test('real slots persist across row rotation and only one client withdraws the l
 
     const latest = await getA();
     const requestBody: PhysicalInventoryRequest = {
-      worldId, version: latest.version, idempotencyKey: 'last-seeds', query: INITIAL_PHYSICAL_QUERY,
+      worldId, version: latest.version, idempotencyKey: 'last-seeds', query: INITIAL_HOME_STORAGE_QUERY,
       command: { kind: 'transfer', from: { container: 'home', index: seedIndex }, to: 'backpack', qty: 4, stackId: seeds!.stack!.id },
     };
     const withdraw = (client: Page, actor: string, key: string) => client.request.post(api + '/inventory/physical', {
@@ -89,7 +120,7 @@ test('real slots persist across row rotation and only one client withdraws the l
 
     await page.reload();
     await expect(page.getByTestId('physical-hotbar')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Hàng 2 ↻' })).toBeVisible();
+    await expect(page.getByTestId('physical-hotbar')).toHaveAttribute('data-active-row', '2');
   } finally {
     await secondContext.close();
   }
@@ -105,10 +136,10 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
     const other = await ctx.newPage();
     await enter(page, 'partner-a');
     await enter(other, 'partner-b');
-    const getA = () => getInventory(request, worldId, may);
-    const getB = () => getInventory(request, worldId, nang);
-    // Normal movement packets are emitted by the game canvas and accepted by the existing relay.
-    for (const client of [page, other]) await client.keyboard.press('ArrowRight', { delay: 180 });
+    await stepToCabinet(page, request, worldId, may);
+    await stepToCabinet(other, request, worldId, nang);
+    const getA = () => getInventory(request, worldId, may, true);
+    const getB = () => getInventory(request, worldId, nang, true);
     await expect.poll(async () => (await getA()).canDrop).toBe(true);
     await expect.poll(async () => (await getB()).canDrop).toBe(true);
     const send = (client: Page, actor: string, version: number, key: string, command: PhysicalInventoryRequest['command']) =>
@@ -147,7 +178,7 @@ test('dropping and concurrent pickup move the same unique stack once', async ({ 
   }
 });
 
-test('keeps browser shortcuts available until the player requests a real import', async ({ page, request }) => {
+test('keeps browser shortcuts available until the player requests a real import', async ({ page, request }, info) => {
   expect((await request.post(api + '/reset', { data: {} })).ok()).toBe(true);
   const seed = await request.post(api + '/seed-couple', { data: {} });
   const worldId = (await seed.json()).data.world.id as string;
@@ -159,12 +190,105 @@ test('keeps browser shortcuts available until the player requests a real import'
     }));
   }, { key: `olw_inv_layout_v2:${worldId}:${may}` });
   await enter(page, 'partner-a');
-  await expect.poll(async () => (await getInventory(request, worldId, may)).atHome).toBe(true);
-  await page.getByRole('button', { name: 'Ba lô', exact: true }).click();
-  const modal = page.getByTestId('physical-inventory-modal');
+  await stepToCabinet(page, request, worldId, may);
+  const modal = await openCabinet(page, info.project.name !== 'chromium-desktop');
   await modal.getByRole('button', { name: 'Lấy món từ ô nhanh cũ' }).click();
   await expect(modal.getByTestId('physical-backpack-1')).toHaveAttribute('data-qty', '1');
   await expect(modal.getByRole('button', { name: 'Lấy món từ ô nhanh cũ' })).toHaveCount(0);
-  const view = await getInventory(request, worldId, may);
+  const view = await getInventory(request, worldId, may, true);
   expect(view.storage?.slots.find(({ stack }) => stack?.itemSku === 'seed_wheat')?.stack?.qty).toBe(4);
+});
+
+
+test('backpack stays personal, the cabinet owns shared storage and selection keeps the grid stable', async ({ page, request }, info) => {
+  expect((await request.post(api + '/reset', { data: {} })).ok()).toBe(true);
+  const seed = await request.post(api + '/seed-couple', { data: {} });
+  const worldId = (await seed.json()).data.world.id as string;
+  const touch = info.project.name !== 'chromium-desktop';
+  await enter(page, 'partner-a');
+
+  const openBackpack = page.getByRole('button', { name: 'Mở ba lô' });
+  const bag = page.getByTestId('physical-inventory-modal');
+  const shelf = page.getByTestId('physical-home-storage-modal');
+  await expect.poll(async () => (await getInventory(request, worldId, may)).atHome).toBe(true);
+  expect((await getInventory(request, worldId, may, true)).storage).toBeNull();
+  if (touch) await openBackpack.tap();
+  else await page.keyboard.press('i');
+  await expect(bag).toBeVisible();
+  await expect(bag.getByRole('region', { name: 'Kho chung' })).toHaveCount(0);
+  await expect(bag.getByRole('textbox', { name: 'Tên vật phẩm' })).toHaveCount(0);
+
+  await bag.getByRole('button', { name: 'Đóng' }).click();
+
+  await stepToCabinet(page, request, worldId, may);
+  expect((await getInventory(request, worldId, may)).storage).toBeNull();
+  if (!touch) {
+    await page.keyboard.press('i');
+    await expect(bag).toBeVisible();
+    await expect(shelf).toBeHidden();
+    await bag.getByRole('button', { name: 'Đóng' }).click();
+  }
+  await openCabinet(page, touch);
+  const stock = (await getInventory(request, worldId, may, true)).storage!.slots;
+  const seedSlot = stock.find(({ stack }) => stack?.itemSku === 'seed_wheat')!;
+  const first = shelf.getByTestId('physical-home-' + seedSlot.index);
+  const neighbor = shelf.getByTestId('physical-home-' + (seedSlot.index + 1));
+  await expect(first).toHaveAttribute('data-qty', '5');
+  const original = { first: await first.boundingBox(), neighbor: await neighbor.boundingBox() };
+  await first.click();
+  await expect(first).toHaveAttribute('aria-pressed', 'true');
+  expect(await first.boundingBox()).toEqual(original.first);
+  expect(await neighbor.boundingBox()).toEqual(original.neighbor);
+  await shelf.getByRole('button', { name: 'Thao tác khác' }).click();
+  expect(await first.boundingBox()).toEqual(original.first);
+  expect(await neighbor.boundingBox()).toEqual(original.neighbor);
+  await shelf.getByRole('button', { name: 'Bỏ chọn' }).click();
+  const search = shelf.getByRole('textbox', { name: 'Tên vật phẩm' });
+  if (!touch) {
+    await search.focus();
+    await page.keyboard.press('j');
+    await expect(search).toHaveValue('j');
+    await expect(shelf).toBeVisible();
+  }
+  await search.fill('khong-co-mat-hang-nay');
+  await search.press('Enter');
+  await expect(shelf.getByText('Không có món phù hợp.')).toBeVisible();
+  await search.fill('');
+  await search.press('Enter');
+  await shelf.getByRole('combobox', { name: 'Loại vật phẩm' }).selectOption('seed');
+  await expect(shelf.getByRole('button', { name: /Kho nhà ô.* ×5/ })).toBeVisible();
+  await shelf.getByRole('button', { name: 'Đóng' }).click();
+
+  if (!touch) {
+    // Put real stacks across the entire row so all nine bindings must equip a concrete slot.
+    for (const [index, cell] of stock.filter(({ stack }) => stack).slice(0, 9).entries()) {
+      const stack = cell.stack!;
+      const view = await getInventory(request, worldId, may);
+      const reply = await request.post(api + '/inventory/physical', {
+        headers: headers(may),
+        data: { worldId, version: view.version, idempotencyKey: 'digit-' + index, query: INITIAL_PHYSICAL_QUERY,
+          command: { kind: 'move', from: { container: 'home', index: cell.index },
+            to: { container: 'backpack', index }, qty: 1, stackId: stack.id } },
+      });
+      expect(reply.ok(), await reply.text()).toBeTruthy();
+    }
+    for (let digit = 1; digit <= 9; digit++) {
+      const slot = page.getByTestId('physical-hotbar-' + digit);
+      await expect(slot).toHaveAttribute('data-qty', '1');
+      await page.keyboard.press(String(digit));
+      await expect(slot).toHaveAttribute('aria-pressed', 'true');
+    }
+    await expect(page.getByTestId('btn-context-secondary')).toContainText('Cất vật phẩm');
+    await page.keyboard.press('k');
+    await expect(page.getByTestId('physical-hotbar-9')).toHaveAttribute('aria-pressed', 'false');
+  }
+
+  await emitVqgJump(page, 'garden', 8, 4);
+  const canvas = page.getByTestId('game-canvas-host').locator('canvas');
+  await expect(canvas).toHaveAttribute('data-map-id', 'garden');
+  await expect.poll(async () => (await getInventory(request, worldId, may, true)).storage).toBeNull();
+  if (touch) await openBackpack.tap();
+  else await page.keyboard.press('i');
+  await expect(bag).toBeVisible();
+  await expect(shelf).toBeHidden();
 });

@@ -80,6 +80,8 @@ function shortMobileActionLabel(action: ContextualAction): string {
       return 'Ngoại hình';
     case 'open_study':
       return 'Học bài';
+    case 'open_home_storage':
+      return 'Kho nhà';
     case 'open_mailbox':
       return 'Hộp thư';
     case 'open_photo_frame':
@@ -148,6 +150,7 @@ export interface MainGameInteractionLayerProps {
   /** True while authoritative pet/inventory mutation is in flight (blocks duplicate J/K). */
   interactionMutationBusy: boolean;
   onOpenInventory: () => void;
+  onOpenHomeStorage?: () => void;
   onCloseTopModal: () => void;
   onFeedPetAuthoritative: () => Promise<void>;
   onPetPetAuthoritative: () => Promise<void>;
@@ -192,6 +195,7 @@ export function MainGameInteractionLayer({
   petCanFeed,
   interactionMutationBusy,
   onOpenInventory,
+  onOpenHomeStorage,
   onCloseTopModal,
   onFeedPetAuthoritative,
   onPetPetAuthoritative,
@@ -215,9 +219,10 @@ export function MainGameInteractionLayer({
     clearHeld: clearLegacyHeld,
   } = useHeldItemFromHotbar(
     useMemo(
-      () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
-      [inventorySnapshot, localUserId, hotbarBindings],
+      () => physicalMode ? [] : buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings),
+      [inventorySnapshot, localUserId, hotbarBindings, physicalMode],
     ),
+    !physicalMode,
   );
   const heldItem = physicalMode ? physicalHeldItem ?? EMPTY_HELD_ITEM : legacyHeldItem;
   const clearHeld = useCallback(() => {
@@ -225,8 +230,8 @@ export function MainGameInteractionLayer({
     else clearLegacyHeld();
   }, [clearLegacyHeld, physicalMode]);
   const hotbarSlots = useMemo(
-    () => buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
-    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku],
+    () => physicalMode ? [] : buildHotbarSlotsFromInventory(inventorySnapshot, localUserId, hotbarBindings, waterFillBySku),
+    [inventorySnapshot, localUserId, hotbarBindings, waterFillBySku, physicalMode],
   );
 
   const [resolution, setResolution] = useState<ContextualResolution>({
@@ -312,6 +317,7 @@ export function MainGameInteractionLayer({
       petCanFeed,
       livingPetLocalSimulation: livingPetSim,
       onOpenInventory,
+      onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
       onFarmApply,
@@ -337,6 +343,7 @@ export function MainGameInteractionLayer({
       petCanFeed,
       livingPetSim,
       onOpenInventory,
+      onOpenHomeStorage,
       onFeedPetAuthoritative,
       onPetPetAuthoritative,
       onFarmApply,
@@ -367,6 +374,7 @@ export function MainGameInteractionLayer({
           which,
           farmPlotByIndex,
           farmServerNowMs,
+          !physicalMode,
         )
       ) {
         return;
@@ -385,7 +393,7 @@ export function MainGameInteractionLayer({
         setLocalActionBusy(false);
       }
     },
-    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs],
+    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs, physicalMode],
   );
 
   const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
@@ -408,6 +416,7 @@ export function MainGameInteractionLayer({
         economyPlayable: frame.economyPlayable ?? donorLanPlayable,
         farmPlotByIndex,
         serverNowMs: farmServerNowMs,
+        canUseHeldToy: !physicalMode,
       });
       const previous = resolutionRef.current;
       if (previous.targetId !== next.targetId ||
@@ -419,7 +428,7 @@ export function MainGameInteractionLayer({
       }
     };
     return gameEventBus.on('evt:interaction-frame', onFrame);
-  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs]);
+  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs, physicalMode]);
 
   useEffect(() => {
     return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
@@ -439,7 +448,7 @@ export function MainGameInteractionLayer({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat || e.defaultPrevented) return;
+      if (e.repeat) return;
       if (e.code === 'Escape') {
         if (modalOpen || !isEditableInputTarget(e.target)) {
           onCloseTopModal();
@@ -447,7 +456,7 @@ export function MainGameInteractionLayer({
         }
         return;
       }
-      if (!showHud || isEditableInputTarget(e.target)) return;
+      if (e.defaultPrevented || !showHud || isEditableInputTarget(e.target)) return;
       if (e.code === 'KeyI') {
         e.preventDefault();
         onOpenInventory();
@@ -486,6 +495,8 @@ export function MainGameInteractionLayer({
     secondary: executeSecondary,
     inventory: () => { if (showHud) onOpenInventory(); },
     back: () => { if (modalOpen) onCloseTopModal(); else if (showHud) clearHeld(); },
+    previousRow: () => { if (showHud && physicalMode) gameEventBus.emit('cmd:rotate-physical-hotbar', -1); },
+    nextRow: () => { if (showHud && physicalMode) gameEventBus.emit('cmd:rotate-physical-hotbar', 1); },
   });
 
   if (!showHud) return null;
@@ -572,6 +583,7 @@ export function MainGameInteractionLayer({
       <div
         className={`main-game-interaction-stack ${petCareHud ? 'main-game-interaction-stack--pet-care' : ''}`}
         data-testid="main-game-interaction-hud"
+        data-physical-inventory={physicalMode || undefined}
         onPointerDown={(e) => e.stopPropagation()}
       >
         {!petCareHud && !touchActions ? (
