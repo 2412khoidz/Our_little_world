@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { RANCH_ACTIONS_ATLAS } from '../../shared/art/ranchActionAtlas';
 import type { FarmPlotView } from '../../shared/farming/farmSnapshotTypes';
 import { cabacosGrowthStageForPermille } from '../../shared/farming/farmGrowthClock';
 import { farmPlotTileForIndex } from '../../shared/farming/farmPlotIndex';
@@ -20,7 +21,7 @@ type PlotVisual = {
   fertilizerBadge?: Phaser.GameObjects.Image;
   sprinkler?: Phaser.GameObjects.Image;
   crop?: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
-  indicator?: Phaser.GameObjects.Image;
+  indicator?: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   stage: string;
 };
 
@@ -176,14 +177,17 @@ export class FarmPlotVisualController {
           this.pushObject(next.crop);
         }
         const indicatorKey = this.plotIndicatorTexture(plot);
-        if (indicatorKey) {
+        if (plot.ready && this.scene.anims.exists('fx_ready')) {
+          next.indicator = this.scene.add
+            .sprite(cx, cy - Math.round(this.tilePixelSize * 0.4), RANCH_ACTIONS_ATLAS, 'fx_ready_0')
+            .setDepth(3.55).setScale(tileUnit).play('fx_ready');
+        } else if (indicatorKey) {
           const indOffsetY = Math.max(12, Math.round(this.tilePixelSize * 0.85));
           next.indicator = this.scene.add
             .image(cx, cy - indOffsetY, indicatorKey)
             .setDepth(3.55)
             .setScale(0.85 * tileUnit);
           next.indicator.setTint(plot.ready ? 0xffe066 : 0x4fc3f7);
-          this.pushObject(next.indicator);
         }
       }
 

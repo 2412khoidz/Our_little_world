@@ -1,3 +1,5 @@
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
+import { DEFAULT_ORCHARD_SLOT_TILES } from '../../shared/farming/farmEntityTiles';
 /**
  * Procedural perennial fruit tree textures & world sprites (`OrchardVisualController`).
  *
@@ -10,21 +12,6 @@ import type { OrchardTreeStage, OrchardTreeView } from '../../shared/farming/orc
 import type { CalendarSeason } from '../../shared/world/worldCalendar';
 import { TILE_SIZE } from '../../shared/maps';
 import { FARMING_TREES_ATLAS_KEY, getFarmingTreeFrame } from '../../shared/art/farmingSpriteAtlas';
-
-export const DEFAULT_ORCHARD_SLOT_TILES: ReadonlyArray<readonly [number, number]> = [
-  [8, 26],
-  [12, 26],
-  [16, 26],
-  [20, 26],
-  [8, 30],
-  [12, 30],
-  [16, 30],
-  [20, 30],
-  [8, 34],
-  [12, 34],
-  [16, 34],
-  [20, 34],
-];
 
 export function computeOrchardTreeDisplayScale(
   frameH: number,
@@ -144,10 +131,37 @@ export class OrchardVisualController {
 
   destroy(): void {
     for (const entry of this.sprites.values()) {
+      this.scene.tweens.killTweensOf(entry.sprite);
       entry.sprite.destroy();
       entry.badge?.destroy();
     }
     this.sprites.clear();
+  }
+
+  interactionTargets(): InteractableTarget[] {
+    return Array.from(this.sprites, ([slotIndex, { sprite }]) => ({
+      id: `orchard:${slotIndex}`, kind: 'deep_farm', labelVi: 'Cây ăn quả',
+      x: sprite.x, y: sprite.y, maxRadiusPx: 25 * this.tilePixelSize / 16,
+      deepFarmTarget: { kind: 'tree', slotIndex },
+    }));
+  }
+
+  playHarvestShake(slotIndex: number) {
+    const sprite = this.sprites.get(slotIndex)?.sprite;
+    if (!sprite) return null;
+    this.scene.tweens.killTweensOf(sprite);
+    sprite.setRotation(0);
+    this.scene.tweens.add({
+      targets: sprite, rotation: { from: -0.045, to: 0.045 }, duration: 65, yoyo: true, repeat: 1,
+      onComplete: () => sprite.setRotation(0),
+    });
+    const scale = this.tilePixelSize / 16;
+    return {
+      x: sprite.x + sprite.displayWidth * 0.42,
+      y: sprite.y - sprite.displayHeight * 0.35,
+      depth: sprite.depth + 2,
+      scale,
+    };
   }
 
   sync(views: readonly OrchardTreeView[], season: CalendarSeason = 'spring'): void {
@@ -162,6 +176,7 @@ export class OrchardVisualController {
       const existing = this.sprites.get(view.slotIndex);
       if (existing?.cacheKey === cacheKey) continue;
 
+      if (existing) this.scene.tweens.killTweensOf(existing.sprite);
       existing?.sprite.destroy();
       existing?.badge?.destroy();
 
@@ -211,6 +226,7 @@ export class OrchardVisualController {
     for (const slotIdx of [...this.sprites.keys()]) {
       if (!active.has(slotIdx)) {
         const entry = this.sprites.get(slotIdx);
+        if (entry) this.scene.tweens.killTweensOf(entry.sprite);
         entry?.sprite.destroy();
         entry?.badge?.destroy();
         this.sprites.delete(slotIdx);

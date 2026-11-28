@@ -32,6 +32,7 @@ interface GameViewportProps {
   hudLayoutMode?: HudLayoutMode;
   petCareActive?: boolean;
   isModalOpen: boolean;
+  animateUnderModal?: boolean;
   /** When true, legacy E/nearby button is hidden (main game J/K HUD). */
   contextualInteractionHud?: boolean;
   movementConnection: number | null;
@@ -56,6 +57,7 @@ export function GameViewport({
   hudLayoutMode = 'desktop',
   petCareActive = false,
   isModalOpen,
+  animateUnderModal = false,
   contextualInteractionHud = false,
   movementConnection,
   toast,
@@ -167,8 +169,8 @@ export function GameViewport({
 
   useEffect(() => {
     if (!sceneReady) return;
-    gameEventBus.emit('cmd:set-paused', { paused: isModalOpen });
-  }, [sceneReady, isModalOpen]);
+    gameEventBus.emit('cmd:set-paused', { paused: isModalOpen, keepAnimating: animateUnderModal });
+  }, [sceneReady, isModalOpen, animateUnderModal]);
 
   useEffect(() => {
     if (!sceneReady) return;

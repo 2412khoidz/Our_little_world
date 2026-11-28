@@ -9,7 +9,7 @@ Checklist chống hồi quy dùng cho cả **Feature Agent** (trước bàn giao
 - [ ] **Git hygiene:** `git status --short` không chứa `.env`, `.dev-lan-state*.json`, `public/assets/private-*`, `public/assets/local-licensed/`.
 - [ ] **Ancestry:** `git merge-base --is-ancestor origin/main HEAD` pass (`exit 0`).
 - [ ] **Private runtime assets:** `npm run assets:private:verify` -> PASSED (10 atlas/character files + 5 track nhạc nền).
-- [ ] **Lint:** `npm run lint` -> 0 errors (hiện baseline có 1 warning sẵn tại `src/features/donor/ChillFishingModal.tsx:90`, không thêm warning mới).
+- [ ] **Lint:** `npm run lint` -> 0 errors. M3e đã xử lý warning trong `ChillFishingModal.tsx`.
 - [ ] **Typecheck:** `npm run typecheck` -> exit 0.
 - [ ] **Production build & Guard:** `npm run build && node scripts/verify-prod-guard.mjs` -> exit 0 (0 dev/private/LAN leaks trong `dist/assets/*.js`, không trùng precache URL trong `dist/sw.js`).
 
@@ -26,6 +26,10 @@ Chỉ chạy các nhóm bài test liên quan trực tiếp + nhóm phụ thuộc
 ### Deep Farming & Economy (`Checkpoints A–G`)
 - [ ] `npx vitest run tests/unit/farming.test.ts tests/unit/deepCropSimulation.test.ts tests/unit/flowerGeneticsOrchard.test.ts tests/unit/livestock.test.ts tests/unit/workshopsEconomy.test.ts tests/unit/orderBoard.test.ts tests/unit/farmingSpriteAtlas.test.ts tests/unit/farmVisualScaleParity.test.ts tests/unit/catalogParity.test.ts tests/server/deepFarmingCoopAuthority.test.ts`
 - [ ] `npx playwright test tests/e2e/donor-economy-two-client.spec.ts tests/e2e/farming-co-op.spec.ts --project=chromium-desktop`
+
+### Hiệu ứng trang trại và câu cá (M3d + M3e)
+- [ ] `npx vitest run tests/unit/ranchVisuals.test.ts tests/unit/farmVisualScaleParity.test.ts tests/unit/farmingSpriteAtlas.test.ts tests/unit/canonicalFishingReward.test.ts tests/unit/mobileInteractablesAndHud.test.ts`
+- [ ] `npx playwright test tests/e2e/farming-fishing-visuals.spec.ts` trên hai project Chromium. Kiểm tra thêm [bằng chứng hình ảnh và save DEV](handovers/FARMING_FISHING_VISUALS.md).
 
 ### Billiards V2
 - [ ] `npx vitest run tests/unit/billiardsPhysicsDeterminism.test.ts tests/unit/billiardsProtocol.test.ts tests/unit/billiardsModalLifecycle.test.tsx tests/server/billiardsDevLan.test.ts`

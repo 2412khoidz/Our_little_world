@@ -1,0 +1,184 @@
+.ranch-fishing {
+  box-sizing: border-box;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+           max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  --ranch-fishing-width: 540px;
+}
+
+.ranch-fishing[data-focus-expanded="1"] {
+  --ranch-fishing-width: 700px;
+}
+
+.ranch-fishing:fullscreen {
+  display: grid;
+  place-items: center;
+  background: #152925;
+}
+
+.nuvora-desk.ranch-fishing__panel {
+  width: min(100%, var(--ranch-fishing-width));
+  max-height: calc(var(--olw-vvh, 100dvh) - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom)));
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: #3f2919;
+}
+
+.ranch-fishing__header {
+  gap: 6px;
+}
+
+.ranch-fishing__header h2,
+.ranch-fishing__tools,
+.ranch-fishing__actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ranch-fishing__header h2 svg {
+  flex-shrink: 0;
+}
+
+.ranch-fishing__tools .btn,
+.ranch-fishing__actions .btn {
+  min-height: 44px;
+}
+
+.ranch-fishing__tools .btn {
+  min-width: 44px;
+  justify-content: center;
+}
+
+.ranch-fishing__body {
+  display: grid;
+  align-items: start;
+  gap: 10px;
+}
+
+.ranch-fishing__side {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ranch-fishing__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border: 2px solid #704726;
+  border-radius: 10px;
+  box-sizing: border-box;
+  background: #214b64;
+  touch-action: manipulation;
+}
+
+.ranch-fishing__canvas[data-interactive="true"] {
+  cursor: pointer;
+  touch-action: none;
+}
+
+.ranch-fishing__status {
+  min-height: 1.3em;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.ranch-fishing__actions {
+  flex-wrap: wrap;
+}
+
+.ranch-fishing__actions .btn--primary {
+  flex: 1;
+}
+
+.ranch-fishing__catch,
+.ranch-fishing__kit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 2px solid #bc9a5e;
+  border-radius: 10px;
+  background: #fff0ce;
+}
+
+.ranch-fishing__catch[data-escaped="true"] .ranch-fishing__fish {
+  opacity: .55;
+  filter: grayscale(.65);
+}
+
+.ranch-fishing__catch small,
+.ranch-fishing__kit small {
+  display: block;
+}
+
+.ranch-fishing__fish {
+  display: inline-block;
+  flex: none;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.ranch-fishing__meter {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ranch-fishing__meter progress {
+  accent-color: #2e8761;
+  width: 100%;
+  height: 12px;
+}
+
+.ranch-fishing__tension {
+  position: relative;
+  height: 10px;
+  margin: 2px 6px 5px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #a64d36 15%, #79af75 15% 85%, #a64d36 85%);
+  box-shadow: inset 0 1px 2px #4a2b25aa;
+}
+
+.ranch-fishing__tension::after {
+  position: absolute;
+  left: var(--tension);
+  top: -2px;
+  width: 5px;
+  height: 14px;
+  border-radius: 3px;
+  background: #fff3c3;
+  box-shadow: 0 0 0 1px #563d24;
+  transform: translateX(-50%);
+  content: "";
+}
+
+.ranch-fishing__hold {
+  user-select: none;
+  touch-action: none;
+}
+
+@media (orientation: landscape) and (max-height: 550px) {
+  .ranch-fishing {
+    --ranch-fishing-width: 750px;
+  }
+
+  .ranch-fishing__body {
+    grid-template-columns: minmax(0, 1.58fr) minmax(160px, 1fr);
+  }
+}
+
+@media (max-width: 390px) {
+  .ranch-fishing__header h2 {
+    display: block;
+    font-size: 16px;
+  }
+
+  .ranch-fishing__header h2 svg {
+    display: none;
+  }
+}

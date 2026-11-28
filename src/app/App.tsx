@@ -524,6 +524,8 @@ function MainCoupleApp({
       setFarmServerNowMs(snap.serverNowMs);
       setFarmPlotByIndex(new Map(snap.plots.map((p) => [p.plotId, p])));
       gameEventBus.emit('cmd:sync-farm', {
+        worldId: snap.worldId,
+        version: snap.version,
         plots: snap.plots,
         serverNowMs: snap.serverNowMs,
         growthTimeScale: snap.growthTimeScale,
@@ -544,6 +546,7 @@ function MainCoupleApp({
     return () => clearInterval(id);
   }, [currentMapId, backend.farm, farmClockAnchor]);
   const [donorChillFishingSpot, setDonorChillFishingSpot] = useState<DonorFishingSpotId>('meadow_pond');
+  const [initialWorkshopId, setInitialWorkshopId] = useState<WorkshopId>();
   const [donorWorkshopFocus, setDonorWorkshopFocus] = useState<DonorWorkshopFocus | undefined>(undefined);
   const [mailboxSnapshot, setMailboxSnapshot] = useState<MailboxSnapshot | null>(null);
   const [mailboxBusy, setMailboxBusy] = useState(false);
@@ -2823,6 +2826,7 @@ function MainCoupleApp({
           showToast('Xưởng bánh Hollow sẽ mở trên bản preview nông trại.');
           return;
         }
+        setInitialWorkshopId(undefined);
         setDonorWorkshopFocus('bakery');
         setActiveModal('donor_workshop');
       } else if (action === 'open_fishing_sea') {
@@ -3049,6 +3053,10 @@ function MainCoupleApp({
         petCareActive={petCareMode}
         movementConnection={connectionStatus === 'connected' ? movementConnectionVersion : null}
         isModalOpen={isAnyModalOpen}
+        animateUnderModal={
+          activeModal === 'donor_fishing' || activeModal === 'donor_workshop' ||
+          activeModal === 'deep_flowers' || activeModal === 'deep_livestock'
+        }
         contextualInteractionHud
         toast={toast}
       />
@@ -3068,7 +3076,16 @@ function MainCoupleApp({
         hudLayoutMode={layoutMode}
         hotbarSlotsPerPage={hotbarStrategy.slotsPerPage}
         petCanFeed={petCanFeed}
-        interactionMutationBusy={petBusy || farmBusy}
+        interactionMutationBusy={petBusy || farmBusy || deepFarmBusy}
+        deepFarmSnapshot={deepFarmSnapshot}
+        onApplyDeepFarm={backend.farm && worldId ? async (intent) => {
+          await runDeepFarmAction({
+            ...intent,
+            worldId,
+            expectedVersion: deepFarmVersionRef.current,
+            idempotencyKey: makeIdempotencyKey(intent.kind),
+          });
+        } : undefined}
         onOpenInventory={() => {
           setActiveModal('inventory');
           void refreshInventorySnapshot();
@@ -3170,8 +3187,9 @@ function MainCoupleApp({
             : undefined
         }
         onOpenDonorWorkshop={
-          donorLanPlayable && worldId
-            ? (focus) => {
+          (donorLanPlayable || deepFarmSnapshot) && worldId
+            ? (focus, workshopId) => {
+                setInitialWorkshopId(workshopId);
                 setDonorWorkshopFocus(focus);
                 setActiveModal('donor_workshop');
               }
@@ -3386,6 +3404,7 @@ function MainCoupleApp({
           onOpenDonorWorkshop={
             backend.farm && worldId
               ? () => {
+                  setInitialWorkshopId(undefined);
                   setDonorWorkshopFocus(undefined);
                   void refreshDeepFarmSnapshot(worldId);
                   setActiveModal('donor_workshop');
@@ -3514,6 +3533,7 @@ function MainCoupleApp({
           onOpenDonorWorkshop={
             backend.farm && worldId
               ? () => {
+                  setInitialWorkshopId(undefined);
                   setDonorWorkshopFocus(undefined);
                   void refreshDeepFarmSnapshot(worldId);
                   setActiveModal('donor_workshop');
@@ -3648,6 +3668,7 @@ function MainCoupleApp({
         <DonorWorkshopModal
           worldId={worldId}
           focusSection={donorWorkshopFocus}
+          initialWorkshopId={initialWorkshopId}
           inventory={inventorySnapshot}
           legacyVillageEnabled={donorLanPlayable}
           onClose={() => {

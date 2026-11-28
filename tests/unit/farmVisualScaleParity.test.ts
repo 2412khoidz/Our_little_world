@@ -1,3 +1,4 @@
+import { DEFAULT_LIVESTOCK_TILES, DEFAULT_ORCHARD_SLOT_TILES } from '../../src/shared/farming/farmEntityTiles';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -12,12 +13,10 @@ import {
 } from '../../src/shared/donor/farmCropVisualResolver';
 import {
   computeOrchardTreeDisplayScale,
-  DEFAULT_ORCHARD_SLOT_TILES,
 } from '../../src/game/farming/OrchardVisualController';
 import {
   computeLivestockDisplayScale,
   computeLivestockSpeciesDisplayScale,
-  DEFAULT_LIVESTOCK_TILES,
 } from '../../src/game/farming/LivestockVisualController';
 import { TILE_SIZE } from '../../src/shared/maps';
 

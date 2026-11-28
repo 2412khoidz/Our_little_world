@@ -8,7 +8,7 @@
 > - **Đã hoàn tất & duyệt (`RC2` trên `main`):** **M0 Phase 1** (Mobile HUD & Fullscreen), **M1** (Billiards V4.1 + Fair Start), **M3a** (Asset Audit), **M3b** (32 SKU fixes), **M3c / M3c.1 / M3c.2** (Animated Livestock, Portraits & Ambient Animals).
 > - **M0 Follow-up (`PENDING`):** Cải tiến/tối ưu menu phụ trợ (auxiliary mobile menu improvements).
 > - **M2 (`V0.2.x` · `PLANNED`):** Couple P1 Animations (`kiss`, `lean_shoulder`, `dance`, `give_flower`)
-> - **M3d–M3e (`V0.2.x` · `PLANNED`):** Animated Processing Machines/VFX (`M3d`) & Fishing Artwork/Anim Transplant (`M3e`)
+> - **M3d–M3e (`V0.2.x` · chờ chủ dự án duyệt hình ảnh):** Animated Processing Machines/VFX (`M3d`) & Fishing Artwork/Anim Transplant (`M3e`)
 > - **M4 (`V0.2.4`):** Home Progression (Shop nội thất 4 phong cách + mở rộng nhà giữ nguyên đồ cũ)
 > - **M5 (`V0.3`):** Interactive Cooking UI (`src/shared/cooking/`) nối nguyên liệu nông trại
 > - **M6 (`V0.3`):** Persistent Shared Life UI (Nhật ký, Wishlist, Lịch hẹn, Picnic)

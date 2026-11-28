@@ -639,6 +639,189 @@ def pack_shelf_atlas(
     return frames
 
 
+def pack_ranch_action_atlases(pool: ZipPool) -> None:
+    """Keep donor strips contiguous for pixel-perfect Phaser frames and CSS step animations."""
+    donor = "FarmRanchLife_v1.0.zip"
+    root = "FarmRanchLife"
+
+    def strip(name: str, path: str, width: int, height: int, count: int):
+        image = pool.load_image(donor, f"{root}/{path}")
+        if image.size != (width * count, height):
+            raise ValueError(f"Unexpected {path} dimensions: {image.size}")
+        return (name, image, {"width": width, "height": height, "count": count})
+
+    buildings = "05_Buildings_Machines"
+    art_root = REPO_ROOT / "public/assets/unified"
+    props_doc = json.loads((art_root / "props-manifest.json").read_text(encoding="utf-8"))
+    props_art = Image.open(art_root / props_doc["texture"]["file"]).convert("RGBA")
+    props = {entry["id"]: entry["rect"] for entry in props_doc["entries"]}
+    inventory_art = Image.open(OUT_PUBLIC / "items-16.png").convert("RGBA")
+    inventory_frames = json.loads((OUT_PUBLIC / "items-16.json").read_text(encoding="utf-8"))["frames"]
+    large_item_art = Image.open(OUT_PUBLIC / "items-32.png").convert("RGBA")
+    large_item_frames = json.loads((OUT_PUBLIC / "items-32.json").read_text(encoding="utf-8"))["frames"]
+    sparkle = pool.load_image(donor, f"{root}/02_Crops/ready_sparkle_overlay_4f.png")
+
+    def crop_rect(image: Image.Image, rect: dict) -> Image.Image:
+        x, y = rect["x"], rect["y"]
+        return image.crop((x, y, x + rect["w"], y + rect["h"]))
+
+    def item(sku: str) -> Image.Image:
+        atlas, frames = (inventory_art, inventory_frames) if sku in inventory_frames else (large_item_art, large_item_frames)
+        image = crop_rect(atlas, frames[sku]["frame"])
+        bounds = image.getbbox()
+        return image.crop(bounds) if bounds else image
+
+    def fit(image: Image.Image, width: int, height: int) -> Image.Image:
+        image = image.copy()
+        image.thumbnail((width, height), Image.Resampling.NEAREST)
+        return image
+
+    def ranch_prop(name: str) -> Image.Image:
+        return pool.load_image(donor, f"{root}/{buildings}/Ranch_Props/{name}.png")
+
+    def artisan(name: str, index: int) -> Image.Image:
+        path = f"{buildings}/Artisan_Machines/{name}_idle_work4_done_6f.png"
+        _, source, _ = strip(name, path, 16, 32, 6)
+        # Keep the working artwork and replace the donor's unrelated result balloon.
+        frame = index if index < 5 else 0
+        return source.crop((16 * frame, 0, 16 * (frame + 1), 32))
+
+    windmill = fit(Image.open(REPO_ROOT / "public/maps/donor/hollowmere/sprites/windmill.png").convert("RGBA"), 17, 30)
+    grain = fit(ranch_prop("sack_grain"), 9, 9)
+    milk = fit(ranch_prop("milk_pail_empty_full_2f").crop((16, 0, 32, 16)), 9, 9)
+    feed = fit(ranch_prop("sack_chicken_feed"), 9, 9)
+    compositor = ranch_prop("compost_bin_4f")
+    hearth = fit(crop_rect(props_art, props["prop.fireplace_brick"]), 21, 22)
+    fire = crop_rect(props_art, props["sheet.fire"])
+    counter = crop_rect(props_art, props["prop.kitchen_counter_fruit"]).crop((0, 11, 32, 24))
+    counter = fit(counter, 23, 11)
+    rose = fit(item("rose_pink"), 9, 10)
+    bouquet = fit(item("sakura_bouquet"), 12, 13)
+    soup = fit(item("carrot_soup"), 10, 11)
+    bread = fit(item("bread"), 9, 8)
+    dust = pool.load_image(donor, f"{root}/10_Effects/soil_dust_till_4f.png")
+
+    def machine_frame(station: str, index: int) -> Image.Image:
+        cell = Image.new("RGBA", (24, 32))
+        working = 1 <= index <= 4
+        if station == "mill":
+            cell.alpha_composite(windmill, (2, 32 - windmill.height))
+            cell.alpha_composite(grain, (15, 32 - grain.height))
+            if working:
+                cell.alpha_composite(dust.crop(((index - 1) * 16, 0, index * 16, 16)), (7, 15))
+        elif station == "dairy":
+            cell.alpha_composite(artisan("butter_churn", index), (0, 0))
+            cell.alpha_composite(milk, (14, 32 - milk.height))
+        elif station == "bakery":
+            cell.alpha_composite(hearth, (1, 32 - hearth.height))
+            if working:
+                flame = fit(fire.crop(((index - 1) * 16, 0, index * 16, 16)), 9, 9)
+                cell.alpha_composite(flame, (7, 22))
+            cell.alpha_composite(bread, (15, 25 - bread.height))
+        elif station == "feed_mill":
+            frame = index - 1 if working else 0
+            cell.alpha_composite(compositor.crop((frame * 16, 0, (frame + 1) * 16, 32)), (1, 0))
+            cell.alpha_composite(feed, (15, 32 - feed.height))
+        elif station == "florist":
+            cell.alpha_composite(counter, (0, 32 - counter.height))
+            cell.alpha_composite(rose, (2, 25 - rose.height))
+            cell.alpha_composite(bouquet, (10 + (index % 2 if working else 0), 25 - bouquet.height))
+        elif station == "kitchen":
+            cell.alpha_composite(hearth, (0, 32 - hearth.height))
+            cell.alpha_composite(fit(counter, 13, 9), (11, 26))
+            cell.alpha_composite(soup, (12, 27 - soup.height))
+            if working:
+                vapor = fit(fire.crop(((index - 1) * 16, 0, index * 16, 16)), 8, 8)
+                cell.alpha_composite(vapor, (6, 22))
+        else:
+            cell.alpha_composite(artisan("preserves_jar" if station == "preserves" else "loom", index), (4, 0))
+        if index == 5:
+            cell.alpha_composite(sparkle.crop((0, 0, 16, 16)), (8, 1))
+        return cell
+
+    farming = []
+    for station in ("mill", "dairy", "bakery", "preserves", "feed_mill", "loom", "florist", "kitchen"):
+        cells = Image.new("RGBA", (24 * 6, 32))
+        for index in range(6):
+            cells.alpha_composite(machine_frame(station, index), (index * 24, 0))
+        farming.append((f"machine_{station}", cells, {"width": 24, "height": 32, "count": 6}))
+
+    effects = {
+        "till": "soil_dust_till", "plant": "seed_scatter", "water": "water_hit",
+        "harvest": "harvest_pop", "pet": "hearts_petting",
+    }
+    farming += [
+        strip(f"fx_{key}", f"10_Effects/{source}_4f.png", 16, 16, 4)
+        for key, source in effects.items()
+    ] + [strip("fx_ready", "02_Crops/ready_sparkle_overlay_4f.png", 16, 16, 4)]
+
+    # Extract the detached fruit from frames 2 and 3. The LPC orchard canopy
+    # remains in the world. Rows 34..47 of the strips contain fruit and trunk.
+    for tree in ("apple", "cherry", "fig", "lemon", "orange", "peach", "pear", "plum", "pomegranate"):
+        path = f"03_Fruit_Trees/{tree}/{tree}_harvest_shake_3f.png"
+        _, source, _ = strip(tree, path, 32, 48, 3)
+        drop = Image.new("RGBA", (32, 16))
+        for index in (1, 2):
+            for y in range(33, 48):
+                for x in range(8, 18):
+                    pixel = source.getpixel((index * 32 + x, y))
+                    if pixel[3] and pixel != source.getpixel((x, y)):
+                        drop.putpixel(((index - 1) * 16 + x - 4, y - 32), pixel)
+        farming.append((f"fruit_{tree}", drop, {"width": 16, "height": 16, "count": 2}))
+
+    fishing = [
+        strip(key, f"11_Fishing/{key}_4f.png", 16, 16, 4)
+        for key in ("bobber_float", "bobber_bite", "fishing_spot_bubbles")
+    ] + [strip("fish_minnow", "08_Items/fish/minnow.png", 16, 16, 1)]
+
+    # Reuse the 4x4 repeat of shallow water tiles already on the OLW farm map.
+    cabacos_water = Image.open(REPO_ROOT / "public/maps/donor/cabacos/ts_map.png").convert("RGBA")
+    fishing.append(("panel_water", cabacos_water.crop((176, 288, 240, 352)), {
+        "width": 64, "height": 64, "count": 1,
+    }))
+    tidefall = REPO_ROOT / "public/assets/donor/tidefall-phaser/sprites/animations"
+    ripples = Image.open(tidefall / "water_ripples_animation.png").convert("RGBA")
+    fishing.append(("water_ripple", ripples.crop((0, 16, 96, 32)), {"width": 16, "height": 16, "count": 6}))
+    shadow = Image.open(tidefall / "fish_shadow_swim_animations/small_fish/animation.png").convert("RGBA")
+    for direction, row in (("right", 0), ("left", 2)):
+        cells = Image.new("RGBA", (64, 16))
+        for index in range(4):
+            x, y = index * 32 + 8, row * 32 + 8
+            cells.paste(shadow.crop((x, y, x + 16, y + 16)), (index * 16, 0))
+        fishing.append((f"fish_shadow_{direction}", cells, {"width": 16, "height": 16, "count": 4}))
+
+    metadata = {}
+    for key, entries in (("ranch-actions", farming), ("ranch-fishing", fishing)):
+        json_path = OUT_PUBLIC / f"{key}.json"
+        strips = pack_shelf_atlas(
+            entries, 256, 2, OUT_PUBLIC / f"{key}.png", json_path, f"/assets/farming/{key}.png",
+        )
+        doc = json.loads(json_path.read_text(encoding="utf-8"))
+        frames = {}
+        for name, entry in strips.items():
+            x, y = entry["frame"]["x"], entry["frame"]["y"]
+            w, h = entry["width"], entry["height"]
+            for index in range(entry["count"]):
+                frames[f"{name}_{index}"] = {
+                    "frame": {"x": x + index * w, "y": y, "w": w, "h": h},
+                    "rotated": False, "trimmed": False,
+                    "spriteSourceSize": {"x": 0, "y": 0, "w": w, "h": h},
+                    "sourceSize": {"w": w, "h": h},
+                }
+        doc["frames"] = frames
+        metadata[key] = {
+            "image": doc["meta"]["image"], "size": doc["meta"]["size"],
+            "strips": {
+                name: {**entry["frame"], "w": entry["width"], "h": entry["height"]}
+                for name, entry in strips.items()
+            },
+        }
+        json_path.write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    metadata_path = REPO_ROOT / "src/shared/art/ranchActionAtlas.generated.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+
+
 def build_all(src_dir: Path) -> None:
     OUT_PUBLIC.mkdir(parents=True, exist_ok=True)
     pool = ZipPool(src_dir)
@@ -1408,7 +1591,8 @@ Original zip archives stay outside the repository and are not redistributed stan
 | **LPC Food V2** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel, thekingphoenix (`lpc-food-v2.zip`) | Grain sheaves, butter, sea salt, yeast, herbs, rhubarb | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Crops v2.1** — bluecarrot16, Daniel Eddeland, Joshua Taylor, Jetrel (`crops-v2.1.zip`) | Multi-stage growth frames (`crops-stages.png`) for field crops | CC-BY-SA 3.0 / GPL 3.0 |
 | **LPC Fruit Trees** (`lpc-fruit-trees.zip`) | Multi-stage perennial orchard tree frames (`trees-orchard.png`) | CC-BY-SA 3.0 / GPL 3.0 |
-| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons & animated livestock sprites (`livestock-ranch.png`) | Perpetual commercial/personal game license (no standalone resale) |
+| **Farm & Ranch Life v1.0** (`FarmRanchLife_v1.0.zip`) | Seeds, saplings, fertilizers, sprinklers, tools, livestock products, crops, machine icons, animated livestock, machines, farm FX and fishing FX | Perpetual commercial/personal game license (no standalone resale) |
+| **Cabacos + Tidefall Phaser** (OLW vendored assets) | Cabacos pond tile repeat, Tidefall water ripples and small-fish shadow loop in `ranch-fishing.png` | See the Cabacos vendor credits and Tidefall Phaser MIT license |
 | **Shikashi's Fantasy Icons Pack v2** (`Shikashi's Fantasy Icons Pack v2.zip`) | Powders, spices, candles, yarn, wool knitwear, basket, scrolls | Personal & commercial project license |
 | **16x16 Food / OpenGameArt (`food.zip`, `food-ocal.zip`, `food-glitch.zip`, `food-bluecarrot16_20201221.zip`)** | Vegetables, cheese, zucchini, cabbage, broccoli, soups, yogurt, olive oil, vinegar, walnuts, cocoa beans, bait | CC0 / Public Domain (FGA/OCAL/Glitch/Bluecarrot16) |
 """
@@ -1421,6 +1605,7 @@ Original zip archives stay outside the repository and are not redistributed stan
         f"trees={len(orchard_map)} ({len(tree_frames)} frames), "
         f"livestock={len(livestock_meta)} ({len(livestock_frames)} frames)"
     )
+    pack_ranch_action_atlases(pool)
     pool.close()
 
 

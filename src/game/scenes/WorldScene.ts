@@ -158,10 +158,15 @@ import { gameAudio } from '../audio/gameAudioManager';
 import { resolveFootstepSurface } from '../../shared/audio/surfaceFootsteps';
 import { farmPlotIndexForTile } from '../../shared/farming/farmPlotIndex';
 import { FarmPlotVisualController } from '../farming/FarmPlotVisualController';
-import { DEFAULT_ORCHARD_SLOT_TILES, OrchardVisualController } from '../farming/OrchardVisualController';
+import { OrchardVisualController } from '../farming/OrchardVisualController';
+import { DEFAULT_ORCHARD_SLOT_TILES } from '../../shared/farming/farmEntityTiles';
 import { LivestockVisualController } from '../farming/LivestockVisualController';
-import { playFarmTillToolFx } from '../farming/FarmTillToolFx';
-import { playFarmWaterToolFx } from '../farming/FarmWaterToolFx';
+import { FarmActionEffects, WorkshopMachineVisuals } from '../farming/RanchActionVisuals';
+import { RanchFishingVisuals } from '../farming/RanchFishingVisuals';
+import { harvestDropAnimation, RANCH_ACTIONS_ATLAS, RANCH_FISHING_ATLAS } from '../../shared/art/ranchActionAtlas';
+import { confirmedDeepFarmEffects, confirmedPlotEffects, type PlotEffect } from '../../shared/farming/confirmedFarmVisualEffects';
+import { farmPlotTileForIndex } from '../../shared/farming/farmPlotIndex';
+import { FARM_WORLD_INTERACTABLES } from '../../shared/world/farmPlotContract';
 import type { DeepFarmSnapshot } from '../../shared/farming/deepFarmState';
 
 function preferDemoEHomeGarden(
@@ -368,12 +373,17 @@ export class WorldScene extends Phaser.Scene {
   private readonly donorToolController = new DonorPydewToolController();
   private localMoving = false;
   private prePosturePos: { x: number; y: number } | null = null;
+  private ranchEffects: FarmActionEffects | null = null;
+  private workshopMachines: WorkshopMachineVisuals | null = null;
+  private ranchFishing: RanchFishingVisuals | null = null;
+  private deepFarmReceivedAt = 0;
   private farmPlotVisual: FarmPlotVisualController | null = null;
   private orchardVisual: OrchardVisualController | null = null;
   private livestockVisual: LivestockVisualController | null = null;
   private farmHoverGraphics: Phaser.GameObjects.Graphics | null = null;
   private hoveredFarmPlotId: number | null = null;
   private hoveredFarmTile: GridPoint | null = null;
+  private farmVisualRevision: { worldId: string; version: number; nowMs: number } | null = null;
   private farmPlotsCache: readonly import('../../shared/farming/farmSnapshotTypes').FarmPlotView[] = [];
   private deepFarmCache: DeepFarmSnapshot | null = null;
   private worldLighting: WorldLightingOverlay | null = null;
@@ -503,7 +513,7 @@ export class WorldScene extends Phaser.Scene {
     return container;
   }
 
-  private triggerDonorToolSwing(kind: DonorToolKind, forceRestart = false): void {
+  private triggerDonorToolSwing(kind: DonorToolKind, forceRestart = false, impactFx = true): void {
     if (!this.localSprite) return;
     const triggered = this.donorToolController.trigger(
       kind,
@@ -513,7 +523,7 @@ export class WorldScene extends Phaser.Scene {
       this.tilePx(),
       (state) => {
         playToolActionSfx(kind);
-        this.spawnDonorToolHitParticles(kind, state.targetWorldX, state.targetWorldY);
+        if (impactFx) this.spawnDonorToolHitParticles(kind, state.targetWorldX, state.targetWorldY);
       },
       forceRestart,
     );
@@ -719,6 +729,7 @@ export class WorldScene extends Phaser.Scene {
     this.mailboxBadge?.destroy();
     this.mailboxBadge = null;
 
+    this.destroyRanchVisuals();
     for (const layer of this.mapLayers) {
       layer.destroy();
     }
@@ -796,6 +807,7 @@ export class WorldScene extends Phaser.Scene {
       }
       if (mapId === 'farm' && this.tilemap) {
         const farmTilePx = getMapTilePixelSize('farm');
+        this.ranchEffects = new FarmActionEffects(this);
         this.farmPlotVisual = new FarmPlotVisualController(
           this,
           this.tilemap,
@@ -873,6 +885,13 @@ export class WorldScene extends Phaser.Scene {
     this.cameras?.main?.fadeIn(160, 26, 20, 24);
     this.syncCameraDataset();
     this.refreshDiscoverabilityMarkers();
+    const targets = this.collectSceneInteractableTargets();
+    const mill = targets.find((target) => target.id === 'farm_barn_mill');
+    if (mapId === 'farm' && (mill || this.deepFarmCache)) this.syncWorkshopMachines();
+    if (targets.some((target) => target.kind === 'fishing_spot' && target.donorPlayable) &&
+        this.textures.exists(RANCH_FISHING_ATLAS)) {
+      this.ranchFishing = new RanchFishingVisuals(this, targets, this.tilePx());
+    }
 
     this.lastPortalAtMs = Date.now();
     this.buildingMap = false;
@@ -1967,6 +1986,13 @@ export class WorldScene extends Phaser.Scene {
         }, true);
       }),
 
+      gameEventBus.on('cmd:pet-field-animal', ({ targetId }) => {
+        if (!this.localSprite || !this.ranchEffects) return;
+        const target = this.collectFieldAnimalTargets().find((entry) => entry.id === targetId);
+        if (!target || Math.hypot(target.x - this.localSprite.x, target.y - this.localSprite.y) > target.maxRadiusPx) return;
+        const scale = this.tilePx() / 16;
+        this.ranchEffects.play('fx_pet', target.x, target.y - 15 * scale, Math.round(target.y) + 1, scale);
+      }),
       gameEventBus.on('cmd:sync-held-item', (held) => {
         this.heldItem = held;
         if (this.currentMapId === 'farm' && this.hoveredFarmTile) {
@@ -1983,44 +2009,81 @@ export class WorldScene extends Phaser.Scene {
           typeof jitterMs === 'number' && Number.isFinite(jitterMs) ? Math.max(0, jitterMs) : 0;
       }),
 
-      gameEventBus.on('cmd:sync-farm', ({ plots, highlightPlotId, highlightAction }) => {
+      gameEventBus.on('cmd:sync-farm', ({ worldId, version, serverNowMs, plots, highlightPlotId, highlightAction }) => {
+        const previous = this.farmVisualRevision;
+        const sameWorld = previous?.worldId === worldId;
+        if (sameWorld && (previous.version > version || (previous.version === version && previous.nowMs > serverNowMs))) return;
+        const advanced = sameWorld && previous.version + 1 === version;
+        const acknowledged: { action: PlotEffect; plotId: number } | null = highlightPlotId != null && (highlightAction === 'till' || highlightAction === 'plant' ||
+          highlightAction === 'water' || highlightAction === 'harvest')
+          ? { action: highlightAction, plotId: highlightPlotId } : null;
+        const effects = advanced ? confirmedPlotEffects(this.farmPlotsCache, plots)
+          : acknowledged && (!sameWorld || previous.version < version) ? [acknowledged] : [];
+        // Sprinkler projection can already show one water charge. Keep the
+        // confirmed manual splash when that projection masks the increment.
+        if (advanced && acknowledged?.action === 'water' && effects.length === 0) effects.push(acknowledged);
+
+        this.farmVisualRevision = { worldId, version, nowMs: serverNowMs };
         this.farmPlotsCache = plots;
-        if (this.currentMapId === 'farm') {
-          this.farmPlotVisual?.sync(plots, highlightAction === 'till' ? highlightPlotId : undefined);
-          if (this.hoveredFarmTile) {
-            this.redrawFarmHoverHighlight(this.hoveredFarmTile.tileX, this.hoveredFarmTile.tileY);
-          }
-          if (highlightPlotId != null && highlightAction === 'till') {
-            playFarmTillToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            this.triggerDonorToolSwing('hoe', true);
-          }
-          if (highlightPlotId != null && highlightAction === 'plant') {
-            this.triggerDonorToolSwing('plant', true);
-          }
-          if (highlightPlotId != null && highlightAction === 'water') {
-            playFarmWaterToolFx(this, highlightPlotId, (obj) => this.mapLayers.push(obj));
-            this.triggerDonorToolSwing('water', true);
-          }
-          if (highlightPlotId != null && highlightAction === 'harvest') {
-            this.triggerDonorToolSwing('harvest', true);
-          }
+        if (this.currentMapId !== 'farm') return;
+        const tillPop = acknowledged?.action === 'till' && effects.some((effect) => effect.plotId === highlightPlotId);
+        this.farmPlotVisual?.sync(plots, tillPop ? highlightPlotId : undefined);
+        if (this.hoveredFarmTile) this.redrawFarmHoverHighlight(this.hoveredFarmTile.tileX, this.hoveredFarmTile.tileY);
+        const tileSize = this.tilePx();
+        for (const effect of effects) {
+          const tile = farmPlotTileForIndex(effect.plotId);
+          if (!tile) continue;
+          const x = (tile.tileX + 0.5) * tileSize;
+          const y = (tile.tileY + 0.5) * tileSize;
+          this.ranchEffects?.play(`fx_${effect.action}`, x, y, 3.57, tileSize / 16);
+        }
+        if (acknowledged && effects.length) {
+          this.triggerDonorToolSwing(acknowledged.action === 'till' ? 'hoe' : acknowledged.action, true, false);
         }
       }),
 
       gameEventBus.on('cmd:sync-deep-farm', (deep) => {
+        const previous = this.deepFarmCache;
+        if (previous?.worldId === deep.worldId && (
+          previous.version > deep.version || (previous.version === deep.version && previous.serverNowMs > deep.serverNowMs)
+        )) return;
         this.deepFarmCache = deep;
+        this.deepFarmReceivedAt = performance.now();
         if (this.currentMapId === 'farm') {
           this.orchardVisual?.sync(deep.orchardViews, deep.calendar.season);
           this.livestockVisual?.sync(deep.projectedLivestock);
+          this.syncWorkshopMachines();
+          for (const effect of confirmedDeepFarmEffects(previous, deep)) {
+            const anchor = effect.kind === 'tree'
+              ? this.orchardVisual?.playHarvestShake(effect.slotIndex)
+              : this.livestockVisual?.getEffectAnchor(effect.animalId);
+            if (!anchor) continue;
+            const animation = effect.kind === 'tree' ? harvestDropAnimation(effect.treeId) : 'fx_pet';
+            this.ranchEffects?.play(animation, anchor.x, anchor.y, anchor.depth, anchor.scale);
+          }
           this.refreshBlockedGrid();
         }
       }),
 
-      gameEventBus.on('cmd:set-paused', ({ paused }) => {
+      gameEventBus.on('cmd:fishing-visual', (cue) => {
+        if (this.ranchFishing?.sync(this.localUserId, cue, this.localSprite) && cue.phase === 'casting') {
+          playDonorToolUseAnim(this, this.localSprite, this.localTextureKey, this.localFacing, 'fish');
+        }
+      }),
+      gameEventBus.on('evt:donor-fishing-sync', (session) => {
+        if (session.anglerUserId === this.localUserId) return;
+        const remote = this.remoteEntities.get(session.anglerUserId);
+        if (remote?.mapId !== this.currentMapId) return;
+        if (this.ranchFishing?.sync(session.anglerUserId, { ...session, reelProgress: session.progressPermille / 1000 }, remote.sprite, true) && session.phase === 'casting') {
+          playDonorToolUseAnim(this, remote.sprite, remote.textureKey, remote.facing, 'fish');
+        }
+      }),
+
+      gameEventBus.on('cmd:set-paused', ({ paused, keepAnimating }) => {
         this.paused = paused;
         if (this.petCareMode) return;
-        if (paused) {
-          this.emitLocalMovement('idle');
+        if (paused) this.emitLocalMovement('idle');
+        if (paused && !keepAnimating) {
           if (this.scene.isActive()) this.scene.pause();
         } else if (!this.renderSuspended) {
           if (this.scene.isPaused()) this.scene.resume();
@@ -2447,7 +2510,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(time: number, deltaMs: number): void {
-    if (this.paused || this.renderSuspended || document.hidden) return;
+    if (this.renderSuspended || document.hidden) return;
+    this.ranchFishing?.update();
+    if (this.paused) return;
 
     const dtSec = Math.min(deltaMs, 50) / 1000;
     const now = Date.now();
@@ -4244,6 +4309,23 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
+  private collectFieldAnimalTargets(): InteractableTarget[] {
+    const maxRadiusPx = this.tilePx() * 1.5;
+    const target = ({ state, sprite }: AmbientChickenHandle | AmbientDuckHandle | AmbientSheepHandle, labelVi: string): InteractableTarget => ({
+      id: `field-livestock:${state.id}`,
+      kind: 'ambient_livestock',
+      labelVi,
+      x: sprite.x,
+      y: sprite.y,
+      maxRadiusPx,
+    });
+    return [
+      ...this.ambientChickens.map((animal) => target(animal, 'Gà')),
+      ...this.ambientDucks.map((animal) => target(animal, 'Vịt')),
+      ...this.ambientSheep.map((animal) => target(animal, 'Cừu')),
+    ];
+  }
+
   private collectSceneInteractableTargets(): InteractableTarget[] {
     const petPos = this.petEntity?.isOnMapVisible() ? this.petEntity.getWorldPosition() : null;
     const interactables = buildMainGameInteractables({
@@ -4267,6 +4349,14 @@ export class WorldScene extends Phaser.Scene {
     }
     const economyPlayable = isDonorEconomyUiEnabled();
     interactables.push(...buildTiledWorldInteractableTargets(this.currentMapId, economyPlayable));
+    if (this.currentMapId === 'farm') {
+      interactables.push(
+        ...(this.orchardVisual?.interactionTargets() ?? []),
+        ...(this.livestockVisual?.interactionTargets() ?? []),
+        ...this.collectFieldAnimalTargets(),
+        ...(this.workshopMachines?.interactionTargets() ?? []),
+      );
+    }
     return interactables;
   }
 
@@ -4464,7 +4554,34 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private syncWorkshopMachines(): void {
+    if (!this.textures.exists(RANCH_ACTIONS_ATLAS)) return;
+    if (!this.workshopMachines) {
+      const anchor = FARM_WORLD_INTERACTABLES.barn_mill;
+      const tile = this.tilePx();
+      this.workshopMachines = new WorkshopMachineVisuals(this, (anchor.tileX + 0.5) * tile, (anchor.tileY + 0.5) * tile, tile);
+    }
+    const deep = this.deepFarmCache;
+    if (deep) this.workshopMachines.sync(deep.workshops, deep.serverNowMs + performance.now() - this.deepFarmReceivedAt);
+  }
+
+  private destroyRanchVisuals(): void {
+    this.workshopMachines?.destroy();
+    this.workshopMachines = null;
+    this.ranchEffects?.destroy();
+    this.ranchEffects = null;
+    this.ranchFishing?.destroy();
+    this.ranchFishing = null;
+  }
+
   private cleanup(): void {
+    this.destroyRanchVisuals();
+    this.farmPlotVisual?.destroy();
+    this.orchardVisual?.destroy();
+    this.livestockVisual?.destroy();
+    this.farmPlotVisual = null;
+    this.orchardVisual = null;
+    this.livestockVisual = null;
     this.renderSuspended = false;
     this.coupleAffectionIcon?.destroy();
     this.coupleAffectionIcon = null;

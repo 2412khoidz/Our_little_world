@@ -495,3 +495,17 @@ Replaces overlapping/misaligned maps with a cohesive `16×16` pixel-density worl
 
 
 
+
+
+## M3d + M3e — Workshop, action effects, and fishing
+
+| Source | Assets or implementation used | OLW use |
+|---|---|---|
+| Farm & Ranch Life v1.0 local archive | Eight verified `16×32` machine strips, six `16×16` effect strips, falling fruit cutouts from nine `32×48` shake strips, three fishing strips and `minnow.png` | `ranch-actions` and `ranch-fishing` packed atlases. The archive permits incorporation into games and prohibits standalone asset redistribution. |
+| Cabacos @ `79e423defc12bd99327cfcc28bf7ec0085996244` | Existing OLW pond tiles in `ts_map.png` and `tools/rod.png` | Cabacos water 4×4 crop in the fishing atlas and the original held rod in the overworld. See the vendored map and farming art credits. |
+| Tidefall Phaser @ `6a77169d198757413ccd92d310bf655d2f177506` (MIT) | Center row of the water ripple strip, two small-fish shadow directions, current Chill state machine and spectator playback | Shared donor fishing canvas, actual ripple and shadow frames, and state-driven visual cues. |
+| Existing OLW donors | Harvest Hollow / Webfarmville workshop timestamps, Webfarmville Meadowbrook outcomes, Canvas Games hold/release simulation, Fishing Frenzy fallback art | Read-only visual consumers of the existing jobs, catches, fish registry and Tension loop. |
+
+The acceptance follow-up reuses Hollowmere’s windmill, OLW’s brick hearth and counter, and the Farm & Ranch Life butter churn, milk pail, grain/feed sacks and compost animation. The ready marker is shared and the workshop tray displays the actual completed item.
+
+See [M3d + M3e visuals and playtest](handovers/FARMING_FISHING_VISUALS.md) for the selected machines and artwork limitations.

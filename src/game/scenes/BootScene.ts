@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { RANCH_ACTIONS_ATLAS, RANCH_ACTIONS_URL, RANCH_FISHING_ATLAS, RANCH_FISHING_URL } from '../../shared/art/ranchActionAtlas';
+import { registerRanchActions } from '../farming/RanchActionVisuals';
+import { registerRanchFishing } from '../farming/RanchFishingVisuals';
 import { AVATAR_ATLAS_KEY, AVATAR_ATLAS_URL, USE_PRIVATE_ART } from '../art/atlasProfile';
 import { DONOR_PYDEW_TEXTURE_IDS } from '../art/donorPydewFarmerAvatarTexture';
 import {
@@ -205,12 +208,16 @@ export class BootScene extends Phaser.Scene {
       this.load.image(key, url);
     }
 
+    this.load.atlas(RANCH_ACTIONS_ATLAS, RANCH_ACTIONS_URL, RANCH_ACTIONS_URL.replace('.png', '.json'));
+    this.load.atlas(RANCH_FISHING_ATLAS, RANCH_FISHING_URL, RANCH_FISHING_URL.replace('.png', '.json'));
     this.load.atlas(FARMING_CROPS_ATLAS_KEY, FARMING_CROPS_ATLAS_PNG, FARMING_CROPS_ATLAS_JSON);
     this.load.atlas(FARMING_TREES_ATLAS_KEY, FARMING_TREES_ATLAS_PNG, FARMING_TREES_ATLAS_JSON);
     this.load.atlas(FARMING_LIVESTOCK_ATLAS_KEY, FARMING_LIVESTOCK_ATLAS_PNG, FARMING_LIVESTOCK_ATLAS_JSON);
   }
 
   create(): void {
+    registerRanchActions(this);
+    registerRanchFishing(this);
     const tilesetTex = this.textures.get('tileset-cozy');
     tilesetTex?.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
@@ -286,6 +293,8 @@ export class BootScene extends Phaser.Scene {
       FARMING_CROPS_ATLAS_KEY,
       FARMING_TREES_ATLAS_KEY,
       FARMING_LIVESTOCK_ATLAS_KEY,
+      RANCH_ACTIONS_ATLAS,
+      RANCH_FISHING_ATLAS,
       ...COUPLE_EMOTE_TEX_LIST.map(([key]) => key),
       ...PYDEW_RAIN_DROP_TEXTURE_KEYS,
     ]) {

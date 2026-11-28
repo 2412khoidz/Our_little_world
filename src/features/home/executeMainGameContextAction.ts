@@ -1,3 +1,5 @@
+import type { DeepFarmIntent } from '../../shared/interaction/deepFarmContextActions';
+import type { WorkshopId } from '../../shared/farming/workshops';
 import { gameAudio } from '../../game/audio/gameAudioManager';
 import { gameEventBus } from '../../game/eventBus';
 import { getMapDefinition } from '../../shared/maps';
@@ -35,7 +37,8 @@ export interface MainGameActionContext {
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
-  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
+  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus, workshopId?: WorkshopId) => void;
+  onApplyDeepFarm?: (intent: DeepFarmIntent) => Promise<void>;
   onNotice: (message: string, isError?: boolean) => void;
   livingPetLocalSimulation?: boolean;
   donorLanPlayable?: boolean;
@@ -356,8 +359,17 @@ export async function executeMainGameContextAction(
     ctx.onOpenDonorFishing('east_stream');
     return;
   }
+  if (code === 'pet_ambient_livestock') {
+    gameEventBus.emit('cmd:pet-field-animal', { targetId: action.targetId });
+    return;
+  }
+
+  if (code === 'apply_deep_farm' && action.deepFarmIntent && ctx.onApplyDeepFarm) {
+    await ctx.onApplyDeepFarm(action.deepFarmIntent);
+    return;
+  }
   if (code === 'open_donor_workshop' && ctx.onOpenDonorWorkshop) {
-    ctx.onOpenDonorWorkshop(action.workshopFocus);
+    ctx.onOpenDonorWorkshop(action.workshopFocus, action.workshopId);
     return;
   }
 

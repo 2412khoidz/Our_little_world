@@ -1,0 +1,92 @@
+.ranch-workshop__tab,
+.ranch-workshop__station .btn {
+  min-height: 40px;
+}
+
+.ranch-workshop__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ranch-workshop__station[data-machine-state="ready"] {
+  box-shadow: inset 0 0 0 1px #aed181;
+}
+
+.ranch-workshop__machine-stage {
+  display: grid;
+  width: 64px;
+  min-height: 70px;
+  flex: none;
+  place-items: center;
+  border-radius: 9px;
+  background: radial-gradient(ellipse at 50% 78%, #ead28d 3%, #6c5032 76%);
+  box-shadow: inset 0 0 0 1px #d6ad6e;
+}
+
+.ranch-workshop__machine {
+  display: block;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+}
+
+[data-machine-state="working"] .ranch-workshop__machine {
+  animation: ranch-machine-cycle 0.667s steps(4, end) infinite;
+}
+
+@keyframes ranch-machine-cycle {
+  from { background-position-x: var(--machine-x); }
+  to { background-position-x: var(--machine-end-x); }
+}
+
+.ranch-workshop__ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ranch-workshop__job {
+  min-width: 78px;
+}
+
+.ranch-workshop__job progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  accent-color: #8cbe70;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-machine-state="working"] .ranch-workshop__machine {
+    animation: none;
+  }
+}
+
+.ranch-workshop__ingredient {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: 5px;
+  border-radius: 6px;
+  background: #efe1c8;
+}
+
+.ranch-workshop__ingredient > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ranch-workshop__machine-stage {
+  position: relative;
+}
+
+.ranch-workshop__ready-art {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  background: #fff3ce;
+  border: 1px solid #887249;
+  border-radius: 6px;
+}

@@ -181,6 +181,21 @@ describe('LivestockVisualController (M3c Animated Donor Transplant)', () => {
       expect(sp.originY).toBe(1.0);
     }
 
+    const assertLiveTargets = () => {
+      const targets = controller.interactionTargets();
+      expect(targets).toHaveLength(projected.length);
+      projected.forEach(({ animal, def }, index) => {
+        expect(targets[index]).toMatchObject({
+          id: `livestock:${animal.animalId}`,
+          labelVi: `${def.nameVi} · ${animal.nickname}`,
+          deepFarmTarget: { kind: 'animal', animalId: animal.animalId },
+          x: mainSprites[index]!.x,
+          y: mainSprites[index]!.y,
+        });
+      });
+    };
+    assertLiveTargets();
+
     const swarmSprite = sprites.find((s) => s.frameName === 'bee_swarm_0');
     expect(swarmSprite).toBeDefined();
     expect(swarmSprite!.playedAnims).toContain(livestockAnimKey('bee', 'swarm'));
@@ -190,6 +205,7 @@ describe('LivestockVisualController (M3c Animated Donor Transplant)', () => {
       controller.step(80);
     }
     expect(sprites.some((s) => s.playedAnims.length >= 2)).toBe(true);
+    assertLiveTargets();
 
     // Updating status only updates badges without destroying existing sprites
     const updated = projected.map((p, idx) =>

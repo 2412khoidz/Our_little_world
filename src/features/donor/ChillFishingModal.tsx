@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Fish, Volume2, VolumeX, X } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { gameAudio } from '../../game/audio/gameAudioManager';
 import { gameEventBus } from '../../game/eventBus';
 import type { AvatarConfig } from '../../shared/types';
@@ -7,12 +7,10 @@ import {
   beginTidefallCast,
   createTidefallFishingIdle,
   isPointerInTidefallZone,
-  pickPersonality,
   tidefallHookStrike,
   tidefallMinigameTap,
   tidefallProgressPermille,
   tickTidefallFishing,
-  type TidefallFishPersonality,
   type TidefallFishingPhase,
   type TidefallFishingState,
 } from '../../shared/donor/tidefall-phaser/tidefallFishingFsm';
@@ -29,7 +27,10 @@ import {
   postDonorFishingSync,
   type DonorFishingSpotId as SpotId,
 } from '../../lib/backend/donorDevLanClient';
-import { loadTidefallFishingArt, type TidefallFishingArtBundle } from '../../shared/donor/tidefall-phaser/tidefallFishingArt';
+import { loadRanchFishingUiArt, type RanchFishingUiArt } from './ranchFishingUiArt';
+import { CatchRevealCard, FishingFishArt, FishingModalFrame, type FishingCatchPresentation } from './FishingModalFrame';
+import { TensionFishingModal } from './TensionFishingModal';
+import { speciesParamsForFish } from './tidefallSpeciesTuning';
 import { loadFishingFrenzyArt, type FishingFrenzyArtBundle } from '../../shared/donor/fishing-frenzy/fishingFrenzyArt';
 import { fishingFrenzySpritePathForFish } from '../../shared/donor/fishing-frenzy/fishingFrenzySpriteMap';
 import { tidefallFishNameVi } from '../../shared/donor/fishing-frenzy/fishingFrenzyFishVi';
@@ -69,7 +70,7 @@ function phaseMessageVi(phase: TidefallFishingState['phase'], observe: boolean, 
   const water = spotId === 'east_stream' ? 'dòng suối' : spotId === 'gull_bay' ? 'làn nước biển' : 'mặt ao';
   switch (phase) {
     case 'idle':
-      return `Chạm Quăng cần để thả phao xuống ${water}.`;
+      return `Quăng cần xuống ${water}. Chạm gài móc rồi bấm theo nhịp vùng xanh.`;
     case 'casting':
       return 'Vụt! Đang thả dây câu…';
     case 'waiting':
@@ -84,98 +85,6 @@ function phaseMessageVi(phase: TidefallFishingState['phase'], observe: boolean, 
       return 'Ôi, cá vẫy đuôi thoát mất rồi…';
     default:
       return '';
-  }
-}
-
-export function speciesParamsForFish(
-  fish: TidefallFishEntry | null,
-  rng: () => number,
-): {
-  personality: TidefallFishPersonality;
-  targetWidth: number;
-  pointerSpeed: number;
-  targetDriftAmp: number;
-  targetDriftFreq: number;
-  speedSurgeAmp: number;
-  hitGain: number;
-  missPenalty: number;
-  biteWindowMs: number;
-} {
-  if (!fish) {
-    const fallbackP = pickPersonality(rng);
-    return {
-      personality: fallbackP,
-      targetWidth: fallbackP === 'LEGENDARY' ? 0.19 : fallbackP === 'TIMID' ? 0.36 : 0.3,
-      pointerSpeed: fallbackP === 'AGGRESSIVE' ? 1.48 : 1.25,
-      targetDriftAmp: fallbackP === 'LEGENDARY' ? 0.16 : 0.05,
-      targetDriftFreq: 1.5,
-      speedSurgeAmp: fallbackP === 'LEGENDARY' ? 0.18 : 0,
-      hitGain: 0.18,
-      missPenalty: 0.11,
-      biteWindowMs: 5200,
-    };
-  }
-  switch (fish.rarity) {
-    case 'legendary':
-      return {
-        personality: 'LEGENDARY',
-        targetWidth: 0.17,
-        pointerSpeed: 1.98,
-        targetDriftAmp: 0.2,
-        targetDriftFreq: 2.5,
-        speedSurgeAmp: 0.22,
-        hitGain: 0.13,
-        missPenalty: 0.14,
-        biteWindowMs: 3200,
-      };
-    case 'epic':
-      return {
-        personality: 'AGGRESSIVE',
-        targetWidth: 0.21,
-        pointerSpeed: 1.72,
-        targetDriftAmp: 0.15,
-        targetDriftFreq: 2.1,
-        speedSurgeAmp: 0.14,
-        hitGain: 0.15,
-        missPenalty: 0.13,
-        biteWindowMs: 3800,
-      };
-    case 'rare':
-      return {
-        personality: 'AGGRESSIVE',
-        targetWidth: 0.25,
-        pointerSpeed: 1.5,
-        targetDriftAmp: 0.11,
-        targetDriftFreq: 1.65,
-        speedSurgeAmp: 0.08,
-        hitGain: 0.16,
-        missPenalty: 0.12,
-        biteWindowMs: 4400,
-      };
-    case 'uncommon':
-      return {
-        personality: 'NORMAL',
-        targetWidth: 0.31,
-        pointerSpeed: 1.28,
-        targetDriftAmp: 0.06,
-        targetDriftFreq: 1.2,
-        speedSurgeAmp: 0,
-        hitGain: 0.19,
-        missPenalty: 0.11,
-        biteWindowMs: 5200,
-      };
-    default:
-      return {
-        personality: 'TIMID',
-        targetWidth: 0.38,
-        pointerSpeed: 1.06,
-        targetDriftAmp: 0,
-        targetDriftFreq: 1.0,
-        speedSurgeAmp: 0,
-        hitGain: 0.22,
-        missPenalty: 0.09,
-        biteWindowMs: 6000,
-      };
   }
 }
 
@@ -200,13 +109,7 @@ function MotionTargetRow({ fish }: { fish: TidefallFishEntry }) {
       data-testid="tidefall-active-fish"
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <img
-          src={fishingFrenzySpritePathForFish(fish.id, { biome: fish.biome, rarity: fish.rarity })}
-          alt=""
-          width={42}
-          height={24}
-          style={{ imageRendering: 'pixelated' }}
-        />
+        <FishingFishArt spriteUrl={fishingFrenzySpritePathForFish(fish.id, { biome: fish.biome, rarity: fish.rarity })} />
         <span>
           Bóng cá: <strong>{nameVi}</strong>
         </span>
@@ -227,52 +130,22 @@ function MotionTargetRow({ fish }: { fish: TidefallFishEntry }) {
   );
 }
 
-function CatchRevealCard({
-  rarity,
-  spriteUrl,
-  escaped,
-  labelVi,
-}: {
-  rarity: import('../../shared/donor/tidefall-phaser/tidefallFishCatalog').TidefallFishRarity;
-  spriteUrl: string;
-  escaped: boolean;
-  labelVi: string;
-}) {
-  return (
-    <div
-      data-testid="fishing-frenzy-catch-reveal"
-      style={{
-        marginTop: 8,
-        padding: '10px 12px',
-        borderRadius: 12,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        border: `2px solid ${FISHING_FRENZY_RARITY_BORDER[rarity]}`,
-        boxShadow: fishingFrenzyRarityGlow(rarity),
-        background: escaped ? 'rgba(180, 90, 70, 0.12)' : 'rgba(255, 247, 224, 0.92)',
-      }}
-    >
-      <img
-        src={spriteUrl}
-        alt=""
-        width={64}
-        height={36}
-        style={{ imageRendering: 'pixelated', flexShrink: 0, filter: escaped ? 'grayscale(0.75) opacity(0.7)' : 'none' }}
-      />
-      <div style={{ textAlign: 'left' }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: '#422614' }}>
-          {escaped ? `${labelVi} tuột mất…` : `Tuyệt vời! Bắt được ${labelVi}`}
-        </div>
-        <div style={{ fontSize: 11.5, color: '#6b4428' }}>
-          Độ hiếm: {tidefallFishRarityLabelVi(rarity)} · {escaped ? 'Thử quăng lại nhé!' : '+1 đã thêm vào túi chung'}
-        </div>
-      </div>
-    </div>
-  );
+export function ChillFishingModal(props: ChillFishingModalProps) {
+  const [tension, setTension] = useState(false);
+  return tension && props.spotId === 'east_stream' ? (
+    <TensionFishingModal
+      worldId={props.worldId}
+      spotId="east_stream"
+      titleVi={DONOR_FISHING_SPOTS.east_stream.labelVi}
+      localAvatarConfig={props.localAvatarConfig}
+      onInventoryRefresh={props.onInventoryRefresh}
+      onClose={props.onClose}
+      onSwitchMode={() => setTension(false)}
+    />
+  ) : <ChillFishingGame {...props} onSwitchMode={props.spotId === 'east_stream' ? () => setTension(true) : undefined} />;
 }
 
-export function ChillFishingModal({
+function ChillFishingGame({
   worldId,
   spotId = 'meadow_pond',
   localUserId,
@@ -280,7 +153,8 @@ export function ChillFishingModal({
   partnerAvatarConfig,
   onClose,
   onInventoryRefresh,
-}: ChillFishingModalProps) {
+  onSwitchMode,
+}: ChillFishingModalProps & { onSwitchMode?: () => void }) {
   const spotDef = DONOR_FISHING_SPOTS[spotId];
   const pondSpot = TIDEFALL_POND_SPOTS.has(spotId);
   const spotCatalog = useMemo(
@@ -296,29 +170,22 @@ export function ChillFishingModal({
   const [observeMode, setObserveMode] = useState(false);
   const [partnerFishingNear, setPartnerFishingNear] = useState(false);
   const [outcomeVi, setOutcomeVi] = useState<string | null>(null);
-  const [art, setArt] = useState<TidefallFishingArtBundle | null>(null);
+  const [art, setArt] = useState<RanchFishingUiArt | null>(null);
   const [frenzyArt, setFrenzyArt] = useState<FishingFrenzyArtBundle | null>(null);
   const [localAvatarCanvas, setLocalAvatarCanvas] = useState<HTMLCanvasElement | null>(null);
   const [partnerAvatarCanvas, setPartnerAvatarCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [catchOutcome, setCatchOutcome] = useState<{
-    escaped: boolean;
-    labelVi: string;
-    rarity: import('../../shared/donor/tidefall-phaser/tidefallFishCatalog').TidefallFishRarity;
-    spriteUrl: string;
-  } | null>(null);
+  const [catchOutcome, setCatchOutcome] = useState<FishingCatchPresentation | null>(null);
   const [muted, setMuted] = useState(() => isFishingAudioMuted());
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const artRef = useRef<TidefallFishingArtBundle | null>(null);
+  const artRef = useRef<RanchFishingUiArt | null>(null);
   const frenzyArtRef = useRef<FishingFrenzyArtBundle | null>(null);
   const avatarCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const partnerAvatarCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const activeFishRef = useRef<TidefallFishEntry | null>(null);
   const spotRef = useRef(spotId);
   const fsmRef = useRef<TidefallFishingState>(createTidefallFishingIdle());
   const spectatorTargetRef = useRef<SpectatorFishingTarget | null>(null);
   const lastSseSyncAtRef = useRef(0);
-  const previewRef = useRef(preview);
   const observeRef = useRef(observeMode);
   const partnerRef = useRef(observeMode || partnerFishingNear);
   const anglerRef = useRef(!observeMode);
@@ -327,9 +194,26 @@ export function ChillFishingModal({
   const syncTs = useRef(0);
   const syncInFlight = useRef(false);
   const resolveGuard = useRef(false);
+  const roundSeed = useRef<number | null>(null);
+  const castPending = useRef(false);
+  const [retryCatch, setRetryCatch] = useState(false);
+  const inventoryRefresh = useRef(onInventoryRefresh);
+  useEffect(() => { inventoryRefresh.current = onInventoryRefresh; }, [onInventoryRefresh]);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
+    };
+  }, [spotId]);
 
   useEffect(() => {
-    previewRef.current = preview;
+    if (observeMode || catchOutcome || uiPhase === 'landed' || uiPhase === 'escaped') return;
+    gameEventBus.emit('cmd:fishing-visual', { spotId, phase: uiPhase });
+  }, [spotId, uiPhase, observeMode, catchOutcome]);
+
+  useEffect(() => {
     observeRef.current = observeMode;
     partnerRef.current = observeMode || partnerFishingNear;
     anglerRef.current = !observeMode;
@@ -337,17 +221,14 @@ export function ChillFishingModal({
     frenzyArtRef.current = frenzyArt;
     avatarCanvasRef.current = localAvatarCanvas;
     partnerAvatarCanvasRef.current = partnerAvatarCanvas;
-    activeFishRef.current = activeCatalogFish;
     spotRef.current = spotId;
   }, [
-    preview,
     observeMode,
     partnerFishingNear,
     art,
     frenzyArt,
     localAvatarCanvas,
     partnerAvatarCanvas,
-    activeCatalogFish,
     spotId,
   ]);
 
@@ -370,16 +251,7 @@ export function ChillFishingModal({
 
   useEffect(() => {
     let cancelled = false;
-    const spritePaths = new Set<string>([
-      fishingFrenzySpritePathForFish('bass', { biome: 'lake', rarity: 'common' }),
-    ]);
-    for (const f of spotCatalog) {
-      spritePaths.add(fishingFrenzySpritePathForFish(f.id, { biome: f.biome, rarity: f.rarity }));
-    }
-    void Promise.all([
-      loadTidefallFishingArt(),
-      loadFishingFrenzyArt([...spritePaths]),
-    ])
+    void Promise.all([loadRanchFishingUiArt(), loadFishingFrenzyArt()])
       .then(([tidefall, frenzy]) => {
         if (!cancelled) {
           setArt(tidefall);
@@ -392,7 +264,7 @@ export function ChillFishingModal({
     return () => {
       cancelled = true;
     };
-  }, [spotCatalog]);
+  }, []);
 
   const applySession = useCallback(
     (session: DonorFishSessionView | null, viaSse = false) => {
@@ -408,6 +280,8 @@ export function ChillFishingModal({
         setPartnerFishingNear(false);
         return;
       }
+      const ended = session.phase === 'landed' || session.phase === 'escaped';
+      if ((ended && !observeRef.current) || castPending.current) return;
       if (!observeRef.current && fsmRef.current.phase !== 'idle') {
         setPartnerFishingNear(session.phase !== 'idle');
         return;
@@ -444,7 +318,13 @@ export function ChillFishingModal({
         fsmRef.current = stepSpectatorFishingState(fsmRef.current, nextTarget, 0);
       }
       setUiPhase((prev) => (prev === session.phase ? prev : session.phase));
-      if (session.phase === 'landed' || session.phase === 'escaped') {
+      if (ended) {
+        observeRef.current = false;
+        spectatorTargetRef.current = null;
+        fsmRef.current = createTidefallFishingIdle();
+        setObserveMode(false);
+        setPartnerFishingNear(false);
+        setUiPhase('idle');
         const fishName = session.labelVi || session.previewName || 'Cá';
         const outcomeText = session.escaped
           ? `Người thương hụt mất ${fishName}…`
@@ -490,7 +370,7 @@ export function ChillFishingModal({
       if (performance.now() - lastSseSyncAtRef.current < 2000) return;
       void fetchDonorFishingSession(worldId)
         .then((session) => {
-          applySession(session, false);
+          if (!cancelled) applySession(session, false);
         })
         .catch(() => undefined);
     }, 2500);
@@ -499,10 +379,11 @@ export function ChillFishingModal({
       cancelled = true;
       unsubSse();
       window.clearInterval(poll);
-      if (!observeRef.current && fsmRef.current.phase !== 'idle') {
+      if (roundSeed.current !== null && !observeRef.current) {
         void postDonorFishingSync(worldId, {
           spotId: spotId as SpotId,
           phase: 'idle',
+          roundSeed: roundSeed.current,
           progressPermille: 0,
           pointerNorm: 0.5,
         }).catch(() => undefined);
@@ -512,6 +393,7 @@ export function ChillFishingModal({
 
   const syncSession = useCallback(
     (state: TidefallFishingState, immediate = false) => {
+      if (roundSeed.current === null) return;
       const now = performance.now();
       if (!immediate) {
         if (now - syncTs.current < 100 || syncInFlight.current) return;
@@ -521,6 +403,7 @@ export function ChillFishingModal({
       void postDonorFishingSync(worldId, {
         spotId: spotId as SpotId,
         phase: state.phase,
+        roundSeed: roundSeed.current,
         progressPermille: tidefallProgressPermille(state),
         pointerNorm: state.pointerNorm,
         targetCenter: state.targetCenter,
@@ -539,11 +422,17 @@ export function ChillFishingModal({
   const resolveCatch = useCallback(
     async (state: TidefallFishingState) => {
       if (state.phase !== 'landed' && state.phase !== 'escaped') return;
-      if (resolveGuard.current) return;
+      if (resolveGuard.current || roundSeed.current === null) return;
       resolveGuard.current = true;
+      setRetryCatch(false);
+      setError(null);
       setBusy(true);
       try {
-        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state));
+        const resolved = await postDonorFishingResolve(worldId, tidefallProgressPermille(state), roundSeed.current);
+        if (!mounted.current) return;
+        roundSeed.current = null;
+        fsmRef.current = createTidefallFishingIdle();
+        setUiPhase('idle');
         const fallbackLabel = activeCatalogFish
           ? tidefallFishNameVi(activeCatalogFish.id, activeCatalogFish.name)
           : 'Cá ao';
@@ -559,6 +448,7 @@ export function ChillFishingModal({
             : fishingFrenzySpritePathForFish('carp'));
         const text = resolved.escaped ? `${displayVi} tuột mất…` : `Bắt được ${displayVi}!`;
         setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl });
+        gameEventBus.emit('cmd:fishing-visual', { spotId, phase: resolved.escaped ? 'escaped' : 'landed', spriteUrl });
         setOutcomeVi(text);
         setMessage(text);
         if (resolved.escaped) {
@@ -568,21 +458,18 @@ export function ChillFishingModal({
           playCatchFanfare(rare);
           gameAudio.playStinger(rare ? 'rare' : 'fish');
         }
-        await onInventoryRefresh();
-        void postDonorFishingSync(worldId, {
-          spotId: spotId as SpotId,
-          phase: 'idle',
-          progressPermille: 0,
-          pointerNorm: 0.5,
-        }).catch(() => undefined);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Không lưu được cá vào túi — thử lại.');
-        resolveGuard.current = false;
+        void inventoryRefresh.current().catch(() => undefined);
+      } catch {
+        if (mounted.current) {
+          setError('Chưa nhận được kết quả lượt câu.');
+          setRetryCatch(true);
+          gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'idle' });
+        }
       } finally {
         setBusy(false);
       }
     },
-    [worldId, spotId, activeCatalogFish, onInventoryRefresh],
+    [worldId, spotId, activeCatalogFish],
   );
 
   useEffect(() => {
@@ -627,11 +514,9 @@ export function ChillFishingModal({
             canvas.width,
             canvas.height,
             fsmRef.current,
-            previewRef.current,
             bundle,
             spotRef.current,
             frenzyArtRef.current,
-            activeFishRef.current,
             {
               partnerPresent: partnerRef.current,
               localAvatarCanvas: avatarCanvasRef.current,
@@ -651,15 +536,22 @@ export function ChillFishingModal({
   }, [syncSession, resolveCatch, spotId]);
 
   const startCast = useCallback(async () => {
+    if (castPending.current || roundSeed.current !== null) return;
+    castPending.current = true;
+    fsmRef.current = createTidefallFishingIdle();
+    setRetryCatch(false);
+    setUiPhase('idle');
     setBusy(true);
     setError(null);
     setOutcomeVi(null);
     setCatchOutcome(null);
     setObserveMode(false);
     spectatorTargetRef.current = null;
-    resolveGuard.current = false;
     try {
       const data = await postDonorFishingStart(worldId, spotId as SpotId);
+      if (!mounted.current) return;
+      roundSeed.current = data.seed;
+      resolveGuard.current = false;
       setPreview(data.preview.name);
       const matched =
         matchTidefallCatalogByPreviewName(data.preview.critterId ?? data.preview.name) ??
@@ -708,7 +600,8 @@ export function ChillFishingModal({
       setError(msg);
       setMessage(msg);
     } finally {
-      setBusy(false);
+      castPending.current = false;
+      if (mounted.current) setBusy(false);
     }
   }, [worldId, spotId, syncSession]);
 
@@ -729,6 +622,9 @@ export function ChillFishingModal({
         setUiPhase(next.phase);
         setMessage(phaseMessageVi(next.phase, false, spotId));
       }
+      if (next.phase === 'minigame') {
+        gameEventBus.emit('cmd:fishing-visual', { spotId, phase: 'minigame', reelProgress: next.progress });
+      }
       if (next.phase === 'landed' || next.phase === 'escaped') {
         void resolveCatch(next);
       } else {
@@ -737,135 +633,155 @@ export function ChillFishingModal({
     }
   }, [observeMode, busy, spotId, resolveCatch, syncSession]);
 
+  function discardCatch() {
+    const seed = roundSeed.current;
+    roundSeed.current = null;
+    fsmRef.current = createTidefallFishingIdle();
+    if (seed !== null) {
+      void postDonorFishingSync(worldId, { spotId, phase: 'idle', roundSeed: seed, progressPermille: 0, pointerNorm: 0.5 })
+        .catch(() => undefined);
+    }
+    setRetryCatch(false);
+    setError(null);
+    setMessage(phaseMessageVi('idle', false, spotId));
+    setUiPhase('idle');
+  }
+
   const showCast = uiPhase === 'idle' || uiPhase === 'landed' || uiPhase === 'escaped';
   const showHook = uiPhase === 'bite' && !observeMode;
 
   return (
-    <div className="modal-backdrop nuvora-inv-backdrop" role="dialog" aria-modal="true" data-testid="donor-fishing-modal">
-      <div className="nuvora-desk cozy-fishing-panel" style={{ maxWidth: 'min(96vw, 460px)' }}>
-        <div className="nuvora-desk__title-row">
-          <h2 className="nuvora-desk__title">
-            <Fish size={18} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-            {spotDef.labelVi.replace(/ \(.*\)/, '')}
-          </h2>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              aria-label={muted ? 'Bật tiếng câu cá' : 'Tắt tiếng câu cá'}
-              onClick={() => {
-                const next = !muted;
-                setFishingAudioMuted(next);
-                setMuted(next);
-              }}
-            >
-              {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-            </button>
-            <button type="button" className="btn btn--secondary btn--sm" onClick={onClose} aria-label="Đóng">
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        <TidefallFishingFirstRun spotLabel={spotDef.labelVi.replace(/ \(.*\)/, '')} />
-
-        {error && (
-          <div className="cozy-alert" style={{ fontSize: 13 }} role="alert">
-            {error}
-          </div>
-        )}
-
-        {activeCatalogFish && uiPhase !== 'idle' && (
-          <MotionTargetRow fish={activeCatalogFish} />
-        )}
-
+    <FishingModalFrame
+      title={`${spotDef.labelVi.replace(/ \(.*\)/, '')} · Chill`}
+      testId="donor-fishing-modal"
+      onClose={onClose}
+      controls={
+        <button
+          type="button"
+          className="btn btn--secondary btn--sm"
+          aria-label={muted ? 'Bật tiếng câu cá' : 'Tắt tiếng câu cá'}
+          onClick={() => {
+            const next = !muted;
+            setFishingAudioMuted(next);
+            setMuted(next);
+          }}
+        >
+          {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+        </button>
+      }
+    >
+      <div className="ranch-fishing__body">
         <canvas
           ref={canvasRef}
           width={360}
           height={210}
-          className="cozy-fishing-canvas"
-          style={{
-            width: '100%',
-            borderRadius: 12,
-            border: '2px solid #6f421f',
-            touchAction: 'none',
-            cursor: observeMode ? 'default' : 'pointer',
-            imageRendering: 'pixelated',
-          }}
+          className="ranch-fishing__canvas"
+          data-interactive={!observeMode && (uiPhase === 'bite' || uiPhase === 'minigame')}
           data-testid="tidefall-fishing-canvas"
           onPointerDown={onCanvasTap}
         />
-
-        {(uiPhase === 'landed' || uiPhase === 'escaped') && catchOutcome && (
-          <CatchRevealCard
-            rarity={catchOutcome.rarity}
-            spriteUrl={catchOutcome.spriteUrl}
-            escaped={catchOutcome.escaped}
-            labelVi={catchOutcome.labelVi}
-          />
-        )}
-
-        <p
-          style={{ fontSize: 13, margin: '8px 0', color: '#462818', fontWeight: 600 }}
-          data-testid="tidefall-fishing-message"
-        >
-          {outcomeVi ?? message}
-        </p>
-
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {showCast && !observeMode && (
-            <button
-              type="button"
-              className="btn btn--primary"
-              disabled={busy}
-              onClick={() => void startCast()}
-              data-testid="tidefall-cast-btn"
-            >
-              {uiPhase === 'idle' ? 'Quăng cần' : 'Quăng lại'}
-            </button>
+        <div className="ranch-fishing__side">
+          {error && (
+            <div className="cozy-alert" style={{ fontSize: 13 }} role="alert">
+              {error}
+            </div>
           )}
-          {showHook && (
-            <button type="button" className="btn btn--primary" onClick={onCanvasTap} data-testid="tidefall-hook-btn">
-              Gài móc!
-            </button>
+
+          {activeCatalogFish && uiPhase !== 'idle' && (
+            <MotionTargetRow fish={activeCatalogFish} />
           )}
-          {(uiPhase === 'landed' || uiPhase === 'escaped') && !busy && (
-            <button type="button" className="btn btn--secondary btn--sm" onClick={onClose}>
-              Đóng
-            </button>
+
+          {catchOutcome && (
+            <CatchRevealCard
+              rarity={catchOutcome.rarity}
+              spriteUrl={catchOutcome.spriteUrl}
+              escaped={catchOutcome.escaped}
+              labelVi={catchOutcome.labelVi}
+            />
+          )}
+
+          {!catchOutcome && <p className="ranch-fishing__status" data-testid="tidefall-fishing-message" aria-live="polite">
+            {busy && (uiPhase === 'landed' || uiPhase === 'escaped') ? 'Đang ghi kết quả…' : outcomeVi ?? message}
+          </p>}
+
+          <div className="ranch-fishing__actions">
+            {retryCatch && (
+              <>
+                <button type="button" className="btn btn--primary" onClick={() => {
+                  resolveGuard.current = false;
+                  void resolveCatch(fsmRef.current);
+                }}>Thử nhận kết quả</button>
+                <button type="button" className="btn btn--secondary" onClick={discardCatch}>Bỏ lượt</button>
+              </>
+            )}
+            {showCast && !observeMode && !retryCatch && (
+              <button
+                type="button"
+                className="btn btn--primary"
+                disabled={busy}
+                onClick={() => void startCast()}
+                data-testid="tidefall-cast-btn"
+              >
+                {catchOutcome ? 'Quăng lại' : 'Quăng cần'}
+              </button>
+            )}
+            {showHook && (
+              <button type="button" className="btn btn--primary" onClick={onCanvasTap} data-testid="tidefall-hook-btn">
+                Gài móc!
+              </button>
+            )}
+            {uiPhase === 'minigame' && !observeMode && (
+              <button type="button" className="btn btn--primary" onClick={onCanvasTap}>Kéo dây</button>
+            )}
+            {showCast && !observeMode && !retryCatch && onSwitchMode && (
+              <button type="button" className="btn btn--secondary" disabled={busy} onClick={onSwitchMode}>
+                Tension · Giữ rồi thả
+              </button>
+            )}
+            {catchOutcome && !busy && (
+              <button type="button" className="btn btn--secondary btn--sm" onClick={() => {
+                setCatchOutcome(null);
+                setOutcomeVi(null);
+                setMessage(phaseMessageVi('idle', false, spotId));
+              }}>
+                Xong
+              </button>
+            )}
+          </div>
+
+          {uiPhase === 'idle' && !catchOutcome && !busy && <TidefallFishingFirstRun spotLabel={spotDef.labelVi} />}
+
+          {showCast && pondSpot && spotCatalog.length > 0 && (
+            <details className="cozy-fishing-catalog-drawer" data-testid="tidefall-fish-catalog">
+              <summary>Sách cá tại điểm câu ({spotCatalog.length} loài)</summary>
+              <ul className="cozy-fishing-catalog-grid">
+                {spotCatalog.slice(0, 12).map((f) => (
+                  <li
+                    key={f.id}
+                    style={{
+                      borderColor: FISHING_FRENZY_RARITY_BORDER[f.rarity],
+                      boxShadow: fishingFrenzyRarityGlow(f.rarity),
+                    }}
+                  >
+                    <img
+                      src={fishingFrenzySpritePathForFish(f.id, { biome: f.biome, rarity: f.rarity })}
+                      alt=""
+                      width={36}
+                      height={20}
+                      style={{ imageRendering: 'pixelated', flexShrink: 0 }}
+                    />
+                    <span>
+                      <strong>{tidefallFishNameVi(f.id, f.name)}</strong>
+                      <br />
+                      <small>{tidefallFishRarityLabelVi(f.rarity)}</small>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </div>
-
-        {showCast && pondSpot && spotCatalog.length > 0 && (
-          <details className="cozy-fishing-catalog-drawer" data-testid="tidefall-fish-catalog">
-            <summary>Sách cá tại điểm câu ({spotCatalog.length} loài)</summary>
-            <ul className="cozy-fishing-catalog-grid">
-              {spotCatalog.slice(0, 12).map((f) => (
-                <li
-                  key={f.id}
-                  style={{
-                    borderColor: FISHING_FRENZY_RARITY_BORDER[f.rarity],
-                    boxShadow: fishingFrenzyRarityGlow(f.rarity),
-                  }}
-                >
-                  <img
-                    src={fishingFrenzySpritePathForFish(f.id, { biome: f.biome, rarity: f.rarity })}
-                    alt=""
-                    width={36}
-                    height={20}
-                    style={{ imageRendering: 'pixelated', flexShrink: 0 }}
-                  />
-                  <span>
-                    <strong>{tidefallFishNameVi(f.id, f.name)}</strong>
-                    <br />
-                    <small>{tidefallFishRarityLabelVi(f.rarity)}</small>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
       </div>
-    </div>
+    </FishingModalFrame>
   );
 }

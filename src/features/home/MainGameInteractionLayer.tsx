@@ -1,3 +1,8 @@
+import { ItemUsageDisclosure } from '../../ui/components/ItemUsageDisclosure';
+import { resolveDeepFarmActions, sharedFeedStock, type DeepFarmIntent } from '../../shared/interaction/deepFarmContextActions';
+import type { DeepFarmSnapshot } from '../../shared/farming/deepFarmState';
+import type { WorkshopId } from '../../shared/farming/workshops';
+import type { InteractableTarget } from '../../shared/interaction/interactionTypes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DoorOpen, Hand, MessageCircle, PackageMinus, Sparkles, Store } from 'lucide-react';
 import '../../ui/designSystem/gameUiTokens.css';
@@ -18,7 +23,7 @@ import { ContextualPromptBadge } from '../../ui/components/ContextualPromptBadge
 import { GameHotbar } from '../../ui/components/GameHotbar';
 import { HeldItemChip } from '../../ui/components/HeldItemChip';
 import { executeMainGameContextAction } from './executeMainGameContextAction';
-import { validateActionAgainstLatestFrame } from './interactionActionGate';
+import { isSameContextualAction, validateActionAgainstLatestFrame } from './interactionActionGate';
 import { useHeldItemFromHotbar } from './useHeldItemFromHotbar';
 import { isLivingPetLocalSimulationEnabled } from '../../shared/petLiving/mainGame/petLivingDevFlag';
 import { isPetCareModeActive } from '../../shared/petLiving/petCare/petCareModeFlag';
@@ -48,6 +53,7 @@ function shortMobileActionLabel(action: ContextualAction): string {
     case 'offer_food_pet':
       return 'Đưa ăn';
     case 'pet_cat':
+    case 'pet_ambient_livestock':
       return 'Vuốt ve';
     case 'roll_toy':
       return 'Chơi';
@@ -62,6 +68,8 @@ function shortMobileActionLabel(action: ContextualAction): string {
       return 'Câu cá';
     case 'open_donor_workshop':
       return 'Xưởng';
+    case 'apply_deep_farm':
+      return action.labelVi;
     case 'talk_npc':
       return 'Nói chuyện';
     case 'use_portal':
@@ -161,7 +169,9 @@ export interface MainGameInteractionLayerProps {
   onOpenFarmShipping?: () => void;
   onOpenDonorFishing?: (spotId?: string) => void;
   onOpenDonorStreamFishing?: () => void;
-  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus) => void;
+  onOpenDonorWorkshop?: (focus?: import('../../shared/donor/donorWorkshopFocus').DonorWorkshopFocus, workshopId?: WorkshopId) => void;
+  deepFarmSnapshot?: DeepFarmSnapshot | null;
+  onApplyDeepFarm?: (intent: DeepFarmIntent) => Promise<void>;
   donorLanPlayable?: boolean;
   farmPlotByIndex?: ReadonlyMap<number, FarmPlotView>;
   farmServerNowMs?: number;
@@ -195,6 +205,8 @@ export function MainGameInteractionLayer({
   onOpenDonorFishing,
   onOpenDonorStreamFishing,
   onOpenDonorWorkshop,
+  deepFarmSnapshot,
+  onApplyDeepFarm,
   donorLanPlayable = false,
   farmPlotByIndex,
   farmServerNowMs,
@@ -294,6 +306,11 @@ export function MainGameInteractionLayer({
   const showHud = enabled && !decorateActive && !modalOpen;
   const touchActions = (showJoystick || hudLayoutMode !== 'desktop') && !petCareHud;
 
+  const sharedStock = useMemo(() => sharedFeedStock(inventorySnapshot?.items ?? []), [inventorySnapshot?.items]);
+  const deepFarmActions = useCallback((target: InteractableTarget, nowMs: number) =>
+    onApplyDeepFarm ? resolveDeepFarmActions(target, deepFarmSnapshot, sharedStock, localUserId, nowMs) : [],
+  [onApplyDeepFarm, deepFarmSnapshot, sharedStock, localUserId]);
+
   const livingPetSim = isLivingPetLocalSimulationEnabled();
 
   const actionCtx = useMemo(
@@ -312,6 +329,7 @@ export function MainGameInteractionLayer({
       onOpenDonorFishing,
       onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
+      onApplyDeepFarm,
       donorLanPlayable,
       onNotice: (msg: string, isError?: boolean) => {
         if (isError) onNotice(msg, true);
@@ -336,6 +354,7 @@ export function MainGameInteractionLayer({
       onOpenDonorFishing,
       onOpenDonorStreamFishing,
       onOpenDonorWorkshop,
+      onApplyDeepFarm,
       donorLanPlayable,
       onNotice,
     ],
@@ -358,6 +377,7 @@ export function MainGameInteractionLayer({
           which,
           farmPlotByIndex,
           farmServerNowMs,
+          deepFarmActions,
         )
       ) {
         return;
@@ -376,7 +396,7 @@ export function MainGameInteractionLayer({
         setLocalActionBusy(false);
       }
     },
-    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs],
+    [showHud, interactionMutationBusy, actionCtx, clearHeld, farmPlotByIndex, farmServerNowMs, deepFarmActions],
   );
 
   const executePrimary = useCallback(() => void runGatedAction('primary'), [runGatedAction]);
@@ -398,18 +418,20 @@ export function MainGameInteractionLayer({
         economyPlayable: frame.economyPlayable ?? donorLanPlayable,
         farmPlotByIndex,
         serverNowMs: farmServerNowMs,
+        deepFarmActions,
       });
       setResolution((cur) =>
         cur.targetId === next.targetId &&
-        cur.primary?.code === next.primary?.code &&
-        cur.primary?.available === next.primary?.available &&
-        cur.secondary?.code === next.secondary?.code
+        cur.livestock?.labelVi === next.livestock?.labelVi &&
+        cur.livestock?.detailsVi.join('\n') === next.livestock?.detailsVi.join('\n') &&
+        (cur.primary === next.primary || isSameContextualAction(cur.primary, next.primary)) &&
+        (cur.secondary === next.secondary || isSameContextualAction(cur.secondary, next.secondary))
           ? cur
           : next,
       );
     };
     return gameEventBus.on('evt:interaction-frame', onFrame);
-  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs]);
+  }, [donorLanPlayable, farmPlotByIndex, farmServerNowMs, deepFarmActions]);
 
   useEffect(() => {
     return gameEventBus.on('evt:farm-plot-click-request', ({ plotId, action, seedSku }) => {
@@ -495,6 +517,7 @@ export function MainGameInteractionLayer({
               }
               data-testid="btn-context-primary"
               data-touch-role="primary"
+              data-context-action={resolution.primary.code}
               aria-label={resolution.primary.labelVi}
               disabled={inputsLocked}
               style={{ opacity: resolution.primary.available ? 1 : 0.72 }}
@@ -525,6 +548,7 @@ export function MainGameInteractionLayer({
               }
               data-testid="btn-context-secondary"
               data-touch-role="secondary"
+              data-context-action={resolution.secondary.code}
               aria-label={resolution.secondary.labelVi}
               disabled={inputsLocked}
               onClick={() => void executeSecondary()}
@@ -552,6 +576,12 @@ export function MainGameInteractionLayer({
         data-testid="main-game-interaction-hud"
         onPointerDown={(e) => e.stopPropagation()}
       >
+        {!petCareHud && resolution.livestock && (
+          <div className="olw-game-window olw-livestock-context" data-testid="livestock-context" role="status">
+            <strong>{resolution.livestock.labelVi}</strong>
+            {resolution.livestock.detailsVi.map((detail) => <span key={detail}>{detail}</span>)}
+          </div>
+        )}
         {!petCareHud && !touchActions ? (
           <ContextualPromptBadge
             resolution={resolution}
@@ -585,6 +615,13 @@ export function MainGameInteractionLayer({
         ) : (
           <HeldItemChip heldItem={heldItem} onClear={clearHeld} />
         )}
+        {heldItem.itemSku && <div className="olw-held-usage" key={heldItem.itemSku}>
+          <ItemUsageDisclosure
+            sku={heldItem.itemSku}
+            label={heldItem.labelVi}
+            description={inventorySnapshot?.catalog.find((item) => item.sku === heldItem.itemSku)?.descriptionVi}
+          />
+        </div>}
         <GameHotbar
           slots={hotbarSlots}
           heldItem={heldItem}

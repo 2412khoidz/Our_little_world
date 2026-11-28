@@ -13,8 +13,8 @@
          ▼ (Remaining V0.2.x polish & features)
 [M0 Follow-up: Auxiliary Mobile Menu Improvements] (PENDING) ──┐
 [M2: Natural Couple Animations (P1 Kiss & Poses)] ─────────────┼─▶ Complete V0.2.x
-[M3d: Animated Processing Machines & Env VFX] (PENDING) ───────┤
-[M3e: Fishing Artwork & Anim Transplant] (PENDING) ────────────┘
+[M3d: Animated Processing Machines & Env VFX] (CHỜ DUYỆT) ───────┤
+[M3e: Fishing Artwork & Anim Transplant] (CHỜ DUYỆT) ────────────┘
                                                                       │
                                                                       ▼
                                                      [M4: Home Progression & Shop (V0.2.4)]
@@ -79,19 +79,16 @@
 ## Mission 3c / M3c.1 / M3c.2 — Animated Livestock & Ambient Animal Transplant (`V0.2.x` · `COMPLETED & OWNER APPROVED` in RC2)
 - **Trạng thái:** Đã đóng gói `public/assets/farming/livestock-ranch.{png,json}` từ `FarmRanchLife_v1.0.zip` cho đủ `7` loài vật nuôi, thêm chân dung UI (`LivestockPanelModal.tsx`), chuyển ghép ambient animals trên `farm`/`village`/`garden` (`ambientAnimalVisualAdapter.ts`), hoạt ảnh vịt bơi nước và chỉnh cừu sang `sheep_brown_baby` ở scale `1.00` (`0cf17fb`, `40f0504`, `469d3de`, `0018d10`); giữ nguyên mèo `Quýt` 2D/3D.
 
-## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x` · `PLANNED`)
-- **Phạm vi & Trải nghiệm người chơi:** Mở rộng hình động 6 frame cho các máy chế biến (`FarmRanchLife/05_Buildings_Machines/Artisan_Machines/*_idle_work4_done_6f.png`) và gắn VFX môi trường từ `FarmRanchLife` (`10_Effects/{soil_dust_till_4f,water_hit_4f,seed_scatter_4f,harvest_pop_4f,hearts_petting_4f}.png`, `02_Crops/ready_sparkle_overlay_4f.png`, `03_Fruit_Trees/*_harvest_shake_3f.png`), kèm tinh chỉnh UX đứng cạnh cây ăn quả/chuồng/xưởng.
-- **Dependencies:** Sau M3b–M3c để tránh xung đột `scripts/pack-farming-atlases.py` và `BootScene.ts`.
-- **Branch / Worktree đề xuất:** `npm run worktree:new -- --name farming-machines-vfx` (`feat/farming-machines-vfx`).
-- **Hệ thống & File chồng chéo:** `scripts/pack-farming-atlases.py`, `src/game/farming/{FarmPlotVisualController,OrchardVisualController}.ts`, `src/features/donor/DonorWorkshopModal.tsx`, `src/shared/interaction/*`.
-- **Focused Acceptance:** `farmVisualScaleParity.test.ts`, `mobileInteractablesAndHud.test.ts`, `donor-economy-two-client.spec.ts`, `npm run lint` (`0` errors, `0` warnings).
+## Mission 3d — Animated Processing Machines and Environmental VFX (`V0.2.x` · đã triển khai, chờ chủ dự án duyệt hình ảnh)
 
-## Mission 3e — Fishing Artwork and Animation Transplant (`V0.2.x`)
-- **Phạm vi & Trải nghiệm người chơi:** Thay thế/nâng cấp artwork và hiệu ứng ao câu cá bằng bộ `FarmRanchLife/11_Fishing/{bobber_float_4f,bobber_bite_4f,fishing_spot_bubbles_4f}.png` cùng artwork cá chuẩn xác (giữ nguyên hợp đồng `fish_minnow` và `meadowbrookNatureCatch.ts`), đồng thời dọn warning `ChillFishingModal.tsx:90`.
-- **Dependencies:** M3a (`ASSET_REUSE_BACKLOG.md` §2) và độc lập với M3d (trừ `pack-farming-atlases.py` nếu dùng chung atlas).
-- **Branch / Worktree đề xuất:** `npm run worktree:new -- --name fishing-art-transplant` (`feat/fishing-art-transplant`).
-- **Hệ thống & File chồng chéo:** `src/features/donor/{ChillFishingModal,TensionFishingModal}.tsx`, `src/game/scenes/WorldScene.ts` (vùng hồ câu), `src/shared/art/farmingSpriteAtlas.ts`.
-- **Focused Acceptance:** `canonicalFishingReward.test.ts`, `farmingSpriteAtlas.test.ts`, `npm run lint` (`0` errors, `0` warnings).
+- Tám máy Farm & Ranch Life hoạt động cạnh mốc xưởng Meadowbrook. Khung nghỉ, vòng làm việc và khung có thành phẩm lấy từ trạng thái hàng đợi hiện có. Trong bảng xưởng, mỗi mẻ có tiến độ và hình nguyên liệu/thành phẩm.
+- Hiệu ứng cuốc, gieo, tưới, thu hoạch và báo chín bám ô đất. Vườn cây giữ hình cây LPC với chuyển động rung và quả rơi. Vật nuôi hiện trái tim tại vị trí thực sau khi vuốt ve thành công.
+- Worktree chung với M3e dựa trên Canonical RC2. Xem [Hướng dẫn playtest M3d/M3e](handovers/FARMING_FISHING_VISUALS.md).
+
+## Mission 3e — Fishing Artwork and Animation Transplant (`V0.2.x` · đã triển khai, chờ chủ dự án duyệt hình ảnh)
+
+- Phao, gợn nước, bọt, dây câu, cá cắn và cá vừa bắt hiển thị theo phiên câu hiện có. Chill vẫn mở mặc định. Suối Đông cho phép chọn thêm chế độ giữ lực Tension.
+- Hai bảng câu dùng chung khung Nuvora và cơ chế toàn màn hình của ứng dụng. Xem [Hướng dẫn playtest M3d/M3e](handovers/FARMING_FISHING_VISUALS.md).
 
 ## Mission 4 — Home Progression: Furniture Shop & House Upgrades (`V0.2.4`)
 - **Phạm vi & Trải nghiệm người chơi:** Thêm cửa hàng nội thất 4 phong cách (`Pastel`, `Modern`, `Cottage`, `Rustic`) tiêu coin từ ví nông trại và hệ thống nâng cấp mở rộng nhà (`kitchen`, `bedroom`, `study`, `greenhouse`), **tự động giữ lại toàn bộ đồ đạc cũ và tương thích 100% file save `.dev-lan-state.json`**.

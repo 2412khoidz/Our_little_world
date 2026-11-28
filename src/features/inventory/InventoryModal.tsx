@@ -1,3 +1,4 @@
+import { itemUsageDetails } from '../../shared/inventory/itemUsageDetails';
 import { useCallback, useMemo, useState } from 'react';
 import { Backpack, Gift, Sparkles, X } from 'lucide-react';
 import { computeSellPriceBp, getItem } from '../../shared/economy/catalogConfig';
@@ -264,22 +265,10 @@ export function InventoryModal({
     const sku = resolvedInspect.stack.itemSku;
     const quality = resolvedInspect.stack.quality;
     const catalog = catalogMap.get(sku);
-    const fish = resolveCanonicalFishBySku(sku);
     const econ = getItem(sku);
     const groupKey = catalog?.purpose ?? econ?.group ?? (sku.startsWith('tool_') ? 'tool' : '');
     const categoryLabel = GROUP_LABEL_VI[groupKey] ?? 'Vật phẩm';
-    const descriptionVi =
-      catalog?.descriptionVi ??
-      fish?.descriptionVi ??
-      (sku === 'tool_hoe'
-        ? 'Dùng cuốc đất trên ô ruộng bằng phím J hoặc click chuột.'
-        : sku === 'tool_watering_can' || sku === 'water_pitcher'
-          ? 'Múc nước từ vòi bếp, ao hoặc giếng rồi tưới cây / rót cho bé mèo.'
-          : sku === 'rod_basic'
-            ? 'Cầm cần câu và đứng cạnh mặt nước để câu cá thư giãn.'
-            : sku.startsWith('seed_')
-              ? 'Gieo lên ô đất đã cuốc để trồng cây.'
-              : 'Có thể gắn vào ô nhanh 1–8 hoặc sắp xếp lại vị trí trong túi.');
+    const details = itemUsageDetails(sku, labelForSku(sku), catalog?.descriptionVi);
     const sellPrice = resolveUnitSellCoins(sku, quality);
     return {
       sku,
@@ -287,7 +276,8 @@ export function InventoryModal({
       quality,
       qualityVi: QUALITY_LABEL_VI[quality],
       categoryLabel,
-      descriptionVi,
+      descriptionVi: details.descriptionVi,
+      usageVi: details.usageVi,
       sellPrice,
       qty: resolvedInspect.qty,
       bagIndex: resolvedInspect.bagIndex,
@@ -445,6 +435,9 @@ export function InventoryModal({
 
               <div style={{ fontSize: 12.5, lineHeight: 1.4, color: '#4f2f1b' }}>
                 {inspectorDetails.descriptionVi}
+                {inspectorDetails.usageVi && inspectorDetails.usageVi !== inspectorDetails.descriptionVi && (
+                  <span className="nuvora-inspector__usage">{inspectorDetails.usageVi}</span>
+                )}
               </div>
 
               <div className="nuvora-inspector__hotbar-row">

@@ -43,6 +43,13 @@
   - **Ranh giới tích hợp đã vá sạch:** Nối `useFocusMode.ts` → `GlobalViewportContext` (`useOptionalGlobalViewport`) giữ 1 `fullscreenOwner` duy nhất; đồng bộ `handleOpenBilliards` cho cả `MobileNavDrawer` và `MenuModal`; vá triệt để lỗi **HTTP 404 cold-start** trên `/donor/workshop/queue` (`scripts/devLanServerPlugin.mjs` chờ async `ssrLoadModule` promises cho `/donor/` & `/farm`).
   - **Bảo toàn save & phạm vi mở:** Save gốc `.dev-lan-state.json` được backup nguyên vẹn (`80D55386...`); tạo thêm save nghiệm thu cô lập `.dev-lan-state-acceptance-rc2.json` (`50,000` xu, `37` nhóm vật phẩm & đủ 7 loài); giữ nguyên `M0` auxiliary mobile menu improvements, `M2`, `M3d`, `M3e` và `M4–M10` là nhiệm vụ tiếp theo.
 
+## M3d + M3e trên `feat/farming-fishing-visuals`
+
+- **Đã triển khai, chờ chủ dự án duyệt hình ảnh.** Tám máy có ba trạng thái ở trang trại và bảng xưởng. Hiệu ứng trang trại dựa trên dữ liệu đã xác nhận. Chill và Tension dùng chung artwork mặt nước, phao và khung fullscreen.
+- [Hướng dẫn playtest, ca kiểm tra và giới hạn](handovers/FARMING_FISHING_VISUALS.md).
+- **Phản hồi nghiệm thu của chủ dự án.** Nối thao tác ngay tại cây, vật nuôi và máy, làm rõ công dụng vật phẩm và hai chế độ câu, đồng thời sửa chốt lượt câu cũ khi quăng lại. Hình máy mới chờ chủ dự án xem lại.
+- **Save QA dành cho chủ dự án.** Tám máy và trạng thái hình ảnh đã được duyệt. Save riêng có đồ thử toàn bộ xưởng, 13 vật nuôi và các luống, cây sẵn thu. Đứng cạnh con vật để vuốt ve hoặc xem thao tác chăm sóc đang có và lý do nếu chưa dùng được.
+
 ## DOCS RECONCILIATION — ROADMAP V3, APPROVED `M3a`, `M0` & MULTIPLAYER MAINTENANCE (`main`)
 
 - **Hợp nhất chỉ tài liệu & metadata (từ `chore/master-roadmap-v3` @ `f900d09` + `chore/m3a-asset-library-audit` @ `3134f1a`):**

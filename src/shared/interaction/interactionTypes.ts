@@ -1,3 +1,5 @@
+import type { DeepFarmIntent, DeepFarmTarget } from './deepFarmContextActions';
+import type { WorkshopId } from '../farming/workshops';
 import type { Direction } from '../types';
 import type { LivingItemIconId } from '../petLiving/petVisualTypes';
 
@@ -53,6 +55,8 @@ export type InteractableDomainKind =
   | 'portal'
   | 'crop_plot'
   | 'fishing_spot'
+  | 'deep_farm'
+  | 'ambient_livestock'
   | 'workshop_building'
   | 'kitchen'
   | 'shop_npc'
@@ -74,6 +78,7 @@ export interface InteractableTarget {
   fishingSpotId?: string;
   /** Opens donor workshop modal scrolled to mill / bakery / coop. */
   workshopFocus?: DonorWorkshopFocus;
+  deepFarmTarget?: DeepFarmTarget;
 }
 
 export type InteractionActionCode =
@@ -82,6 +87,7 @@ export type InteractionActionCode =
   | 'pour_water_bowl'
   | 'fill_water_pitcher'
   | 'pet_cat'
+  | 'pet_ambient_livestock'
   | 'enter_pet_care'
   | 'roll_toy'
   | 'place_cardboard_box'
@@ -105,6 +111,7 @@ export type InteractionActionCode =
   | 'place_sprinkler'
   | 'remove_sprinkler'
   | 'harvest_crop'
+  | 'apply_deep_farm'
   | 'open_farm_market'
   | 'open_shipping_bin'
   | 'open_donor_fishing'
@@ -122,12 +129,20 @@ export interface ContextualAction {
   reasonVi?: string;
   donorFishingSpotId?: string;
   workshopFocus?: DonorWorkshopFocus;
+  workshopId?: WorkshopId;
+  deepFarmIntent?: DeepFarmIntent;
+}
+
+export interface LivestockContext {
+  labelVi: string;
+  detailsVi: string[];
 }
 
 export interface ContextualResolution {
   targetId: string | null;
   primary: ContextualAction | null;
   secondary: ContextualAction | null;
+  livestock?: LivestockContext;
 }
 
 export interface KeybindingConfig {
@@ -155,4 +170,5 @@ export interface InteractionResolveInput {
   /** Live farm authority projection for crop plot inspect + ready gating. */
   farmPlotByIndex?: ReadonlyMap<number, import('../farming/farmSnapshotTypes').FarmPlotView>;
   serverNowMs?: number;
+  deepFarmActions?: (target: InteractableTarget, nowMs: number) => readonly ContextualAction[];
 }

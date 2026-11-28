@@ -312,6 +312,14 @@ export async function tryHandleDonorDevLan(ctx: {
       sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa có phiên câu — hãy quăng cần trước.' });
       return true;
     }
+    if (row.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== row.seed)) {
+      sendJson(res, 409, { ok: false, code: 'FISHING_ROUND_CHANGED', message: 'Lượt câu đã thay đổi. Hãy quăng cần lại.' });
+      return true;
+    }
+    if (row.resolved) {
+      sendJson(res, 200, { ok: true, data: donorFishSessionView(row) });
+      return true;
+    }
     const phase = parseTidefallPhase(body.phase);
     row.phase = phase;
     row.progressPermille = Math.max(0, Math.min(1000, Math.round(Number(body.progressPermille ?? row.progressPermille))));
@@ -384,6 +392,10 @@ export async function tryHandleDonorDevLan(ctx: {
     const session = v015.donorFishSession[worldId];
     if (!session) {
       sendJson(res, 400, { ok: false, code: 'NO_SESSION', message: 'Chưa câu — hãy quăng cần trước.' });
+      return true;
+    }
+    if (session.anglerUserId !== userId || (body.roundSeed !== undefined && body.roundSeed !== session.seed)) {
+      sendJson(res, 409, { ok: false, code: 'FISHING_ROUND_CHANGED', message: 'Lượt câu đã thay đổi. Hãy quăng cần lại.' });
       return true;
     }
     // Idempotency guard: replay exact authoritative result without duplicate inventory grant.
