@@ -1,3 +1,4 @@
+import type { TradeSession } from './physicalTrade';
 import type { InventoryCatalogItem, InventoryOwnerScope, ItemQualityTier } from './inventoryTypes';
 
 export const BACKPACK_ROW_SIZE = 9;
@@ -44,6 +45,7 @@ export interface PhysicalDrop extends PhysicalPosition {
   readonly id: string;
   readonly droppedBy: string;
   readonly pickupAfterMs?: number;
+  readonly dropperExited?: boolean;
   readonly stack: PhysicalStack;
 }
 
@@ -53,6 +55,8 @@ export interface PhysicalInventory {
   readonly nextId: number;
   readonly containers: Record<string, PhysicalContainer>;
   readonly players: Partial<Record<string, PhysicalBackpack>>;
+  readonly tradeReceipts?: Readonly<Record<string, TradeSession>>;
+  readonly starterClaims?: Readonly<Record<string, readonly string[]>>;
   readonly drops?: Record<string, PhysicalDrop>;
 }
 
@@ -113,7 +117,9 @@ export type PhysicalCommand =
   | { readonly kind: 'organize'; readonly container: ContainerKind }
   | { readonly kind: 'deposit'; readonly matchingOnly: boolean }
   | { readonly kind: 'drop'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string }
-  | { readonly kind: 'pickup'; readonly dropId: string }
+  | { readonly kind: 'pickup'; readonly dropId: string; readonly automatic?: boolean }
+  | { readonly kind: 'arm_pickup'; readonly dropId: string }
+  | { readonly kind: 'claim_starter' }
   | { readonly kind: 'upgrade_backpack' }
   | { readonly kind: 'sell'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string; readonly channel: 'market' | 'shipping' }
   | { readonly kind: 'discard'; readonly from: PhysicalSlotAddress; readonly qty: number; readonly stackId: string; readonly confirm: true };
@@ -413,6 +419,8 @@ export function editBasicPhysicalInventory(edit: PhysicalInventoryEdit, command:
     return;
   }
   const { container: source, stack } = edit.source(command.from, command.stackId, command.qty);
+  const targetKind = command.kind === 'move' ? command.to.container : command.to;
+  if (stack.metadata?.starterOwner && targetKind !== 'backpack') physicalError('PROTECTED', 'Dụng cụ cơ bản gắn với ba lô của bạn.');
   if (command.kind === 'transfer') {
     if (command.from.container === command.to) physicalError('INVALID', 'Hãy chọn một kho khác.');
     const dest = edit.edit(command.to);
@@ -427,6 +435,8 @@ export function editBasicPhysicalInventory(edit: PhysicalInventoryEdit, command:
   checkPhysicalIndex(dest, command.to.index);
   if (dest.locked[command.to.index]) physicalError('PROTECTED', 'Ô đích đang được khóa.');
   const target = dest.slots[command.to.index];
+  if (target?.metadata?.starterOwner && command.from.container !== 'backpack')
+    physicalError('PROTECTED', 'Dụng cụ cơ bản gắn với ba lô của bạn.');
   if (target && !canStackPhysical(stack, target, edit.catalog)) {
     if (command.qty !== stack.qty || stack.legacyParcel || target.legacyParcel) {
       physicalError('INVALID', 'Cần chọn cả chồng thường để đổi chỗ.');

@@ -106,6 +106,12 @@ export default function PhysicalInventoryPilot({
     return () => { current = false; };
   }, [clearSelection, open]);
 
+  useEffect(() => {
+    if (!message || open) return;
+    const timer = window.setTimeout(() => setMessage(''), 4200);
+    return () => window.clearTimeout(timer);
+  }, [message, open]);
+
   const refresh = useCallback(async () => {
     const request = ++sequence.current;
     const result = await backend.read(worldId, query);
@@ -133,18 +139,22 @@ export default function PhysicalInventoryPilot({
       if (result.ok) {
         if (request === sequence.current) setView((old) => preferPhysicalSnapshot(old, result.data));
         else void refresh();
+        if (result.data.pickup) {
+          const { collected, remaining } = result.data.pickup;
+          setMessage(remaining ? `Đã nhặt ${collected} · còn ${remaining} trên đất.` : `Đã nhặt ${collected}.`);
+        }
         if (command.kind === 'rotate') setEquipped(null);
         else if (command.kind !== 'pickup') clearSelection();
       } else {
-        if (command.kind !== 'pickup' || open) setMessage(result.message);
-        if (command.kind === 'pickup' && ['NOT_FOUND', 'VERSION_CONFLICT', 'NETWORK_ERROR'].includes(result.code)) pickupAttempt.current.ids.delete(command.dropId);
+        if (command.kind !== 'arm_pickup') setMessage(result.message);
+        if (command.kind === 'pickup' && ['NOT_FOUND', 'VERSION_CONFLICT', 'NETWORK_ERROR', 'UNAVAILABLE'].includes(result.code)) pickupAttempt.current.ids.delete(command.dropId);
         await refresh();
       }
     } finally {
       setBusy(false);
       applying.current = false;
     }
-  }, [backend, clearSelection, open, query, refresh, view, worldId]);
+  }, [backend, clearSelection, query, refresh, view, worldId]);
 
   useEffect(() => {
     const publish = () => gameEventBus.emit('cmd:sync-physical-drops', {
@@ -156,12 +166,15 @@ export default function PhysicalInventoryPilot({
 
   const pickupAttempt = useRef({ mapId: '', version: -1, ids: new Set<string>(), nextAt: 0 });
   const lastPickupPosition = useRef({ mapId: '', x: 0, y: 0, movingUntil: 0 });
+  useEffect(() => {
+    if (connection !== 'connected') lastPickupPosition.current = { mapId: '', x: 0, y: 0, movingUntil: 0 };
+  }, [connection]);
   useEffect(() => gameEventBus.on('evt:interaction-frame', ({ mapId, playerX: x, playerY: y }) => {
     const position = { mapId, x, y };
     const now = Date.now();
     const last = lastPickupPosition.current;
     if (last.mapId !== mapId || Math.hypot(last.x - x, last.y - y) >= 1) {
-      lastPickupPosition.current = { ...position, movingUntil: showHud && !open ? now + 1500 : 0 };
+      lastPickupPosition.current = { ...position, movingUntil: last.mapId === mapId && showHud && !open && connection === 'connected' ? now + 1500 : 0 };
     }
     if (!showHud || open || connection !== 'connected' || !view || applying.current) return;
     const attempt = pickupAttempt.current;
@@ -180,13 +193,19 @@ export default function PhysicalInventoryPilot({
     for (const id of attempt.ids) {
       if (!nearby.some((drop) => drop.id === id)) attempt.ids.delete(id);
     }
+    const unarmed = view.unarmedDrops.find((item) => !canReachDrop(item, position));
+    if (unarmed) {
+      attempt.nextAt = now + 350;
+      void apply({ kind: 'arm_pickup', dropId: unarmed.id });
+      return;
+    }
     if (now > lastPickupPosition.current.movingUntil) return;
     const drop = nearby.find((item) => !attempt.ids.has(item.id) &&
-      (item.droppedBy !== userId || now >= (item.pickupAfterMs ?? 0)));
+      (item.droppedBy !== userId || item.dropperExited));
     if (!drop) return;
     attempt.ids.add(drop.id);
     attempt.nextAt = now + 350;
-    void apply({ kind: 'pickup', dropId: drop.id });
+    void apply({ kind: 'pickup', dropId: drop.id, automatic: true });
   }), [apply, connection, open, refresh, showHud, userId, view]);
 
   const activeRow = view?.player.activeRow ?? 0;
@@ -370,6 +389,9 @@ export default function PhysicalInventoryPilot({
       <div className="physical-hotbar" data-touch={touch || undefined} data-active-row={activeRow + 1}
         role="group" aria-label="Thanh vật phẩm nhanh" data-testid="physical-hotbar"
         onPointerDown={(event) => event.stopPropagation()}>
+        {(message || (view?.overflowUnits ?? 0) > 0) && <small className="physical-hud-notice" role="status">
+          {message || `Đồ giữ hộ: ${view?.overflowUnits} · tại tủ lạnh`}
+        </small>}
         <div className="physical-hotbar__slots">
           {hotbar.map((cell, key) => (
             <button key={key} type="button" className="nuvora-sl"
@@ -421,6 +443,9 @@ export default function PhysicalInventoryPilot({
                   </div>
                   <div className="physical-slot-grid">{view.backpack.map((cell) => drawCell(cell, 'backpack'))}</div>
                   <div className="physical-inventory-actions physical-bag-options">
+                    {view.overflowUnits > 0 && <span role="status">Đồ giữ hộ: {view.overflowUnits} · mở kho tại tủ lạnh</span>}
+                    {view.atHome && view.starterPending > 0 && <button type="button" className="physical-control" disabled={busy}
+                      onClick={() => void apply({ kind: 'claim_starter' })}>Nhận dụng cụ cơ bản ({view.starterPending})</button>}
                     <button type="button" className="physical-control" disabled={busy}
                       onClick={() => rotate(1)}>Đổi hàng</button>
                     {mode === 'backpack' && view.atHome && upgradeCost !== undefined && nextCapacity !== undefined && (

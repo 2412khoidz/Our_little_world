@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { dropLanding, handleDevLanPhysicalInventory, type PhysicalDevLanDatabase } from '../../src/server/devLanPhysicalInventoryRoute';
 import { HOME_STORAGE_ANCHOR } from '../../src/shared/interaction/mainGameWorldAnchors';
 import { computeSellPrice } from '../../src/shared/economy/catalogConfig';
@@ -99,7 +99,9 @@ describe('Physical wallet and save authority', () => {
     expect(host.mutate(starred.version, 'sell-favorite', sale).payload.code).toBe('PROTECTED');
   });
 
-  it('persists a forward drop and its receipt across save reloads', () => {
+  it('persists a forward drop and its receipt across save reloads', ({ onTestFinished }) => {
+    const clock = vi.spyOn(Date, 'now');
+    onTestFinished(() => { clock.mockRestore(); });
     const host = fixture();
     host.location.value = { mapId: 'home', x: 136, y: 152, facing: 'right' };
     expect(dropLanding({ mapId: 'home', x: -16, y: 152 }, [])).toBeNull();
@@ -118,7 +120,18 @@ describe('Physical wallet and save authority', () => {
     expect(restarted.call().view?.mapDrops).toEqual([]);
     restarted.location.value = { mapId: 'home', x: 136, y: 152 };
     expect(restarted.mutate(old.version, 'drop-gold', command).view?.mapDrops).toEqual([entity]);
-    const picked = restarted.mutate(dropped.version, 'pickup-gold', { kind: 'pickup', dropId: entity!.id }, 'nang').view!;
+    clock.mockReturnValue((entity!.pickupAfterMs ?? 0) + 1);
+    const automatic = { kind: 'pickup', dropId: entity!.id, automatic: true } as const;
+    expect(restarted.mutate(dropped.version, 'still-inside', automatic).status).toBe(409);
+    restarted.location.value = { mapId: 'home', x: 64, y: 152 };
+    expect(restarted.mutate(dropped.version, 'away', automatic).status).toBe(409);
+    const armed = restarted.mutate(dropped.version, 'record-exit', { kind: 'arm_pickup', dropId: entity!.id }).view!;
+    const returned = fixture(restarted.durable);
+    returned.location.value = { mapId: 'home', x: 136, y: 152 };
+    expect(returned.mutate(armed.version, 'reentry', automatic).view?.pickup).toEqual({ collected: 3, remaining: 0 });
+    expect(returned.mutate(armed.version, 'reentry', automatic).view?.pickup).toEqual({ collected: 3, remaining: 0 });
+    restarted.location.value = { mapId: 'home', x: 136, y: 152 };
+    const picked = restarted.mutate(armed.version, 'pickup-gold', { kind: 'pickup', dropId: entity!.id }, 'nang').view!;
     expect(picked.mapDrops).toEqual([]);
     expect(picked.backpack[0]?.stack).toMatchObject({ qty: 3, quality: 'gold' });
     expect(restarted.mutate(dropped.version, 'pickup-again', { kind: 'pickup', dropId: entity!.id }, 'may').status).toBe(409);

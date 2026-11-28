@@ -148,6 +148,7 @@ import { IosInstallModal } from '../features/pwa/IosInstallModal';
 import { PwaStatusBanner } from '../features/pwa/PwaStatusBanner';
 import { getIslandZoneMeta } from '../shared/world/worldGraph';
 
+const PhysicalTrade = import.meta.env.DEV ? lazy(() => import('../features/inventory/PhysicalTrade')) : null;
 const PhysicalInventoryPilot = import.meta.env.DEV
   ? lazy(() => import('../features/inventory/PhysicalInventoryPilot'))
   : null;
@@ -380,6 +381,7 @@ function MainCoupleApp({
   const [mutationBusy, setMutationBusy] = useState(false);
 
   // Modals & settings
+  const [tradeOpen, setTradeOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<
     | null
     | 'invite'
@@ -2915,7 +2917,8 @@ function MainCoupleApp({
     );
   }
 
-  const isAnyModalOpen = activeModal !== null || previewNotice !== null || activeNpcDialogue !== null;
+  const hasBaseModal = activeModal !== null || previewNotice !== null || activeNpcDialogue !== null;
+  const isAnyModalOpen = hasBaseModal || tradeOpen;
   const kibbleCount = getSharedKibbleQty(inventorySnapshot?.items ?? []);
   const petFeedCooldownMs = petSnapshot
     ? getPetActionCooldownRemainingMs('feed', petSnapshot.lastFedAtMs, coupleClockNowMs)
@@ -3222,8 +3225,11 @@ function MainCoupleApp({
         onNotice={(message, isError) => showToast(message, isError)}
       />
 
-      {!decorateActive && !isAnyModalOpen && !petCareMode && (
+            {!decorateActive && !hasBaseModal && !petCareMode && (
         <CoupleEmoteDock
+          tradeAction={import.meta.env.DEV && PhysicalTrade && worldId && backend.inventory?.physical
+            ? <Suspense fallback={null}><PhysicalTrade worldId={worldId} userId={currentUser.userId}
+              backend={backend.inventory.physical} onOpenChange={setTradeOpen} /></Suspense> : undefined}
           partnerOnlineSameRoom={presences.some(
             (p) => p.userId !== currentUser.userId && p.mapId === currentMapId,
           )}

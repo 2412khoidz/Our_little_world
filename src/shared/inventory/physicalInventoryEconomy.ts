@@ -52,7 +52,7 @@ export function editPhysicalEconomy(
     physicalError('FORBIDDEN', 'Hãy mang món trong ba lô tới chợ hoặc thùng hàng.');
   }
   const { container, stack } = edit.source(command.from, command.stackId, command.qty);
-  if (isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) {
+  if (stack.metadata?.starterOwner || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) {
     physicalError('PROTECTED', 'Món này đang được bảo vệ.');
   }
   // The legacy pricing functions work on a temporary projection of this one exact slot.

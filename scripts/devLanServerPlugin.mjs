@@ -521,6 +521,9 @@ export function createDevLanHandler({
   }
 
   let physicalQueue = Promise.resolve();
+  const tradeSessions = new Map();
+  const tradeInvites = new Map();
+  const tradeConnections = new Map();
 
   function runPhysicalRequest(module, context, worldId) {
     const queued = physicalQueue.then(async () => {
@@ -532,6 +535,11 @@ export function createDevLanHandler({
         placements: db.placements[worldId] ?? [],
         orchard: db.v015.deepFarms?.[worldId]?.orchard,
       };
+      if (route === '/inventory/physical-trade') {
+        const partnerId = db.memberships[worldId]?.find((entry) => entry.userId !== userId)?.userId;
+        return module.handlePhysicalTrade({ ...physicalContext, partnerId, tradeSessions, tradeInvites, tradeConnections,
+          partnerPosition: partnerId ? wsHub.getActivePlayerPosition(worldId, partnerId) : null });
+      }
       if (!module.isPhysicalGameplayRoute(route, req.method)) {
         return module.handleDevLanPhysicalInventory(physicalContext);
       }
@@ -604,6 +612,10 @@ export function createDevLanHandler({
             transaction.apply(draft.inventory[worldId], {
               received, sharedRecipient: payer, consumedBait: route === '/donor/fishing/start',
             });
+            if (transaction.overflowUnits && reply.payload?.data && typeof reply.payload.data === 'object') {
+              const data = reply.payload.data;
+              data.overflowUnits = transaction.overflowUnits;
+            }
             if (workshopKind === 'queue_workshop' && transaction.consumed.length) {
               const queuedJob = jobs.find((job) => !originalJobs.some(({ jobId }) => jobId === job.jobId));
               if (!queuedJob) throw new Error('Không tìm thấy mẻ vừa giữ nguyên liệu.');

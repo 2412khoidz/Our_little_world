@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   isPairedCouplePosture,
   type CoupleEmoteId,
@@ -13,6 +13,7 @@ import { CoupleActionBar, CoupleInviteToast } from './CoupleActionBar';
 const DOCK_OPEN_KEY = 'olw-couple-emote-dock-open';
 
 interface CoupleEmoteDockProps {
+  tradeAction?: ReactNode;
   partnerOnlineSameRoom: boolean;
   localPosture: CouplePostureKind;
   incomingInvite: CoupleInvitePayload | null;
@@ -61,6 +62,7 @@ export function CoupleEmoteDock(props: CoupleEmoteDockProps) {
         onAccept={props.onAcceptHug}
         onDecline={props.onDeclineHug}
       />
+      {props.tradeAction && <div className="couple-emote-dock__trade">{props.tradeAction}</div>}
       {!open ? (
         <div className="couple-emote-dock__collapsed-row">
           {props.localPosture !== 'none' && (

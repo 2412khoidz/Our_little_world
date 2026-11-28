@@ -6,7 +6,7 @@ import {
 
 export const MAX_PHYSICAL_DROPS = 64;
 export const DROP_COOLDOWN_MS = 850;
-const PICKUP_RADIUS = 40;
+const PICKUP_RADIUS = 26;
 
 export function positionIsUsable(position: { mapId: string; x?: number; y?: number } | null): position is PhysicalPosition {
   return position !== null && Number.isFinite(position.x) && Number.isFinite(position.y);
@@ -58,7 +58,7 @@ function organize(edit: PhysicalInventoryEdit, kind: 'backpack' | 'home' | 'over
   }
 }
 
-type LifecycleCommand = Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' }>;
+type LifecycleCommand = Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' | 'claim_starter' }>;
 
 export function editPhysicalInventory(
   edit: PhysicalInventoryEdit,
@@ -90,7 +90,7 @@ export function editPhysicalInventory(
       const home = edit.edit('home');
       const eligible = physicalSlots(home).filter(({ index }) => !home.locked[index]).map(({ stack }) => stack);
       for (const { index, stack } of physicalSlots(bag)) {
-        if (bag.locked[index] || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.individual) continue;
+        if (bag.locked[index] || stack.metadata?.starterOwner || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.individual) continue;
         if (command.matchingOnly && !eligible.some((target) => canStackPhysical(stack, target, edit.catalog))) continue;
         const deposited = edit.insert(home, stack);
         if (deposited > 0) edit.take(bag, index, stack, deposited);
@@ -101,11 +101,11 @@ export function editPhysicalInventory(
     case 'drop': {
       if (command.from.container !== 'backpack') physicalError('FORBIDDEN', 'Hãy chuyển món vào ba lô trước.');
       const { container, stack } = edit.source(command.from, command.stackId, command.qty);
-      if (isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) physicalError('PROTECTED', 'Món này đang được bảo vệ.');
+      if (stack.metadata?.starterOwner || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) physicalError('PROTECTED', 'Món này đang được bảo vệ.');
       if (command.kind === 'drop') {
         if (!landing) physicalError('UNAVAILABLE', 'Chưa có chỗ trống để thả món đồ.');
         const compatible = Object.values(edit.readDrops()).find((drop) =>
-          drop.droppedBy === edit.userId && canReachDrop(drop, landing) &&
+          drop.droppedBy === edit.userId && !drop.dropperExited && canReachDrop(drop, landing) &&
           Math.hypot(drop.x - landing.x, drop.y - landing.y) <= 8 &&
           canStackPhysical(drop.stack, stack, edit.catalog) &&
           drop.stack.qty + command.qty <= physicalStackLimit(stack, edit.catalog));
@@ -126,14 +126,22 @@ export function editPhysicalInventory(
       edit.take(container, command.from.index, stack, command.qty);
       return;
     }
+    case 'arm_pickup': {
+      const drop = edit.readDrops()[command.dropId];
+      if (!drop || drop.droppedBy !== edit.userId || drop.dropperExited || !position || canReachDrop(drop, position)) {
+        physicalError('UNAVAILABLE', 'Hãy bước ra khỏi vùng nhặt đồ.');
+      }
+      edit.setDrop(drop.id, { ...drop, dropperExited: true });
+      return;
+    }
     case 'pickup': {
       const drop = edit.readDrops()[command.dropId];
       if (!drop || !position || !canReachDrop(drop, position)) physicalError('NOT_FOUND', 'Món này đã được nhặt hoặc ở quá xa.');
-      if (drop.droppedBy === edit.userId && (drop.pickupAfterMs ?? 0) > nowMs)
+      if ((drop.pickupAfterMs ?? 0) > nowMs || (command.automatic && drop.droppedBy === edit.userId && !drop.dropperExited))
         physicalError('UNAVAILABLE', 'Chờ món đồ chạm đất rồi nhặt nhé.');
       const bag = edit.edit('backpack');
       const inserted = edit.insert(bag, drop.stack);
-      if (inserted === 0) physicalError('FULL', 'Ba lô đã đầy. Món đồ vẫn ở mặt đất.');
+      if (inserted === 0) physicalError('FULL', 'Ba lô đầy — vật phẩm vẫn ở đây.');
       edit.setDrop(drop.id, inserted === drop.stack.qty ? null : {
         ...drop, stack: { ...drop.stack, qty: drop.stack.qty - inserted },
       });

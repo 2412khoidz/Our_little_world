@@ -2174,3 +2174,5 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.couple-emote-dock__trade { pointer-events: auto; order: 1; }

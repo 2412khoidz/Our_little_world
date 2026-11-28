@@ -77,8 +77,9 @@ export function preparePhysicalGameplay(ctx: PhysicalGameplayContext) {
   const enforceHeld = Boolean(heldSkuKey || exactPetFood);
   const now = new Date().toISOString();
   const available = new Map<string, InventoryEntry>();
-  const eligible = sources.filter(({ stack, address }) => !enforceHeld || stack.itemSku !== requestedSku
-    || Boolean(held && address.index === held.address.index));
+  const removesEquipment = ['/farm/sell', '/farm/ship', '/mailbox/send'].includes(route);
+  const eligible = sources.filter(({ stack, address }) => (!removesEquipment || !stack.metadata?.starterOwner)
+    && (!enforceHeld || stack.itemSku !== requestedSku || Boolean(held && address.index === held.address.index)));
   for (const { stack, scope: ownerScope } of eligible) {
     const row: InventoryEntry = { worldId, ownerScope, itemSku: stack.itemSku, quality: stack.quality, qty: stack.qty, updatedAt: now };
     const key = keyOf(row);
@@ -86,6 +87,11 @@ export function preparePhysicalGameplay(ctx: PhysicalGameplayContext) {
     available.set(key, row);
   }
 
+  const requiresBackpack = route === '/farm/buy-seed'
+    || route === '/farm/apply' && ['harvest', 'remove_sprinkler'].includes(String(body.action))
+    || route === '/farm/deep/apply' && ['harvest_tree', 'harvest_flower', 'collect_livestock', 'collect_workshop'].includes(String(body.kind))
+    || /^\/donor\/(workshop|bakery|coop)\/collect$/.test(route);
+  let overflowUnits = 0;
   let next = state;
   let consumed: PhysicalStack[] = [];
 
@@ -146,9 +152,13 @@ export function preparePhysicalGameplay(ctx: PhysicalGameplayContext) {
 
     function put(edit: PhysicalInventoryEdit, stack: PhysicalStack) {
       const overflow = creditPhysicalReward(edit, stack);
-      if (overflow && edit.insert(edit.edit('overflow'), overflow) !== overflow.qty) {
+      if (!overflow) return;
+      if (requiresBackpack) physicalError('FULL', route === '/farm/buy-seed'
+        ? 'Ba lô đầy — chưa trừ xu.' : 'Ba lô đầy — vật phẩm vẫn ở đây.');
+      if (edit.insert(edit.edit('overflow'), overflow) !== overflow.qty) {
         physicalError('FULL', 'Không còn chỗ giữ vật phẩm. Hãy dọn ba lô rồi thử lại.');
       }
+      if (edit.userId === userId) overflowUnits += overflow.qty;
     }
 
     const gains = new Map<string, { actor: string; row: InventoryEntry; qty: number }>();
@@ -197,6 +207,7 @@ export function preparePhysicalGameplay(ctx: PhysicalGameplayContext) {
 
   return {
     rows: [...available.values()].map((row) => ({ ...row })),
+    get overflowUnits() { return overflowUnits; },
     get consumed() { return consumed; },
     get state() { return next; },
     apply,

@@ -26,7 +26,11 @@ export interface PhysicalInventoryView {
   readonly storage: { readonly kind: Exclude<ContainerKind, 'backpack'>; readonly page: number; readonly pages: number; readonly slots: readonly PhysicalSlotView[] } | null;
   readonly definitions: Readonly<Record<string, PhysicalDefinition>>;
   readonly categories: readonly string[];
+  readonly overflowUnits: number;
+  readonly pickup?: { collected: number; remaining: number };
+  readonly starterPending: number;
   readonly dropMapId: string | null;
+  readonly unarmedDrops: readonly PhysicalDrop[];
   readonly mapDrops: readonly PhysicalDrop[];
   readonly nearbyDrops: readonly PhysicalDrop[];
   readonly canDrop: boolean;

@@ -19,7 +19,7 @@ const wheat = (qty: number, ownerScope: LegacyPhysicalEntry['ownerScope'] = 'sha
 const create = (...rows: LegacyPhysicalEntry[]) => migratePhysicalInventory(undefined, 'world', rows, catalog);
 const read = (state: PhysicalInventory, kind: 'home' | 'backpack' | 'overflow' = 'backpack', actor = 'may') =>
   readPhysicalContainer(state, kind, actor);
-const apply = (state: PhysicalInventory, command: Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' }>, actor = 'may', atHome = true) => {
+const apply = (state: PhysicalInventory, command: Exclude<PhysicalCommand, { kind: 'upgrade_backpack' | 'sell' | 'claim_starter' }>, actor = 'may', atHome = true) => {
   const edit = new PhysicalInventoryEdit(state, actor, catalog, atHome);
   editPhysicalInventory(edit, command, null);
   return edit.finish();
@@ -137,12 +137,12 @@ describe('Physical storage lifecycle', () => {
     expect(() => editPhysicalInventory(new PhysicalInventoryEdit(state, 'may', catalog, false),
       { kind: 'pickup', dropId: drop.id }, { ...position, x: 500 })).toThrow('xa');
     const picker = new PhysicalInventoryEdit(state, 'may', catalog, false);
-    editPhysicalInventory(picker, { kind: 'pickup', dropId: drop.id }, position);
+    editPhysicalInventory(picker, { kind: 'pickup', dropId: drop.id }, position, position, drop.pickupAfterMs);
     state = picker.finish();
     expect(state.drops?.[drop.id]?.stack.qty).toBe(9);
     expect(qty(state)).toBe(180);
     expect(() => editPhysicalInventory(new PhysicalInventoryEdit(state, 'may', catalog, false),
-      { kind: 'pickup', dropId: drop.id }, position)).toThrow('đầy');
+      { kind: 'pickup', dropId: drop.id }, position, position, drop.pickupAfterMs)).toThrow('đầy');
   });
 
   it('reserves from authorized nearby storage and preserves metadata in the reservation', () => {

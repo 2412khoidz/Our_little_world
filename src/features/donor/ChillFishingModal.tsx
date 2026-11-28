@@ -454,7 +454,7 @@ function ChillFishingGame({
               })
             : fishingFrenzySpritePathForFish('carp'));
         const text = resolved.escaped ? `${displayVi} tuột mất…` : `Bắt được ${displayVi}!`;
-        setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl });
+        setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl, overflowUnits: resolved.overflowUnits });
         gameEventBus.emit('cmd:fishing-visual', { spotId, phase: resolved.escaped ? 'escaped' : 'landed', spriteUrl });
         setOutcomeVi(text);
         setMessage(text);

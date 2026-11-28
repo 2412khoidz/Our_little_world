@@ -86,9 +86,10 @@ export interface FishingCatchPresentation {
   labelVi: string;
   rarity: TidefallFishRarity;
   spriteUrl: string;
+  overflowUnits?: number;
 }
 
-export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi }: FishingCatchPresentation) {
+export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi, overflowUnits }: FishingCatchPresentation) {
   return (
     <div
       className="ranch-fishing__catch"
@@ -100,7 +101,7 @@ export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi }: Fishing
       <FishingFishArt spriteUrl={spriteUrl} />
       <div>
         <strong>{escaped ? `${labelVi} tuột mất…` : `Bắt được ${labelVi}!`}</strong>
-        <small>{tidefallFishRarityLabelVi(rarity)} · {escaped ? 'Thử quăng lại nhé' : 'Đã thêm vào túi chung'}</small>
+        <small>{tidefallFishRarityLabelVi(rarity)} · {escaped ? 'Thử quăng lại nhé' : overflowUnits ? 'Đã chuyển vào Đồ giữ hộ' : 'Đã nhận vật phẩm'}</small>
       </div>
     </div>
   );

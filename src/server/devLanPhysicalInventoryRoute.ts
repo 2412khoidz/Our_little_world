@@ -1,3 +1,4 @@
+import { claimStarterTools, pendingStarterTools } from './devLanStarterTools';
 import type { OrchardState } from '../shared/farming/orchard';
 import { DEFAULT_ORCHARD_SLOT_TILES } from '../shared/farming/farmEntityTiles';
 import { getMapDefinition, getMapTilePixelSize, MAP_IDS } from '../shared/maps';
@@ -52,7 +53,9 @@ const inputSchema = z.strictObject({
     z.strictObject({ kind: z.literal('organize'), container: kind }),
     z.strictObject({ kind: z.literal('deposit'), matchingOnly: z.boolean() }),
     z.strictObject({ kind: z.literal('drop'), ...stackSource }),
-    z.strictObject({ kind: z.literal('pickup'), dropId: identifier }),
+    z.strictObject({ kind: z.literal('pickup'), dropId: identifier, automatic: z.boolean().optional() }),
+    z.strictObject({ kind: z.literal('arm_pickup'), dropId: identifier }),
+    z.strictObject({ kind: z.literal('claim_starter') }),
     z.strictObject({ kind: z.literal('upgrade_backpack') }),
     z.strictObject({ kind: z.literal('sell'), ...stackSource, channel: z.enum(['market', 'shipping']) }),
     z.strictObject({ kind: z.literal('discard'), ...stackSource, confirm: z.literal(true) }),
@@ -66,12 +69,12 @@ export interface PhysicalDevLanDatabase {
     wallets: Record<string, { coins: number }>;
     shippingBin?: Record<string, FarmShippingMeta>;
     physicalInventory?: Record<string, PhysicalInventory>;
-    physicalReceipts?: Record<string, Record<string, { actor: string; fingerprint: string }>>;
+    physicalReceipts?: Record<string, Record<string, { actor: string; fingerprint: string; pickup?: { collected: number; remaining: number } }>>;
     petLiving?: Record<string, { offers?: readonly { inventoryReserved?: boolean }[] }>;
   };
 }
 
-interface Context {
+export interface Context {
   req: { method?: string };
   res: unknown;
   reqUrl: URL;
@@ -85,7 +88,7 @@ interface Context {
   sendJson: (res: unknown, status: number, body: unknown) => void;
   saveDb: () => void;
   broadcastInventory: (worldId: string) => void;
-  position: { mapId: string; x?: number; y?: number; facing?: string } | null;
+  position: { mapId: string; x?: number; y?: number; facing?: string; connectionId?: string } | null;
   placements?: readonly FurniturePlacement[];
   orchard?: OrchardState;
 }
@@ -162,7 +165,10 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
   return {
     worldId: ctx.worldId, version: state.version, atHome,
     player: playerBackpack(state, ctx.userId), coins: ctx.db.v015.wallets[ctx.worldId]?.coins ?? 0,
-    backpack, storage, definitions, categories, dropMapId, mapDrops, nearbyDrops, canDrop: position !== null, saleChannel: physicalSaleChannel(ctx.position),
+    backpack, storage, definitions, categories, dropMapId, mapDrops, nearbyDrops,
+    starterPending: pendingStarterTools(state, ctx.userId, catalog).length,
+    unarmedDrops: Object.values(state.drops ?? {}).filter((drop) => drop.droppedBy === ctx.userId && !drop.dropperExited),
+    overflowUnits: physicalSlots(readPhysicalContainer(state, 'overflow', ctx.userId)).reduce((total, slot) => total + slot.stack.qty, 0), canDrop: position !== null, saleChannel: physicalSaleChannel(ctx.position),
   };
 }
 
@@ -266,7 +272,7 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       if (prior.actor !== ctx.userId || prior.fingerprint !== fingerprint) {
         fail(409, 'IDEMPOTENCY_CONFLICT', 'Mã thao tác đã được dùng cho một yêu cầu khác.');
       } else {
-        send(200, { ok: true, data: createView(ctx, state, input.query, catalog) });
+        send(200, { ok: true, data: { ...createView(ctx, state, input.query, catalog), ...(prior.pickup ? { pickup: prior.pickup } : {}) } });
       }
       return true;
     }
@@ -283,18 +289,25 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
         worldId, coins: wallet?.coins ?? 0, shipping, position: ctx.position,
         idempotencyKey: input.idempotencyKey, nowMs: Date.now(),
       });
-    } else {
+    } else if (input.command.kind !== 'claim_starter') {
       const position = positionIsUsable(ctx.position) ? ctx.position : null;
       const landing = input.command.kind === 'drop' && position
         ? dropLanding({ ...position, facing: ctx.position?.facing }, ctx.placements ?? [], ctx.orchard)
         : position;
       editPhysicalInventory(edit, input.command, position, landing);
     }
-    const next = edit.finish();
+    if (input.command.kind === 'claim_starter' && ctx.position?.mapId !== 'home') {
+      fail(403, 'FORBIDDEN', 'Về nhà để nhận dụng cụ cơ bản.');
+      return true;
+    }
+    const next = input.command.kind === 'claim_starter' ? claimStarterTools(state, ctx.userId, catalog) : edit.finish();
+    const requestedDrop = input.command.kind === 'pickup' ? state.drops?.[input.command.dropId] : undefined;
+    const remaining = requestedDrop ? next.drops?.[requestedDrop.id]?.stack.qty ?? 0 : 0;
+    const pickup = requestedDrop ? { collected: requestedDrop.stack.qty - remaining, remaining } : undefined;
     if (economy) v015.wallets[worldId] = { coins: economy.coins };
     if (economy?.shipping) (v015.shippingBin ??= {})[worldId] = economy.shipping;
     v015.physicalInventory[worldId] = next;
-    receipts[receiptKey] = { actor: ctx.userId, fingerprint };
+    receipts[receiptKey] = { actor: ctx.userId, fingerprint, ...(pickup ? { pickup } : {}) };
     try { ctx.saveDb(); } catch (error) {
       v015.physicalInventory[worldId] = state;
       delete receipts[receiptKey];
@@ -309,7 +322,7 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
       throw error;
     }
     ctx.broadcastInventory(worldId);
-    send(200, { ok: true, data: createView(ctx, next, input.query, catalog) });
+    send(200, { ok: true, data: { ...createView(ctx, next, input.query, catalog), ...(pickup ? { pickup } : {}) } });
     return true;
   } catch (error) {
     if (error instanceof z.ZodError) fail(400, 'VALIDATION_ERROR', 'Thao tác túi đồ không hợp lệ.');
@@ -318,3 +331,5 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
     return true;
   }
 }
+
+export { handlePhysicalTrade } from './devLanPhysicalTrade';

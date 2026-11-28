@@ -516,3 +516,26 @@
     min-height: 36px;
   }
 }
+
+.physical-hud-notice, .physical-trade-invite {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: max-content;
+  max-width: min(75vw, 300px);
+  padding: 6px 10px;
+  color: #fff7de;
+  background: #3b2821;
+  border-radius: 8px;
+}
+.physical-hud-notice { top: auto; bottom: 100%; }
+.physical-trade-trigger { min-width: 44px; min-height: 44px; }
+.physical-trade-dialog { pointer-events: auto; }
+.physical-trade-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-block: 5px;
+}
+.physical-trade-line input { width: 4rem; min-height: 36px; }

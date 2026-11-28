@@ -133,6 +133,7 @@ export function postDonorFishingResolve(worldId: string, reelProgressPermille: n
     rarity?: TidefallFishRarity;
     spriteUrl?: string;
     qtyGranted?: number;
+    overflowUnits?: number;
     spotId?: DonorFishingSpotId;
     alreadyResolved?: boolean;
   }>(

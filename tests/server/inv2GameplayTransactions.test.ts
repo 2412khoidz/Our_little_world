@@ -307,3 +307,57 @@ describe('INV.2d physical gameplay authority over the Dev LAN API', () => {
     expect(Object.values(overflow.slots)).toEqual([expect.objectContaining({ itemSku: 'apple', quality: 'gold', metadata: trait, qty: 1 })]);
   });
 });
+
+it('rolls back fully blocked harvests, orchard, livestock, workshops and purchases, then persists an unavoidable catch once', async () => {
+  const items = Object.fromEntries(Array.from({ length: 18 }, (_, i) =>
+    [i, stack(i, 'apple', 1, { metadata: { batch: i } })]));
+  Object.assign(items, {
+    0: stack(0, 'tool_hoe', 1, { metadata: { instanceId: 'hoe' } }),
+    1: stack(1, 'seed_wheat', 4),
+    2: stack(2, 'tool_watering_can', 1, { metadata: { instanceId: 'can' } }),
+    3: stack(3, 'sapling_cocoa', 3),
+    4: stack(4, 'feed_chicken', 5),
+    5: stack(5, 'wheat', 10, { metadata: { batch: 'mill' } }),
+    6: stack(6, 'rod_basic', 1, { metadata: { instanceId: 'rod' } }),
+    7: stack(7, 'bait_free_worm', 3),
+  });
+  const server = await fixture(items);
+  await apply(server, '/farm/apply', { action: 'till', plotIndex: 0, toolSku: 'tool_hoe',
+    physicalSource: { index: 0, stackId: 'fixture-0' } });
+  await apply(server, '/farm/apply', { action: 'plant', plotIndex: 0, seedSku: 'seed_wheat',
+    physicalSource: { index: 1, stackId: 'fixture-1' } });
+  await apply(server, '/farm/apply', { action: 'water', plotIndex: 0, toolSku: 'tool_watering_can',
+    physicalSource: { index: 2, stackId: 'fixture-2' } });
+  await apply(server, '/farm/deep/apply', { kind: 'plant_tree', slotIndex: 0, saplingSku: 'sapling_cocoa' });
+  const adopted = await apply(server, '/farm/deep/apply', { kind: 'adopt_livestock', speciesId: 'chicken', nickname: 'QA' });
+  const animalId = adopted.snapshot.livestock.animals[0].animalId;
+  await apply(server, '/farm/deep/apply', { kind: 'feed_livestock', animalId, feedSku: 'feed_chicken' });
+  await apply(server, '/farm/deep/apply', { kind: 'queue_workshop', workshopId: 'mill', recipeId: 'flour' });
+  server.advance(31 * 24 * 60 * 60_000);
+  const before = await server.durable();
+  for (const [route, params] of [
+    ['/farm/apply', { action: 'harvest', plotIndex: 0 }],
+    ['/farm/deep/apply', { kind: 'harvest_tree', slotIndex: 0 }],
+    ['/farm/deep/apply', { kind: 'collect_livestock', animalId }],
+    ['/farm/deep/apply', { kind: 'collect_workshop', workshopId: 'mill' }],
+    ['/farm/buy-seed', { itemSku: 'seed_carrot', qty: 1 }],
+  ] as const) {
+    for (const res of await Promise.all([server.call(route, params), server.call(route, params)])) {
+      expect(res.body.code, JSON.stringify(res.body)).toBe('FULL');
+    }
+    expect(await server.durable()).toEqual(before);
+  }
+  const castId = 'rc31-full-fishing';
+  await apply(server, '/donor/fishing/start', { castId, spotId: 'meadow_pond',
+    physicalSource: { index: 6, stackId: 'fixture-6' } });
+  const reward = await apply(server, '/donor/fishing/resolve', { castId, reelProgressPermille: 1000 });
+  expect(reward.overflowUnits).toBe(reward.qtyGranted);
+  expect(reward.overflowUnits).toBeGreaterThan(0);
+  const after = await server.durable();
+  await server.restart();
+  expect(await apply(server, '/donor/fishing/resolve', { castId, reelProgressPermille: 1000 }))
+    .toMatchObject({ alreadyResolved: true, overflowUnits: reward.qtyGranted });
+  expect(await server.durable()).toEqual(after);
+  const views = await Promise.all([server.read(), server.read(nang)]);
+  expect(views.map((view) => view.overflowUnits)).toEqual([reward.qtyGranted, 0]);
+});

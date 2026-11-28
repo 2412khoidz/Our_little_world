@@ -2,6 +2,11 @@
 
 *Cập nhật lần cuối: 28/11/2026*
 
+## RC3.1 — Nghiệm thu kho vật lý và trao đổi Dev LAN
+
+- Sau nghiệm thu RC3, tách giữ chỗ phần thưởng tự nguyện khỏi Đồ giữ hộ, tách vùng nút xã hội và thao tác mobile, sửa nhặt lại đồ và cấp dụng cụ theo từng người. Thêm trao đổi trực tiếp cùng bản đồ qua giao dịch nguyên tử.
+- [Bản bàn giao RC3.1, kết quả kiểm tra và save QA](handovers/CANONICAL_RC31.md). Chờ chủ dự án duyệt trước khi cập nhật main.
+
 ## RC3 — Nghiệm thu hợp nhất Dev LAN
 
 - Tách từ `main@55db4aa`, đã có Inventory Integrity và Billiards Room Lifecycle. Hợp nhất M3d/M3e, INV.2/INV.2d và R1/R1.1. Đồ rơi dùng cùng kho vật lý và hiển thị theo bản đồ trên Phaser.
