@@ -312,16 +312,17 @@ export function markLobbyMatchEnded(
   nowMs: number,
 ): BilliardsLobbyState {
   const next = cloneLobby(state, nowMs);
+  if (!matchId || next.activeMatchId !== matchId || (next.status !== 'in_match' && next.status !== 'countdown')) {
+    return next;
+  }
   if (next.confirmedConfig && next.confirmedConfig.matchId === matchId) {
     next.confirmedConfig.scores = [scores[0], scores[1]];
   }
-  if (next.activeMatchId === matchId || next.status === 'in_match') {
-    next.activeMatchId = null;
-    next.status = 'lobby';
-    for (const p of next.players) {
-      p.ready = false;
-      p.wantRematch = false;
-    }
+  next.activeMatchId = null;
+  next.status = 'lobby';
+  for (const p of next.players) {
+    p.ready = false;
+    p.wantRematch = false;
   }
   return next;
 }
@@ -334,22 +335,20 @@ export function applyLobbyRematch(
   nextMatchMeta?: NextLobbyMatchMeta,
 ): { accepted: boolean; nextState: BilliardsLobbyState; startedCountdown: boolean } {
   const next = cloneLobby(state, nowMs);
-  // If already in countdown for next match, ignore duplicate request for old match
-  if (state.status === 'countdown' && state.confirmedConfig && state.confirmedConfig.matchId !== payload.matchId) {
-    return { accepted: true, nextState: next, startedCountdown: false };
-  }
-  const isValidMatch =
-    !payload.matchId ||
-    next.activeMatchId === payload.matchId ||
-    next.confirmedConfig?.matchId === payload.matchId ||
-    next.status === 'lobby';
-
-  if (!isValidMatch) {
+  if (!payload.matchId) {
     return { accepted: false, nextState: next, startedCountdown: false };
   }
-  next.players[payload.playerSlot].wantRematch = payload.wantRematch;
-  next.players[payload.playerSlot].joined = true;
-  next.players[payload.playerSlot].connected = true;
+  const currentTargetMatchId = next.activeMatchId ?? next.confirmedConfig?.matchId ?? null;
+  if (!currentTargetMatchId || payload.matchId !== currentTargetMatchId || next.status === 'idle') {
+    return { accepted: false, nextState: next, startedCountdown: false };
+  }
+  const actor = next.players[payload.playerSlot];
+  if (actor.joined && actor.connected && actor.wantRematch === payload.wantRematch) {
+    return { accepted: false, nextState: next, startedCountdown: false };
+  }
+  actor.wantRematch = payload.wantRematch;
+  actor.joined = true;
+  actor.connected = true;
 
   const p0 = next.players[0];
   const p1 = next.players[1];

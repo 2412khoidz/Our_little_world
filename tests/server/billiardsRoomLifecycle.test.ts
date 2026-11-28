@@ -838,4 +838,263 @@ describe('HOTFIX-BILLIARDS-01: Room Lifecycle, Rematch Recovery & Timer Safety',
     wsA.close(1000);
     wsB.close(1000);
   });
+
+  it('Scenario 12: Ignores stale/duplicate settlements & rematches and keeps OLW world & world invite unchanged across match end, rematch, and new_lobby', async () => {
+    const { worldId, wsA, wsB } = await seedAndConnectPair();
+
+    // Capture baseline OLW world snapshot & invite status before billiards actions
+    const worldBeforeRes = await fetch(`http://127.0.0.1:${port}/api/dev-lan/world/snapshot`, {
+      headers: { 'x-dev-user-id': MAY_ID },
+    });
+    const worldBefore = (await worldBeforeRes.json()) as {
+      ok: boolean;
+      data: {
+        world: { id: string; name: string };
+        members: Array<{ userId: string }>;
+        placements: Array<{ id: string }>;
+      };
+    };
+    expect(worldBefore.ok).toBe(true);
+    expect(worldBefore.data.world.id).toBe(worldId);
+
+    const inviteBeforeRes = await fetch(
+      `http://127.0.0.1:${port}/api/dev-lan/world/invite-status?worldId=${encodeURIComponent(worldId)}`,
+      { headers: { 'x-dev-user-id': MAY_ID } },
+    );
+    const inviteBefore = (await inviteBeforeRes.json()) as {
+      ok: boolean;
+      data: { hasActiveInvite: boolean; expiresAt: string | null };
+    };
+    expect(inviteBefore.ok).toBe(true);
+
+    // Join & start Match 1
+    const joinedP = waitForFrame(wsB, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        Boolean(lm.packet.payload.payload?.players?.[0]?.joined) &&
+        Boolean(lm.packet.payload.payload?.players?.[1]?.joined)
+      );
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 1, {
+      type: 'billiards:lobby_join',
+      payload: { playerSlot: 0, edition: '2d', rule: '8ball', assetsReady: true },
+    });
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 1, {
+      type: 'billiards:lobby_join',
+      payload: { playerSlot: 1, assetsReady: true },
+    });
+    await joinedP;
+
+    const cd1P = waitForFrame<{
+      packet: { payload: { payload: { confirmedConfig: { matchId: string } } } };
+    }>(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        lm.packet.payload.payload?.status === 'countdown'
+      );
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 2, {
+      type: 'billiards:lobby_ready',
+      payload: { playerSlot: 0, configVersion: 1, ready: true, assetsReady: true },
+    });
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 2, {
+      type: 'billiards:lobby_ready',
+      payload: { playerSlot: 1, configVersion: 1, ready: true, assetsReady: true },
+    });
+    const match1Id = (await cd1P).packet.payload.payload.confirmedConfig.matchId;
+
+    // Settle Match 1 cleanly
+    const settle1P = waitForFrame(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        lm.packet.payload.payload?.status === 'lobby'
+      );
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 3, {
+      type: 'billiards:settled',
+      payload: {
+        matchId: match1Id,
+        matchSeq: 1,
+        kind: 'shot_settled',
+        actorSlot: 0,
+        shotIndex: 1,
+        stateVersion: 2,
+        nextShotSeq: 2,
+        balls: [],
+        groups: ['solid', 'stripe'],
+        nextPlayer: 0,
+        ballInHand: false,
+        isBreakShot: false,
+        turnDeadlineMs: Date.now() + 30000,
+        turnRemainingMs: 30000,
+        returnedIds: [],
+        scores: [1, 0],
+        winner: { winnerSlot: 0, reason: 'eight_ball_sunk' },
+      },
+    });
+    await settle1P;
+
+    // Rematch into Match 2
+    const cd2P = waitForFrame<{
+      packet: { payload: { payload: { confirmedConfig: { matchId: string; scores: [number, number] } } } };
+    }>(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        lm.packet.payload.payload?.status === 'countdown'
+      );
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 4, {
+      type: 'billiards:lobby_rematch',
+      payload: { playerSlot: 0, matchId: match1Id, wantRematch: true },
+    });
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 4, {
+      type: 'billiards:lobby_rematch',
+      payload: { playerSlot: 1, matchId: match1Id, wantRematch: true },
+    });
+    const cd2 = await cd2P;
+    const match2Id = cd2.packet.payload.payload.confirmedConfig.matchId;
+    expect(match2Id).not.toBe(match1Id);
+
+    // Wait for Match 2 to enter in_match
+    const inMatch2P = waitForFrame(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        lm.packet.payload.payload?.status === 'in_match'
+      );
+    });
+    await inMatch2P;
+
+    // Inject late/stale Match 1 settlement, snapshot with winner, and stale rematch while Match 2 is active
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 5, {
+      type: 'billiards:settled',
+      payload: {
+        matchId: match1Id,
+        matchSeq: 1,
+        kind: 'shot_settled',
+        actorSlot: 1,
+        shotIndex: 2,
+        stateVersion: 99,
+        nextShotSeq: 3,
+        balls: [],
+        groups: ['solid', 'stripe'],
+        nextPlayer: 1,
+        ballInHand: false,
+        isBreakShot: false,
+        turnDeadlineMs: Date.now() + 30000,
+        turnRemainingMs: 30000,
+        returnedIds: [],
+        scores: [0, 99],
+        winner: { winnerSlot: 1, reason: 'eight_ball_sunk' },
+      },
+    });
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 6, {
+      type: 'billiards:state_snapshot',
+      payload: {
+        matchId: match1Id,
+        matchSeq: 1,
+        edition: '2d',
+        rule: '8ball',
+        rackSeed: 1,
+        initiatorSlot: 0,
+        stateVersion: 100,
+        nextShotSeq: 4,
+        balls: [],
+        groups: ['solid', 'stripe'],
+        currentPlayer: 1,
+        ballInHand: false,
+        isBreakShot: false,
+        turnDeadlineMs: Date.now() + 30000,
+        turnRemainingMs: 30000,
+        returnedIds: [],
+        scores: [0, 99],
+        winner: { winnerSlot: 1, reason: 'eight_ball_sunk' },
+      },
+    });
+    sendMinigame(wsB, worldId, NANG_ID, 'sess-b', 7, {
+      type: 'billiards:lobby_rematch',
+      payload: { playerSlot: 1, matchId: match1Id, wantRematch: true },
+    });
+
+    // Verify Match 2 is completely unaffected!
+    const syncAfterStaleP = waitForFrame<{
+      packet: {
+        payload: {
+          payload: {
+            status: string;
+            activeMatchId: string | null;
+            confirmedConfig: { scores: [number, number] } | null;
+            players: Array<{ wantRematch?: boolean }>;
+          };
+        };
+      };
+    }>(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return lm.type === 'minigame_event' && lm.packet?.payload?.type === 'billiards:lobby_state';
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 8, {
+      type: 'billiards:lobby_sync_request',
+      payload: {},
+    });
+    const afterStale = (await syncAfterStaleP).packet.payload.payload;
+    expect(afterStale.status).toBe('in_match');
+    expect(afterStale.activeMatchId).toBe(match2Id);
+    expect(afterStale.confirmedConfig?.scores).toEqual([1, 0]);
+    expect(Boolean(afterStale.players[1]?.wantRematch)).toBe(false);
+
+    // Call new_lobby -> distinct billiards lobby, but OLW world & world invite code MUST remain unchanged
+    const newLobbyP = waitForFrame(wsA, (m) => {
+      const lm = asLobbyMsg(m);
+      return (
+        lm.type === 'minigame_event' &&
+        lm.packet?.payload?.type === 'billiards:lobby_state' &&
+        lm.packet.payload.payload?.status === 'lobby'
+      );
+    });
+    sendMinigame(wsA, worldId, MAY_ID, 'sess-a', 9, {
+      type: 'billiards:lobby_leave',
+      payload: { playerSlot: 0, reason: 'new_lobby' },
+    });
+    await newLobbyP;
+
+    const worldAfterRes = await fetch(`http://127.0.0.1:${port}/api/dev-lan/world/snapshot`, {
+      headers: { 'x-dev-user-id': MAY_ID },
+    });
+    const worldAfter = (await worldAfterRes.json()) as {
+      ok: boolean;
+      data: {
+        world: { id: string; name: string };
+        members: Array<{ userId: string }>;
+        placements: Array<{ id: string }>;
+      };
+    };
+    expect(worldAfter.ok).toBe(true);
+    expect(worldAfter.data.world.id).toBe(worldBefore.data.world.id);
+    expect(worldAfter.data.world.name).toBe(worldBefore.data.world.name);
+    expect(worldAfter.data.members.length).toBe(worldBefore.data.members.length);
+    expect(worldAfter.data.placements.length).toBe(worldBefore.data.placements.length);
+
+    const inviteStatusAfterRes = await fetch(
+      `http://127.0.0.1:${port}/api/dev-lan/world/invite-status?worldId=${encodeURIComponent(worldId)}`,
+      { headers: { 'x-dev-user-id': MAY_ID } },
+    );
+    const inviteStatusAfter = (await inviteStatusAfterRes.json()) as {
+      ok: boolean;
+      data: { hasActiveInvite: boolean; expiresAt: string | null };
+    };
+    expect(inviteStatusAfter.ok).toBe(true);
+    expect(inviteStatusAfter.data).toEqual(inviteBefore.data);
+
+    wsA.close(1000);
+    wsB.close(1000);
+  });
 });

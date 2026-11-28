@@ -365,28 +365,21 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:lobby_rematch') {
-      const matchId = String(p.matchId ?? '');
-      const isValidMatchRef =
-        !matchId ||
-        rec.activeMatchId === matchId ||
-        rec.confirmedConfig?.matchId === matchId ||
-        rec.endedMatchIds.has(matchId) ||
-        rec.status === 'lobby';
-
-      if (!isValidMatchRef) {
-        emitLobbyState(rec);
+      const matchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const currentTargetMatchId = rec.activeMatchId ?? rec.confirmedConfig?.matchId ?? null;
+      if (!matchId || !currentTargetMatchId || matchId !== currentTargetMatchId || rec.status === 'idle') {
         return { handled: true, relayToPeer: false };
       }
 
-      // Guard against concurrent or duplicate rematch requests if already counting down for next match
-      if (rec.status === 'countdown' && rec.confirmedConfig && rec.confirmedConfig.matchId !== matchId) {
-        emitLobbyState(rec);
+      const wantRematch = Boolean(p.wantRematch);
+      const actor = rec.players[actorSlot];
+      if (actor.joined && actor.connected && actor.wantRematch === wantRematch) {
         return { handled: true, relayToPeer: false };
       }
 
-      rec.players[actorSlot].joined = true;
-      rec.players[actorSlot].connected = true;
-      rec.players[actorSlot].wantRematch = Boolean(p.wantRematch);
+      actor.joined = true;
+      actor.connected = true;
+      actor.wantRematch = wantRematch;
       const p0 = rec.players[0];
       const p1 = rec.players[1];
       if (
@@ -412,6 +405,10 @@ export function createDevLanBilliardsLobby({
 
     // Track active match lifecycle & snapshot cache for reconnect recovery
     if (type === 'billiards:start') {
+      const startMatchId = typeof p.matchId === 'string' ? p.matchId : '';
+      if (startMatchId && rec.endedMatchIds.has(startMatchId)) {
+        return { handled: true, relayToPeer: false };
+      }
       clearCountdownTimer(rec);
       rec.status = 'in_match';
       rec.edition = p.edition === '3d' ? '3d' : '2d';
@@ -430,20 +427,41 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:settled') {
+      const matchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const matchSeq = Number(p.matchSeq) || 0;
+      if (matchId && rec.endedMatchIds.has(matchId)) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (matchSeq > 0 && rec.matchSeq > 0 && matchSeq < rec.matchSeq) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (matchId && rec.activeMatchId && rec.activeMatchId !== matchId) {
+        return { handled: true, relayToPeer: false };
+      }
+
       if (p.winner) {
-        rec.endedMatchIds.add(p.matchId);
+        if (
+          !matchId ||
+          rec.activeMatchId !== matchId ||
+          (rec.status !== 'in_match' && rec.status !== 'countdown')
+        ) {
+          return { handled: true, relayToPeer: false };
+        }
+        clearCountdownTimer(rec);
+        rec.endedMatchIds.add(matchId);
         if (Array.isArray(p.scores) && p.scores.length === 2) {
           rec.scores = [Number(p.scores[0]) || 0, Number(p.scores[1]) || 0];
-        }
-        if (rec.activeMatchId === p.matchId || rec.status === 'in_match') {
-          rec.activeMatchId = null;
-          rec.status = 'lobby';
-          for (const pl of rec.players) {
-            pl.ready = false;
-            pl.wantRematch = false;
+          if (rec.confirmedConfig && rec.confirmedConfig.matchId === matchId) {
+            rec.confirmedConfig.scores = [rec.scores[0], rec.scores[1]];
           }
         }
-        if (rec.lastMatchSnapshot && rec.lastMatchSnapshot.matchId === p.matchId) {
+        rec.activeMatchId = null;
+        rec.status = 'lobby';
+        for (const pl of rec.players) {
+          pl.ready = false;
+          pl.wantRematch = false;
+        }
+        if (rec.lastMatchSnapshot && rec.lastMatchSnapshot.matchId === matchId) {
           rec.lastMatchSnapshot.winner = p.winner;
         }
         emitLobbyState(rec);
@@ -452,16 +470,36 @@ export function createDevLanBilliardsLobby({
     }
 
     if (type === 'billiards:state_snapshot') {
+      const snapMatchId = typeof p.matchId === 'string' ? p.matchId : '';
+      const snapMatchSeq = Number(p.matchSeq) || 0;
+      if (snapMatchSeq > 0 && rec.matchSeq > 0 && snapMatchSeq < rec.matchSeq) {
+        return { handled: true, relayToPeer: false };
+      }
+      if (snapMatchId && rec.activeMatchId && rec.activeMatchId !== snapMatchId && rec.endedMatchIds.has(snapMatchId)) {
+        return { handled: true, relayToPeer: false };
+      }
       if (
         !rec.lastMatchSnapshot ||
-        (Number(p.matchSeq) || 0) > (Number(rec.lastMatchSnapshot.matchSeq) || 0) ||
+        snapMatchSeq > (Number(rec.lastMatchSnapshot.matchSeq) || 0) ||
         (p.matchId === rec.lastMatchSnapshot.matchId &&
           (Number(p.stateVersion) || 0) >= (Number(rec.lastMatchSnapshot.stateVersion) || 0))
       ) {
         rec.lastMatchSnapshot = p;
         if (p.winner) {
-          rec.endedMatchIds.add(p.matchId);
-          if (rec.activeMatchId === p.matchId || rec.status === 'in_match') {
+          if (
+            snapMatchId &&
+            !rec.endedMatchIds.has(snapMatchId) &&
+            rec.activeMatchId === snapMatchId &&
+            (rec.status === 'in_match' || rec.status === 'countdown')
+          ) {
+            clearCountdownTimer(rec);
+            rec.endedMatchIds.add(snapMatchId);
+            if (Array.isArray(p.scores) && p.scores.length === 2) {
+              rec.scores = [Number(p.scores[0]) || 0, Number(p.scores[1]) || 0];
+              if (rec.confirmedConfig && rec.confirmedConfig.matchId === snapMatchId) {
+                rec.confirmedConfig.scores = [rec.scores[0], rec.scores[1]];
+              }
+            }
             rec.activeMatchId = null;
             rec.status = 'lobby';
             for (const pl of rec.players) {
@@ -470,8 +508,13 @@ export function createDevLanBilliardsLobby({
             }
             emitLobbyState(rec);
           }
-        } else if (rec.status === 'in_match' || rec.status === 'countdown') {
-          rec.activeMatchId = p.matchId ?? rec.activeMatchId;
+        } else if (
+          snapMatchId &&
+          rec.status === 'in_match' &&
+          !rec.activeMatchId &&
+          !rec.endedMatchIds.has(snapMatchId)
+        ) {
+          rec.activeMatchId = snapMatchId;
         }
       }
       return { handled: true, relayToPeer: true };

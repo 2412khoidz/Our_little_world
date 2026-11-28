@@ -50,14 +50,32 @@ describe('Billiards Room & Match Lifecycle Unit Tests', () => {
     expect(ended.players[1].wantRematch).toBe(false);
   });
 
-  it('applyLobbyRematch preserves lobbyId, alternates starting player, and guards against duplicate rematch triggers', () => {
+  it('applyLobbyRematch preserves lobbyId, alternates starting player, and guards against stale/duplicate triggers', () => {
     let state = createInitialLobbyState('lobby-room-stable', t0);
     state = applyLobbyJoin(state, { playerSlot: 0, startingPlayer: 0, assetsReady: true }, t0);
     state = applyLobbyJoin(state, { playerSlot: 1, assetsReady: true }, t0);
+    state = (
+      applyLobbyReady(
+        state,
+        { playerSlot: 0, configVersion: 1, ready: true, assetsReady: true },
+        t0,
+        { matchId: 'm-prev', matchSeq: 1, rackSeed: 123, scores: [0, 0] },
+      ) as { accepted: true; nextState: typeof state }
+    ).nextState;
+    state = (
+      applyLobbyReady(
+        state,
+        { playerSlot: 1, configVersion: 1, ready: true, assetsReady: true },
+        t0 + 10,
+        { matchId: 'm-prev', matchSeq: 1, rackSeed: 123, scores: [0, 0] },
+      ) as { accepted: true; nextState: typeof state }
+    ).nextState;
+    state = promoteCountdownToMatch(state, t0 + 1000);
 
     // End match 1
-    state = markLobbyMatchEnded(state, 'm-prev', [1, 0], t0 + 1000);
+    state = markLobbyMatchEnded(state, 'm-prev', [1, 0], t0 + 1500);
     expect(state.status).toBe('lobby');
+    expect(state.activeMatchId).toBeNull();
 
     // Player 0 requests rematch
     const rem0 = applyLobbyRematch(
@@ -68,6 +86,27 @@ describe('Billiards Room & Match Lifecycle Unit Tests', () => {
     expect(rem0.accepted).toBe(true);
     expect(rem0.startedCountdown).toBe(false);
     expect(rem0.nextState.players[0].wantRematch).toBe(true);
+
+    // Duplicate markLobbyMatchEnded after match already ended must NOT wipe player 0's wantRematch
+    const afterDupEnd = markLobbyMatchEnded(rem0.nextState, 'm-prev', [1, 0], t0 + 2010);
+    expect(afterDupEnd.players[0].wantRematch).toBe(true);
+
+    // Duplicate identical rematch request from player 0 must be ignored
+    const dupSamePlayer = applyLobbyRematch(
+      rem0.nextState,
+      { playerSlot: 0, matchId: 'm-prev', wantRematch: true },
+      t0 + 2020,
+    );
+    expect(dupSamePlayer.accepted).toBe(false);
+    expect(dupSamePlayer.startedCountdown).toBe(false);
+
+    // Empty matchId must be rejected
+    const emptyMatchRem = applyLobbyRematch(
+      rem0.nextState,
+      { playerSlot: 1, matchId: '', wantRematch: true },
+      t0 + 2030,
+    );
+    expect(emptyMatchRem.accepted).toBe(false);
 
     // Player 1 requests rematch -> triggers countdown & alternates starter from 0 to 1
     const rem1 = applyLobbyRematch(
@@ -85,16 +124,22 @@ describe('Billiards Room & Match Lifecycle Unit Tests', () => {
     expect(rem1.nextState.confirmedConfig?.startingPlayer).toBe(1);
     expect(rem1.nextState.confirmedConfig?.scores).toEqual([1, 0]);
 
-    // Scenario 5: Concurrent duplicate rematch call while countdown is already active must be ignored
-    const dupRem = applyLobbyRematch(
+    // Stale matchId ('m-prev') during m-rematch-2 countdown/in_match must be rejected
+    const staleRem = applyLobbyRematch(
       rem1.nextState,
-      { playerSlot: 0, matchId: 'm-rematch-2', wantRematch: true },
+      { playerSlot: 0, matchId: 'm-prev', wantRematch: true },
       t0 + 2150,
     );
-    expect(dupRem.accepted).toBe(true);
-    expect(dupRem.startedCountdown).toBe(false);
-    expect(dupRem.nextState.status).toBe('countdown');
-    expect(dupRem.nextState.activeMatchId).toBe('m-rematch-2'); // matchId not replaced!
+    expect(staleRem.accepted).toBe(false);
+    expect(staleRem.startedCountdown).toBe(false);
+    expect(staleRem.nextState.activeMatchId).toBe('m-rematch-2');
+
+    // Stale markLobbyMatchEnded('m-prev') while m-rematch-2 is active must NOT end m-rematch-2 or overwrite scores
+    const activeMatch2 = promoteCountdownToMatch(rem1.nextState, t0 + 4600);
+    const afterStaleEnd = markLobbyMatchEnded(activeMatch2, 'm-prev', [9, 9], t0 + 4700);
+    expect(afterStaleEnd.status).toBe('in_match');
+    expect(afterStaleEnd.activeMatchId).toBe('m-rematch-2');
+    expect(afterStaleEnd.confirmedConfig?.scores).toEqual([1, 0]);
   });
 
   it('applyLobbyLeave with reason new_lobby resets state cleanly', () => {
