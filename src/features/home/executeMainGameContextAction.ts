@@ -13,7 +13,17 @@ import type { FarmShopKind } from '../../shared/shop/farmShopCatalog';
 const MISSION02_PENDING_VI =
   'Tính năng này chờ giao dịch kho chính thức (Mission 02). Hãy dùng bảng mèo hoặc tủ đồ tạm thời.';
 
+export const PHYSICAL_ACTION_PENDING_VI = 'Tính năng này chưa nối với túi đồ INV.2.';
+const PHYSICAL_ACTIONS_PENDING = new Set<InteractionActionCode>([
+  'till_plot', 'plant_crop', 'water_crop', 'harvest_crop', 'fertilize_plot',
+  'place_sprinkler', 'remove_sprinkler', 'offer_food_pet', 'pet_cat', 'enter_pet_care',
+  'roll_toy', 'place_cardboard_box', 'fill_water_pitcher', 'pour_water_bowl', 'fill_food_bowl',
+  'open_farm_market', 'open_shipping_bin', 'open_donor_fishing',
+  'open_donor_stream_fishing', 'open_donor_workshop',
+]);
+
 export interface MainGameActionContext {
+  physicalMode?: boolean;
   mapId: MapId;
   heldItem: HeldItemState;
   hasPet: boolean;
@@ -74,6 +84,11 @@ export async function executeMainGameContextAction(
   action: ContextualAction,
   ctx: MainGameActionContext,
 ): Promise<void> {
+  if (ctx.physicalMode && PHYSICAL_ACTIONS_PENDING.has(action.code)) {
+    ctx.onNotice(PHYSICAL_ACTION_PENDING_VI, true);
+    return;
+  }
+
   if (!action.available) {
     ctx.onNotice(action.reasonVi ?? 'Hiện chưa thể thực hiện thao tác này.', true);
     return;

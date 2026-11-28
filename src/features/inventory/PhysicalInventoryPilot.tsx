@@ -6,7 +6,8 @@ import { loadInventoryLayout } from '../../shared/inventory/inventoryLayoutStore
 import { CatalogSkuIcon } from '../../ui/components/CatalogSkuIcon';
 import { gameEventBus } from '../../game/eventBus';
 import { hotbarSkuToHeldKind } from '../../shared/interaction/hotbarContract';
-import { EMPTY_HELD_ITEM } from '../../shared/interaction/interactionResolver';
+import type { HeldItemState } from '../../shared/interaction/interactionTypes';
+import { EMPTY_HELD_ITEM, isEditableInputTarget } from '../../shared/interaction/interactionResolver';
 import './nuvora/nuvoraInventorySkin.css';
 import './physicalInventory.css';
 
@@ -20,6 +21,7 @@ interface Props {
   readonly showHud: boolean;
   readonly open: boolean;
   readonly onOpen: () => void;
+  readonly onHeldItemChange: (held: HeldItemState | null) => void;
   readonly onClose: () => void;
 }
 
@@ -53,7 +55,7 @@ function oldShortcuts(worldId: string, userId: string): PhysicalShortcut[] {
 }
 
 export default function PhysicalInventoryPilot({
-  backend, worldId, userId, revision, location, connection, showHud, open, onOpen, onClose,
+  backend, worldId, userId, revision, location, connection, showHud, open, onOpen, onClose, onHeldItemChange,
 }: Props) {
   const [view, setView] = useState<PhysicalInventoryView | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -116,8 +118,7 @@ export default function PhysicalInventoryPilot({
   if (equipped && view && !visibleHeld) setEquipped(null);
 
   useEffect(() => {
-    if (!visibleHeld) gameEventBus.emit('cmd:sync-held-item', EMPTY_HELD_ITEM);
-    else gameEventBus.emit('cmd:sync-held-item', {
+    const item: HeldItemState = visibleHeld ? {
       ...EMPTY_HELD_ITEM,
       slotIndex: equippedIndex,
       itemSku: visibleHeld.itemSku,
@@ -125,14 +126,20 @@ export default function PhysicalInventoryPilot({
       ownerScope: `user:${userId}`,
       labelVi: equippedName,
       quality: visibleHeld.quality,
-    });
-  }, [equippedIndex, equippedName, userId, visibleHeld]);
+    } : EMPTY_HELD_ITEM;
+    onHeldItemChange(item);
+    gameEventBus.emit('cmd:sync-held-item', item);
+  }, [equippedIndex, equippedName, onHeldItemChange, userId, visibleHeld]);
+  useEffect(() => {
+    const unsubscribe = gameEventBus.on('cmd:clear-physical-held-item', () => setEquipped(null));
+    return () => { unsubscribe(); onHeldItemChange(null); };
+  }, [onHeldItemChange]);
   const source = selection && selectedSlot(view, selection.address);
   const held = selection && source?.stack?.id === selection.stackId && source.stack.qty >= selection.qty ? selection : null;
 
   useEffect(() => {
     const keyDown = (event: KeyboardEvent) => {
-      if (event.repeat) return;
+      if (event.repeat || event.defaultPrevented) return;
       if (event.key === 'Escape' && open) {
         event.preventDefault();
         event.stopPropagation();
@@ -141,12 +148,7 @@ export default function PhysicalInventoryPilot({
         return;
       }
       const target = event.target;
-      if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
-      if (!open && showHud && event.key.toLowerCase() === 'i') {
-        event.preventDefault();
-        onOpen();
-        return;
-      }
+      if (isEditableInputTarget(target)) return;
       if (open || !showHud || !view) return;
       if (event.key === 'Tab' && (target === document.body || target instanceof HTMLCanvasElement)) {
         event.preventDefault();
@@ -159,7 +161,7 @@ export default function PhysicalInventoryPilot({
     };
     window.addEventListener('keydown', keyDown, true);
     return () => window.removeEventListener('keydown', keyDown, true);
-  }, [apply, onClose, onOpen, open, selection, showHud, view]);
+  }, [apply, onClose, open, selection, showHud, view]);
 
   function pick(address: PhysicalSlotAddress, cell: PhysicalSlotView, single: boolean) {
     if (busy) return;

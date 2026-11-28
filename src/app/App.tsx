@@ -406,6 +406,7 @@ function MainCoupleApp({
   >(null);
   const [inventoryEntry, setInventoryEntry] = useState<{ key: string; snapshot: InventorySnapshot } | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [physicalHeldItem, setPhysicalHeldItem] = useState<HeldItemState | null>(null);
   const [heldHotbarIndex, setHeldHotbarIndex] = useState<number | null>(null);
   const [heldItemSku, setHeldItemSku] = useState<string | null>(null);
   const [waterFillBySku, setWaterFillBySku] = useState<Record<string, number>>({
@@ -3059,7 +3060,9 @@ function MainCoupleApp({
         toast={toast}
       />
 
-      {!backend.inventory?.physical && <MainGameInteractionLayer
+      <MainGameInteractionLayer
+        physicalMode={Boolean(backend.inventory?.physical)}
+        physicalHeldItem={physicalHeldItem}
         localUserId={currentUser.userId}
         key={currentMapId}
         petCareOverlayActive={petCareMode}
@@ -3077,7 +3080,7 @@ function MainCoupleApp({
         interactionMutationBusy={petBusy || farmBusy}
         onOpenInventory={() => {
           setActiveModal('inventory');
-          void refreshInventorySnapshot();
+          if (!backend.inventory?.physical) void refreshInventorySnapshot();
         }}
         onCloseTopModal={() => {
           if (activeNpcDialogue) setActiveNpcDialogue(null);
@@ -3187,7 +3190,7 @@ function MainCoupleApp({
         farmPlotByIndex={farmPlotByIndex}
         farmServerNowMs={farmServerNowMs}
         onNotice={(message, isError) => showToast(message, isError)}
-      />}
+      />
 
       {!decorateActive && !isAnyModalOpen && !petCareMode && (
         <CoupleEmoteDock
@@ -3579,7 +3582,8 @@ function MainCoupleApp({
             revision={inventorySnapshot?.physicalVersion}
             location={currentMapId}
             connection={connectionStatus}
-            showHud={!isAnyModalOpen}
+            showHud={!isAnyModalOpen && !decorateActive}
+            onHeldItemChange={setPhysicalHeldItem}
             open={activeModal === 'inventory'}
             onOpen={() => setActiveModal('inventory')}
             onClose={() => setActiveModal(null)}
