@@ -2938,6 +2938,7 @@ function MainCoupleApp({
       data-hud-mode={layoutMode}
       data-focus-expanded={isFocusExpanded ? '1' : '0'}
     >
+      <div id="olw-gameplay-modal-root" />
       <PwaStatusBanner />
 
       {!isMobileHud ? (
@@ -3301,7 +3302,7 @@ function MainCoupleApp({
         />
       ) : !isMobileHud ? (
         <QuickNavBar
-          hidden={petCareMode || activeNpcDialogue !== null}
+          hidden={petCareMode || isAnyModalOpen}
           currentMapId={currentMapId}
           decorateActive={decorateActive}
           onSelectMap={handleSelectMap}
@@ -3941,8 +3942,7 @@ function MainCoupleApp({
 
 
       {(activeModal === 'farm_market' || activeModal === 'farm_shipping') && backend.farm && (
-        <div className="modal-backdrop nuvora-inv-backdrop" role="presentation" onClick={() => setActiveModal(null)}>
-          <div onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop nuvora-inv-backdrop olw-gameplay-modal" role="presentation" onClick={() => setActiveModal(null)}>
             <FarmEconomyPanel
               mode={activeModal === 'farm_market' ? 'shop' : 'shipping'}
               shopKind={farmShopKind}
@@ -4005,7 +4005,6 @@ function MainCoupleApp({
               }}
             />
           </div>
-        </div>
       )}
 
       {activeModal === 'mailbox' && backend.mailbox && (

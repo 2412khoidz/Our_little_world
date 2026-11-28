@@ -454,7 +454,7 @@ function ChillFishingGame({
               })
             : fishingFrenzySpritePathForFish('carp'));
         const text = resolved.escaped ? `${displayVi} tuột mất…` : `Bắt được ${displayVi}!`;
-        setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl, overflowUnits: resolved.overflowUnits });
+        setCatchOutcome({ escaped: resolved.escaped, labelVi: displayVi, rarity, spriteUrl, overflowUnits: resolved.overflowUnits, qtyGranted: resolved.qtyGranted });
         gameEventBus.emit('cmd:fishing-visual', { spotId, phase: resolved.escaped ? 'escaped' : 'landed', spriteUrl });
         setOutcomeVi(text);
         setMessage(text);
@@ -703,12 +703,7 @@ function ChillFishingGame({
           )}
 
           {catchOutcome && (
-            <CatchRevealCard
-              rarity={catchOutcome.rarity}
-              spriteUrl={catchOutcome.spriteUrl}
-              escaped={catchOutcome.escaped}
-              labelVi={catchOutcome.labelVi}
-            />
+            <CatchRevealCard {...catchOutcome} />
           )}
 
           {!catchOutcome && <p className="ranch-fishing__status" data-testid="tidefall-fishing-message" aria-live="polite">

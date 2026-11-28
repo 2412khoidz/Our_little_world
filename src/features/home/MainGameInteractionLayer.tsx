@@ -641,7 +641,7 @@ export function MainGameInteractionLayer({
           </div>
         ) : null}
         {isMobileHud ? (
-          heldItem.itemKind !== 'none' && heldItem.itemSku ? (
+          !physicalMode && heldItem.itemKind !== 'none' && heldItem.itemSku ? (
             <div className="olw-m-held-pill" data-testid="held-item-chip" role="status">
               <span>{heldItem.labelVi || heldItem.itemSku}</span>
               <button type="button" aria-label="Bỏ cầm" onClick={clearHeld}>
@@ -652,7 +652,7 @@ export function MainGameInteractionLayer({
         ) : (
           <HeldItemChip heldItem={heldItem} onClear={clearHeld} />
         )}
-        {heldItem.itemSku && <div className="olw-held-usage" key={heldItem.itemSku}>
+        {heldItem.itemSku && !(physicalMode && isMobileHud) && <div className="olw-held-usage" key={heldItem.itemSku}>
           <ItemUsageDisclosure
             sku={heldItem.itemSku}
             label={heldItem.labelVi}

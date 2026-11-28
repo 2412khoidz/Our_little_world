@@ -87,9 +87,10 @@ export interface FishingCatchPresentation {
   rarity: TidefallFishRarity;
   spriteUrl: string;
   overflowUnits?: number;
+  qtyGranted?: number;
 }
 
-export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi, overflowUnits }: FishingCatchPresentation) {
+export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi, overflowUnits = 0, qtyGranted }: FishingCatchPresentation) {
   return (
     <div
       className="ranch-fishing__catch"
@@ -100,9 +101,14 @@ export function CatchRevealCard({ rarity, spriteUrl, escaped, labelVi, overflowU
     >
       <FishingFishArt spriteUrl={spriteUrl} />
       <div>
-        <strong>{escaped ? `${labelVi} tuột mất…` : `Bắt được ${labelVi}!`}</strong>
+        <strong>{escaped ? `${labelVi} tuột mất…` : `Bắt được ${labelVi}${qtyGranted ? ` ×${qtyGranted}` : ''}!`}</strong>
         <small>{tidefallFishRarityLabelVi(rarity)}{escaped ? ' · Thử quăng lại nhé' : !overflowUnits ? ' · Đã nhận vật phẩm' : ''}</small>
-        {!escaped && Boolean(overflowUnits) && <p>Ba lô đầy, chuyển vào Đồ giữ hộ.</p>}
+        {!escaped && overflowUnits > 0 && <>
+          <small>Ba lô đầy, chuyển vào Đồ giữ hộ.</small>
+          <small>{qtyGranted && qtyGranted > overflowUnits
+            ? `${qtyGranted - overflowUnits} vào ba lô · ${overflowUnits} vào Đồ giữ hộ.`
+            : `${overflowUnits} vào Đồ giữ hộ.`} Mở kho nhà tại tủ lạnh để lấy.</small>
+        </>}
       </div>
     </div>
   );

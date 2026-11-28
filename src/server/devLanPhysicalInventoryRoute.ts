@@ -11,7 +11,7 @@ import { canReachHomeStorage } from '../shared/interaction/mainGameWorldAnchors'
 import type { FarmShippingMeta } from '../shared/farming/farmShipping';
 import { editPhysicalEconomy, physicalSaleChannel } from '../shared/inventory/physicalInventoryEconomy';
 import {
-  getPhysicalCatalog, migratePhysicalInventory, PhysicalInventoryEdit, PhysicalInventoryError,
+  getPhysicalCatalog, migratePhysicalInventory, normalizePhysicalStacks, PhysicalInventoryEdit, PhysicalInventoryError,
   physicalSlots, playerBackpack, readPhysicalContainer, STORAGE_PAGE_SIZE,
   type LegacyPhysicalEntry, type PhysicalCatalog, type PhysicalInventory, type PhysicalPosition,
 } from '../shared/inventory/physicalInventory';
@@ -174,7 +174,7 @@ function createView(ctx: Context, state: PhysicalInventory, query: PhysicalStora
 
 export function loadPhysicalGameplayState(db: PhysicalDevLanDatabase, worldId: string, entries: readonly InventoryCatalogItem[]) {
   const state = db.v015.physicalInventory?.[worldId];
-  if (state) return state;
+  if (state) return normalizePhysicalStacks(state, getPhysicalCatalog(entries));
   if (db.v015.petLiving?.[worldId]?.offers?.some((offer) => offer.inventoryReserved)) {
     throw new PhysicalInventoryError('UNAVAILABLE', 'Hãy giải quyết lời mời ăn của mèo trên bản sao save trước khi chuyển túi đồ.');
   }
@@ -225,21 +225,24 @@ export function handleDevLanPhysicalInventory(ctx: Context): boolean {
   const catalog = getPhysicalCatalog(ctx.catalog);
   try {
     v015.physicalInventory ??= {};
-    let state = v015.physicalInventory[worldId];
-    if (!state) {
-      if (ctx.req.method !== 'GET') {
+    const previous = v015.physicalInventory[worldId];
+    let state = previous && normalizePhysicalStacks(previous, catalog);
+    if (!state || state !== previous) {
+      if (!previous && ctx.req.method !== 'GET') {
         fail(409, 'VERSION_CONFLICT', 'Hãy mở túi đồ trước khi thực hiện.');
         return true;
       }
       const legacy = v015.inventory[worldId];
-      state = loadPhysicalGameplayState(ctx.db, worldId, ctx.catalog);
+      state ??= loadPhysicalGameplayState(ctx.db, worldId, ctx.catalog);
       v015.physicalInventory[worldId] = state;
       delete v015.inventory[worldId];
       try { ctx.saveDb(); } catch (error) {
-        delete v015.physicalInventory[worldId];
+        if (previous) v015.physicalInventory[worldId] = previous;
+        else delete v015.physicalInventory[worldId];
         if (legacy) v015.inventory[worldId] = legacy;
         throw error;
       }
+      if (previous) ctx.broadcastInventory(worldId);
     }
     if (ctx.req.method === 'GET') {
       if (ctx.route === '/inventory') {

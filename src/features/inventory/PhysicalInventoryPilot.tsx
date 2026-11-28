@@ -1,3 +1,4 @@
+import { ItemUsageDisclosure } from '../../ui/components/ItemUsageDisclosure';
 import { canReachDrop } from '../../shared/inventory/physicalInventoryLifecycle';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Archive, ArrowLeftRight, Backpack, ChevronLeft, ChevronRight, MoreHorizontal, Search, X } from 'lucide-react';
@@ -389,9 +390,15 @@ export default function PhysicalInventoryPilot({
       <div className="physical-hotbar" data-touch={touch || undefined} data-active-row={activeRow + 1}
         role="group" aria-label="Thanh vật phẩm nhanh" data-testid="physical-hotbar"
         onPointerDown={(event) => event.stopPropagation()}>
-        {(message || (view?.overflowUnits ?? 0) > 0) && <small className="physical-hud-notice" role="status">
-          {message || `Đồ giữ hộ: ${view?.overflowUnits} · tại tủ lạnh`}
-        </small>}
+        <div className="physical-hotbar__feedback">
+          {(message || (view?.overflowUnits ?? 0) > 0) && <small className="physical-hud-notice" role="status">
+            {message || `Đồ giữ hộ: ${view?.overflowUnits} · tại tủ lạnh`}
+          </small>}
+          {touch && visibleHeld && <div className="olw-m-held-pill" data-testid="held-item-chip" role="status">
+            <span>{equippedName}</span>
+            <button type="button" aria-label="Bỏ cầm" onClick={() => setEquipped(null)}>×</button>
+          </div>}
+        </div>
         <div className="physical-hotbar__slots">
           {hotbar.map((cell, key) => (
             <button key={key} type="button" className="nuvora-sl"
@@ -423,8 +430,8 @@ export default function PhysicalInventoryPilot({
       </div>
     )}
     {open && (
-      <div className="modal-backdrop physical-inventory-backdrop" role="dialog" aria-label={title} aria-modal="true">
-        <div className="nuvora-desk physical-inventory-panel" ref={panelRef} onKeyDown={trapTab}
+      <div className="modal-backdrop physical-inventory-backdrop olw-gameplay-modal" role="dialog" aria-label={title} aria-modal="true">
+        <div className="nuvora-desk physical-inventory-panel olw-gameplay-modal__panel" ref={panelRef} onKeyDown={trapTab}
           data-testid={mode === 'storage' ? 'physical-home-storage-modal' : 'physical-inventory-modal'} data-mode={mode}>
           <header className="physical-panel-header">
             <h2>{mode === 'storage' ? <Archive size={23} /> : <Backpack size={23} />}{title}</h2>
@@ -432,7 +439,7 @@ export default function PhysicalInventoryPilot({
               <X size={20} />
             </button>
           </header>
-          <div className="physical-panel-body">
+          <div className="physical-panel-body olw-gameplay-modal__scroll">
             {view ? <>
               <div className="physical-inventory-trays">
                 <section className="physical-tray" aria-label="Ba lô">
@@ -441,6 +448,7 @@ export default function PhysicalInventoryPilot({
                     <button type="button" className="physical-control" disabled={busy}
                       onClick={() => void apply({ kind: 'organize', container: 'backpack' })}>Sắp xếp</button>
                   </div>
+                  {touch && visibleHeld && <ItemUsageDisclosure sku={visibleHeld.itemSku} label={equippedName} />}
                   <div className="physical-slot-grid">{view.backpack.map((cell) => drawCell(cell, 'backpack'))}</div>
                   <div className="physical-inventory-actions physical-bag-options">
                     {view.overflowUnits > 0 && <span role="status">Đồ giữ hộ: {view.overflowUnits} · mở kho tại tủ lạnh</span>}

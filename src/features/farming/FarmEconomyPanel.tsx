@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PackageCheck, Plus, Trash2 } from 'lucide-react';
 import { computeSellPriceBp, getItem, requireItem } from '../../shared/economy/catalogConfig';
 import { resolveCanonicalFishBySku } from '../../shared/donor/fishing/canonicalFishRegistry';
@@ -110,6 +110,14 @@ export function FarmEconomyPanel({
   const title = mode === 'shop' ? shopMeta.titleVi : 'Thùng giao hàng';
 
   const [shopCategory, setShopCategory] = useState<'default' | FarmShopCategoryId>('default');
+  const [buyQty, setBuyQty] = useState(1);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const products = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const origin = document.activeElement;
+    closeRef.current?.focus();
+    return () => { if (origin instanceof HTMLElement && origin.isConnected) origin.focus(); };
+  }, []);
   const [stagedCrate, setStagedCrate] = useState<Record<string, number>>({});
 
   const shippableSkus = useMemo(() => {
@@ -178,7 +186,12 @@ export function FarmEconomyPanel({
 
   return (
     <div
-      className={deskClass}
+      className={deskClass + " olw-gameplay-modal__panel farm-economy-desk"}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
+      }}
+      aria-modal="true"
       role="dialog"
       aria-labelledby="farm-economy-title"
       data-testid={
@@ -201,6 +214,7 @@ export function FarmEconomyPanel({
         <button
           type="button"
           className="btn btn--secondary btn--sm"
+          ref={closeRef}
           onClick={onClose}
           aria-label="Đóng"
         >
@@ -249,12 +263,13 @@ export function FarmEconomyPanel({
       </p>
 
       {mode === 'shop' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+        <div className="farm-economy-toolbar">
           {DEEP_SHOP_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setShopCategory(tab.id)}
+              aria-pressed={shopCategory === tab.id}
+              onClick={() => { setShopCategory(tab.id); products.current?.scrollTo(0, 0); }}
               className={`btn btn--sm ${shopCategory === tab.id ? 'btn--primary' : 'btn--secondary'}`}
             >
               {tab.labelVi}
@@ -262,8 +277,13 @@ export function FarmEconomyPanel({
           ))}
         </div>
       )}
+      {mode === 'shop' && <div className="farm-economy-toolbar" aria-label="Số lượng mua">
+        {[1, 5, 10].map((quantity) => <button type="button" key={quantity} className="btn btn--sm btn--secondary"
+          aria-pressed={quantity === buyQty} onClick={() => setBuyQty(quantity)}>×{quantity}</button>)}
+      </div>}
 
-      <div className={mode === 'shop' ? 'nuvora-shop-list' : 'cozy-shipping-zones'}>
+      <div className={(mode === 'shop' ? 'nuvora-shop-list' : 'cozy-shipping-zones') + ' olw-gameplay-modal__scroll'}
+        data-testid="farm-economy-products" ref={products}>
         {mode === 'shop' && shopCategory !== 'default' &&
           farmShopItemsByCategory(shopCategory).map((def) => {
             const price = def.storeBuy ?? 0;
@@ -279,8 +299,9 @@ export function FarmEconomyPanel({
                 nameVi={def.nameVi}
                 price={price}
                 inSeason={inSeason}
-                disabled={busy || walletCoins < price}
-                onBuy={() => void onBuyStoreItem(def.sku, 1)}
+                quantity={buyQty}
+                disabled={busy || walletCoins < price * buyQty}
+                onBuy={() => void onBuyStoreItem(def.sku, buyQty)}
               />
             );
           })}
@@ -307,8 +328,9 @@ export function FarmEconomyPanel({
                 nameVi={nameVi}
                 price={price}
                 inSeason={inSeason}
-                disabled={busy || walletCoins < price}
-                onBuy={() => void onBuyStoreItem(itemSku, 1)}
+                quantity={buyQty}
+                disabled={busy || walletCoins < price * buyQty}
+                onBuy={() => void onBuyStoreItem(itemSku, buyQty)}
               />
             );
           })}
@@ -316,6 +338,7 @@ export function FarmEconomyPanel({
         {mode === 'shop' && shopCategory === 'default' && shopMeta.layout === 'grid' && (
           <NuvoraShopGrid
             busy={busy}
+            quantity={buyQty}
             cells={farmShopSkusForKind(shopKind)
               .map((itemSku) => {
                 try {
@@ -326,14 +349,14 @@ export function FarmEconomyPanel({
                     sku: itemSku,
                     nameVi: def.nameVi,
                     price,
-                    disabled: busy || walletCoins < price,
+                    disabled: busy || walletCoins < price * buyQty,
                   };
                 } catch {
                   return null;
                 }
               })
               .filter((c): c is NonNullable<typeof c> => c !== null)}
-            onBuy={(sku) => void onBuyStoreItem(sku, 1)}
+            onBuy={(sku) => void onBuyStoreItem(sku, buyQty)}
           />
         )}
 

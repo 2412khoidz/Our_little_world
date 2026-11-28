@@ -45,7 +45,7 @@ test('mobile trade and heart targets stay separate from door and cabinet buttons
 });
 
 test('two Dev LAN players claim their own tools and settle a partial direct gift', async ({ page, request, browser, baseURL, isMobile }) => {
-  test.skip(isMobile, 'Two coordinated browser contexts');
+
   await request.post(api + '/reset', { data: {} });
   const seed = await request.post(api + '/seed-couple', { data: {} });
   const worldId = (await seed.json()).data.world.id as string;
@@ -86,11 +86,17 @@ test('two Dev LAN players claim their own tools and settle a partial direct gift
     await page.getByRole('button', { name: 'Mời trao đổi' }).click();
     await receiver.getByRole('button', { name: 'Đồng ý' }).click();
     const trade = page.getByRole('dialog', { name: 'Trao đổi vật phẩm' });
-    const quantity = trade.getByRole('spinbutton');
-    await expect(quantity).toHaveCount(1);
-    await quantity.fill('2');
+    await page.setViewportSize(isMobile ? { width: 393, height: 700 } : { width: 1024, height: 460 });
+    const slot = trade.getByRole('button', { name: /Hạt giống lúa mì ×5/ });
+    const original = await slot.boundingBox();
+    await slot.click();
+    expect(await slot.boundingBox()).toEqual(original);
+    await trade.getByRole('button', { name: '+1', exact: true }).click();
     await trade.getByRole('button', { name: 'Đưa vào' }).click();
-    await expect(trade.getByText(/×2 · Thường/)).toBeVisible();
+    await expect(trade.getByRole('button', { name: /Hạt giống lúa mì ×2/ })).toBeVisible();
+    const confirm = trade.getByRole('button', { name: 'Xác nhận đề nghị' });
+    await expect(confirm).toBeInViewport();
+    await expect(trade.getByRole('button', { name: 'Hủy' })).toBeInViewport();
     await trade.getByRole('button', { name: 'Xác nhận đề nghị' }).click();
     await receiver.getByRole('button', { name: 'Xác nhận đề nghị' }).click();
     await expect.poll(async () => (await read(nang)).backpack.find(({ stack }: { stack?: { itemSku: string } }) =>
@@ -99,5 +105,39 @@ test('two Dev LAN players claim their own tools and settle a partial direct gift
     await expect(trade).toBeHidden();
   } finally {
     await other.close();
+  }
+});
+
+test('shop scrolls to the last purchase while the header stays reachable', async ({ page, request, baseURL, isMobile }) => {
+  await request.post(api + '/reset', { data: {} });
+  await request.post(api + '/seed-couple', { data: {} });
+  await enterExtendedWorldGame(page, baseURL!);
+  const shop = page.getByTestId('farm-economy-panel');
+  await page.waitForFunction(() => typeof (window as unknown as { __OLW_VQG?: { openFarmMarket?: unknown } })
+    .__OLW_VQG?.openFarmMarket === 'function');
+  for (const [width, height] of isMobile ? [[393, 700], [430, 932], [873, 380], [932, 430]] : [[1280, 600]]) {
+    await page.setViewportSize({ width: width!, height: height! });
+    await page.evaluate(() =>
+      (window as unknown as { __OLW_VQG: { openFarmMarket: () => void } }).__OLW_VQG.openFarmMarket());
+    await expect(shop).toBeVisible();
+    await shop.getByRole('button', { name: '40+ Hạt & Hoa' }).click();
+    const close = shop.getByRole('button', { name: 'Đóng' });
+    const wallet = shop.getByTestId('farm-economy-wallet');
+    const scroller = shop.getByTestId('farm-economy-products');
+    expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight && el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    const last = scroller.getByRole('button', { name: 'Mua', exact: true }).last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(close).toBeInViewport();
+    await expect(wallet).toBeInViewport();
+    const bounds = (await shop.boundingBox())!;
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(height! + 1);
+    if (width === (isMobile ? 393 : 1280)) {
+      const coins = Number(await shop.getByTestId('farm-wallet-coins').textContent());
+      await last.click();
+      await expect.poll(async () => Number(await shop.getByTestId('farm-wallet-coins').textContent())).toBeLessThan(coins);
+    }
+    await close.click();
+    await expect(shop).toBeHidden();
   }
 });

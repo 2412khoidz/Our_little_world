@@ -158,3 +158,27 @@ describe('Physical storage lifecycle', () => {
     expect(qty(edit.finish())).toBe(1);
   });
 });
+
+it('caps ordinary physical stacks at 99 and keeps compatible, locked and overflow quantities intact', () => {
+  const limits = new Map(catalog).set('apple', { name: 'Táo', stackLimit: 999, category: 'fruit' });
+  const base: PhysicalInventory = { schemaVersion: 1, version: 1, nextId: 100, players: {}, containers: {} };
+  const apple: PhysicalStack = { itemSku: 'apple', id: 'apple', qty: 10, quality: 'normal', metadata: { variety: 'crisp' } };
+  const nearly = (amount: number): PhysicalInventory => ({ ...base, containers: {
+    'backpack:may': { capacity: 2, slots: { 0: { ...apple, qty: amount } }, locked: {} },
+  } });
+  for (const [before, incoming, expected] of [[98, 1, [99]], [99, 1, [99, 1]], [95, 10, [99, 6]]] as const) {
+    const edit = new PhysicalInventoryEdit(nearly(before), 'may', limits, true);
+    expect(edit.insert(edit.edit('backpack'), { ...apple, id: 'incoming', qty: incoming })).toBe(incoming);
+    const result = edit.finish();
+    expect(physicalSlots(read(result)).map(({ stack }) => stack.qty)).toEqual(expected);
+    expect(qty(result)).toBe(before + incoming);
+  }
+  const oversized = nearly(301);
+  oversized.containers['backpack:may']!.slots[1] = { ...apple, id: 'silver', qty: 1, quality: 'silver' };
+  const migrated = migratePhysicalInventory(oversized, 'world', [], limits);
+  expect(migrated.containers['backpack:may']?.slots[0]).toEqual({ ...apple, qty: 99 });
+  expect(migrated.containers['backpack:may']?.slots[1]?.quality).toBe('silver');
+  expect(physicalSlots(read(migrated, 'overflow')).map(({ stack }) => stack.qty)).toEqual([99, 99, 4]);
+  expect(qty(migrated)).toBe(qty(oversized));
+  expect(migratePhysicalInventory(migrated, 'world', [], limits)).toBe(migrated);
+});

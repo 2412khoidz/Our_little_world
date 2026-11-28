@@ -5,6 +5,7 @@ export const BACKPACK_ROW_SIZE = 9;
 export const BACKPACK_TIERS = [18, 27, 36, 45, 54] as const;
 export const BACKPACK_UPGRADE_COSTS = [100, 250, 500, 850] as const;
 export const STORAGE_PAGE_SIZE = 36;
+export const MAX_PHYSICAL_STACK = 99;
 const MAX_INDEX = 2_147_483_646;
 
 type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
@@ -83,7 +84,7 @@ export function getPhysicalCatalog(ref: readonly InventoryCatalogItem[]): Physic
   const catalog = new Map(ref.map((row) => [row.sku, {
     name: row.nameVi,
     category: row.category ?? row.purpose,
-    stackLimit: Math.max(1, row.stackLimit),
+    stackLimit: Math.min(MAX_PHYSICAL_STACK, Math.max(1, row.stackLimit)),
     individual: ESSENTIAL.has(row.sku) || row.purpose === 'tool' || /^(rod_|tool_|accessory_)/.test(row.sku),
     essential: ESSENTIAL.has(row.sku),
   }]));
@@ -169,14 +170,14 @@ export function physicalStackKey(stack: Pick<PhysicalStack, 'itemSku' | 'quality
 }
 
 export function canStackPhysical(a: PhysicalStack, b: PhysicalStack, catalog: PhysicalCatalog): boolean {
-  return !a.metadata?.instanceId && !b.metadata?.instanceId && !catalog.get(a.itemSku)?.individual
+  return !a.legacyParcel && !b.legacyParcel && !a.metadata?.instanceId && !b.metadata?.instanceId && !catalog.get(a.itemSku)?.individual
     && physicalStackKey(a) === physicalStackKey(b) && Boolean(a.favorite) === Boolean(b.favorite);
 }
 
 export function physicalStackLimit(stack: Pick<PhysicalStack, 'itemSku' | 'metadata'>, catalog: PhysicalCatalog): number {
   const def = catalog.get(stack.itemSku);
   if (stack.metadata?.instanceId || def?.individual) return 1;
-  return def?.stackLimit ?? 99;
+  return Math.min(MAX_PHYSICAL_STACK, def?.stackLimit ?? MAX_PHYSICAL_STACK);
 }
 
 export function physicalSlots(container: PhysicalContainer): { index: number; stack: PhysicalStack }[] {
@@ -292,7 +293,7 @@ export class PhysicalInventoryEdit {
 
 function putLegacyParcel(container: PhysicalContainer, stack: PhysicalStack): void {
   let index = 0;
-  while (container.slots[index]) index++;
+  while (container.slots[index] || container.locked[index]) index++;
   container.slots[index] = { ...stack, legacyParcel: true };
 }
 
@@ -302,7 +303,7 @@ export function migratePhysicalInventory(
   rows: readonly LegacyPhysicalEntry[],
   catalog: PhysicalCatalog,
 ): PhysicalInventory {
-  if (previous) return previous;
+  if (previous) return normalizePhysicalStacks(previous, catalog);
   if (rows.some((row) => row.worldId !== worldId)) physicalError('INVALID', 'Save có vật phẩm thuộc một nhà khác.');
   const initial: PhysicalInventory = { schemaVersion: 1, version: 0, nextId: 1, containers: {}, players: {} };
   // Stable ordering keeps the same slot assignments across repeat imports of the same legacy save.
@@ -363,6 +364,51 @@ export function migratePhysicalInventory(
     }
   }
   return { ...(edit?.finish() ?? state), version: 1 };
+}
+
+/** Repack previously saved physical stacks without moving unaffected slots. */
+export function normalizePhysicalStacks(previous: PhysicalInventory, catalog: PhysicalCatalog): PhysicalInventory {
+  let state = previous;
+  for (const [id, original] of Object.entries(previous.containers)) {
+    const kind = (id === 'home' ? 'home' : id.slice(0, id.indexOf(':'))) as ContainerKind;
+    const owner = id === 'home' ? '' : id.slice(id.indexOf(':') + 1);
+    const oversized = physicalSlots(original).filter(({ stack }) => stack.qty > physicalStackLimit(stack, catalog)
+      && !(kind !== 'backpack' && stack.legacyParcel && stack.qty > physicalStackLimit(stack, catalog) * STORAGE_PAGE_SIZE));
+    if (!oversized.length) continue;
+    const edit = new PhysicalInventoryEdit(state, owner, catalog, true);
+    const container = edit.edit(kind);
+    // Keep the existing ID at its original address and prevent a remainder
+    // from merging into another oversized stack that is still being split.
+    for (const { index, stack } of oversized) {
+      if (stack.metadata?.instanceId || catalog.get(stack.itemSku)?.individual)
+        physicalError('INVALID', 'Save có nhiều món cùng một định danh trang bị.');
+      container.slots[index] = edit.span(stack, physicalStackLimit(stack, catalog), true);
+    }
+    for (const { stack } of oversized) {
+      const extra = stack.qty - physicalStackLimit(stack, catalog);
+      const { legacyParcel: _parcel, ...remainder } = edit.span(stack, extra, false);
+      if (kind !== 'backpack' && extra > physicalStackLimit(stack, catalog) * STORAGE_PAGE_SIZE) {
+        putLegacyParcel(container, remainder);
+        continue;
+      }
+      const accepted = edit.insert(container, remainder);
+      if (accepted < extra) {
+        const overflow = edit.edit('overflow');
+        const rest = { ...remainder, qty: extra - accepted };
+        if (rest.qty > physicalStackLimit(stack, catalog) * STORAGE_PAGE_SIZE) putLegacyParcel(overflow, rest);
+        else edit.insert(overflow, rest);
+      }
+    }
+    state = edit.finish();
+  }
+  const oversizedDrops = Object.values(state.drops ?? {}).filter(({ stack }) => !stack.legacyParcel
+    && stack.qty > physicalStackLimit(stack, catalog));
+  if (oversizedDrops.length) {
+    const edit = new PhysicalInventoryEdit(state, '', catalog, false);
+    for (const drop of oversizedDrops) edit.setDrop(drop.id, { ...drop, stack: { ...drop.stack, legacyParcel: true } });
+    state = edit.finish();
+  }
+  return state;
 }
 
 function importShortcuts(edit: PhysicalInventoryEdit, shortcuts: readonly PhysicalShortcut[]) {

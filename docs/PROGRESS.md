@@ -2,6 +2,12 @@
 
 *Cập nhật lần cuối: 28/11/2026*
 
+## RC3.2 — Nghiệm thu giao diện và chồng đồ
+
+- Lưới trao đổi dùng khung kho vật lý. Cửa hàng và bảng xưởng có vùng cuộn tách, thanh điều hướng ẩn khi mở modal. Nhãn món đang cầm neo trên thanh nhanh mobile.
+- Chồng vật lý dùng trần 99, giữ mức thấp hơn trong catalog và trang bị cá thể ở 1. [Bàn giao RC3.2, đối soát và cách mở save QA](handovers/CANONICAL_RC32.md).
+- Chờ chủ dự án nghiệm thu trước khi cập nhật main.
+
 ## RC3.2 — Link mời, mã QR và thông báo ba lô
 
 - Hộp thoại Chơi cùng người thương hiển thị link và mã QR chứa cùng địa chỉ. QR được tạo trên thiết bị và cập nhật theo link khi đổi lời mời.

@@ -10,6 +10,7 @@ export interface NuvoraShopGridCell {
 export interface NuvoraShopGridProps {
   cells: readonly NuvoraShopGridCell[];
   busy: boolean;
+  quantity?: number;
   onBuy: (sku: string) => void;
 }
 
@@ -17,7 +18,7 @@ export interface NuvoraShopGridProps {
  * Cabacos `SeedShopPanel` slot grid — NUVORA wooden tray (3×N).
  * @see docs/UPSTREAM_REUSE.md Worker F/K — ShopRow + grid layout reference @ 79e423d
  */
-export function NuvoraShopGrid({ cells, busy, onBuy }: NuvoraShopGridProps) {
+export function NuvoraShopGrid({ cells, busy, quantity = 1, onBuy }: NuvoraShopGridProps) {
   return (
     <div className="nuvora-shop-g9" data-testid="nuvora-shop-grid">
       {cells.map((cell) => (
@@ -27,7 +28,7 @@ export function NuvoraShopGrid({ cells, busy, onBuy }: NuvoraShopGridProps) {
           className="nuvora-shop-cell"
           disabled={busy || cell.disabled}
           data-testid={`nuvora-shop-cell-${cell.sku}`}
-          title={`${cell.nameVi} — ${cell.price} xu`}
+          title={`${cell.nameVi} — ${cell.price * quantity} xu`}
           onClick={() => onBuy(cell.sku)}
         >
           <span className="nuvora-shop-cell__icon">
@@ -38,7 +39,7 @@ export function NuvoraShopGrid({ cells, busy, onBuy }: NuvoraShopGridProps) {
             <span className="nuvora-shop-row__coin" aria-hidden>
               ●
             </span>
-            {cell.price}
+            {cell.price * quantity}
           </span>
         </button>
       ))}

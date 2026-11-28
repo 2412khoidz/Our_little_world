@@ -71,12 +71,14 @@ it('shows the confirmed minnow in Chill and never re-resolves it while the next 
   const refresh = vi.fn().mockResolvedValue(undefined);
   let secondCast!: (value: ReturnType<typeof start>) => void;
   api.start.mockResolvedValueOnce(start(87)).mockImplementationOnce(() => new Promise((resolve) => { secondCast = resolve; }));
-  api.resolve.mockResolvedValue(result);
+  api.resolve.mockResolvedValueOnce({ ...result, qtyGranted: 1, overflowUnits: 1 }).mockResolvedValue(result);
   render(<ChillFishingModal worldId="world" onClose={vi.fn()} onInventoryRefresh={refresh} />);
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Quăng cần' })); });
   await frame(100);
   const card = screen.getByTestId('fishing-frenzy-catch-reveal');
   expect(card).toHaveTextContent(minnow.labelVi);
+  expect(card).toHaveTextContent("Ba lô đầy, chuyển vào Đồ giữ hộ.");
+  expect(card).toHaveTextContent("×1");
   expect(card.querySelector<HTMLElement>('.ranch-fishing__fish')?.style.backgroundImage).toContain(RANCH_FISHING_URL);
   expect(api.resolve).toHaveBeenCalledExactlyOnceWith('world', 1000, 87, 'cast-for-87');
   expect(refresh).toHaveBeenCalledTimes(1);
@@ -94,7 +96,7 @@ it('shows the confirmed minnow in Chill and never re-resolves it while the next 
 it('retries the same Tension catch after an interrupted response and returns to the normal cast state', async () => {
   const refresh = vi.fn().mockResolvedValue(undefined);
   api.start.mockResolvedValue(start(91));
-  api.resolve.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ ...result, overflowUnits: 1 });
+  api.resolve.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ ...result, overflowUnits: 1, qtyGranted: 3 });
   render(<TensionFishingModal worldId="world" spotId="east_stream" titleVi="Suối" onClose={vi.fn()} onInventoryRefresh={refresh} />);
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Quăng cần' })); });
   await frame(100);
@@ -105,6 +107,9 @@ it('retries the same Tension catch after an interrupted response and returns to 
   const overflowCard = screen.getByTestId('fishing-frenzy-catch-reveal');
   expect(overflowCard).toHaveTextContent(minnow.labelVi);
   expect(overflowCard).toHaveTextContent('Ba lô đầy, chuyển vào Đồ giữ hộ.');
+  expect(overflowCard).toHaveTextContent('×3');
+  expect(overflowCard).toHaveTextContent('2 vào ba lô · 1 vào Đồ giữ hộ.');
+  expect(overflowCard).toHaveTextContent('Mở kho nhà tại tủ lạnh để lấy.');
   expect(overflowCard).not.toHaveTextContent('Đã nhận vật phẩm');
   expect(refresh).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: /^Xong$/ }));

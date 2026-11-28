@@ -629,12 +629,12 @@ export function createDevLanHandler({
               newOffer.physicalStack = transaction.consumed[0];
             }
           }
-          const migrated = !committed.physicalInventory?.[worldId];
+          const migrated = committed.physicalInventory?.[worldId] !== state;
           const changed = transaction.state !== state;
           if (saved || migrated || route === '/farm/deep') {
             delete draft.inventory[worldId];
             (draft.physicalInventory ??= {})[worldId] = transaction.state;
-            if (changed && stage.domainVersions[worldId].inventoryVersion === previousInventoryVersion) {
+            if ((changed || migrated) && stage.domainVersions[worldId].inventoryVersion === previousInventoryVersion) {
               bumpWorldStateVersion(worldId, 'inventory', stage);
             }
             if (db !== sourceDb || db.v015 !== committed) {
@@ -655,7 +655,7 @@ export function createDevLanHandler({
               throw error;
             }
             for (const args of events) broadcastEvent(...args);
-            if (changed) {
+            if (changed || migrated) {
               const meta = ensureWorldVersionState(worldId);
               broadcastEvent(worldId, 'world_mutated', { reason: 'inventory', ...meta });
             }

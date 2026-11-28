@@ -4,6 +4,7 @@ export interface NuvoraShopSeedRowProps {
   seedSku: string;
   nameVi: string;
   price: number;
+  quantity?: number;
   inSeason: boolean;
   disabled: boolean;
   onBuy: () => void;
@@ -14,6 +15,7 @@ export function NuvoraShopSeedRow({
   seedSku,
   nameVi,
   price,
+  quantity = 1,
   inSeason,
   disabled,
   onBuy,
@@ -31,7 +33,7 @@ export function NuvoraShopSeedRow({
         <span className="nuvora-shop-row__coin" aria-hidden>
           ●
         </span>
-        {price}
+        {price * quantity}
       </span>
       <button
         type="button"
@@ -41,7 +43,7 @@ export function NuvoraShopSeedRow({
         title={inSeason ? undefined : 'Ngoài mùa gợi ý (vẫn mua được)'}
         onClick={onBuy}
       >
-        Mua
+        {quantity === 1 ? 'Mua' : `Mua ×${quantity}`}
       </button>
     </div>
   );

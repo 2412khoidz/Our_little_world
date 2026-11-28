@@ -135,7 +135,7 @@ export function TensionFishingModal({
       roundSeed.current = null;
       const fallback = resolveCanonicalFishByCritterId(result.critterId ?? '');
       const spriteUrl = result.spriteUrl ?? fallback.spriteUrl;
-      setOutcome({ escaped: result.escaped, labelVi: result.labelVi || fallback.labelVi, rarity: result.rarity ?? fallback.rarity, spriteUrl, overflowUnits: result.overflowUnits });
+      setOutcome({ escaped: result.escaped, labelVi: result.labelVi || fallback.labelVi, rarity: result.rarity ?? fallback.rarity, spriteUrl, overflowUnits: result.overflowUnits, qtyGranted: result.qtyGranted });
       renderState.current = createTidefallFishingIdle();
       gameEventBus.emit('cmd:fishing-visual', {
         spotId, phase: result.escaped ? 'escaped' : 'landed', spriteUrl,

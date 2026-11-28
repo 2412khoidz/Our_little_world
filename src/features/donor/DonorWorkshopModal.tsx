@@ -359,14 +359,12 @@ export function DonorWorkshopModal({
   const eggStock = sharedStock(inventory, 'donor_egg');
 
   return (
-    <div className="modal-backdrop nuvora-inv-backdrop" role="dialog" aria-modal="true" data-testid="donor-workshop-modal">
+    <div className="modal-backdrop nuvora-inv-backdrop olw-gameplay-modal" role="dialog" aria-modal="true" data-testid="donor-workshop-modal">
       <div
-        className="nuvora-desk"
+        className="nuvora-desk olw-gameplay-modal__panel"
         style={{
           maxWidth: deepMode ? 'min(98vw, 720px)' : 'min(98vw, 500px)',
           width: '100%',
-          maxHeight: '90dvh',
-          overflowY: 'auto',
         }}
       >
         <div className="nuvora-desk__title-row">
@@ -385,6 +383,7 @@ export function DonorWorkshopModal({
           </button>
         </div>
 
+        <div className="olw-gameplay-modal__scroll">
         {error && (
           <div className="cozy-alert" style={{ fontSize: 13 }}>
             {error}
@@ -735,6 +734,7 @@ export function DonorWorkshopModal({
             </div>
           </section>
         )}
+        </div>
       </div>
     </div>
   );

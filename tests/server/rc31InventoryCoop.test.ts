@@ -98,6 +98,21 @@ describe('RC3.1 trade transactions', () => {
     }
   });
 
+  it('frees both outgoing slots before settling a swap between two full backpacks', () => {
+    const left = { ...full(), 0: stack('left-rod', 'rod_basic', 1, { instanceId: 'rod', durability: 7 }) };
+    const right = { ...full(), 0: stack('right-hoe', 'tool_hoe', 1, { instanceId: 'hoe' }) };
+    const t = trade(state(left, right));
+    const tradeId = t.open();
+    t.call('a', { kind: 'offer', tradeId, revision: 0, lines: [{ index: 0, stackId: 'left-rod', qty: 1 }] });
+    t.call('b', { kind: 'offer', tradeId, revision: 1, lines: [{ index: 0, stackId: 'right-hoe', qty: 1 }] });
+    const confirm = { kind: 'confirm', tradeId, revision: 2 } as const;
+    t.call('a', confirm);
+    expect(t.call('b', confirm).session?.phase).toBe('settled');
+    expect(t.current().containers['backpack:a']!.slots[0]?.metadata).toEqual({ instanceId: 'hoe' });
+    expect(t.current().containers['backpack:b']!.slots[0]?.metadata).toEqual({ instanceId: 'rod', durability: 7 });
+    expect(t.commits()).toBe(1);
+  });
+
   it('cancels on disconnect or walking away and rejects a changed stack and a cancelled trade', () => {
     for (const scenario of ['away', 'disconnect', 'stack', 'cancel']) {
       const t = trade(state({ 0: stack('apple', 'apple', 4) }));

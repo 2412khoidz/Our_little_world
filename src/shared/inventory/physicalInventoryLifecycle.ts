@@ -103,6 +103,7 @@ export function editPhysicalInventory(
       const { container, stack } = edit.source(command.from, command.stackId, command.qty);
       if (stack.metadata?.starterOwner || isProtectedPhysicalStack(stack) || edit.catalog.get(stack.itemSku)?.essential) physicalError('PROTECTED', 'Món này đang được bảo vệ.');
       if (command.kind === 'drop') {
+        if (command.qty > physicalStackLimit(stack, edit.catalog)) physicalError('INVALID', 'Số lượng thả vượt giới hạn một chồng.');
         if (!landing) physicalError('UNAVAILABLE', 'Chưa có chỗ trống để thả món đồ.');
         const compatible = Object.values(edit.readDrops()).find((drop) =>
           drop.droppedBy === edit.userId && !drop.dropperExited && canReachDrop(drop, landing) &&
@@ -140,7 +141,8 @@ export function editPhysicalInventory(
       if ((drop.pickupAfterMs ?? 0) > nowMs || (command.automatic && drop.droppedBy === edit.userId && !drop.dropperExited))
         physicalError('UNAVAILABLE', 'Chờ món đồ chạm đất rồi nhặt nhé.');
       const bag = edit.edit('backpack');
-      const inserted = edit.insert(bag, drop.stack);
+      const { legacyParcel: _parcel, ...pickupStack } = drop.stack;
+      const inserted = edit.insert(bag, pickupStack);
       if (inserted === 0) physicalError('FULL', 'Ba lô đầy.');
       edit.setDrop(drop.id, inserted === drop.stack.qty ? null : {
         ...drop, stack: { ...drop.stack, qty: drop.stack.qty - inserted },

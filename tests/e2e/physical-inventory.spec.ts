@@ -60,8 +60,6 @@ test('real slots persist across row rotation and only one client withdraws the l
     await enter(other, 'partner-b');
     await stepToCabinet(page, request, worldId, may);
     await stepToCabinet(other, request, worldId, nang);
-    await page.getByRole('button', { name: 'Mở ba lô' }).click();
-    await other.getByRole('button', { name: 'Mở ba lô' }).click();
     const getA = () => getInventory(request, worldId, may, true);
     const getB = () => getInventory(request, worldId, nang, true);
     const modal = await openCabinet(page, info.project.name !== 'chromium-desktop');

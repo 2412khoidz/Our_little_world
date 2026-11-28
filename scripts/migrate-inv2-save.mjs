@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { V015_CATALOG } from './devLanV015Handlers.mjs';
-import { getPhysicalCatalog, migratePhysicalInventory, physicalSlots, physicalStackKey } from '../src/shared/inventory/physicalInventory.ts';
+import { getPhysicalCatalog, migratePhysicalInventory, normalizePhysicalStacks, physicalSlots, physicalStackKey } from '../src/shared/inventory/physicalInventory.ts';
 
 function migrateSave(db) {
   const v015 = db.v015;
@@ -14,6 +14,7 @@ function migrateSave(db) {
   for (const worldId of Object.keys(db.worlds)) {
     if (physicalInventory[worldId]) {
       if (inventory[worldId]?.length) throw new Error('Save chứa hai nguồn kho cùng lúc.');
+      physicalInventory[worldId] = normalizePhysicalStacks(physicalInventory[worldId], catalog);
       delete inventory[worldId];
       continue;
     }

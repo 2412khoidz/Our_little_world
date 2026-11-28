@@ -528,14 +528,58 @@
   background: #3b2821;
   border-radius: 8px;
 }
-.physical-hud-notice { top: auto; bottom: 100%; }
+.physical-hotbar__feedback {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  max-inline-size: min(50vw, 260px);
+}
+.physical-hotbar__feedback .physical-hud-notice { position: static; max-inline-size: 100%; }
+.physical-hotbar__feedback .olw-m-held-pill { width: max-content; max-inline-size: 100%; }
+.physical-hotbar__feedback .olw-m-held-pill button { flex: none; }
 .physical-trade-trigger { min-width: 44px; min-height: 44px; }
 .physical-trade-dialog { pointer-events: auto; }
-.physical-trade-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-block: 5px;
+.app-shell:is([data-hud-mode='mobile-portrait'], [data-hud-mode='mobile-landscape'])
+  .main-game-interaction-stack[data-physical-inventory='true'] {
+  bottom: calc(105px + var(--safe-bottom));
+  max-width: min(32vw, 220px);
 }
-.physical-trade-line input { width: 4rem; min-height: 36px; }
+.olw-gameplay-modal .physical-trade-panel { width: min(100%, 630px); block-size: min(100%, 560px); }
+.physical-trade-panel .physical-panel-body { display: grid; align-content: start; gap: 8px; }
+.physical-trade-offers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.physical-trade-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 44px));
+  gap: 3px;
+  margin-top: 5px;
+}
+.physical-trade-grid--bag { grid-template-columns: repeat(9, minmax(0, 44px)); }
+.physical-trade-grid .nuvora-sl {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.physical-trade-grid .nuvora-sl[aria-pressed='true'] { outline: 2px solid #bc7b24; outline-offset: -2px; }
+.physical-trade-grid .nuvora-sl:disabled { opacity: .55; }
+.physical-trade-quality { position: absolute; inset: 0 auto auto 3px; font-size: 9px; color: #555; }
+.physical-trade-quality[data-quality='gold'] { color: #a45209; }
+.physical-trade-ready[data-confirmed='true'] { color: #244b27; font-weight: 800; }
+.physical-trade-inspector { min-block-size: 52px; }
+.physical-trade-stepper { flex-wrap: wrap; margin-top: 5px; }
+.physical-trade-stepper output { min-inline-size: 2ch; text-align: center; }
+.physical-trade-footer { justify-content: space-between; border-top: 2px solid #a5744e; padding-top: 6px; }
+.physical-trade-footer button, .physical-trade-stepper button { min-block-size: 38px; }
+.physical-trade-error { margin: 0; font-weight: 700; color: #802c27; }
+@media (max-width: 500px) {
+  .physical-trade-grid--offer { grid-template-columns: repeat(3, minmax(0, 44px)); }
+  .physical-trade-grid--bag { grid-template-columns: repeat(6, minmax(0, 44px)); }
+}
